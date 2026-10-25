@@ -30,7 +30,7 @@ export function TitleBar() {
       </div>
       <div className="titlebar-title flex items-center gap-1.5">
         <Music2 className="h-3.5 w-3.5 text-[#0066cc]" strokeWidth={2.2} />
-        奇妙音乐屋
+        声屿
         {subtitle && subtitle !== '发现音乐' ? (
           <span className="font-normal text-black/35">— {subtitle}</span>
         ) : null}

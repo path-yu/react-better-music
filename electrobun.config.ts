@@ -2,7 +2,7 @@ import type { ElectrobunConfig } from 'electrobun'
 
 export default {
   app: {
-    name: 'Qimiao Music',
+    name: '声屿',
     identifier: 'com.qimiao.music',
     version: '0.1.0',
   },
@@ -15,6 +15,7 @@ export default {
     copy: {
       'dist-electrobun/index.html': 'views/mainview/index.html',
       'dist-electrobun/assets': 'views/mainview/assets',
+      'assets/app-icon.ico': 'app-icon.ico',
     },
     watchIgnore: ['dist-electrobun/**'],
     mac: {
