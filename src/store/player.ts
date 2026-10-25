@@ -8,6 +8,7 @@ import {
   fetchSongUrl,
 } from '../api'
 import { buildLyricLines, isEmptyLyric, type LyricLine } from '../lib/lyric'
+import { apiUrl } from '../lib/http'
 import { getCachedAudio } from '../lib/songCache'
 import { toast } from '../lib/toast'
 import type { Song } from '../types'
@@ -155,26 +156,19 @@ export const usePlayerStore = create<PlayerState>()(
             return true
           }
 
-          const needsFetch = !song.url || (!song.lyric && !song.yrc && !song.isNotLyric)
-          if (needsFetch) {
-            const enriched = await enrichSong(song)
-            patchSong(index, enriched)
-            if (get().loadRequestId !== requestId) return true
-            set({
-              audioUrl: enriched.url ?? '',
-              sourceReady: true,
-              lyricLines: readLyrics(enriched),
-              lyricLoading: false,
-            })
-          } else {
-            if (get().loadRequestId !== requestId) return true
-            set({
-              audioUrl: song.url ?? '',
-              sourceReady: true,
-              lyricLines: readLyrics(song),
-              lyricLoading: false,
-            })
+          // Always resolve a fresh URL: NetEase media URLs expire, and the
+          // persisted queue can still hold an URL that is no longer valid.
+          const url = await fetchSongUrl(song.id)
+          if (get().loadRequestId !== requestId) return true
+          if (!url) {
+            const available = await checkMusicAvailable(song.id)
+            throw new Error(available ? '获取歌曲播放地址失败' : '亲爱的，暂无版权，已为你跳过')
           }
+          patchSong(index, { url })
+          // Stream through the local API: the WebView cannot load the CDN
+          // media URL directly (it answers 403 for cross-origin media).
+          set({ audioUrl: apiUrl('/audio/proxy', { url }), sourceReady: true })
+          await resolveLyrics(index, song, requestId)
           return true
         } catch (error) {
           if (get().loadRequestId !== requestId) return true
@@ -499,9 +493,10 @@ export const usePlayerStore = create<PlayerState>()(
             const fresh = await enrichSong(song)
             const active = get().queue[get().currentIndex]
             if (!active || active.id !== song.id) return true
+            const freshUrl = fresh.url
             patchSong(currentIndex, fresh)
             set({
-              audioUrl: fresh.url ?? '',
+              audioUrl: freshUrl ? apiUrl('/audio/proxy', { url: freshUrl }) : '',
               sourceReady: true,
               lyricLines: readLyrics(fresh),
               lyricLoading: false,

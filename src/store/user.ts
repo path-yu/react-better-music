@@ -11,6 +11,12 @@ import {
   signIn as signInApi,
 } from '../api'
 import { toast } from '../lib/toast'
+import {
+  clearLoginCookie,
+  fetchGuestCookie,
+  getLoginCookie,
+  refreshLogin,
+} from '../lib/session'
 import { usePlayerStore } from './player'
 import type { Playlist, UserProfile } from '../types'
 
@@ -66,13 +72,26 @@ export const useUserStore = create<UserState>()(
 
       async initSession() {
         try {
-          const status = await fetchLoginStatus()
-          const account = status.data?.account
+          if (!getLoginCookie()) await fetchGuestCookie()
+
+          let status = await fetchLoginStatus()
+          let account = status.data?.account
+
+          // Restore the persisted cookie: refresh it once when it has expired.
+          if (!account?.id && getLoginCookie()) {
+            if (await refreshLogin()) {
+              status = await fetchLoginStatus()
+              account = status.data?.account
+            }
+          }
+
           if (account?.id) {
             set({ isLogin: true })
             await get().refreshProfile()
             await Promise.all([get().loadPlaylists(account.id), get().refreshLiked(account.id)])
           } else {
+            // Keep an anonymous cookie so public endpoints do not fail with 400.
+            await fetchGuestCookie()
             const accountRes = await fetchAccount()
             if (accountRes.account?.id) {
               set({ isLogin: true })
@@ -158,6 +177,7 @@ export const useUserStore = create<UserState>()(
         } catch {
           // ignore
         }
+        clearLoginCookie()
         set({
           isLogin: false,
           profile: null,

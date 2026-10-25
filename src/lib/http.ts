@@ -1,6 +1,25 @@
-const API_BASE = (import.meta.env.VITE_API_BASE || '/api').replace(/\/$/, '')
+import { API_BASE } from './apiBase'
+import {
+  clearLoginCookie,
+  fetchGuestCookie,
+  getActiveCookie,
+  getGuestCookie,
+  getLoginCookie,
+  refreshLogin,
+} from './session'
 
 type Query = Record<string, string | number | boolean | undefined | null>
+
+/** Endpoints that must not reuse the cached cookie. */
+const COOKIE_FREE_PREFIXES = [
+  '/login/cellphone',
+  '/login/qr',
+  '/captcha',
+  '/register/anonimous',
+]
+
+/** Endpoints whose failures should not trigger a session refresh retry. */
+const RETRY_FREE_PREFIXES = [...COOKIE_FREE_PREFIXES, '/logout']
 
 function buildQuery(params?: Query) {
   if (!params) return ''
@@ -52,44 +71,110 @@ async function parse<T>(response: Response): Promise<T> {
   return payload as T
 }
 
+function withSessionCookie(path: string, params?: Query): Query | undefined {
+  if (COOKIE_FREE_PREFIXES.some((prefix) => path.startsWith(prefix))) return params
+  const cookie = getActiveCookie()
+  if (!cookie) return params
+  return { ...params, cookie }
+}
+
+function isSessionFailure(error: unknown) {
+  if (!(error instanceof ApiError)) return false
+  const payload = error.payload as {
+    code?: number
+    message?: string
+    msg?: string
+  } | null
+  if (error.status === 301 || payload?.code === 301) return true
+  if (error.status === 400) {
+    const message = `${payload?.message ?? ''} ${payload?.msg ?? ''}`
+    return message.includes('登录') || message.includes('验证') || message.includes('需要')
+  }
+  return false
+}
+
+function isRetryFree(path: string) {
+  return RETRY_FREE_PREFIXES.some((prefix) => path.startsWith(prefix))
+}
+
+/**
+ * A 301/400 auth failure means the cached cookie expired. Try `/login/refresh`
+ * first; when that fails, fall back to a fresh anonymous cookie so public
+ * endpoints keep working without a logged-in account.
+ */
+async function recoverSession() {
+  if (getLoginCookie()) {
+    if (await refreshLogin()) return true
+    clearLoginCookie()
+  }
+  if (getGuestCookie()) return true
+  return Boolean(await fetchGuestCookie(true))
+}
+
+async function runWithSession<T>(path: string, run: () => Promise<Response>) {
+  const canRetry = !isRetryFree(path)
+  try {
+    const payload = await parse<T>(await run())
+    const code = (payload as { code?: number } | null)?.code
+    // Some endpoints report an expired session as HTTP 200 with body code 301.
+    if (canRetry && code === 301 && (await recoverSession())) {
+      return parse<T>(await run())
+    }
+    return payload
+  } catch (error) {
+    if (!isSessionFailure(error) || !canRetry) throw error
+    if (!(await recoverSession())) throw error
+    return parse<T>(await run())
+  }
+}
+
 export function get<T>(path: string, params?: Query, signal?: AbortSignal) {
-  return fetch(buildUrl(path, params), {
-    method: 'GET',
-    credentials: 'include',
-    signal,
-  }).then((response) => parse<T>(response))
+  return runWithSession<T>(path, () =>
+    fetch(buildUrl(path, withSessionCookie(path, params)), {
+      method: 'GET',
+      credentials: 'include',
+      signal,
+    }),
+  )
 }
 
 export function post<T>(path: string, body?: BodyInit | null, params?: Query, signal?: AbortSignal) {
-  return fetch(buildUrl(path, params), {
-    method: 'POST',
-    credentials: 'include',
-    body,
-    signal,
-  }).then((response) => parse<T>(response))
+  return runWithSession<T>(path, () =>
+    fetch(buildUrl(path, withSessionCookie(path, params)), {
+      method: 'POST',
+      credentials: 'include',
+      body,
+      signal,
+    }),
+  )
 }
 
 export function postForm<T>(path: string, params: Query, signal?: AbortSignal) {
-  const body = new URLSearchParams()
-  Object.entries(params).forEach(([key, value]) => {
-    if (value === undefined || value === null) return
-    body.append(key, String(value))
-  })
-  return fetch(`${API_BASE}${path}`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body,
-    signal,
-  }).then((response) => parse<T>(response))
+  const run = () => {
+    const body = new URLSearchParams()
+    Object.entries(withSessionCookie(path, params) ?? {}).forEach(([key, value]) => {
+      if (value === undefined || value === null) return
+      body.append(key, String(value))
+    })
+    return fetch(`${API_BASE}${path}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body,
+      signal,
+    })
+  }
+  return runWithSession<T>(path, run)
 }
 
 export function uploadFile<T>(path: string, file: File, params?: Query) {
-  const formData = new FormData()
-  formData.append('imgFile', file)
-  return fetch(buildUrl(path, params), {
-    method: 'POST',
-    credentials: 'include',
-    body: formData,
-  }).then((response) => parse<T>(response))
+  return runWithSession<T>(path, () => {
+    const formData = new FormData()
+    formData.append('imgFile', file)
+    return fetch(buildUrl(path, withSessionCookie(path, params)), {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    })
+  })
 }

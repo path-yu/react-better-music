@@ -17,6 +17,8 @@ import {
   sendCaptcha,
 } from '../../api'
 import { toast } from '../../lib/toast'
+import { ApiError } from '../../lib/http'
+import { saveLoginCookie } from '../../lib/session'
 import { useUserStore } from '../../store/user'
 
 interface LoginModalProps {
@@ -42,6 +44,11 @@ function responseMessage(res: { code: number; [key: string]: unknown }) {
   return undefined
 }
 
+function requestErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof ApiError) return error.message
+  return fallback
+}
+
 export function LoginModal({ open, onOpenChange }: LoginModalProps) {
   const [mode, setMode] = useState<LoginMode>('captcha')
   const [phone, setPhone] = useState('')
@@ -49,6 +56,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
   const [countdown, setCountdown] = useState(0)
   const [sending, setSending] = useState(false)
   const [loggingIn, setLoggingIn] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
 
   const [qrImage, setQrImage] = useState('')
   const [status, setStatus] = useState<QrStatus>(0)
@@ -83,9 +91,15 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
           if (cancelledRef.current) return
           setStatus(result.code as QrStatus)
           if (result.code === 803) {
-            toast.success('登录成功')
-            await useUserStore.getState().initSession()
+            if (typeof result.cookie === 'string' && result.cookie) {
+              saveLoginCookie(result.cookie)
+            }
             onOpenChange(false)
+            toast.success('登录成功')
+            void useUserStore
+              .getState()
+              .initSession()
+              .catch(() => {})
             return
           }
           if (result.code === 800) return
@@ -113,6 +127,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
     setCountdown(0)
     setSending(false)
     setLoggingIn(false)
+    setErrorMessage('')
     setQrImage('')
     setStatus(0)
     setLoading(false)
@@ -147,16 +162,21 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
     }
     if (countdown > 0 || sending) return
     setSending(true)
+    setErrorMessage('')
     try {
       const res = await sendCaptcha(phone)
       if (res.code === 200) {
         toast.success('验证码已发送，请查收短信')
         setCountdown(60)
       } else {
-        toast.error(responseMessage(res) ?? '验证码发送失败')
+        const message = responseMessage(res) ?? '验证码发送失败'
+        setErrorMessage(message)
+        toast.error(message)
       }
-    } catch {
-      toast.error('验证码发送失败，请稍后重试')
+    } catch (error) {
+      const message = requestErrorMessage(error, '验证码发送失败，请稍后重试')
+      setErrorMessage(message)
+      toast.error(message)
     } finally {
       setSending(false)
     }
@@ -173,17 +193,28 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
     }
     if (loggingIn) return
     setLoggingIn(true)
+    setErrorMessage('')
     try {
       const res = await loginByCellphone(phone, captcha.trim())
       if (res.code === 200) {
-        toast.success('登录成功')
-        await useUserStore.getState().initSession()
+        if (typeof res.cookie === 'string' && res.cookie) {
+          saveLoginCookie(res.cookie)
+        }
         onOpenChange(false)
+        toast.success('登录成功')
+        void useUserStore
+          .getState()
+          .initSession()
+          .catch(() => {})
       } else {
-        toast.error(responseMessage(res) ?? '登录失败，请检查手机号或验证码')
+        const message = responseMessage(res) ?? '登录失败，请检查手机号或验证码'
+        setErrorMessage(message)
+        toast.error(message)
       }
-    } catch {
-      toast.error('登录失败，请检查手机号或验证码')
+    } catch (error) {
+      const message = requestErrorMessage(error, '登录失败，请稍后重试')
+      setErrorMessage(message)
+      toast.error(message)
     } finally {
       setLoggingIn(false)
     }
@@ -193,7 +224,10 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
     <Modal isOpen={open} onClose={() => onOpenChange(false)} title="登录" size="sm" glass>
       <Tabs
         value={mode}
-        onValueChange={(value) => setMode(value as LoginMode)}
+        onValueChange={(value) => {
+          setMode(value as LoginMode)
+          setErrorMessage('')
+        }}
         className="w-full"
       >
         <TabsList>
@@ -217,9 +251,10 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
               <p className="mb-1.5 text-[11px] text-black/40">手机号</p>
               <Input
                 value={phone}
-                onChange={(event) =>
+                onChange={(event) => {
                   setPhone(event.target.value.replace(/\D/g, '').slice(0, 11))
-                }
+                  setErrorMessage('')
+                }}
                 placeholder="请输入手机号"
                 inputMode="numeric"
                 autoComplete="tel"
@@ -232,9 +267,10 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
               <div className="flex items-center gap-2">
                 <Input
                   value={captcha}
-                  onChange={(event) =>
+                  onChange={(event) => {
                     setCaptcha(event.target.value.replace(/\D/g, '').slice(0, 6))
-                  }
+                    setErrorMessage('')
+                  }}
                   placeholder="请输入验证码"
                   inputMode="numeric"
                   autoComplete="one-time-code"
@@ -265,6 +301,15 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
             >
               登录
             </Button>
+
+            {errorMessage ? (
+              <div
+                role="alert"
+                className="rounded-[10px] border border-[#ff3b30]/15 bg-[#ff3b30]/10 px-3 py-2 text-[12px] leading-relaxed text-[#d70015] dark:text-[#ff6961]"
+              >
+                {errorMessage}
+              </div>
+            ) : null}
 
             <p className="text-center text-[11px] leading-relaxed text-black/30">
               未注册的手机号登录后将自动创建账号

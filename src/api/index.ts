@@ -16,6 +16,12 @@ import type {
 import { get, postForm, uploadFile } from '../lib/http'
 import { normalizeMv, normalizePlaylist, normalizeSongs, type RawSong } from '../lib/songs'
 
+/** The CDN sometimes hands out http media URLs, which the WebView rejects. */
+function secureMediaUrl(url: string | null | undefined) {
+  if (!url) return null
+  return url.replace(/^http:\/\//i, 'https://')
+}
+
 /* ------------------------------- discovery ------------------------------- */
 
 export async function fetchBanners() {
@@ -165,7 +171,7 @@ export async function fetchSongUrl(id: number | string) {
     id,
     level: 'standard',
   })
-  return res.data?.[0]?.url ?? null
+  return secureMediaUrl(res.data?.[0]?.url)
 }
 
 export async function checkMusicAvailable(id: number | string) {
@@ -265,7 +271,7 @@ export async function fetchMvDetail(mvid: number | string) {
 
 export async function fetchMvUrl(id: number | string) {
   const res = await get<{ data?: { url?: string } }>('/mv/url', { id })
-  return res.data?.url ?? ''
+  return secureMediaUrl(res.data?.url) ?? ''
 }
 
 export async function fetchSimilarMv(mvid: number | string) {
@@ -451,7 +457,7 @@ export async function fetchQrImage(key: string) {
 }
 
 export async function fetchQrStatus(key: string) {
-  return get<{ code: number; message?: string }>('/login/qr/check', {
+  return get<{ code: number; message?: string; cookie?: string }>('/login/qr/check', {
     key,
     timestamp: Date.now(),
   })
