@@ -197,6 +197,9 @@ export function PlayerBar() {
   }
 
   const duration = currentSong.dt || 0
+  const loadingSource = playing && !sourceReady
+  const buffering = playing && sourceReady && !audioReady
+  const busy = loadingSource || buffering
   const percent = duration ? Math.min(100, (currentTime * 1000 * 100) / duration) : 0
   // While the audio element still points at the previous track, force the
   // progress UI to zero so stale timeupdate events can never leak through.
@@ -292,8 +295,15 @@ export function PlayerBar() {
               />
             </button>
           </div>
-          <p className="mt-0.5 truncate text-[10.5px] text-black/40">
-            <ArtistLinks artists={currentSong.ar} />
+          <p className="mt-0.5 flex items-center gap-1 truncate text-[10.5px] text-black/40">
+            {busy ? (
+              <>
+                <Loader2 className="h-3 w-3 flex-none animate-spin text-[#0066cc]" />
+                {loadingSource ? '正在加载音源…' : '正在缓冲…'}
+              </>
+            ) : (
+              <ArtistLinks artists={currentSong.ar} />
+            )}
           </p>
         </div>
       </div>
@@ -341,11 +351,15 @@ export function PlayerBar() {
           </button>
           <button
             type="button"
-            aria-label={playing ? '暂停' : '播放'}
+            aria-label={
+              loadingSource ? '正在加载音源' : buffering ? '正在缓冲' : playing ? '暂停' : '播放'
+            }
             onClick={() => void togglePlay()}
             className="pressable flex h-[32px] w-[32px] items-center justify-center rounded-full bg-[#0066cc] text-white shadow-[0_2px_8px_rgba(0,102,204,0.35)] hover:bg-[#0071e3]"
           >
-            {playing ? (
+            {busy ? (
+              <Loader2 className="h-[15px] w-[15px] animate-spin" />
+            ) : playing ? (
               <Pause className="h-[15px] w-[15px] fill-current" />
             ) : (
               <Play className="ml-[1px] h-[15px] w-[15px] fill-current" />

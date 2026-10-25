@@ -33,6 +33,7 @@ export function NowPlaying() {
   const currentSong = queue[currentIndex]
   const playing = usePlayerStore((state) => state.playing)
   const audioReady = usePlayerStore((state) => state.audioReady)
+  const sourceReady = usePlayerStore((state) => state.sourceReady)
   const currentTime = usePlayerStore((state) => state.currentTime)
   const lyricLines = usePlayerStore((state) => state.lyricLines)
   const lyricLoading = usePlayerStore((state) => state.lyricLoading)
@@ -97,6 +98,9 @@ export function NowPlaying() {
   const activeIndex = findLyricIndex(lyricLines, currentTime * 1000)
   const liked = likedIds.includes(currentSong.id)
   const discSpinning = playing && audioReady
+  const loadingSource = playing && !sourceReady
+  const buffering = playing && sourceReady && !audioReady
+  const busy = loadingSource || buffering
 
   const handleSeek = (timeMs: number) => {
     seekAudio(timeMs / 1000)
@@ -208,6 +212,16 @@ export function NowPlaying() {
                 <span className="mx-2 text-black/20">·</span>
                 {currentSong.al.name}
               </p>
+              {busy ? (
+                <p
+                  className="mt-2 flex items-center justify-center gap-1.5 text-[12px] text-[#0066cc]"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  {loadingSource ? '正在加载音源…' : '正在缓冲…'}
+                </p>
+              ) : null}
             </div>
 
             <div className="mt-4 flex items-center gap-6">
@@ -221,11 +235,15 @@ export function NowPlaying() {
               </button>
               <button
                 type="button"
-                aria-label={playing ? '暂停' : '播放'}
+                aria-label={
+                  loadingSource ? '正在加载音源' : buffering ? '正在缓冲' : playing ? '暂停' : '播放'
+                }
                 onClick={() => void togglePlay()}
                 className="pressable flex h-12 w-12 items-center justify-center rounded-full bg-[#0066cc] text-white shadow-[0_6px_18px_rgba(0,102,204,0.35)] hover:bg-[#0071e3]"
               >
-                {playing ? (
+                {busy ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : playing ? (
                   <Pause className="h-5 w-5 fill-current" />
                 ) : (
                   <Play className="ml-[2px] h-5 w-5 fill-current" />
