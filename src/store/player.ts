@@ -5,7 +5,7 @@ import {
   fetchIntelligenceList,
   fetchLyric,
   fetchPersonalFm,
-  fetchSongUrl,
+  fetchSongUrlInfo,
 } from '../api'
 import { buildLyricLines, isEmptyLyric, type LyricLine } from '../lib/lyric'
 import { apiUrl } from '../lib/http'
@@ -64,7 +64,10 @@ async function enrichSong(song: Song): Promise<Song> {
   if (!available) {
     throw new Error('亲爱的，暂无版权，已为你跳过')
   }
-  const url = await fetchSongUrl(song.id, useSettingsStore.getState().playLevel)
+  const { url, trialEnd } = await fetchSongUrlInfo(
+    song.id,
+    useSettingsStore.getState().playLevel,
+  )
   if (!url) {
     throw new Error('获取歌曲播放地址失败')
   }
@@ -74,6 +77,7 @@ async function enrichSong(song: Song): Promise<Song> {
     ...song,
     url,
     urlFetchedAt: Date.now(),
+    trialEnd,
     lyric: lyricData.lyric,
     tlyric: lyricData.tlyric,
     yrc: lyricData.yrc,
@@ -131,12 +135,12 @@ export const usePlayerStore = create<PlayerState>()(
         if (prefetching.has(target.id)) return
         prefetching.add(target.id)
         const level = useSettingsStore.getState().playLevel
-        void fetchSongUrl(target.id, level)
-          .then((url) => {
+        void fetchSongUrlInfo(target.id, level)
+          .then(({ url, trialEnd }) => {
             if (!url) return
             const active = get().queue[nextIndex]
             if (!active || active.id !== target.id || hasFreshUrl(active)) return
-            patchSong(nextIndex, { url, urlFetchedAt: Date.now() })
+            patchSong(nextIndex, { url, urlFetchedAt: Date.now(), trialEnd })
           })
           .catch(() => undefined)
           .finally(() => prefetching.delete(target.id))
@@ -200,11 +204,15 @@ export const usePlayerStore = create<PlayerState>()(
 
           // Prefetched (and still fresh) URLs are used directly; otherwise
           // resolve a new one because NetEase media URLs expire.
-          let url: string | null = hasFreshUrl(song) ? (song.url ?? null) : null
+          const fresh = hasFreshUrl(song)
+          let url: string | null = fresh ? (song.url ?? null) : null
+          let trialEnd: number | null = fresh ? (song.trialEnd ?? null) : null
           if (!url) {
-            url = await fetchSongUrl(song.id, useSettingsStore.getState().playLevel)
+            const info = await fetchSongUrlInfo(song.id, useSettingsStore.getState().playLevel)
+            url = info.url
+            trialEnd = info.trialEnd
             if (get().loadRequestId !== requestId) return true
-            if (url) patchSong(index, { url, urlFetchedAt: Date.now() })
+            if (url) patchSong(index, { url, urlFetchedAt: Date.now(), trialEnd })
           }
           if (!url) {
             const available = await checkMusicAvailable(song.id)
@@ -213,6 +221,9 @@ export const usePlayerStore = create<PlayerState>()(
           // Stream through the local API: the WebView cannot load the CDN
           // media URL directly (it answers 403 for cross-origin media).
           set({ audioUrl: apiUrl('/audio/proxy', { url }), sourceReady: true })
+          if (trialEnd && trialEnd > 0) {
+            toast.warning(`当前仅可试听 ${trialEnd} 秒，登录或开通会员后可播放完整版`)
+          }
           prefetchAfter(index)
           await resolveLyrics(index, song, requestId)
           return true

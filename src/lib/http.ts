@@ -5,6 +5,7 @@ import {
   getActiveCookie,
   getGuestCookie,
   getLoginCookie,
+  notifyLoginExpired,
   refreshLogin,
 } from './session'
 
@@ -106,6 +107,7 @@ async function recoverSession() {
   if (getLoginCookie()) {
     if (await refreshLogin()) return true
     clearLoginCookie()
+    notifyLoginExpired()
   }
   if (getGuestCookie()) return true
   return Boolean(await fetchGuestCookie(true))

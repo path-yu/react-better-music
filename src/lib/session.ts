@@ -55,6 +55,32 @@ export function getActiveCookie() {
   return getLoginCookie() || getGuestCookie()
 }
 
+type LoginExpiredListener = () => void
+const loginExpiredListeners = new Set<LoginExpiredListener>()
+let lastExpiredNotice = 0
+
+/** Subscribe to "the stored login cookie is dead" events (used to reset the UI). */
+export function onLoginExpired(listener: LoginExpiredListener) {
+  loginExpiredListeners.add(listener)
+  return () => {
+    loginExpiredListeners.delete(listener)
+  }
+}
+
+export function notifyLoginExpired() {
+  // Several requests often fail at once; only surface the expiry once.
+  const now = Date.now()
+  if (now - lastExpiredNotice < 5000) return
+  lastExpiredNotice = now
+  loginExpiredListeners.forEach((listener) => {
+    try {
+      listener()
+    } catch {
+      // ignore listener errors
+    }
+  })
+}
+
 async function requestCookie(path: string, params?: Record<string, string>) {
   const search = new URLSearchParams(params).toString()
   const response = await fetch(`${API_BASE}${path}${search ? `?${search}` : ''}`, {

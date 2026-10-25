@@ -15,6 +15,7 @@ import {
   clearLoginCookie,
   fetchGuestCookie,
   getLoginCookie,
+  onLoginExpired,
   refreshLogin,
 } from '../lib/session'
 import { usePlayerStore } from './player'
@@ -57,6 +58,17 @@ function splitPlaylists(uid: number, playlists: Playlist[]) {
   return { created, collected }
 }
 
+/**
+ * The local API injects an anonymous account (type 1000) when no valid login
+ * cookie is sent, so a non-null account id alone does not mean "logged in".
+ */
+function isAnonymousAccount(
+  account?: { id?: number; type?: number; anonimousUser?: boolean } | null,
+) {
+  if (!account?.id) return true
+  return account.anonimousUser === true || account.type === 1000
+}
+
 export const useUserStore = create<UserState>()(
   persist(
     (set, get) => ({
@@ -74,38 +86,48 @@ export const useUserStore = create<UserState>()(
         try {
           if (!getLoginCookie()) await fetchGuestCookie()
 
+          const wasLoggedIn = get().isLogin || Boolean(get().profile)
           let status = await fetchLoginStatus()
           let account = status.data?.account
 
           // Restore the persisted cookie: refresh it once when it has expired.
-          if (!account?.id && getLoginCookie()) {
+          if (isAnonymousAccount(account) && getLoginCookie()) {
             if (await refreshLogin()) {
               status = await fetchLoginStatus()
               account = status.data?.account
             }
           }
 
-          if (account?.id) {
+          const uid = account?.id
+          if (uid && !isAnonymousAccount(account)) {
             set({ isLogin: true })
             await get().refreshProfile()
-            await Promise.all([get().loadPlaylists(account.id), get().refreshLiked(account.id)])
-          } else {
-            // Keep an anonymous cookie so public endpoints do not fail with 400.
-            await fetchGuestCookie()
-            const accountRes = await fetchAccount()
-            if (accountRes.account?.id) {
-              set({ isLogin: true })
-              await get().refreshProfile()
-              await Promise.all([
-                get().loadPlaylists(accountRes.account.id),
-                get().refreshLiked(accountRes.account.id),
-              ])
-            } else {
-              set({ isLogin: false, profile: null, createdPlaylists: [], collectedPlaylists: [] })
-            }
+            await Promise.all([get().loadPlaylists(uid), get().refreshLiked(uid)])
+            return
           }
+
+          // Keep an anonymous cookie so public endpoints do not fail with 400.
+          await fetchGuestCookie()
+          set({
+            isLogin: false,
+            profile: null,
+            level: 0,
+            pcSign: false,
+            likedIds: [],
+            createdPlaylists: [],
+            collectedPlaylists: [],
+          })
+          if (wasLoggedIn) toast.warning('登录已过期，请重新登录')
         } catch {
-          set({ isLogin: false })
+          set({
+            isLogin: false,
+            profile: null,
+            level: 0,
+            pcSign: false,
+            likedIds: [],
+            createdPlaylists: [],
+            collectedPlaylists: [],
+          })
         } finally {
           set({ initialized: true })
         }
@@ -126,7 +148,6 @@ export const useUserStore = create<UserState>()(
               profile: detail.profile,
               level: detail.level ?? 0,
               pcSign: Boolean(detail.pcSign),
-              isLogin: true,
             })
           }
         } catch {
@@ -140,7 +161,7 @@ export const useUserStore = create<UserState>()(
           const { created, collected } = splitPlaylists(uid, playlists)
           set({ createdPlaylists: created, collectedPlaylists: collected })
         } catch {
-          // silent
+          if (get().isLogin) toast.warning('歌单加载失败，请稍后重试')
         }
       },
 
@@ -257,3 +278,18 @@ export const useUserStore = create<UserState>()(
     },
   ),
 )
+
+// The HTTP layer falls back to a guest cookie when /login/refresh fails; make
+// sure the UI stops showing the stale profile as if it were still signed in.
+onLoginExpired(() => {
+  useUserStore.setState({
+    isLogin: false,
+    profile: null,
+    level: 0,
+    pcSign: false,
+    likedIds: [],
+    createdPlaylists: [],
+    collectedPlaylists: [],
+  })
+  toast.warning('登录已过期，请重新登录')
+})

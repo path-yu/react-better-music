@@ -58,6 +58,8 @@ export interface Song {
   /** enriched at runtime */
   url?: string
   urlFetchedAt?: number
+  /** Trial length in seconds when NetEase only returns a preview clip. */
+  trialEnd?: number | null
   lyric?: string
   tlyric?: string
   yrc?: string

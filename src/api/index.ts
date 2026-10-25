@@ -167,12 +167,24 @@ export async function fetchSimilarSongs(id: string | number) {
 
 /* ---------------------------------- song --------------------------------- */
 
+export async function fetchSongUrlInfo(id: number | string, level: PlayLevel = 'exhigh') {
+  const res = await get<{
+    data?: Array<{
+      url: string | null
+      freeTrialInfo?: { start?: number; end?: number } | null
+    }>
+  }>('/song/url/v1', { id, level })
+  const item = res.data?.[0]
+  return {
+    url: secureMediaUrl(item?.url),
+    /** Seconds of the trial clip; null when the full track is available. */
+    trialEnd: item?.freeTrialInfo?.end ?? null,
+  }
+}
+
 export async function fetchSongUrl(id: number | string, level: PlayLevel = 'exhigh') {
-  const res = await get<{ data?: Array<{ url: string | null }> }>('/song/url/v1', {
-    id,
-    level,
-  })
-  return secureMediaUrl(res.data?.[0]?.url)
+  const { url } = await fetchSongUrlInfo(id, level)
+  return url
 }
 
 export async function checkMusicAvailable(id: number | string) {
@@ -468,7 +480,11 @@ export async function fetchLoginStatus() {
   return get<{
     data?: {
       code: number
-      account?: { id: number } | null
+      account?: {
+        id: number
+        type?: number
+        anonimousUser?: boolean
+      } | null
       profile?: UserProfile | null
     }
   }>('/login/status', { timestamp: Date.now() })
@@ -476,7 +492,11 @@ export async function fetchLoginStatus() {
 
 export async function fetchAccount() {
   return get<{
-    account?: { id: number } | null
+    account?: {
+      id: number
+      type?: number
+      anonimousUser?: boolean
+    } | null
     profile?: UserProfile | null
   }>('/user/account')
 }
