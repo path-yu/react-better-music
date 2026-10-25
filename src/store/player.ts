@@ -9,7 +9,13 @@ import {
 } from '../api'
 import { buildLyricLines, isEmptyLyric, type LyricLine } from '../lib/lyric'
 import { apiUrl } from '../lib/http'
-import { getCachedAudio } from '../lib/songCache'
+import { getCachedAudio, hasCachedAudio } from '../lib/songCache'
+import {
+  clearPrefetchedAudio,
+  consumePrefetchedAudio,
+  prefetchAudio,
+  retainPrefetchedAudio,
+} from '../lib/audioPrefetch'
 import { toast } from '../lib/toast'
 import { useSettingsStore } from './settings'
 import type { Song } from '../types'
@@ -29,6 +35,8 @@ interface PlayerState {
   audioReady: boolean
   audioUrl: string
   sourceReady: boolean
+  /** True while playing a blob read from the offline cache (skip caching again). */
+  audioFromCache: boolean
   loadRequestId: number
   showNowPlaying: boolean
   showQueue: boolean
@@ -103,7 +111,15 @@ const playableQueue = (songs: Song[]) => songs.filter((song) => song.fee !== 0)
 // NetEase media URLs expire after roughly 20 minutes; treat anything older
 // than this as stale and resolve it again before playback.
 const URL_TTL = 10 * 60 * 1000
-const prefetching = new Set<number>()
+// Give the current track a head start before downloading both neighbours.
+const AUDIO_PREFETCH_DELAY = 1800
+
+let prefetchTimer: number | undefined
+let prefetchToken = 0
+const urlRequests = new Map<
+  number,
+  Promise<{ url: string | null; trialEnd: number | null }>
+>()
 
 function hasFreshUrl(song: Song) {
   return Boolean(
@@ -122,28 +138,85 @@ export const usePlayerStore = create<PlayerState>()(
         }))
       }
 
-      // Resolve the next track's URL in the background so switching songs does
-      // not wait for another /song/url/v1 request. Existing fresh URLs are
-      // reused and failures stay silent.
-      const prefetchAfter = (index: number) => {
-        const { queue } = get()
-        if (queue.length < 2) return
-        const nextIndex = (index + 1) % queue.length
-        const target = queue[nextIndex]
-        if (!target || target.fee === 0) return
-        if (hasFreshUrl(target)) return
-        if (prefetching.has(target.id)) return
-        prefetching.add(target.id)
+      const requestNeighborUrl = (song: Song) => {
         const level = useSettingsStore.getState().playLevel
-        void fetchSongUrlInfo(target.id, level)
-          .then(({ url, trialEnd }) => {
-            if (!url) return
-            const active = get().queue[nextIndex]
-            if (!active || active.id !== target.id || hasFreshUrl(active)) return
-            patchSong(nextIndex, { url, urlFetchedAt: Date.now(), trialEnd })
-          })
-          .catch(() => undefined)
-          .finally(() => prefetching.delete(target.id))
+        const pendingRequest = urlRequests.get(song.id)
+        if (pendingRequest) return pendingRequest
+        const request = fetchSongUrlInfo(song.id, level).finally(() => {
+          urlRequests.delete(song.id)
+        })
+        urlRequests.set(song.id, request)
+        return request
+      }
+
+      // Resolve both neighbours' URLs right away and download their audio once
+      // the current track is ready, so next/prev can start from a local blob.
+      const prefetchNeighbors = (index: number, delay = AUDIO_PREFETCH_DELAY) => {
+        const { queue } = get()
+        const token = prefetchToken + 1
+        prefetchToken = token
+        if (prefetchTimer !== undefined) {
+          window.clearTimeout(prefetchTimer)
+          prefetchTimer = undefined
+        }
+
+        const findNeighbor = (direction: 1 | -1) => {
+          for (let step = 1; step < queue.length; step += 1) {
+            const candidateIndex =
+              ((index + direction * step) % queue.length + queue.length) % queue.length
+            const candidate = queue[candidateIndex]
+            if (candidate && candidate.fee !== 0) {
+              return { index: candidateIndex, song: candidate }
+            }
+          }
+          return null
+        }
+        const found = [findNeighbor(1), findNeighbor(-1)].filter(
+          (entry): entry is { index: number; song: Song } => entry !== null,
+        )
+        const neighbors = found.filter(
+          (entry, position) =>
+            found.findIndex((item) => item.song.id === entry.song.id) === position,
+        )
+
+        // Only the reachable neighbours may keep their prefetched audio.
+        retainPrefetchedAudio(neighbors.map((entry) => entry.song.id))
+        if (!neighbors.length) return
+
+        const resolves = neighbors.map(async ({ index: neighborIndex, song }) => {
+          if (await hasCachedAudio(song.id)) return null
+          let url = hasFreshUrl(song) ? (song.url ?? null) : null
+          let trialEnd = song.trialEnd ?? null
+          if (!url) {
+            try {
+              const info = await requestNeighborUrl(song)
+              url = info.url
+              trialEnd = info.trialEnd
+            } catch {
+              return null
+            }
+            if (!url) return null
+            const active = get().queue[neighborIndex]
+            if (!active || active.id !== song.id) return null
+            patchSong(neighborIndex, { url, urlFetchedAt: Date.now(), trialEnd })
+          }
+          return { songId: song.id, url, trialEnd }
+        })
+
+        void Promise.all(resolves).then((results) => {
+          if (token !== prefetchToken || get().currentIndex !== index) return
+          const start = () => {
+            if (token !== prefetchToken || get().currentIndex !== index) return
+            for (const result of results) {
+              if (result) void prefetchAudio(result.songId, result.url, result.trialEnd)
+            }
+          }
+          if (delay <= 0) {
+            start()
+            return
+          }
+          prefetchTimer = window.setTimeout(start, delay)
+        })
       }
 
       const resolveLyrics = async (index: number, song: Song, requestId: number) => {
@@ -184,6 +257,7 @@ export const usePlayerStore = create<PlayerState>()(
           lyricLines: [],
           audioUrl: '',
           sourceReady: false,
+          audioFromCache: false,
         })
         try {
           // Prefer audio cached in IndexedDB (ffmpeg-transcoded Opus).
@@ -196,8 +270,22 @@ export const usePlayerStore = create<PlayerState>()(
               URL.revokeObjectURL(url)
               return true
             }
-            set({ audioUrl: url, sourceReady: true })
-            prefetchAfter(index)
+            set({ audioUrl: url, sourceReady: true, audioFromCache: true })
+            prefetchNeighbors(index)
+            await resolveLyrics(index, song, requestId)
+            return true
+          }
+
+          // A neighbour preload is already a local Blob: play it immediately.
+          const prefetched = consumePrefetchedAudio(song.id)
+          if (prefetched) {
+            set({ audioUrl: prefetched.url, sourceReady: true })
+            if (prefetched.trialEnd && prefetched.trialEnd > 0) {
+              toast.warning(
+                `当前仅可试听 ${prefetched.trialEnd} 秒，登录或开通会员后可播放完整版`,
+              )
+            }
+            prefetchNeighbors(index)
             await resolveLyrics(index, song, requestId)
             return true
           }
@@ -224,12 +312,18 @@ export const usePlayerStore = create<PlayerState>()(
           if (trialEnd && trialEnd > 0) {
             toast.warning(`当前仅可试听 ${trialEnd} 秒，登录或开通会员后可播放完整版`)
           }
-          prefetchAfter(index)
+          prefetchNeighbors(index)
           await resolveLyrics(index, song, requestId)
           return true
         } catch (error) {
           if (get().loadRequestId !== requestId) return true
-          set({ lyricLoading: false, playing: false, audioUrl: '', sourceReady: false })
+          set({
+            lyricLoading: false,
+            playing: false,
+            audioUrl: '',
+            sourceReady: false,
+            audioFromCache: false,
+          })
           toast.warning(error instanceof Error ? error.message : '歌曲加载失败')
           return false
         }
@@ -353,6 +447,7 @@ export const usePlayerStore = create<PlayerState>()(
         audioReady: false,
         audioUrl: '',
         sourceReady: false,
+        audioFromCache: false,
         loadRequestId: 0,
         showNowPlaying: false,
         showQueue: false,
@@ -526,6 +621,12 @@ export const usePlayerStore = create<PlayerState>()(
         },
 
         clearQueue() {
+          clearPrefetchedAudio()
+          prefetchToken += 1
+          if (prefetchTimer !== undefined) {
+            window.clearTimeout(prefetchTimer)
+            prefetchTimer = undefined
+          }
           set({
             queue: [],
             currentIndex: 0,
@@ -536,6 +637,7 @@ export const usePlayerStore = create<PlayerState>()(
             lyricLines: [],
             audioUrl: '',
             sourceReady: false,
+            audioFromCache: false,
             heartMode: false,
             heartLoading: false,
           })
@@ -555,6 +657,7 @@ export const usePlayerStore = create<PlayerState>()(
             set({
               audioUrl: freshUrl ? apiUrl('/audio/proxy', { url: freshUrl }) : '',
               sourceReady: true,
+              audioFromCache: false,
               lyricLines: readLyrics(fresh),
               lyricLoading: false,
             })
@@ -568,10 +671,18 @@ export const usePlayerStore = create<PlayerState>()(
         },
 
         prefetchNext() {
-          prefetchAfter(get().currentIndex)
+          // onLoadedData has fired, so the current track no longer needs the
+          // bandwidth head start: download both neighbours right away.
+          prefetchNeighbors(get().currentIndex, 0)
         },
 
         invalidateUrls() {
+          clearPrefetchedAudio()
+          prefetchToken += 1
+          if (prefetchTimer !== undefined) {
+            window.clearTimeout(prefetchTimer)
+            prefetchTimer = undefined
+          }
           set((state) => ({
             queue: state.queue.map((song) => ({ ...song, urlFetchedAt: undefined })),
           }))

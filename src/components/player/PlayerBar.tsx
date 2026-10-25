@@ -50,6 +50,7 @@ export function PlayerBar() {
   const audioUrl = usePlayerStore((state) => state.audioUrl)
   const sourceReady = usePlayerStore((state) => state.sourceReady)
   const audioReady = usePlayerStore((state) => state.audioReady)
+  const audioFromCache = usePlayerStore((state) => state.audioFromCache)
   const heartMode = usePlayerStore((state) => state.heartMode)
   const heartLoading = usePlayerStore((state) => state.heartLoading)
 
@@ -188,13 +189,13 @@ export function PlayerBar() {
   // Downloading the whole file and loading ffmpeg.wasm immediately competes
   // with the first audio buffer and makes the initial playback noticeably slow.
   useEffect(() => {
-    if (!playing || !audioReady || !currentSong?.url || audioUrl.startsWith('blob:')) return
+    if (!playing || !audioReady || !currentSong?.url || audioFromCache) return
     const songId = currentSong.id
     const timer = window.setTimeout(() => {
       const state = usePlayerStore.getState()
       const active = state.queue[state.currentIndex]
       if (!active || active.id !== songId || !state.playing || !active.url) return
-      if (state.audioUrl.startsWith('blob:')) return
+      if (state.audioFromCache) return
       cacheSong({
         id: active.id,
         name: active.name,
@@ -204,7 +205,7 @@ export function PlayerBar() {
       })
     }, 10000)
     return () => window.clearTimeout(timer)
-  }, [playing, audioReady, currentSong?.id, currentSong?.url, audioUrl])
+  }, [playing, audioReady, currentSong?.id, currentSong?.url, audioFromCache])
 
   if (!queue.length || !currentSong) {
     return (

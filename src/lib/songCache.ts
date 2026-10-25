@@ -1,5 +1,6 @@
 import type { FFmpeg } from '@ffmpeg/ffmpeg'
 import { apiUrl } from './http'
+import { isDesktopApp, saveDownloadFile } from './desktopDownloads'
 import { useSettingsStore } from '../store/settings'
 
 interface CacheMeta {
@@ -96,6 +97,20 @@ export async function getCachedAudio(id: number): Promise<Blob | null> {
     return record?.blob ?? null
   } catch {
     return null
+  }
+}
+
+/** True when the track already has a cached copy (cheap metadata read). */
+export async function hasCachedAudio(id: number): Promise<boolean> {
+  if (typeof indexedDB === 'undefined') return false
+  try {
+    const db = await openDb()
+    const meta = await requestResult<CacheMeta | undefined>(
+      db.transaction(META_STORE, 'readonly').objectStore(META_STORE).get(id),
+    )
+    return Boolean(meta)
+  } catch {
+    return false
   }
 }
 
@@ -272,10 +287,11 @@ function cacheFileName(meta: CacheMeta) {
   return `${safe || 'cached-song'}.opus`
 }
 
-/** Export the given cached tracks to the browser/WebView download folder. */
+/** Export the given cached tracks to the configured download folder. */
 export async function downloadCachedAudio(ids: number[]): Promise<number> {
   if (typeof indexedDB === 'undefined' || !ids.length) return 0
   const db = await openDb()
+  const desktop = isDesktopApp()
   let exported = 0
   for (const id of ids) {
     const meta = await requestResult<CacheMeta | undefined>(
@@ -286,14 +302,19 @@ export async function downloadCachedAudio(ids: number[]): Promise<number> {
       db.transaction(AUDIO_STORE, 'readonly').objectStore(AUDIO_STORE).get(id),
     )
     if (!record) continue
-    const url = URL.createObjectURL(record.blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = cacheFileName(meta)
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    window.setTimeout(() => URL.revokeObjectURL(url), 10000)
+    if (desktop) {
+      // Write straight into the user-configured folder via the Bun process.
+      await saveDownloadFile(cacheFileName(meta), record.blob)
+    } else {
+      const url = URL.createObjectURL(record.blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = cacheFileName(meta)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.setTimeout(() => URL.revokeObjectURL(url), 10000)
+    }
     exported += 1
     await new Promise((resolve) => window.setTimeout(resolve, 250))
   }

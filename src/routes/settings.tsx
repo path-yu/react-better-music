@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import {
   Download,
+  FolderOpen,
   HardDrive,
   ListMusic,
   Loader2,
@@ -17,6 +18,12 @@ import {
   listCachedAudio,
   type CachedAudioItem,
 } from '../lib/songCache'
+import {
+  getDownloadDir,
+  isDesktopApp,
+  openDownloadDir,
+  pickDownloadDir,
+} from '../lib/desktopDownloads'
 import { formatDate, formatDuration } from '../lib/format'
 import { toast } from '../lib/toast'
 
@@ -40,6 +47,22 @@ function SettingsPage() {
   const [confirmingClear, setConfirmingClear] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [downloadingId, setDownloadingId] = useState<number | null>(null)
+  const desktop = isDesktopApp()
+  const [downloadDir, setDownloadDir] = useState('')
+  const [pickingDir, setPickingDir] = useState(false)
+
+  useEffect(() => {
+    if (!desktop) return
+    let active = true
+    void getDownloadDir()
+      .then((dir) => {
+        if (active) setDownloadDir(dir)
+      })
+      .catch(() => undefined)
+    return () => {
+      active = false
+    }
+  }, [desktop])
 
   const loadCache = useCallback(async () => {
     setLoading(true)
@@ -98,7 +121,11 @@ function SettingsPage() {
     setDownloading(true)
     try {
       const count = await downloadCachedAudio(selected)
-      toast.success(`已导出 ${count} 首缓存音乐，请查看下载目录`)
+      toast.success(
+        desktop && downloadDir
+          ? `已导出 ${count} 首缓存音乐到 ${downloadDir}`
+          : `已导出 ${count} 首缓存音乐，请查看下载目录`,
+      )
     } catch {
       toast.error('导出缓存失败')
     } finally {
@@ -111,11 +138,37 @@ function SettingsPage() {
     setDownloadingId(item.id)
     try {
       await downloadCachedAudio([item.id])
-      toast.success(`已开始下载「${item.name}」`)
+      toast.success(
+        desktop ? `已保存「${item.name}」到下载目录` : `已开始下载「${item.name}」`,
+      )
     } catch {
       toast.error('下载失败')
     } finally {
       setDownloadingId(null)
+    }
+  }
+
+  const handlePickDir = async () => {
+    if (pickingDir) return
+    setPickingDir(true)
+    try {
+      const dir = await pickDownloadDir()
+      if (dir) {
+        setDownloadDir(dir)
+        toast.success('下载目录已更新')
+      }
+    } catch {
+      toast.error('无法选择下载目录')
+    } finally {
+      setPickingDir(false)
+    }
+  }
+
+  const handleOpenDir = async () => {
+    try {
+      await openDownloadDir()
+    } catch {
+      toast.error('无法打开下载目录')
     }
   }
 
@@ -176,6 +229,29 @@ function SettingsPage() {
               </p>
             </div>
           </div>
+
+          {desktop ? (
+            <div className="mt-4 flex items-center gap-3 rounded-[12px] border border-black/6 bg-[#f5f5f7] px-4 py-3">
+              <FolderOpen className="h-4 w-4 flex-none text-[#0066cc]" />
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] text-black/40">下载目录</p>
+                <p className="mt-0.5 truncate text-[12px] text-black/70" title={downloadDir}>
+                  {downloadDir || '正在读取…'}
+                </p>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                loading={pickingDir}
+                onClick={() => void handlePickDir()}
+              >
+                选择文件夹
+              </Button>
+              <Button variant="secondary" size="sm" onClick={() => void handleOpenDir()}>
+                打开
+              </Button>
+            </div>
+          ) : null}
         </section>
 
         <section className="apple-card overflow-hidden">
@@ -274,7 +350,9 @@ function SettingsPage() {
 
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-black/6 px-6 py-3">
             <p className="text-[11px] leading-relaxed text-black/30">
-              下载会导出为 .opus 文件；浏览器可能询问是否允许下载多个文件。
+              {desktop
+                ? '下载会保存为 .opus 文件到上方设置的下载目录。'
+                : '下载会导出为 .opus 文件；浏览器可能询问是否允许下载多个文件。'}
             </p>
             <Button
               variant={confirmingClear ? 'destructive' : 'secondary'}
