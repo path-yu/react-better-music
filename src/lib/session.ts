@@ -95,24 +95,51 @@ async function requestCookie(path: string, params?: Record<string, string>) {
   }
 }
 
-/** Refresh the logged-in cookie. Returns false and clears it when the session expired. */
+let refreshPromise: Promise<boolean> | null = null
+let lastRefreshAt = 0
+
+/** When the login cookie was last successfully rotated (0 = this app session). */
+export function getLastLoginRefreshAt() {
+  return lastRefreshAt
+}
+
+/**
+ * Rotate the logged-in cookie. NetEase extends the session every time this
+ * succeeds, so calling it periodically keeps the user signed in indefinitely.
+ * The cookie is only cleared when the server explicitly rejects it; a network
+ * failure keeps it so the next attempt can recover the session.
+ */
 export async function refreshLogin(): Promise<boolean> {
   const cookie = getLoginCookie()
   if (!cookie) return false
-  try {
-    const res = await requestCookie('/login/refresh', {
-      cookie,
-      timestamp: String(Date.now()),
-    })
-    if (res.code === 200 && typeof res.cookie === 'string' && res.cookie) {
-      saveLoginCookie(res.cookie)
-      return true
+  // Parallel requests must not each rotate the cookie and race each other.
+  if (refreshPromise) return refreshPromise
+  refreshPromise = (async () => {
+    try {
+      const res = await requestCookie('/login/refresh', {
+        cookie,
+        timestamp: String(Date.now()),
+      })
+      // A login may have replaced the cookie while this request was in flight.
+      if (getLoginCookie() !== cookie) return false
+      if (res.code === 200 && typeof res.cookie === 'string' && res.cookie) {
+        saveLoginCookie(res.cookie)
+        lastRefreshAt = Date.now()
+        return true
+      }
+      if (res.code === 301 || res.code === 302 || res.code === 400) {
+        clearLoginCookie()
+        notifyLoginExpired()
+      }
+      return false
+    } catch {
+      // Keep the cookie: transient failures should not log the user out.
+      return false
+    } finally {
+      refreshPromise = null
     }
-    clearLoginCookie()
-    return false
-  } catch {
-    return false
-  }
+  })()
+  return refreshPromise
 }
 
 /** Get (and cache) the anonymous cookie used for requests that do not require login. */

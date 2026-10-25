@@ -1,11 +1,9 @@
 import { API_BASE } from './apiBase'
 import {
-  clearLoginCookie,
   fetchGuestCookie,
   getActiveCookie,
   getGuestCookie,
   getLoginCookie,
-  notifyLoginExpired,
   refreshLogin,
 } from './session'
 
@@ -106,8 +104,8 @@ function isRetryFree(path: string) {
 async function recoverSession() {
   if (getLoginCookie()) {
     if (await refreshLogin()) return true
-    clearLoginCookie()
-    notifyLoginExpired()
+    // refreshLogin clears the cookie (and notifies the app) only when the
+    // server rejected the session; a transient failure keeps it for later.
   }
   if (getGuestCookie()) return true
   return Boolean(await fetchGuestCookie(true))

@@ -84,14 +84,15 @@ export const useUserStore = create<UserState>()(
 
       async initSession() {
         try {
-          if (!getLoginCookie()) await fetchGuestCookie()
+          const hadLoginCookie = Boolean(getLoginCookie())
+          if (!hadLoginCookie) await fetchGuestCookie()
 
           const wasLoggedIn = get().isLogin || Boolean(get().profile)
           let status = await fetchLoginStatus()
           let account = status.data?.account
 
           // Restore the persisted cookie: refresh it once when it has expired.
-          if (isAnonymousAccount(account) && getLoginCookie()) {
+          if (isAnonymousAccount(account) && hadLoginCookie) {
             if (await refreshLogin()) {
               status = await fetchLoginStatus()
               account = status.data?.account
@@ -103,6 +104,9 @@ export const useUserStore = create<UserState>()(
             set({ isLogin: true })
             await get().refreshProfile()
             await Promise.all([get().loadPlaylists(uid), get().refreshLiked(uid)])
+            // Rotate the cookie after each launch so the persisted session
+            // never goes stale as long as the app is opened regularly.
+            void refreshLogin()
             return
           }
 
@@ -117,7 +121,9 @@ export const useUserStore = create<UserState>()(
             createdPlaylists: [],
             collectedPlaylists: [],
           })
-          if (wasLoggedIn) toast.warning('登录已过期，请重新登录')
+          // A rejected cookie already surfaces a toast from refreshLogin;
+          // here we only cover the "cookie vanished but profile remained" case.
+          if (wasLoggedIn && !hadLoginCookie) toast.warning('登录状态已失效，请重新登录')
         } catch {
           set({
             isLogin: false,

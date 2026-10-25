@@ -11,6 +11,10 @@ import { useUiStore } from '../../store/ui'
 import { useUserStore } from '../../store/user'
 import { usePlayerStore } from '../../store/player'
 import { applyTheme } from '../../lib/theme'
+import { getLastLoginRefreshAt, getLoginCookie, refreshLogin } from '../../lib/session'
+
+/** Rotate the login cookie every few hours so the persisted session never dies. */
+const LOGIN_REFRESH_INTERVAL = 6 * 60 * 60 * 1000
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
@@ -28,6 +32,25 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     void initSession()
   }, [initSession])
+
+  useEffect(() => {
+    const keepAlive = () => {
+      if (!getLoginCookie()) return
+      if (Date.now() - getLastLoginRefreshAt() < LOGIN_REFRESH_INTERVAL) return
+      void refreshLogin()
+    }
+    const timer = window.setInterval(keepAlive, 30 * 60 * 1000)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') keepAlive()
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    window.addEventListener('focus', keepAlive)
+    return () => {
+      window.clearInterval(timer)
+      document.removeEventListener('visibilitychange', handleVisibility)
+      window.removeEventListener('focus', keepAlive)
+    }
+  }, [])
 
   useEffect(() => {
     // 滚动条仅在滚动时显示：标记当前正在滚动的容器，停止滚动后自动移除。
