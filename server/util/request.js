@@ -4,8 +4,6 @@ const CryptoJS = require('crypto-js')
 const { default: axios } = require('axios')
 const logger = require('./logger')
 const { PacProxyAgent } = require('pac-proxy-agent')
-const http = require('http')
-const https = require('https')
 const tunnel = require('tunnel')
 const fs = require('fs')
 const path = require('path')
@@ -20,6 +18,7 @@ const {
 } = require('./index')
 const { URLSearchParams, URL } = require('url')
 const { APP_CONF } = require('./config.json')
+const { createHttpAgent, createHttpsAgent } = require('./ipv4Agent')
 const { loadNeapiKey } = require('./neapiKey')
 const {
   getToken: antiCheatTokenV2,
@@ -59,9 +58,11 @@ const parse = JSON.parse
 const characters = 'abcdefghijklmnopqrstuvwxyz'
 const charactersLength = characters.length
 
-// 预先创建HTTP/HTTPS agents并重用
-const createHttpAgent = () => new http.Agent({ keepAlive: true })
-const createHttpsAgent = () => new https.Agent({ keepAlive: true })
+// 预先创建并复用 HTTP/HTTPS agents。
+// 强制 IPv4 并关闭 Happy Eyeballs：当前网络 IPv6 不可达，否则首次请求
+// 会先等待 IPv6 连接超时约 10 秒才回退到 IPv4。
+const httpAgent = createHttpAgent()
+const httpsAgent = createHttpsAgent()
 
 // 预先计算WNMCID（只计算一次）
 const WNMCID = (function () {
@@ -446,8 +447,8 @@ const createRequest = async (uri, data, options) => {
       data: use_neapi
         ? encryptData
         : new URLSearchParams(encryptData).toString(),
-      httpAgent: createHttpAgent(),
-      httpsAgent: createHttpsAgent(),
+      httpAgent: httpAgent,
+      httpsAgent: httpsAgent,
     }
 
     // 自定义超时

@@ -12,6 +12,12 @@ const fileUpload = require('express-fileupload')
 const decode = require('safe-decode-uri-component')
 const logger = require('./util/logger.js')
 const { APP_CONF } = require('./util/config.json')
+const { createHttpAgent, createHttpsAgent } = require('./util/ipv4Agent')
+
+// Media proxy requests also force IPv4 with Happy Eyeballs disabled, otherwise
+// the first request can wait ~10s for an unreachable IPv6 connection.
+const httpProxyAgent = createHttpAgent()
+const httpsProxyAgent = createHttpsAgent()
 
 /**
  * The version check result.
@@ -282,6 +288,8 @@ async function constructServer(moduleDefs) {
         responseType: 'stream',
         timeout: 30000,
         proxy: false,
+        httpAgent: httpProxyAgent,
+        httpsAgent: httpsProxyAgent,
         headers,
         validateStatus: () => true,
       })

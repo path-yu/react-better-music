@@ -49,6 +49,7 @@ export function PlayerBar() {
   const playToken = usePlayerStore((state) => state.playToken)
   const audioUrl = usePlayerStore((state) => state.audioUrl)
   const sourceReady = usePlayerStore((state) => state.sourceReady)
+  const audioReady = usePlayerStore((state) => state.audioReady)
   const heartMode = usePlayerStore((state) => state.heartMode)
   const heartLoading = usePlayerStore((state) => state.heartLoading)
 
@@ -164,6 +165,28 @@ export function PlayerBar() {
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
   }, [togglePlay])
+
+  // Start caching only after the track has played steadily for a while.
+  // Downloading the whole file and loading ffmpeg.wasm immediately competes
+  // with the first audio buffer and makes the initial playback noticeably slow.
+  useEffect(() => {
+    if (!playing || !audioReady || !currentSong?.url || audioUrl.startsWith('blob:')) return
+    const songId = currentSong.id
+    const timer = window.setTimeout(() => {
+      const state = usePlayerStore.getState()
+      const active = state.queue[state.currentIndex]
+      if (!active || active.id !== songId || !state.playing || !active.url) return
+      if (state.audioUrl.startsWith('blob:')) return
+      cacheSong({
+        id: active.id,
+        name: active.name,
+        url: active.url,
+        artists: formatArtists(active.ar),
+        duration: active.dt,
+      })
+    }, 10000)
+    return () => window.clearTimeout(timer)
+  }, [playing, audioReady, currentSong?.id, currentSong?.url, audioUrl])
 
   if (!queue.length || !currentSong) {
     return (
@@ -456,15 +479,6 @@ export function PlayerBar() {
           if (audio && audioUrl && audio.getAttribute('src') === audioUrl) {
             switchingRef.current = false
             setAudioReady(true)
-            if (!audioUrl.startsWith('blob:') && currentSong?.url) {
-              cacheSong({
-                id: currentSong.id,
-                name: currentSong.name,
-                url: currentSong.url,
-                artists: formatArtists(currentSong.ar),
-                duration: currentSong.dt,
-              })
-            }
             prefetchNext()
           }
         }}
