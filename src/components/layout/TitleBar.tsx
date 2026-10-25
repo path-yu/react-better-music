@@ -10,6 +10,7 @@ const TITLES: Array<[string, string]> = [
   ['/mv/', 'MV'],
   ['/search', '搜索'],
   ['/profile', '个人信息'],
+  ['/settings', '设置'],
   ['/', '发现音乐'],
 ]
 

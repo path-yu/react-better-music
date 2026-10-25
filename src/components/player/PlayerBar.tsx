@@ -23,10 +23,9 @@ import { ProgressSlider } from './ProgressSlider'
 import { VolumeSlider } from './VolumeSlider'
 import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
-import { formatDuration } from '../../lib/format'
+import { cn, formatArtists, formatDuration } from '../../lib/format'
 import { registerAudio, setAudioVolume } from '../../lib/audio'
 import { cacheSong } from '../../lib/songCache'
-import { cn } from '../../lib/format'
 
 export function PlayerBar() {
   const audioRef = useRef<HTMLAudioElement>(null)
@@ -395,6 +394,8 @@ export function PlayerBar() {
                 id: currentSong.id,
                 name: currentSong.name,
                 url: currentSong.url,
+                artists: formatArtists(currentSong.ar),
+                duration: currentSong.dt,
               })
             }
           }

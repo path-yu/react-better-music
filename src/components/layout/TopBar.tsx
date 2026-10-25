@@ -1,10 +1,12 @@
-import { ChevronLeft, ChevronRight, Disc3, Moon, Sun } from 'lucide-react'
+import { useNavigate } from '@tanstack/react-router'
+import { ChevronLeft, ChevronRight, Disc3, Moon, Settings2, Sun } from 'lucide-react'
 import { SearchBox } from './SearchBox'
 import { UserMenu } from './UserMenu'
 import { usePlayerStore } from '../../store/player'
 import { useUiStore } from '../../store/ui'
 
 export function TopBar() {
+  const navigate = useNavigate()
   const queue = usePlayerStore((state) => state.queue)
   const showNowPlaying = usePlayerStore((state) => state.showNowPlaying)
   const toggleNowPlaying = usePlayerStore((state) => state.toggleNowPlaying)
@@ -60,6 +62,15 @@ export function TopBar() {
             正在播放
           </button>
         )}
+        <button
+          type="button"
+          aria-label="设置"
+          title="设置"
+          onClick={() => navigate({ to: '/settings' })}
+          className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/40 transition-colors hover:bg-black/5 hover:text-black/75"
+        >
+          <Settings2 className="h-[15px] w-[15px]" />
+        </button>
         <UserMenu />
       </div>
     </header>
