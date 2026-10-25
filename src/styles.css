@@ -1,0 +1,897 @@
+@import "tailwindcss";
+@import "@pikoloo/darwin-ui/styles.css";
+
+:root,
+[data-theme="light"] {
+  /* Apple action blue replaces Darwin's monochrome primary */
+  --primary: 210 100% 40%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 211 100% 45%;
+  --accent: 210 100% 96%;
+  --accent-foreground: 210 100% 30%;
+
+  --apple-blue: #0066cc;
+  --apple-blue-focus: #0071e3;
+  --apple-blue-dark: #2997ff;
+  --apple-ink: #1d1d1f;
+  --apple-body: #1d1d1f;
+  --apple-muted: #7a7a7a;
+  --apple-parchment: #f5f5f7;
+  --apple-pearl: #fafafc;
+  --apple-hairline: #e5e5ea;
+  --apple-divider: #f0f0f0;
+  --apple-green: #28c840;
+  --apple-yellow: #febc2e;
+  --apple-red: #ff5f57;
+  --font-apple: "SF Pro Display", "SF Pro Text", -apple-system,
+    BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", system-ui, sans-serif;
+  --product-shadow: rgba(0, 0, 0, 0.22) 3px 5px 30px 0;
+
+  /* Darwin UI overlay layers must sit above the app chrome */
+  --z-modal: 1000;
+  --z-alert: 1100;
+  --z-fullscreen: 1200;
+  --z-toast: 2000;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-apple);
+  color: var(--apple-ink);
+  background: radial-gradient(circle at 20% 0%, #e8e8ee 0%, #f5f5f7 45%, #e9e9ee 100%);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+/* 滚动条默认隐藏，仅在容器滚动时显示（由 AppShell 的全局滚动监听切换 is-scrolling）。
+   放进 base 层，确保组件上的 [scrollbar-width:none] 等工具类可以覆盖它。 */
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 99px;
+  }
+
+  .is-scrolling {
+    scrollbar-color: rgba(0, 0, 0, 0.26) transparent;
+  }
+
+  .is-scrolling::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.26);
+  }
+
+  .is-scrolling::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* ---------- macOS window shell ---------- */
+
+.app-shell {
+  height: 100dvh;
+  padding: 14px;
+  display: flex;
+}
+
+.app-window {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1440px;
+  height: 100%;
+  margin: 0 auto;
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 0 0 0.5px rgba(0, 0, 0, 0.16),
+    0 24px 70px -12px rgba(0, 0, 0, 0.35);
+}
+
+/* Electrobun desktop builds use the native window frame. */
+html.desktop .app-shell {
+  padding: 0;
+}
+
+html.desktop .app-window {
+  max-width: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.titlebar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 44px;
+  flex: none;
+  padding: 0 16px;
+  background: rgba(246, 246, 248, 0.78);
+  backdrop-filter: saturate(180%) blur(24px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  user-select: none;
+}
+
+.traffic-lights {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.traffic-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.12);
+}
+
+.traffic-dot.red {
+  background: var(--apple-red);
+}
+
+.traffic-dot.yellow {
+  background: var(--apple-yellow);
+}
+
+.traffic-dot.green {
+  background: var(--apple-green);
+}
+
+.titlebar-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: rgba(0, 0, 0, 0.55);
+  white-space: nowrap;
+}
+
+.app-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.sidebar-glass {
+  width: 232px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  background: rgba(244, 244, 247, 0.72);
+  backdrop-filter: saturate(180%) blur(30px);
+  border-right: 1px solid rgba(0, 0, 0, 0.07);
+}
+
+.main-column {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  background: #ffffff;
+}
+
+.apple-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+.player-glass {
+  flex: none;
+  background: rgba(250, 250, 252, 0.86);
+  backdrop-filter: saturate(180%) blur(26px);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.pushbar-glass {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* ---------- Apple typography ---------- */
+
+.font-display {
+  font-family: var(--font-apple);
+  letter-spacing: -0.022em;
+}
+
+.headline-xl {
+  font-size: 40px;
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.headline-lg {
+  font-size: 28px;
+  line-height: 1.14;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.headline-md {
+  font-size: 21px;
+  line-height: 1.19;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+}
+
+.body-apple {
+  font-size: 15px;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+}
+
+.text-secondary-apple {
+  color: var(--apple-muted);
+}
+
+.section-title {
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  color: var(--apple-ink);
+}
+
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--apple-muted);
+}
+
+/* ---------- Apple cards / tiles ---------- */
+
+.apple-card {
+  background: #ffffff;
+  border: 1px solid var(--apple-hairline);
+  border-radius: 18px;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.apple-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px -16px rgba(0, 0, 0, 0.28);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+.artwork-shadow {
+  box-shadow: var(--product-shadow);
+}
+
+.pill {
+  border-radius: 9999px;
+}
+
+.pill-primary {
+  background: var(--apple-blue);
+  color: #fff;
+}
+
+.pill-primary:hover {
+  background: var(--apple-blue-focus);
+}
+
+.pill-secondary {
+  color: var(--apple-blue);
+  border: 1px solid var(--apple-blue);
+  background: transparent;
+}
+
+.pill-secondary:hover {
+  background: rgba(0, 102, 204, 0.06);
+}
+
+.pressable {
+  transition:
+    transform 0.12s ease,
+    background-color 0.2s ease,
+    color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.pressable:active {
+  transform: scale(0.95);
+}
+
+/* ---------- misc ---------- */
+
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.no-select {
+  user-select: none;
+}
+
+.hero-fade-mask {
+  mask-image: linear-gradient(to bottom, #000 65%, transparent 100%);
+}
+
+@keyframes spin-disc {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.disc-spin {
+  animation: spin-disc 24s linear infinite;
+}
+
+.disc-paused {
+  animation-play-state: paused;
+}
+
+.now-disc {
+  width: clamp(190px, min(30vw, 36vh), 330px);
+  height: clamp(190px, min(30vw, 36vh), 330px);
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-up {
+  animation: fade-up 0.4s ease both;
+}
+
+@keyframes marquee {
+  0%,
+  20% {
+    transform: translateX(0);
+  }
+  80%,
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* ---------- song table responsive columns ---------- */
+
+.song-grid {
+  display: grid;
+  align-items: center;
+  gap: 0.75rem;
+  grid-template-columns: 26px minmax(0, 1fr) 52px;
+}
+
+.song-meta {
+  display: none;
+}
+
+.song-artist-mobile {
+  display: block;
+}
+
+@media (min-width: 1100px) {
+  .song-grid {
+    grid-template-columns: 26px minmax(0, 2.2fr) minmax(0, 1.2fr) minmax(0, 1.2fr) 52px;
+  }
+
+  .song-meta {
+    display: block;
+  }
+
+  .song-artist-mobile {
+    display: none;
+  }
+}
+
+/* ---------- full-screen now playing ---------- */
+
+.nowplaying-overlay {
+  position: absolute;
+  inset: 0 0 76px 0;
+  z-index: 60;
+  overflow: hidden;
+  animation: nowplaying-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* 播放详情页保持沉浸式：歌词等所有滚动区域都不显示滚动条。 */
+.nowplaying-overlay,
+.nowplaying-overlay * {
+  scrollbar-width: none;
+}
+
+.nowplaying-overlay *::-webkit-scrollbar {
+  display: none;
+}
+
+.lyrics-viewport {
+  --lyric-active: #0066cc;
+  --lyric-dim: rgba(0, 0, 0, 0.28);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.25) 5%,
+    #000 15%,
+    #000 85%,
+    rgba(0, 0, 0, 0.25) 95%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.25) 5%,
+    #000 15%,
+    #000 85%,
+    rgba(0, 0, 0, 0.25) 95%,
+    transparent 100%
+  );
+}
+
+.dark .lyrics-viewport {
+  --lyric-active: #2997ff;
+  --lyric-dim: rgba(255, 255, 255, 0.3);
+}
+
+.tag-scroller {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 10px,
+    #000 calc(100% - 10px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 10px,
+    #000 calc(100% - 10px),
+    transparent 100%
+  );
+}
+
+.lyric-word {
+  white-space: pre-wrap;
+}
+
+@keyframes nowplaying-enter {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ---------- dark theme ---------- */
+
+.dark {
+  color-scheme: dark;
+  --apple-ink: #f5f5f7;
+  --apple-body: #f5f5f7;
+  --apple-muted: #98989d;
+  --apple-parchment: #1c1c1e;
+  --apple-pearl: #232325;
+  --apple-hairline: rgba(255, 255, 255, 0.12);
+  --apple-divider: rgba(255, 255, 255, 0.08);
+  --apple-blue-dark: #2997ff;
+  --product-shadow: rgba(0, 0, 0, 0.55) 3px 5px 30px 0;
+  /* Darwin theme variables for hover / secondary surfaces */
+  --accent: 240 3.7% 16%;
+  --accent-foreground: 0 0% 98%;
+  --secondary: 240 3.7% 16%;
+  --secondary-foreground: 0 0% 98%;
+}
+
+.dark body {
+  background: radial-gradient(circle at 20% 0%, #26262c 0%, #111113 48%, #1a1a1e 100%);
+}
+
+.dark .app-window {
+  background: rgba(28, 28, 30, 0.94);
+  box-shadow:
+    0 0 0 0.5px rgba(255, 255, 255, 0.14),
+    0 24px 70px -12px rgba(0, 0, 0, 0.7);
+}
+
+.dark .titlebar {
+  background: rgba(30, 30, 32, 0.82);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .titlebar-title {
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.dark .sidebar-glass {
+  background: rgba(28, 28, 30, 0.72);
+  border-right-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .main-column {
+  background: #1c1c1e;
+}
+
+.dark .pushbar-glass {
+  background: rgba(30, 30, 32, 0.84);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .player-glass {
+  background: rgba(24, 24, 26, 0.9);
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .apple-card {
+  background: #232325;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.dark .apple-card-hover:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 12px 28px -16px rgba(0, 0, 0, 0.75);
+}
+
+.dark .section-title {
+  color: #f5f5f7;
+}
+
+.dark .eyebrow {
+  color: #98989d;
+}
+
+.dark .is-scrolling {
+  scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+}
+
+.dark .is-scrolling::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.dark .is-scrolling::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.dark ::selection {
+  background: rgba(41, 151, 255, 0.35);
+}
+
+/* Text tokens: invert the black-based hierarchy to white-based */
+.dark [class~="text-black"] {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.dark [class~="text-black/85"] {
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.dark [class~="text-black/80"] {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.dark [class~="text-black/78"] {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.dark [class~="text-black/75"] {
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.dark [class~="text-black/70"] {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.dark [class~="text-black/65"] {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.dark [class~="text-black/60"] {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.dark [class~="text-black/55"] {
+  color: rgba(255, 255, 255, 0.66);
+}
+
+.dark [class~="text-black/50"] {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.dark [class~="text-black/45"] {
+  color: rgba(255, 255, 255, 0.56);
+}
+
+.dark [class~="text-black/40"] {
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.dark [class~="text-black/35"] {
+  color: rgba(255, 255, 255, 0.46);
+}
+
+.dark [class~="text-black/30"] {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.dark [class~="text-black/25"] {
+  color: rgba(255, 255, 255, 0.34);
+}
+
+.dark [class~="text-black/20"] {
+  color: rgba(255, 255, 255, 0.28);
+}
+
+.dark [class~="text-[#0066cc]"]:not(.media-chip) {
+  color: #2997ff;
+}
+
+.dark [class~="text-[#0066cc]/65"] {
+  color: rgba(41, 151, 255, 0.65);
+}
+
+.dark [class~="text-[#d70015]"] {
+  color: #ff6961;
+}
+
+.dark [class~="text-[#b36b00]"] {
+  color: #ffb340;
+}
+
+.dark [class~="hover:text-black"]:hover {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.dark [class~="hover:text-black/75"]:hover {
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.dark [class~="hover:text-black/70"]:hover {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.dark [class~="hover:text-black/65"]:hover {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.dark [class~="hover:text-black/60"]:hover {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.dark [class~="hover:text-[#0066cc]"]:hover {
+  color: #2997ff;
+}
+
+.dark .group:hover [class~="group-hover:text-[#0066cc]"] {
+  color: #2997ff;
+}
+
+/* Surfaces */
+.dark [class~="bg-white"]:not(.qr-surface):not(.media-chip) {
+  background-color: #232325;
+}
+
+.dark [class~="bg-white/95"] {
+  background-color: rgba(32, 32, 34, 0.97);
+}
+
+.dark [class~="bg-white/90"]:not(.media-chip) {
+  background-color: rgba(28, 28, 30, 0.92);
+}
+
+.dark [class~="bg-white/88"] {
+  background-color: rgba(28, 28, 30, 0.88);
+}
+
+.dark [class~="bg-white/85"]:not(.media-chip) {
+  background-color: rgba(40, 40, 42, 0.9);
+}
+
+.dark [class~="bg-white/80"]:not(.disc-spindle) {
+  background-color: #2c2c2e;
+}
+
+.dark [class~="bg-white/55"] {
+  background-color: rgba(255, 255, 255, 0.07);
+}
+
+.dark [class~="bg-white/45"] {
+  background-color: rgba(255, 255, 255, 0.09);
+}
+
+.dark [class~="bg-[#f5f5f7]"] {
+  background-color: #2c2c2e;
+}
+
+.dark [class~="bg-[#ececf0]"] {
+  background-color: #3a3a3c;
+}
+
+.dark [class~="bg-[#fafafc]"] {
+  background-color: #232325;
+}
+
+.dark [class~="bg-[#f0f0f2]"] {
+  background-color: #2c2c2e;
+}
+
+.dark [class~="bg-[#fbfbfd]/95"] {
+  background-color: rgba(28, 28, 30, 0.96);
+}
+
+.dark [class~="bg-[#0066cc]/10"] {
+  background-color: rgba(41, 151, 255, 0.16);
+}
+
+.dark [class~="bg-[#0066cc]/8"] {
+  background-color: rgba(41, 151, 255, 0.14);
+}
+
+.dark [class~="bg-[#0066cc]/6"] {
+  background-color: rgba(41, 151, 255, 0.12);
+}
+
+.dark [class~="bg-[#ff2d55]/10"] {
+  background-color: rgba(255, 69, 88, 0.16);
+}
+
+.dark [class~="bg-[#ff9500]/10"] {
+  background-color: rgba(255, 159, 10, 0.16);
+}
+
+.dark [class~="bg-black/4"] {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.dark [class~="bg-black/5"] {
+  background-color: rgba(255, 255, 255, 0.07);
+}
+
+.dark [class~="bg-black/6"] {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark [class~="bg-black/8"] {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark [class~="bg-black/10"] {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.dark [class~="hover:bg-black/4"]:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.dark [class~="hover:bg-black/5"]:hover {
+  background-color: rgba(255, 255, 255, 0.07);
+}
+
+.dark [class~="hover:bg-black/10"]:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.dark [class~="hover:bg-[#ececf0]"]:hover {
+  background-color: #3a3a3c;
+}
+
+.dark [class~="hover:bg-white"]:hover {
+  background-color: rgba(255, 255, 255, 0.9);
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.dark [class~="hover:bg-[#d70015]/8"]:hover {
+  background-color: rgba(255, 69, 88, 0.14);
+}
+
+/* Borders */
+.dark [class~="border-black/5"] {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark [class~="border-black/6"] {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark [class~="border-black/8"] {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.dark [class~="border-black/10"] {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+/* Media overlays that must stay white in both themes */
+.dark .media-chip {
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #0066cc;
+}
+
+.dark .qr-surface {
+  background-color: #ffffff;
+}
+
+.dark .qr-surface [class~="text-black/35"] {
+  color: rgba(0, 0, 0, 0.35);
+}
+
+.dark .disc-spindle {
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+.dark .image-fallback {
+  background-image: none;
+  background-color: #2c2c2e;
+  color: rgba(255, 255, 255, 0.18);
+}
+
+.dark .nowplaying-overlay [class~="border-white/60"] {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.dark .nowplaying-overlay [class~="border-white/50"] {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .hero-fade-mask {
+  mask-image: linear-gradient(to bottom, #000 65%, transparent 100%);
+}

@@ -1,0 +1,15 @@
+.DS_Store
+node_modules
+*.log
+.idea
+.vscode
+.history
+examples/moddef.json
+bin
+anonymous_token
+.vercel
+.env
+IFLOW.md
+precompiled
+desktop-api.cjs
+desktop-api.bundle.cjs

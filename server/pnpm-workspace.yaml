@@ -1,0 +1,9 @@
+packages:
+  - '.'
+
+allowBuilds:
+  core-js: true
+  es5-ext: true
+
+minimumReleaseAgeExclude:
+  - '@neteasecloudmusicapienhanced/unblockmusic-utils@0.4.2'

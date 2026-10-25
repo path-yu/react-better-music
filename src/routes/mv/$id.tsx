@@ -1,0 +1,218 @@
+import { useEffect, useState } from 'react'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { ArrowLeft, CalendarDays, Eye, Play } from 'lucide-react'
+import { Avatar, Skeleton } from '@pikoloo/darwin-ui'
+import { ImageWithFallback } from '../../components/common/ImageWithFallback'
+import { ArtistLinks } from '../../components/common/ArtistLinks'
+import { EmptyState } from '../../components/common/EmptyState'
+import { CommentSection } from '../../components/comments/CommentSection'
+import {
+  fetchArtistDetail,
+  fetchMvDetail,
+  fetchMvUrl,
+  fetchSimilarMv,
+} from '../../api'
+import { formatDate, formatNumber } from '../../lib/format'
+import { toast } from '../../lib/toast'
+import { usePlayerStore } from '../../store/player'
+import type { Mv } from '../../types'
+
+export const Route = createFileRoute('/mv/$id')({
+  component: MvDetailPage,
+})
+
+interface AuthorInfo {
+  id: number
+  name: string
+  picUrl?: string
+  briefDesc?: string
+}
+
+function MvDetailPage() {
+  const { id } = Route.useParams()
+  const navigate = useNavigate()
+  const [detail, setDetail] = useState<Mv | null>(null)
+  const [videoUrl, setVideoUrl] = useState('')
+  const [similar, setSimilar] = useState<Mv[]>([])
+  const [author, setAuthor] = useState<AuthorInfo | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [videoLoading, setVideoLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setVideoLoading(true)
+    setDetail(null)
+    setVideoUrl('')
+    setSimilar([])
+    setAuthor(null)
+
+    fetchMvDetail(id)
+      .then(async (mv) => {
+        if (cancelled || !mv) return
+        setDetail(mv)
+        if (mv.artistId) {
+          fetchArtistDetail(mv.artistId)
+            .then((artist) => {
+              if (!cancelled) setAuthor(artist)
+            })
+            .catch(() => undefined)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) toast.error('MV 详情加载失败')
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    fetchMvUrl(id)
+      .then((url) => {
+        if (!cancelled) setVideoUrl(url)
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) setVideoLoading(false)
+      })
+
+    fetchSimilarMv(id)
+      .then((list) => {
+        if (!cancelled) setSimilar(list)
+      })
+      .catch(() => undefined)
+
+    return () => {
+      cancelled = true
+    }
+  }, [id])
+
+  if (loading) {
+    return (
+      <div className="px-8 pt-6">
+        <Skeleton className="h-4 w-24 rounded-full" />
+        <div className="mt-4 flex gap-6">
+          <div className="flex-1">
+            <Skeleton className="aspect-video w-full rounded-[16px]" />
+            <Skeleton className="mt-5 h-6 w-2/5 rounded-full" />
+            <Skeleton className="mt-3 h-3 w-1/4 rounded-full" />
+          </div>
+          <Skeleton className="h-[420px] w-[300px] rounded-[16px]" />
+        </div>
+      </div>
+    )
+  }
+
+  if (!detail) {
+    return (
+      <div className="px-8 pt-10">
+        <EmptyState title="MV 不存在或无法访问" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="px-8 pb-16 pt-5">
+      <button
+        type="button"
+        onClick={() => void navigate({ to: '/latest-mv' })}
+        className="pressable flex items-center gap-1.5 rounded-full px-2 py-1 text-[11.5px] text-black/40 transition-colors hover:bg-black/5 hover:text-black/70"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        返回最新 MV
+      </button>
+
+      <div className="mt-4 flex flex-col gap-7 lg:flex-row">
+        <div className="min-w-0 flex-1">
+          <div className="relative aspect-video w-full overflow-hidden rounded-[16px] bg-black">
+            {videoLoading ? (
+              <Skeleton className="h-full w-full rounded-[16px]" />
+            ) : videoUrl ? (
+              <video
+                key={videoUrl}
+                src={videoUrl}
+                poster={detail.cover}
+                controls
+                playsInline
+                className="h-full w-full"
+                onPlay={() => usePlayerStore.getState().setPlaying(false)}
+              />
+            ) : (
+              <div className="flex h-full flex-col items-center justify-center gap-2 text-white/40">
+                <Play className="h-8 w-8" />
+                <span className="text-[12px]">暂无视频资源</span>
+              </div>
+            )}
+          </div>
+
+          <h1 className="headline-lg mt-5 text-[24px]">{detail.name}</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-4 text-[11px] text-black/35">
+            {detail.publishTime ? (
+              <span className="flex items-center gap-1">
+                <CalendarDays className="h-3 w-3" />
+                {formatDate(detail.publishTime)}
+              </span>
+            ) : null}
+            <span className="flex items-center gap-1">
+              <Eye className="h-3 w-3" />
+              {formatNumber(detail.playCount)} 次播放
+            </span>
+            {detail.artists?.length ? (
+              <span>
+                <ArtistLinks artists={detail.artists} />
+              </span>
+            ) : null}
+          </div>
+
+          {author ? (
+            <div className="mt-5 flex items-start gap-3 rounded-[16px] border border-black/8 bg-[#fafafc] p-4">
+              <Avatar src={author.picUrl} alt={author.name} size="md" />
+              <div className="min-w-0">
+                <p className="text-[13px] font-medium text-black/80">{author.name}</p>
+                {author.briefDesc ? (
+                  <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-black/40">
+                    {author.briefDesc}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+
+          <div className="mt-8">
+            <CommentSection type={1} resourceId={Number(detail.id)} title="MV 评论" />
+          </div>
+        </div>
+
+        <aside className="w-full shrink-0 lg:w-[300px]">
+          <p className="section-title text-[16px]">相关推荐</p>
+          <div className="mt-3 flex flex-col gap-2.5">
+            {similar.slice(0, 8).map((mv) => (
+              <button
+                key={mv.id}
+                type="button"
+                onClick={() => void navigate({ to: '/mv/$id', params: { id: String(mv.id) } })}
+                className="group flex items-center gap-3 rounded-[12px] p-1.5 text-left transition-colors hover:bg-black/4"
+              >
+                <ImageWithFallback
+                  src={mv.cover}
+                  alt={mv.name}
+                  rounded="rounded-[8px]"
+                  className="aspect-video w-[112px] shrink-0"
+                  imageClassName="transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="line-clamp-2 text-[11.5px] leading-snug text-black/70 group-hover:text-[#0066cc]">
+                    {mv.name}
+                  </p>
+                  <p className="mt-1 truncate text-[10px] text-black/30">{mv.artistName}</p>
+                </div>
+              </button>
+            ))}
+            {!similar.length ? (
+              <p className="py-6 text-center text-[11px] text-black/30">暂无相关推荐</p>
+            ) : null}
+          </div>
+        </aside>
+      </div>
+    </div>
+  )
+}
