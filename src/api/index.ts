@@ -12,6 +12,7 @@ import type {
   Song,
   UserDetail,
   UserProfile,
+  PlayLevel,
 } from '../types'
 import { get, postForm, uploadFile } from '../lib/http'
 import { normalizeMv, normalizePlaylist, normalizeSongs, type RawSong } from '../lib/songs'
@@ -166,10 +167,10 @@ export async function fetchSimilarSongs(id: string | number) {
 
 /* ---------------------------------- song --------------------------------- */
 
-export async function fetchSongUrl(id: number | string) {
+export async function fetchSongUrl(id: number | string, level: PlayLevel = 'exhigh') {
   const res = await get<{ data?: Array<{ url: string | null }> }>('/song/url/v1', {
     id,
-    level: 'standard',
+    level,
   })
   return secureMediaUrl(res.data?.[0]?.url)
 }

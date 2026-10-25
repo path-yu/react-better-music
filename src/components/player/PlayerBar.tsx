@@ -1,5 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
+  AudioLines,
+  Check,
   ChevronUp,
   Heart,
   ListMusic,
@@ -23,9 +25,12 @@ import { ProgressSlider } from './ProgressSlider'
 import { VolumeSlider } from './VolumeSlider'
 import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
+import { PLAY_QUALITY_OPTIONS, useSettingsStore } from '../../store/settings'
 import { cn, formatArtists, formatDuration } from '../../lib/format'
 import { registerAudio, setAudioVolume } from '../../lib/audio'
 import { cacheSong } from '../../lib/songCache'
+import { toast } from '../../lib/toast'
+import type { PlayLevel } from '../../types'
 
 export function PlayerBar() {
   const audioRef = useRef<HTMLAudioElement>(null)
@@ -59,7 +64,13 @@ export function PlayerBar() {
   const toggleNowPlaying = usePlayerStore((state) => state.toggleNowPlaying)
   const toggleQueue = usePlayerStore((state) => state.toggleQueue)
   const refreshCurrentUrl = usePlayerStore((state) => state.refreshCurrentUrl)
+  const prefetchNext = usePlayerStore((state) => state.prefetchNext)
+  const invalidateUrls = usePlayerStore((state) => state.invalidateUrls)
   const showNowPlaying = usePlayerStore((state) => state.showNowPlaying)
+
+  const playLevel = useSettingsStore((state) => state.playLevel)
+  const setPlayLevel = useSettingsStore((state) => state.setPlayLevel)
+  const [qualityOpen, setQualityOpen] = useState(false)
 
   const likedIds = useUserStore((state) => state.likedIds)
   const likeSong = useUserStore((state) => state.likeSong)
@@ -187,6 +198,20 @@ export function PlayerBar() {
     const ranges = audio.buffered
     if (!ranges.length || !audio.duration) return
     setBuffered((ranges.end(ranges.length - 1) / audio.duration) * 100)
+  }
+
+  const qualityLabel =
+    PLAY_QUALITY_OPTIONS.find((option) => option.value === playLevel)?.label ?? playLevel
+
+  const handleQualityChange = (level: PlayLevel) => {
+    setQualityOpen(false)
+    if (level === playLevel) return
+    setPlayLevel(level)
+    invalidateUrls()
+    const label =
+      PLAY_QUALITY_OPTIONS.find((option) => option.value === level)?.label ?? level
+    toast.info(`播放音质已切换为${label}，正在重新加载`)
+    void refreshCurrentUrl()
   }
 
   const modeIcon =
@@ -341,6 +366,48 @@ export function PlayerBar() {
       </div>
 
       <div className="flex items-center justify-end gap-2">
+        <Popover open={qualityOpen} onOpenChange={setQualityOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              aria-label="播放音质"
+              title="播放音质"
+              className="pressable flex h-7 items-center gap-1 rounded-full px-2 text-[10.5px] text-black/45 transition-colors hover:bg-black/5 hover:text-black/75"
+            >
+              <AudioLines className="h-3.5 w-3.5" />
+              {qualityLabel}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            side="top"
+            align="end"
+            sideOffset={10}
+            glass
+            className="w-[190px] p-1.5"
+          >
+            <p className="px-2 py-1 text-[10px] text-black/35">播放音质</p>
+            {PLAY_QUALITY_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => handleQualityChange(option.value)}
+                className={cn(
+                  'flex w-full items-center justify-between rounded-[7px] px-2 py-1.5 text-left text-[12px] transition-colors',
+                  playLevel === option.value
+                    ? 'bg-[#0066cc]/10 text-[#0066cc]'
+                    : 'text-black/65 hover:bg-black/5',
+                )}
+              >
+                <span>{option.label}</span>
+                {playLevel === option.value ? <Check className="h-3.5 w-3.5" /> : null}
+              </button>
+            ))}
+            <p className="px-2 pb-1 pt-1 text-[10px] leading-relaxed text-black/30">
+              无损 / Hi-Res 需要对应会员权益；已缓存歌曲按设置中的缓存品质播放。
+            </p>
+          </PopoverContent>
+        </Popover>
+
         <Popover>
           <PopoverTrigger asChild>
             <button
@@ -398,6 +465,7 @@ export function PlayerBar() {
                 duration: currentSong.dt,
               })
             }
+            prefetchNext()
           }
         }}
         onCanPlay={() => {

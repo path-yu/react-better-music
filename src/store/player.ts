@@ -11,6 +11,7 @@ import { buildLyricLines, isEmptyLyric, type LyricLine } from '../lib/lyric'
 import { apiUrl } from '../lib/http'
 import { getCachedAudio } from '../lib/songCache'
 import { toast } from '../lib/toast'
+import { useSettingsStore } from './settings'
 import type { Song } from '../types'
 
 export type PlayMode = 'order' | 'random' | 'singleLoop'
@@ -53,6 +54,8 @@ interface PlayerState {
   toggleQueue: (value?: boolean) => void
   clearQueue: () => void
   refreshCurrentUrl: () => Promise<boolean>
+  prefetchNext: () => void
+  invalidateUrls: () => void
   markSongLike: (id: number, like: boolean) => void
 }
 
@@ -61,7 +64,7 @@ async function enrichSong(song: Song): Promise<Song> {
   if (!available) {
     throw new Error('亲爱的，暂无版权，已为你跳过')
   }
-  const url = await fetchSongUrl(song.id)
+  const url = await fetchSongUrl(song.id, useSettingsStore.getState().playLevel)
   if (!url) {
     throw new Error('获取歌曲播放地址失败')
   }
@@ -70,6 +73,7 @@ async function enrichSong(song: Song): Promise<Song> {
   return {
     ...song,
     url,
+    urlFetchedAt: Date.now(),
     lyric: lyricData.lyric,
     tlyric: lyricData.tlyric,
     yrc: lyricData.yrc,
@@ -92,6 +96,19 @@ function readLyrics(song?: Song) {
 
 const playableQueue = (songs: Song[]) => songs.filter((song) => song.fee !== 0)
 
+// NetEase media URLs expire after roughly 20 minutes; treat anything older
+// than this as stale and resolve it again before playback.
+const URL_TTL = 10 * 60 * 1000
+const prefetching = new Set<number>()
+
+function hasFreshUrl(song: Song) {
+  return Boolean(
+    song.url &&
+      song.urlFetchedAt &&
+      Date.now() - song.urlFetchedAt < URL_TTL,
+  )
+}
+
 export const usePlayerStore = create<PlayerState>()(
   persist(
     (set, get) => {
@@ -99,6 +116,30 @@ export const usePlayerStore = create<PlayerState>()(
         set((state) => ({
           queue: state.queue.map((song, i) => (i === index ? { ...song, ...patch } : song)),
         }))
+      }
+
+      // Resolve the next track's URL in the background so switching songs does
+      // not wait for another /song/url/v1 request. Existing fresh URLs are
+      // reused and failures stay silent.
+      const prefetchAfter = (index: number) => {
+        const { queue } = get()
+        if (queue.length < 2) return
+        const nextIndex = (index + 1) % queue.length
+        const target = queue[nextIndex]
+        if (!target || target.fee === 0) return
+        if (hasFreshUrl(target)) return
+        if (prefetching.has(target.id)) return
+        prefetching.add(target.id)
+        const level = useSettingsStore.getState().playLevel
+        void fetchSongUrl(target.id, level)
+          .then((url) => {
+            if (!url) return
+            const active = get().queue[nextIndex]
+            if (!active || active.id !== target.id || hasFreshUrl(active)) return
+            patchSong(nextIndex, { url, urlFetchedAt: Date.now() })
+          })
+          .catch(() => undefined)
+          .finally(() => prefetching.delete(target.id))
       }
 
       const resolveLyrics = async (index: number, song: Song, requestId: number) => {
@@ -152,22 +193,27 @@ export const usePlayerStore = create<PlayerState>()(
               return true
             }
             set({ audioUrl: url, sourceReady: true })
+            prefetchAfter(index)
             await resolveLyrics(index, song, requestId)
             return true
           }
 
-          // Always resolve a fresh URL: NetEase media URLs expire, and the
-          // persisted queue can still hold an URL that is no longer valid.
-          const url = await fetchSongUrl(song.id)
-          if (get().loadRequestId !== requestId) return true
+          // Prefetched (and still fresh) URLs are used directly; otherwise
+          // resolve a new one because NetEase media URLs expire.
+          let url: string | null = hasFreshUrl(song) ? (song.url ?? null) : null
+          if (!url) {
+            url = await fetchSongUrl(song.id, useSettingsStore.getState().playLevel)
+            if (get().loadRequestId !== requestId) return true
+            if (url) patchSong(index, { url, urlFetchedAt: Date.now() })
+          }
           if (!url) {
             const available = await checkMusicAvailable(song.id)
             throw new Error(available ? '获取歌曲播放地址失败' : '亲爱的，暂无版权，已为你跳过')
           }
-          patchSong(index, { url })
           // Stream through the local API: the WebView cannot load the CDN
           // media URL directly (it answers 403 for cross-origin media).
           set({ audioUrl: apiUrl('/audio/proxy', { url }), sourceReady: true })
+          prefetchAfter(index)
           await resolveLyrics(index, song, requestId)
           return true
         } catch (error) {
@@ -508,6 +554,16 @@ export const usePlayerStore = create<PlayerState>()(
             toast.warning(error instanceof Error ? error.message : '歌曲资源已失效')
             return false
           }
+        },
+
+        prefetchNext() {
+          prefetchAfter(get().currentIndex)
+        },
+
+        invalidateUrls() {
+          set((state) => ({
+            queue: state.queue.map((song) => ({ ...song, urlFetchedAt: undefined })),
+          }))
         },
 
         markSongLike(id, like) {

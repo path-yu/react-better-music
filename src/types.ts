@@ -41,6 +41,8 @@ export interface Album {
   artist?: Artist
 }
 
+export type PlayLevel = 'standard' | 'higher' | 'exhigh' | 'lossless' | 'hires'
+
 export interface Song {
   id: number
   name: string
@@ -55,6 +57,7 @@ export interface Song {
   pc?: boolean
   /** enriched at runtime */
   url?: string
+  urlFetchedAt?: number
   lyric?: string
   tlyric?: string
   yrc?: string
