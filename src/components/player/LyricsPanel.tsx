@@ -45,6 +45,7 @@ export function LyricsPanel({
 }: LyricsPanelProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const lineRefs = useRef<Record<number, HTMLButtonElement | null>>({})
+  const lastActiveRef = useRef(-1)
   const [clockMs, setClockMs] = useState(currentTimeMs)
 
   useEffect(() => {
@@ -73,7 +74,11 @@ export function LyricsPanel({
     const active = lineRefs.current[activeIndex]
     if (!container || !active) return
     const top = active.offsetTop - container.clientHeight / 2 + active.offsetHeight / 2
-    container.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+    // A seek can jump many lines; scrolling smoothly across a long distance
+    // fights the next update and makes the whole panel look shaky.
+    const jump = Math.abs(activeIndex - lastActiveRef.current)
+    lastActiveRef.current = activeIndex
+    container.scrollTo({ top: Math.max(0, top), behavior: jump > 2 ? 'auto' : 'smooth' })
   }, [activeIndex])
 
   if (!lines.length) {
@@ -88,7 +93,7 @@ export function LyricsPanel({
     <div
       ref={containerRef}
       className={cn(
-        'lyrics-viewport relative h-full overflow-y-auto scroll-smooth px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+        'lyrics-viewport relative h-full overflow-y-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
         className,
       )}
     >
@@ -122,7 +127,7 @@ export function LyricsPanel({
               <span
                 className={cn(
                   'block leading-snug',
-                  active ? 'text-[17px]' : compact ? 'text-[12px]' : 'text-[14px]',
+                  compact ? 'text-[12px]' : 'text-[14px]',
                 )}
               >
                 {active && hasWords
@@ -140,8 +145,8 @@ export function LyricsPanel({
               {line.translate ? (
                 <span
                   className={cn(
-                    'mt-0.5 block leading-snug',
-                    active ? 'text-[12px] text-[#0066cc]/65' : 'text-[11px] text-black/25',
+                    'mt-0.5 block text-[11px] leading-snug',
+                    active ? 'text-[#0066cc]/65' : 'text-black/25',
                   )}
                 >
                   {line.translate}

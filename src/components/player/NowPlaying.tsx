@@ -7,10 +7,6 @@ import {
   Loader2,
   MessageSquareText,
   Moon,
-  Pause,
-  Play,
-  SkipBack,
-  SkipForward,
   Sun,
 } from 'lucide-react'
 import { ImageWithFallback } from '../common/ImageWithFallback'
@@ -39,9 +35,6 @@ export function NowPlaying() {
   const lyricLoading = usePlayerStore((state) => state.lyricLoading)
   const toggleNowPlaying = usePlayerStore((state) => state.toggleNowPlaying)
   const toggleQueue = usePlayerStore((state) => state.toggleQueue)
-  const togglePlay = usePlayerStore((state) => state.togglePlay)
-  const next = usePlayerStore((state) => state.next)
-  const prev = usePlayerStore((state) => state.prev)
   const likedIds = useUserStore((state) => state.likedIds)
   const likeSong = useUserStore((state) => state.likeSong)
   const theme = useUiStore((state) => state.theme)
@@ -93,9 +86,13 @@ export function NowPlaying() {
     [theme],
   )
 
+  const activeIndex = useMemo(
+    () => findLyricIndex(lyricLines, currentTime * 1000),
+    [lyricLines, currentTime],
+  )
+
   if (!show || !currentSong) return null
 
-  const activeIndex = findLyricIndex(lyricLines, currentTime * 1000)
   const liked = likedIds.includes(currentSong.id)
   const discSpinning = playing && audioReady
   const loadingSource = playing && !sourceReady
@@ -180,7 +177,33 @@ export function NowPlaying() {
 
         <div className="grid flex-1 grid-cols-1 gap-4 overflow-y-auto px-6 pb-5 md:grid-cols-[minmax(220px,0.9fr)_minmax(250px,1.1fr)] xl:gap-6 xl:px-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <div className="flex min-h-0 flex-col items-center justify-center">
-            <div className="relative flex now-disc items-center justify-center">
+            <div className="max-w-[360px] text-center">
+              <h2 className="headline-lg truncate text-[24px]">{currentSong.name}</h2>
+              {currentSong.alia?.[0] ? (
+                <p className="mt-1 truncate text-[12px] text-black/35">{currentSong.alia[0]}</p>
+              ) : null}
+              <p className="mt-2 text-[13px] text-black/45">
+                <ArtistLinks artists={currentSong.ar} />
+                <span className="mx-2 text-black/20">·</span>
+                {currentSong.al.name}
+              </p>
+              {/* Fixed-height status slot: the text appears/disappears while the
+                  column is vertically centered, so mounting it conditionally
+                  would push the content up and down on every play/pause. */}
+              <div className="mt-2 flex h-5 items-center justify-center" aria-live="polite">
+                {busy ? (
+                  <span
+                    className="flex items-center gap-1.5 text-[12px] text-[#0066cc]"
+                    role="status"
+                  >
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    {loadingSource ? '正在加载音源…' : '正在缓冲…'}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="relative mt-5 flex now-disc items-center justify-center">
               <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.9),rgba(0,0,0,0.08))] shadow-[0_24px_50px_-22px_rgba(0,0,0,0.45)]" />
               <div className="absolute inset-[7%] rounded-full border border-white/50 bg-[conic-gradient(from_0deg,rgba(0,0,0,0.10),rgba(0,0,0,0.03),rgba(0,0,0,0.12),rgba(0,0,0,0.03),rgba(0,0,0,0.10))]" />
               <div className="absolute inset-[13%] rounded-full bg-[repeating-radial-gradient(circle,rgba(0,0,0,0.18),rgba(0,0,0,0.18)_1px,transparent_1px,transparent_5px)] opacity-40" />
@@ -201,65 +224,7 @@ export function NowPlaying() {
                 <div className="disc-spindle absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/80 shadow-inner" />
               </div>
             </div>
-
-            <div className="mt-5 max-w-[360px] text-center">
-              <h2 className="headline-lg truncate text-[24px]">{currentSong.name}</h2>
-              {currentSong.alia?.[0] ? (
-                <p className="mt-1 truncate text-[12px] text-black/35">{currentSong.alia[0]}</p>
-              ) : null}
-              <p className="mt-2 text-[13px] text-black/45">
-                <ArtistLinks artists={currentSong.ar} />
-                <span className="mx-2 text-black/20">·</span>
-                {currentSong.al.name}
-              </p>
-              {busy ? (
-                <p
-                  className="mt-2 flex items-center justify-center gap-1.5 text-[12px] text-[#0066cc]"
-                  role="status"
-                  aria-live="polite"
-                >
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  {loadingSource ? '正在加载音源…' : '正在缓冲…'}
-                </p>
-              ) : null}
-            </div>
-
-            <div className="mt-4 flex items-center gap-6">
-              <button
-                type="button"
-                aria-label="上一首"
-                onClick={() => void prev()}
-                className="pressable text-black/55 hover:text-black"
-              >
-                <SkipBack className="h-5 w-5 fill-current" />
-              </button>
-              <button
-                type="button"
-                aria-label={
-                  loadingSource ? '正在加载音源' : buffering ? '正在缓冲' : playing ? '暂停' : '播放'
-                }
-                onClick={() => void togglePlay()}
-                className="pressable flex h-12 w-12 items-center justify-center rounded-full bg-[#0066cc] text-white shadow-[0_6px_18px_rgba(0,102,204,0.35)] hover:bg-[#0071e3]"
-              >
-                {busy ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : playing ? (
-                  <Pause className="h-5 w-5 fill-current" />
-                ) : (
-                  <Play className="ml-[2px] h-5 w-5 fill-current" />
-                )}
-              </button>
-              <button
-                type="button"
-                aria-label="下一首"
-                onClick={() => void next()}
-                className="pressable text-black/55 hover:text-black"
-              >
-                <SkipForward className="h-5 w-5 fill-current" />
-              </button>
-            </div>
           </div>
-
           <div
             className={cn(
               'relative hidden min-h-0 flex-col rounded-[22px] md:flex',

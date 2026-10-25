@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import { Music2 } from 'lucide-react'
 import { cn } from '../../lib/format'
 
@@ -8,14 +8,17 @@ interface ImageWithFallbackProps {
   className?: string
   imageClassName?: string
   rounded?: string
+  /** Skip the materialize transition (useful for tiny, repaint-prone covers). */
+  instant?: boolean
 }
 
-export function ImageWithFallback({
+export const ImageWithFallback = memo(function ImageWithFallback({
   src,
   alt = '',
   className,
   imageClassName,
   rounded = 'rounded-[12px]',
+  instant = false,
 }: ImageWithFallbackProps) {
   const imgRef = useRef<HTMLImageElement>(null)
   const [loaded, setLoaded] = useState(false)
@@ -55,15 +58,19 @@ export function ImageWithFallback({
           onLoad={() => setLoaded(true)}
           onError={() => setFailed(true)}
           className={cn(
-            'h-full w-full object-cover',
-            'transition-[opacity,filter,transform] duration-[360ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none',
-            loaded
-              ? 'scale-100 opacity-100 blur-[0px]'
-              : 'scale-[1.015] opacity-0 blur-[6px] will-change-[opacity,filter,transform]',
+            'h-full w-full object-cover [backface-visibility:hidden]',
+            instant
+              ? 'opacity-100'
+              : cn(
+                  'transition-[opacity,filter,transform] duration-[360ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none',
+                  loaded
+                    ? 'scale-100 opacity-100 blur-[0px]'
+                    : 'scale-[1.015] opacity-0 blur-[6px] will-change-[opacity,filter,transform]',
+                ),
             imageClassName,
           )}
         />
       )}
     </div>
   )
-}
+})

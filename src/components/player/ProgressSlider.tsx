@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { cn } from '../../lib/format'
 
 interface ProgressSliderProps {
@@ -11,7 +11,18 @@ interface ProgressSliderProps {
 export function ProgressSlider({ value, buffered = 0, onChange, className }: ProgressSliderProps) {
   const [dragging, setDragging] = useState(false)
   const [preview, setPreview] = useState<number | null>(null)
+  const draggingRef = useRef(false)
+  const pendingRef = useRef<number | null>(null)
   const percent = Math.min(100, Math.max(0, preview ?? value))
+
+  const finishDrag = (commit: boolean) => {
+    draggingRef.current = false
+    setDragging(false)
+    const pending = pendingRef.current
+    pendingRef.current = null
+    setPreview(null)
+    if (commit && pending !== null) onChange?.(pending)
+  }
 
   return (
     <div className={cn('group relative flex h-4 w-full items-center', className)}>
@@ -41,19 +52,23 @@ export function ProgressSlider({ value, buffered = 0, onChange, className }: Pro
         value={percent}
         aria-label="播放进度"
         className="relative z-10 h-4 w-full cursor-pointer appearance-none bg-transparent opacity-0"
-        onPointerDown={() => setDragging(true)}
-        onPointerUp={() => {
-          setDragging(false)
-          setPreview(null)
+        onPointerDown={() => {
+          draggingRef.current = true
+          setDragging(true)
         }}
-        onPointerCancel={() => {
-          setDragging(false)
-          setPreview(null)
-        }}
+        onPointerUp={() => finishDrag(true)}
+        onPointerCancel={() => finishDrag(false)}
         onChange={(event) => {
           const next = Number(event.target.value)
-          setPreview(next)
-          onChange?.(next)
+          if (draggingRef.current) {
+            // Follow the pointer locally and only seek once on release, so the
+            // player/lyrics tree is not re-rendered on every pointer move.
+            pendingRef.current = next
+            setPreview(next)
+          } else {
+            setPreview(null)
+            onChange?.(next)
+          }
         }}
         onKeyDown={(event) => {
           if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {

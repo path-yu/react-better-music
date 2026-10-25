@@ -155,16 +155,34 @@ export function PlayerBar() {
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
-      if (event.code !== 'Space') return
       const target = event.target as HTMLElement | null
       const tag = target?.tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || target?.isContentEditable) return
-      event.preventDefault()
-      void togglePlay()
+      if (
+        tag === 'INPUT' ||
+        tag === 'TEXTAREA' ||
+        tag === 'SELECT' ||
+        target?.isContentEditable ||
+        target?.closest('[role="slider"]')
+      ) {
+        return
+      }
+      if (event.code === 'Space') {
+        event.preventDefault()
+        void usePlayerStore.getState().togglePlay()
+        return
+      }
+      if (event.code === 'ArrowUp' || event.code === 'ArrowDown') {
+        event.preventDefault()
+        const state = usePlayerStore.getState()
+        const step = event.shiftKey ? 1 : 5
+        const next =
+          event.code === 'ArrowUp' ? state.volume + step : state.volume - step
+        state.setVolume(Math.min(100, Math.max(0, next)))
+      }
     }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
-  }, [togglePlay])
+  }, [])
 
   // Start caching only after the track has played steadily for a while.
   // Downloading the whole file and loading ffmpeg.wasm immediately competes
@@ -262,7 +280,8 @@ export function PlayerBar() {
             src={currentSong.al.picUrl}
             alt={currentSong.name}
             rounded="rounded-[8px]"
-            className="h-[46px] w-[46px]"
+            className="h-[46px] w-[46px] transform-gpu"
+            instant
           />
           <span className="absolute inset-0 flex items-center justify-center rounded-[8px] bg-black/35 text-white opacity-0 transition-opacity group-hover:opacity-100">
             <ChevronUp className="h-5 w-5" />
@@ -296,10 +315,10 @@ export function PlayerBar() {
             </button>
           </div>
           <p className="mt-0.5 flex items-center gap-1 truncate text-[10.5px] text-black/40">
-            {busy ? (
+            {loadingSource ? (
               <>
                 <Loader2 className="h-3 w-3 flex-none animate-spin text-[#0066cc]" />
-                {loadingSource ? '正在加载音源…' : '正在缓冲…'}
+                正在加载音源…
               </>
             ) : (
               <ArtistLinks artists={currentSong.ar} />
@@ -514,7 +533,10 @@ export function PlayerBar() {
           }
         }}
         onPause={() => {
-          setAudioReady(false)
+          // A user-initiated pause must keep the source ready. Clearing it here
+          // made the next resume look like buffering for a few frames, which
+          // flashed the loading state and shifted the now-playing layout.
+          if (usePlayerStore.getState().playing) setAudioReady(false)
         }}
         onWaiting={() => {
           setAudioReady(false)
