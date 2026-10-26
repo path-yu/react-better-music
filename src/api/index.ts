@@ -1,4 +1,5 @@
 import type {
+  AlbumDetail,
   ApiResponse,
   ArtistAlbum,
   ArtistProfile,
@@ -578,7 +579,22 @@ export function updateUserAvatar(file: File, imgSize: number) {
   })
 }
 
-export async function fetchAlbumDetail(id: number | string) {
-  const res = await get<{ album?: { picUrl?: string } }>('/album', { id })
-  return res.album ?? null
+export async function fetchAlbumDetail(id: number | string): Promise<AlbumDetail | null> {
+  // The album object arrives separately from its track list: /album returns
+  // `{ album: {...}, songs: [...] }`, and album.songs is usually empty.
+  const res = await get<{ album?: Omit<AlbumDetail, 'songs'>; songs?: Song[] }>('/album', { id })
+  const album = res.album
+  if (!album) return null
+  const cover = album.picUrl ?? album.blurPicUrl
+  return {
+    ...album,
+    picUrl: cover,
+    songs: (res.songs ?? []).map((song) => ({
+      ...song,
+      al: {
+        ...song.al,
+        picUrl: song.al?.picUrl ?? cover,
+      },
+    })),
+  }
 }

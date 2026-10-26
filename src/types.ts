@@ -41,6 +41,16 @@ export interface Album {
   artist?: Artist
 }
 
+export interface AlbumDetail extends ArtistAlbum {
+  company?: string
+  description?: string
+  briefDesc?: string
+  commentThreadId?: string
+  tags?: string[]
+  artists?: Artist[]
+  songs: Song[]
+}
+
 export type PlayLevel = 'standard' | 'higher' | 'exhigh' | 'lossless' | 'hires'
 
 export interface Song {

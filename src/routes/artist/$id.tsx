@@ -239,7 +239,17 @@ function ArtistPage() {
           {albums.length ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {albums.map((album) => (
-                <div key={album.id} className="apple-card p-2.5">
+                <button
+                  key={album.id}
+                  type="button"
+                  onClick={() =>
+                    void navigate({
+                      to: '/albums/$id',
+                      params: { id: String(album.id) },
+                    })
+                  }
+                  className="apple-card group p-2.5 text-left transition-colors hover:bg-white/80"
+                >
                   <ImageWithFallback
                     src={album.picUrl}
                     alt={album.name}
@@ -247,14 +257,14 @@ function ArtistPage() {
                     className="aspect-square w-full"
                     resize="240y240"
                   />
-                  <p className="mt-2 line-clamp-2 text-[12px] leading-[1.4] text-black/75">
+                  <span className="mt-2 line-clamp-2 block text-[12px] leading-[1.4] text-black/75 transition-colors group-hover:text-[#0066cc]">
                     {album.name}
-                  </p>
-                  <p className="mt-1 text-[10px] text-black/30">
+                  </span>
+                  <span className="mt-1 block text-[10px] text-black/30">
                     {formatDate(album.publishTime).slice(0, 4)}
                     {album.size ? ` · ${album.size} 首` : ''}
-                  </p>
-                </div>
+                  </span>
+                </button>
               ))}
             </div>
           ) : (
