@@ -1041,3 +1041,59 @@ html.desktop .app-window {
 .dark .hero-fade-mask {
   mask-image: linear-gradient(to bottom, #000 65%, transparent 100%);
 }
+
+/* ---------- Video.js 10 player skin ---------- */
+
+/*
+ * The packaged video skin is dark-only: its palette lives in internal custom
+ * properties on `.media-skin`. Re-mapping those tokens is the smallest way to
+ * give the control bar a macOS light mode without copying the whole skin.
+ * Tokens verified against @videojs/react 10.2.0 — re-check them on upgrades.
+ */
+.media-skin {
+  /* macOS-style tint on hover/focus instead of a solid accent disc. */
+  --media-accent: rgba(255, 255, 255, 0.14);
+  --media-accent-foreground: currentColor;
+}
+
+[data-theme='light'] .media-skin {
+  --media-foreground: var(--apple-ink);
+  /* White veil/pills for dialogs and HUD indicators that sit on the video. */
+  --media-backdrop: #ffffff;
+  --media-popover: rgba(255, 255, 255, 0.72);
+  --media-popover-foreground: var(--apple-ink);
+  --media-controls: rgba(255, 255, 255, 0.7);
+  --media-accent: rgba(0, 0, 0, 0.06);
+  --media-accent-foreground: var(--apple-ink);
+  --media-muted: rgba(0, 0, 0, 0.08);
+  --media-muted-foreground: rgba(0, 0, 0, 0.55);
+  --media-border: rgba(0, 0, 0, 0.08);
+  --media-ring: var(--apple-blue);
+  --media-shadow-surface:
+    0 8px 28px -10px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.08);
+  --media-shadow-surface-inset:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.9), inset 0 0 0 1px rgba(0, 0, 0, 0.02);
+  --media-shadow-thumb:
+    0 0 0 1px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.25);
+  --media-text-shadow-dialog: none;
+  /* Keep the video surface dark, but fade the chrome out with white. */
+  --media-controls-gradient: linear-gradient(
+    to top,
+    rgba(255, 255, 255, 0.32),
+    transparent
+  );
+  --media-thumbnail-gradient: linear-gradient(
+    to top,
+    rgba(255, 255, 255, 0.55),
+    transparent
+  );
+}
+
+/* The skin drops backdrop-filter for these preferences; stay opaque instead. */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  [data-theme='light'] .media-skin {
+    --media-popover: #ffffff;
+    --media-controls: #ffffff;
+    --media-controls-gradient: none;
+  }
+}

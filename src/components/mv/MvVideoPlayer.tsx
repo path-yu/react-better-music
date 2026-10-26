@@ -15,6 +15,9 @@ interface MvVideoPlayerProps {
  * blue accent and the same 16px radius / font stack as the rest of the UI.
  * The packaged skin only exposes CSS custom properties, see
  * https://videojs.org/docs/framework/react/guides/customize-skins
+ *
+ * The skin ships a dark-only palette, so the light-mode tokens are remapped in
+ * `src/styles.css` (search for "Video.js 10 player skin").
  */
 const skinStyle = {
   width: '100%',
