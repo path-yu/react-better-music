@@ -19,13 +19,3 @@ export const toast = {
   warning: (message: string, title?: string) => emit(message, 'warning', title),
   error: (message: string, title?: string) => emit(message, 'error', title),
 }
-
-export function notifyError(error: unknown, fallback = '请求失败，请稍后重试') {
-  const message =
-    error instanceof Error
-      ? error.message
-      : typeof error === 'string'
-        ? error
-        : fallback
-  toast.error(message)
-}

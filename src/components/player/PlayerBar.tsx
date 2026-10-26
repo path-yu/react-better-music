@@ -91,8 +91,9 @@ export function PlayerBar() {
   // Blob URLs created for cached tracks are owned by the audio element while
   // it is mounted; release the last one when the player unmounts.
   useEffect(() => {
+    const audio = audioRef.current
     return () => {
-      const src = audioRef.current?.getAttribute('src')
+      const src = audio?.getAttribute('src')
       if (src?.startsWith('blob:')) URL.revokeObjectURL(src)
     }
   }, [])
@@ -224,6 +225,8 @@ export function PlayerBar() {
       }
     }, 10000)
     return () => window.clearTimeout(timer)
+    // The timer only depends on the identity and URL of the current track.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing, audioReady, currentSong?.id, currentSong?.url, audioFromCache, audioBlob])
 
   if (!queue.length || !currentSong) {

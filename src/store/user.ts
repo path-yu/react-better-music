@@ -11,6 +11,7 @@ import {
   signIn as signInApi,
 } from '../api'
 import { toast } from '../lib/toast'
+import { clearApiCache } from '../lib/http'
 import {
   clearLoginCookie,
   fetchGuestCookie,
@@ -111,6 +112,7 @@ export const useUserStore = create<UserState>()(
           }
 
           // Keep an anonymous cookie so public endpoints do not fail with 400.
+          if (wasLoggedIn) clearApiCache()
           await fetchGuestCookie()
           set({
             isLogin: false,
@@ -205,6 +207,7 @@ export const useUserStore = create<UserState>()(
           // ignore
         }
         clearLoginCookie()
+        clearApiCache()
         set({
           isLogin: false,
           profile: null,

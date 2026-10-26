@@ -130,6 +130,7 @@ async function recoverSession() {
     if (await refreshLogin()) return true
     // refreshLogin clears the cookie (and notifies the app) only when the
     // server rejected the session; a transient failure keeps it for later.
+    clearApiCache()
   }
   if (getGuestCookie()) return true
   return Boolean(await fetchGuestCookie(true))
@@ -152,7 +153,130 @@ async function runWithSession<T>(path: string, run: () => Promise<Response>) {
   }
 }
 
-export function get<T>(path: string, params?: Query, signal?: AbortSignal) {
+/* ------------------------------ read caching ------------------------------ */
+
+interface ReadCacheRule {
+  prefix: string
+  ttl: number
+}
+
+/**
+ * Only read-only browsing endpoints are cached. Session, comment, search and
+ * mutation endpoints intentionally stay out so edits appear immediately.
+ */
+const READ_CACHE_RULES: ReadCacheRule[] = [
+  { prefix: '/banner', ttl: 5 * 60_000 },
+  { prefix: '/personalized', ttl: 5 * 60_000 },
+  { prefix: '/recommend/songs', ttl: 60_000 },
+  { prefix: '/recommend/mv', ttl: 5 * 60_000 },
+  { prefix: '/top/song', ttl: 2 * 60_000 },
+  { prefix: '/top/playlist', ttl: 2 * 60_000 },
+  { prefix: '/playlist/tags', ttl: 10 * 60_000 },
+  { prefix: '/playlist/detail', ttl: 60_000 },
+  { prefix: '/playlist/track/all', ttl: 60_000 },
+  { prefix: '/mv/first', ttl: 2 * 60_000 },
+  { prefix: '/mv/all', ttl: 2 * 60_000 },
+  { prefix: '/mv/detail', ttl: 5 * 60_000 },
+  { prefix: '/mv/url', ttl: 60_000 },
+  { prefix: '/simi/mv', ttl: 5 * 60_000 },
+  { prefix: '/artist/detail', ttl: 5 * 60_000 },
+  { prefix: '/artist/top/song', ttl: 5 * 60_000 },
+  { prefix: '/artist/album', ttl: 5 * 60_000 },
+  { prefix: '/artist/mv', ttl: 5 * 60_000 },
+  { prefix: '/simi/artist', ttl: 5 * 60_000 },
+  { prefix: '/album', ttl: 5 * 60_000 },
+  { prefix: '/lyric/new', ttl: 10 * 60_000 },
+  { prefix: '/song/url/v1', ttl: 60_000 },
+  { prefix: '/search/default', ttl: 5 * 60_000 },
+  { prefix: '/search/hot', ttl: 5 * 60_000 },
+]
+
+const READ_CACHE_LIMIT = 150
+let readCacheEpoch = 0
+const readCache = new Map<string, { data: unknown; expiresAt: number }>()
+const readInflight = new Map<string, Promise<unknown>>()
+
+function readCacheRule(path: string) {
+  return READ_CACHE_RULES.find(
+    (rule) => path === rule.prefix || path.startsWith(`${rule.prefix}/`),
+  )
+}
+
+function readCacheKey(path: string, params?: Query) {
+  const query = Object.entries(params ?? {})
+    .filter(
+      ([key, value]) =>
+        key !== 'timestamp' && value !== undefined && value !== null && value !== '',
+    )
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => `${key}=${String(value)}`)
+    .join('&')
+  return `${readCacheEpoch}:${path}?${query}`
+}
+
+function cacheablePayload(payload: unknown) {
+  if (!payload || typeof payload !== 'object') return false
+  if ('code' in payload) {
+    return (payload as { code?: unknown }).code === 200
+  }
+  return true
+}
+
+function storeReadCache(key: string, data: unknown, ttl: number) {
+  readCache.set(key, { data, expiresAt: Date.now() + ttl })
+  if (readCache.size <= READ_CACHE_LIMIT) return
+  const now = Date.now()
+  for (const [cacheKey, entry] of readCache) {
+    if (entry.expiresAt <= now) readCache.delete(cacheKey)
+  }
+  while (readCache.size > READ_CACHE_LIMIT) {
+    const oldest = readCache.keys().next().value
+    if (oldest === undefined) break
+    readCache.delete(oldest)
+  }
+}
+
+/** Drop every cached read, e.g. after login/logout changes the session. */
+export function clearApiCache() {
+  readCache.clear()
+  readInflight.clear()
+  readCacheEpoch += 1
+}
+
+/** Drop cached reads for the given path prefixes after a mutation. */
+export function invalidateApiCache(pathPrefixes: string[]) {
+  for (const key of [...readCache.keys()]) {
+    if (pathPrefixes.some((prefix) => key.includes(`:${prefix}`))) {
+      readCache.delete(key)
+    }
+  }
+}
+
+function abortError() {
+  return new DOMException('Aborted', 'AbortError')
+}
+
+/** Let a caller bail out without cancelling the shared, cache-warming request. */
+function abortable<T>(promise: Promise<T>, signal?: AbortSignal) {
+  if (!signal) return promise
+  if (signal.aborted) return Promise.reject(abortError())
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(abortError())
+    signal.addEventListener('abort', onAbort, { once: true })
+    promise.then(
+      (value) => {
+        signal.removeEventListener('abort', onAbort)
+        resolve(value)
+      },
+      (error) => {
+        signal.removeEventListener('abort', onAbort)
+        reject(error)
+      },
+    )
+  })
+}
+
+function runGet<T>(path: string, params?: Query, signal?: AbortSignal) {
   return runWithSession<T>(path, async () => {
     const timeout = withTimeout(signal, REQUEST_TIMEOUT)
     try {
@@ -165,6 +289,35 @@ export function get<T>(path: string, params?: Query, signal?: AbortSignal) {
       timeout.cleanup()
     }
   })
+}
+
+export function get<T>(path: string, params?: Query, signal?: AbortSignal) {
+  const rule = readCacheRule(path)
+  if (!rule) return runGet<T>(path, params, signal)
+  if (signal?.aborted) return Promise.reject(abortError())
+
+  const key = readCacheKey(path, params)
+  const cached = readCache.get(key)
+  if (cached && cached.expiresAt > Date.now()) {
+    return abortable(Promise.resolve(cached.data as T), signal)
+  }
+
+  const existing = readInflight.get(key)
+  if (existing) return abortable(existing as Promise<T>, signal)
+
+  const epoch = readCacheEpoch
+  const request = runGet<T>(path, params)
+    .then((data) => {
+      if (epoch === readCacheEpoch && cacheablePayload(data)) {
+        storeReadCache(key, data, rule.ttl)
+      }
+      return data
+    })
+    .finally(() => {
+      if (readInflight.get(key) === request) readInflight.delete(key)
+    })
+  readInflight.set(key, request)
+  return abortable(request, signal)
 }
 
 export function post<T>(path: string, body?: BodyInit | null, params?: Query, signal?: AbortSignal) {
@@ -181,29 +334,6 @@ export function post<T>(path: string, body?: BodyInit | null, params?: Query, si
       timeout.cleanup()
     }
   })
-}
-
-export function postForm<T>(path: string, params: Query, signal?: AbortSignal) {
-  const run = async () => {
-    const timeout = withTimeout(signal, REQUEST_TIMEOUT)
-    try {
-      const body = new URLSearchParams()
-      Object.entries(withSessionCookie(path, params) ?? {}).forEach(([key, value]) => {
-        if (value === undefined || value === null) return
-        body.append(key, String(value))
-      })
-      return await fetch(`${API_BASE}${path}`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body,
-        signal: timeout.signal,
-      })
-    } finally {
-      timeout.cleanup()
-    }
-  }
-  return runWithSession<T>(path, run)
 }
 
 export function uploadFile<T>(path: string, file: File, params?: Query) {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Heart, Pause, Play, Volume2 } from 'lucide-react'
 import { ImageWithFallback } from '../common/ImageWithFallback'
@@ -22,6 +22,139 @@ interface SongTableProps {
 
 const VIRTUAL_THRESHOLD = 500
 const ROW_HEIGHT = 53
+const SONG_GRID = 'song-grid'
+
+interface SongRowProps {
+  song: Song
+  index: number
+  active: boolean
+  playing: boolean
+  liked: boolean
+  virtual?: boolean
+  onPlay: (index: number) => void
+  onLike: (id: number, liked: boolean) => void
+}
+
+/**
+ * Memoized so a play/like change only repaints the affected row instead of
+ * every row in a large playlist.
+ */
+const SongRow = memo(function SongRow({
+  song,
+  index,
+  active,
+  playing,
+  liked,
+  virtual = false,
+  onPlay,
+  onLike,
+}: SongRowProps) {
+  return (
+    <div
+      onClick={(event) => {
+        // Nested buttons (play / like / artist links) handle their own clicks.
+        if ((event.target as HTMLElement).closest('button, a')) return
+        onPlay(index)
+      }}
+      className={cn(
+        SONG_GRID,
+        'group rounded-[10px] px-3 py-2 transition-colors',
+        virtual && 'h-full',
+        active ? 'bg-[#0066cc]/6' : 'hover:bg-black/4',
+      )}
+    >
+      <div className="relative flex h-6 items-center justify-center">
+        {active ? (
+          <Volume2
+            className={cn(
+              'h-3.5 w-3.5 text-[#0066cc] transition-opacity group-hover:opacity-0',
+              playing ? 'animate-pulse' : 'opacity-60',
+            )}
+          />
+        ) : (
+          <span className="text-[10.5px] tabular-nums text-black/25 transition-opacity group-hover:opacity-0">
+            {index < 9 ? `0${index + 1}` : index + 1}
+          </span>
+        )}
+        <button
+          type="button"
+          aria-label={active && playing ? '暂停' : '播放'}
+          onClick={() => onPlay(index)}
+          className="pressable absolute inset-0 flex items-center justify-center text-[#0066cc] opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
+        >
+          {active && playing ? (
+            <Pause className="h-3.5 w-3.5 fill-current" />
+          ) : (
+            <Play className="h-3.5 w-3.5 fill-current" />
+          )}
+        </button>
+      </div>
+
+      <div className="flex min-w-0 items-center gap-2.5">
+        <ImageWithFallback
+          src={song.al.picUrl}
+          alt={song.name}
+          rounded="rounded-[6px]"
+          className="h-9 w-9 shrink-0"
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <span
+              className={cn(
+                'truncate text-[12.5px]',
+                active ? 'font-medium text-[#0066cc]' : 'text-black/80',
+              )}
+            >
+              {song.name}
+            </span>
+            {song.mv || song.mvid ? (
+              <span className="shrink-0 rounded-[3px] bg-[#0066cc]/10 px-1 text-[9px] font-medium text-[#0066cc]">
+                MV
+              </span>
+            ) : null}
+            {song.fee === 1 ? (
+              <span className="shrink-0 rounded-[3px] bg-[#ff2d55]/10 px-1 text-[9px] font-medium text-[#ff2d55]">
+                VIP
+              </span>
+            ) : null}
+            {song.fee === 0 ? (
+              <span className="shrink-0 rounded-[3px] bg-black/6 px-1 text-[9px] text-black/35">
+                无音源
+              </span>
+            ) : null}
+          </div>
+          <p className="song-artist-mobile mt-0.5 truncate text-[10.5px] text-black/35">
+            <ArtistLinks artists={song.ar} />
+          </p>
+        </div>
+        <button
+          type="button"
+          aria-label={liked ? '取消喜欢' : '喜欢'}
+          onClick={() => onLike(song.id, liked)}
+          className={cn(
+            'pressable shrink-0 transition-opacity focus-visible:opacity-100',
+            liked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
+          )}
+        >
+          <Heart
+            className={cn(
+              'h-3.5 w-3.5',
+              liked ? 'fill-[#ff2d55] text-[#ff2d55]' : 'text-black/35',
+            )}
+          />
+        </button>
+      </div>
+
+      <p className="song-meta truncate text-[11.5px] text-black/45">
+        <ArtistLinks artists={song.ar} />
+      </p>
+      <p className="song-meta truncate text-[11.5px] text-black/40">{song.al.name}</p>
+      <p className="text-right text-[10.5px] tabular-nums text-black/30">
+        {formatDuration(song.dt)}
+      </p>
+    </div>
+  )
+})
 
 export function SongTable({
   songs,
@@ -32,14 +165,34 @@ export function SongTable({
   showHeader = true,
 }: SongTableProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
-  const initQueue = usePlayerStore((state) => state.initQueue)
-  const togglePlay = usePlayerStore((state) => state.togglePlay)
   const currentSong = usePlayerStore((state) => state.queue[state.currentIndex])
   const playing = usePlayerStore((state) => state.playing)
   const likedIds = useUserStore((state) => state.likedIds)
   const likedSet = useMemo(() => new Set(likedIds), [likedIds])
-  const likeSong = useUserStore((state) => state.likeSong)
-  const isLogin = useUserStore((state) => state.isLogin)
+
+  // Keep row callbacks referentially stable so memoized rows do not repaint
+  // when only the parent component re-renders.
+  const songsRef = useRef(songs)
+  songsRef.current = songs
+  const playlistIdRef = useRef(playlistId)
+  playlistIdRef.current = playlistId
+
+  const handlePlay = useCallback((index: number) => {
+    const player = usePlayerStore.getState()
+    const song = songsRef.current[index]
+    if (!song) return
+    if (player.queue[player.currentIndex]?.id === song.id) {
+      void player.togglePlay()
+      return
+    }
+    void player.initQueue(songsRef.current, index, playlistIdRef.current)
+  }, [])
+
+  const handleLike = useCallback((id: number, liked: boolean) => {
+    const user = useUserStore.getState()
+    if (!user.isLogin) return
+    void user.likeSong(id, !liked)
+  }, [])
 
   const isVirtual = songs.length > VIRTUAL_THRESHOLD
   const virtualizer = useVirtualizer({
@@ -53,14 +206,6 @@ export function SongTable({
     if (!isVirtual || !scrollRef.current) return
     scrollRef.current.scrollTop = 0
   }, [isVirtual, songs])
-
-  const handlePlay = (index: number) => {
-    if (currentSong?.id === songs[index]?.id) {
-      void togglePlay()
-      return
-    }
-    void initQueue(songs, index, playlistId)
-  }
 
   if (loading) {
     return (
@@ -81,126 +226,27 @@ export function SongTable({
     return <EmptyState title={emptyText} />
   }
 
-  const gridClass = 'song-grid'
-
   const renderRow = (song: Song, index: number, virtual = false) => {
     const active = currentSong?.id === song.id
-    const liked = likedSet.has(song.id)
     return (
-      <div
+      <SongRow
         key={`${song.id}-${index}`}
-        onClick={(event) => {
-          // Nested buttons (play / like / artist links) handle their own clicks.
-          if ((event.target as HTMLElement).closest('button, a')) return
-          handlePlay(index)
-        }}
-        className={cn(
-          gridClass,
-          'group rounded-[10px] px-3 py-2 transition-colors',
-          virtual && 'h-full',
-          active ? 'bg-[#0066cc]/6' : 'hover:bg-black/4',
-        )}
-      >
-        <div className="relative flex h-6 items-center justify-center">
-          {active ? (
-            <Volume2
-              className={cn(
-                'h-3.5 w-3.5 text-[#0066cc] transition-opacity group-hover:opacity-0',
-                playing ? 'animate-pulse' : 'opacity-60',
-              )}
-            />
-          ) : (
-            <span className="text-[10.5px] tabular-nums text-black/25 transition-opacity group-hover:opacity-0">
-              {index < 9 ? `0${index + 1}` : index + 1}
-            </span>
-          )}
-          <button
-            type="button"
-            aria-label={active && playing ? '暂停' : '播放'}
-            onClick={() => handlePlay(index)}
-            className="pressable absolute inset-0 flex items-center justify-center text-[#0066cc] opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
-          >
-            {active && playing ? (
-              <Pause className="h-3.5 w-3.5 fill-current" />
-            ) : (
-              <Play className="h-3.5 w-3.5 fill-current" />
-            )}
-          </button>
-        </div>
-
-        <div className="flex min-w-0 items-center gap-2.5">
-          <ImageWithFallback
-            src={song.al.picUrl}
-            alt={song.name}
-            rounded="rounded-[6px]"
-            className="h-9 w-9 shrink-0"
-          />
-          <div className="min-w-0 flex-1">
-            <div className="flex min-w-0 items-center gap-1.5">
-              <span
-                className={cn(
-                  'truncate text-[12.5px]',
-                  active ? 'font-medium text-[#0066cc]' : 'text-black/80',
-                )}
-              >
-                {song.name}
-              </span>
-              {song.mv || song.mvid ? (
-                <span className="shrink-0 rounded-[3px] bg-[#0066cc]/10 px-1 text-[9px] font-medium text-[#0066cc]">
-                  MV
-                </span>
-              ) : null}
-              {song.fee === 1 ? (
-                <span className="shrink-0 rounded-[3px] bg-[#ff2d55]/10 px-1 text-[9px] font-medium text-[#ff2d55]">
-                  VIP
-                </span>
-              ) : null}
-              {song.fee === 0 ? (
-                <span className="shrink-0 rounded-[3px] bg-black/6 px-1 text-[9px] text-black/35">
-                  无音源
-                </span>
-              ) : null}
-            </div>
-            <p className="song-artist-mobile mt-0.5 truncate text-[10.5px] text-black/35">
-              <ArtistLinks artists={song.ar} />
-            </p>
-          </div>
-          <button
-            type="button"
-            aria-label={liked ? '取消喜欢' : '喜欢'}
-            onClick={() => {
-              if (!isLogin) return
-              void likeSong(song.id, !liked)
-            }}
-            className={cn(
-              'pressable shrink-0 transition-opacity focus-visible:opacity-100',
-              liked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
-            )}
-          >
-            <Heart
-              className={cn(
-                'h-3.5 w-3.5',
-                liked ? 'fill-[#ff2d55] text-[#ff2d55]' : 'text-black/35',
-              )}
-            />
-          </button>
-        </div>
-
-        <p className="song-meta truncate text-[11.5px] text-black/45">
-          <ArtistLinks artists={song.ar} />
-        </p>
-        <p className="song-meta truncate text-[11.5px] text-black/40">{song.al.name}</p>
-        <p className="text-right text-[10.5px] tabular-nums text-black/30">
-          {formatDuration(song.dt)}
-        </p>
-      </div>
+        song={song}
+        index={index}
+        active={active}
+        playing={active && playing}
+        liked={likedSet.has(song.id)}
+        virtual={virtual}
+        onPlay={handlePlay}
+        onLike={handleLike}
+      />
     )
   }
 
   const header = showHeader ? (
     <div
       className={cn(
-        gridClass,
+        SONG_GRID,
         'border-b border-black/8 bg-white/88 px-3 py-2 text-[10.5px] font-medium text-black/35 backdrop-blur-xl',
         !isVirtual && 'sticky top-0 z-10',
       )}

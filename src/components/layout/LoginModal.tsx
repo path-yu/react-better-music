@@ -17,7 +17,7 @@ import {
   sendCaptcha,
 } from '../../api'
 import { toast } from '../../lib/toast'
-import { ApiError } from '../../lib/http'
+import { ApiError, clearApiCache } from '../../lib/http'
 import { saveLoginCookie } from '../../lib/session'
 import { useUserStore } from '../../store/user'
 
@@ -94,6 +94,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
             if (typeof result.cookie === 'string' && result.cookie) {
               saveLoginCookie(result.cookie)
             }
+            clearApiCache()
             onOpenChange(false)
             toast.success('登录成功')
             void useUserStore
@@ -200,6 +201,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
         if (typeof res.cookie === 'string' && res.cookie) {
           saveLoginCookie(res.cookie)
         }
+        clearApiCache()
         onOpenChange(false)
         toast.success('登录成功')
         void useUserStore

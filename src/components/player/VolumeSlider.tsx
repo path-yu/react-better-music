@@ -41,7 +41,7 @@ export function VolumeSlider({ value, onChange, className }: VolumeSliderProps) 
   }
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    let next = value
+    let next: number
     switch (event.key) {
       case 'ArrowUp':
       case 'ArrowRight':

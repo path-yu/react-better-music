@@ -14,7 +14,7 @@ import type {
   UserProfile,
   PlayLevel,
 } from '../types'
-import { get, postForm, uploadFile } from '../lib/http'
+import { get, invalidateApiCache, uploadFile } from '../lib/http'
 import { normalizeMv, normalizePlaylist, normalizeSongs, type RawSong } from '../lib/songs'
 
 /** The CDN sometimes hands out http media URLs, which the WebView rejects. */
@@ -142,57 +142,35 @@ export async function fetchRemainingPlaylistTracks(
   return songs
 }
 
+const PLAYLIST_MUTATION_PREFIXES = ['/playlist/detail', '/playlist/track/all']
+
 export async function updatePlaylistInfo(params: {
   id: string | number
   name: string
   tags: string
   desc: string
 }) {
-  return get<ApiResponse>('/playlist/update', { ...params, timestamp: Date.now() })
+  const res = await get<ApiResponse>('/playlist/update', { ...params, timestamp: Date.now() })
+  if (res.code === 200) invalidateApiCache(PLAYLIST_MUTATION_PREFIXES)
+  return res
 }
 
-export async function updatePlaylistTags(params: { id: number | string; tags: string }) {
-  return get<ApiResponse>('/playlist/tags/update', { ...params, timestamp: Date.now() })
-}
-
-export function updatePlaylistCover(file: File, imgSize: number, id: string | number) {
-  return uploadFile<{ code: number; data?: { url: string } }>('/playlist/cover/update', file, {
-    timestamp: Date.now(),
-    imgSize,
-    id,
-  })
+export async function updatePlaylistCover(file: File, imgSize: number, id: string | number) {
+  const res = await uploadFile<{ code: number; data?: { url: string } }>(
+    '/playlist/cover/update',
+    file,
+    {
+      timestamp: Date.now(),
+      imgSize,
+      id,
+    },
+  )
+  if (res.code === 200) invalidateApiCache(PLAYLIST_MUTATION_PREFIXES)
+  return res
 }
 
 export async function updatePlaylistSubscribe(params: { id: string | number; t: 1 | 2 }) {
   return get<ApiResponse>('/playlist/subscribe', { ...params, timestamp: Date.now() })
-}
-
-export async function updatePlaylistTracks(params: {
-  tracks: number
-  pid: number
-  op: 'add' | 'del'
-}) {
-  return get<{ code: number; body?: { code: number; message?: string; count?: number } }>(
-    '/playlist/tracks',
-    { ...params, timestamp: Date.now() },
-  )
-}
-
-export async function createPlaylist(params: { name: string; privacy?: string }) {
-  return get<{ code: number; playlist?: Playlist }>('/playlist/create', {
-    ...params,
-    timestamp: Date.now(),
-  })
-}
-
-export async function fetchSimilarPlaylists(id: string | number) {
-  const res = await get<{ playlists?: Playlist[] }>('/simi/playlist', { id })
-  return (res.playlists ?? []).map(normalizePlaylist)
-}
-
-export async function fetchSimilarSongs(id: string | number) {
-  const res = await get<{ songs?: Parameters<typeof normalizeSongs>[0] }>('/simi/song', { id })
-  return normalizeSongs(res.songs)
 }
 
 /* ---------------------------------- song --------------------------------- */
@@ -582,10 +560,4 @@ export function updateUserAvatar(file: File, imgSize: number) {
 export async function fetchAlbumDetail(id: number | string) {
   const res = await get<{ album?: { picUrl?: string } }>('/album', { id })
   return res.album ?? null
-}
-
-/* --------------------------------- batch --------------------------------- */
-
-export function batchRequest(data: Record<string, string>) {
-  return postForm<Record<string, unknown>>('/batch', data)
 }

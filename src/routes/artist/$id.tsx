@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { Disc3, Music2, Video } from 'lucide-react'
+import { ChevronDown, Disc3, Music2, Video } from 'lucide-react'
 import { Skeleton, Tabs, TabsContent, TabsList, TabsTrigger } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../../components/common/ImageWithFallback'
 import { EmptyState } from '../../components/common/EmptyState'
@@ -23,6 +23,8 @@ export const Route = createFileRoute('/artist/$id')({
   component: ArtistPage,
 })
 
+const BIO_PREVIEW_HEIGHT = 75
+
 function ArtistPage() {
   const { id } = Route.useParams()
   const navigate = useNavigate()
@@ -33,7 +35,9 @@ function ArtistPage() {
   const [similar, setSimilar] = useState<ArtistSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('songs')
-  const [descExpanded, setDescExpanded] = useState(false)
+  const [bioExpanded, setBioExpanded] = useState(false)
+  const [bioHeight, setBioHeight] = useState(0)
+  const bioTextRef = useRef<HTMLParagraphElement>(null)
   useDocumentTitle(profile?.name ?? '歌手')
 
   useEffect(() => {
@@ -44,7 +48,8 @@ function ArtistPage() {
     setAlbums([])
     setMvs([])
     setSimilar([])
-    setDescExpanded(false)
+    setBioExpanded(false)
+    setBioHeight(0)
 
     Promise.allSettled([
       fetchArtistProfile(id),
@@ -73,6 +78,16 @@ function ArtistPage() {
       cancelled = true
     }
   }, [id])
+
+  useLayoutEffect(() => {
+    const element = bioTextRef.current
+    if (!element) return
+    const measure = () => setBioHeight(element.scrollHeight)
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [profile?.briefDesc])
 
   if (loading) {
     return (
@@ -156,21 +171,38 @@ function ArtistPage() {
 
             {profile.briefDesc ? (
               <div className="mt-4 max-w-[860px]">
-                <p
-                  className={cn(
-                    'whitespace-pre-wrap text-left text-[11.5px] leading-relaxed text-black/40',
-                    !descExpanded && 'line-clamp-3',
-                  )}
+                <p className="eyebrow text-left">歌手简介</p>
+                <div
+                  className="mt-1.5 overflow-hidden transition-[height] duration-300 ease-in-out motion-reduce:transition-none"
+                  style={{
+                    height: bioHeight
+                      ? bioHeight > BIO_PREVIEW_HEIGHT && !bioExpanded
+                        ? BIO_PREVIEW_HEIGHT
+                        : bioHeight
+                      : undefined,
+                  }}
                 >
-                  {profile.briefDesc}
-                </p>
-                {profile.briefDesc.length > 150 ? (
+                  <p
+                    ref={bioTextRef}
+                    className="whitespace-pre-wrap text-left text-[11.5px] leading-relaxed text-black/40"
+                  >
+                    {profile.briefDesc}
+                  </p>
+                </div>
+                {bioHeight > BIO_PREVIEW_HEIGHT ? (
                   <button
                     type="button"
-                    className="mt-1 text-[10.5px] text-[#0066cc]"
-                    onClick={() => setDescExpanded((value) => !value)}
+                    aria-expanded={bioExpanded}
+                    onClick={() => setBioExpanded((value) => !value)}
+                    className="mt-1.5 inline-flex items-center gap-1 text-[10.5px] text-[#0066cc] transition-colors hover:text-[#0071e3]"
                   >
-                    {descExpanded ? '收起' : '展开'}
+                    {bioExpanded ? '收起' : '展开全部'}
+                    <ChevronDown
+                      className={cn(
+                        'h-3 w-3 transition-transform duration-300',
+                        bioExpanded && 'rotate-180',
+                      )}
+                    />
                   </button>
                 ) : null}
               </div>

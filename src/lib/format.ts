@@ -39,34 +39,6 @@ export function getArrLast<T>(arr: T[]): T | undefined {
   return arr[arr.length - 1]
 }
 
-export function throttle<Args extends unknown[]>(fn: (...args: Args) => void, delay: number) {
-  let timer: ReturnType<typeof setTimeout> | null = null
-  let lastArgs: Args | null = null
-  return (...args: Args) => {
-    lastArgs = args
-    if (timer) return
-    timer = setTimeout(() => {
-      timer = null
-      if (lastArgs) fn(...lastArgs)
-    }, delay)
-  }
-}
-
-export function debounce<Args extends unknown[]>(fn: (...args: Args) => void, delay: number) {
-  let timer: ReturnType<typeof setTimeout> | null = null
-  return (...args: Args) => {
-    if (timer) clearTimeout(timer)
-    timer = setTimeout(() => {
-      timer = null
-      fn(...args)
-    }, delay)
-  }
-}
-
-export function isEven(value: number) {
-  return value % 2 === 0
-}
-
 export function matchesKeyword(keyword: string, ...values: Array<string | undefined>) {
   const k = keyword.trim().toLowerCase()
   if (!k) return true

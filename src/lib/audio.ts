@@ -18,9 +18,3 @@ export function setAudioVolume(percent: number) {
   if (!audioElement) return
   audioElement.volume = Math.min(1, Math.max(0, percent / 100))
 }
-
-export function restartAudio() {
-  if (!audioElement) return
-  audioElement.currentTime = 0
-  void audioElement.play().catch(() => undefined)
-}

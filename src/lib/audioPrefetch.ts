@@ -33,11 +33,6 @@ function evictOverflow() {
   }
 }
 
-/** Returns a ready-to-play blob URL without transferring ownership. */
-export function getPrefetchedAudio(songId: number) {
-  return entries.get(songId) ?? null
-}
-
 /**
  * Takes the prefetched track out of the pool. The caller owns the blob URL and
  * must revoke it when the source changes or the player unmounts.
