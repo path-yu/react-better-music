@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from 'react'
+import { memo, useLayoutEffect, useRef, useState } from 'react'
 import { Music2 } from 'lucide-react'
 import { cn } from '../../lib/format'
 
@@ -21,18 +21,20 @@ export const ImageWithFallback = memo(function ImageWithFallback({
   instant = false,
 }: ImageWithFallbackProps) {
   const imgRef = useRef<HTMLImageElement>(null)
-  const [loaded, setLoaded] = useState(false)
-  const [failed, setFailed] = useState(false)
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null)
+  const [failedSrc, setFailedSrc] = useState<string | null>(null)
+  // Tracking the source instead of a boolean means a new image is never
+  // rendered with the previous image's "loaded" state for a frame.
+  const loaded = Boolean(src) && loadedSrc === src
+  const failed = Boolean(src) && failedSrc === src
 
-  useEffect(() => {
-    setLoaded(false)
-    setFailed(false)
-    // Cached images may finish before React attaches onLoad; check the
-    // element directly so the cover never stays at opacity 0.
+  useLayoutEffect(() => {
     const image = imgRef.current
-    if (!image?.complete) return
-    if (image.naturalWidth > 0) setLoaded(true)
-    else if (image.currentSrc) setFailed(true)
+    if (!src || !image?.complete) return
+    // Cached images may finish before React attaches onLoad; check the element
+    // directly before the first paint so they don't flash.
+    if (image.naturalWidth > 0) setLoadedSrc(src)
+    else if (image.currentSrc) setFailedSrc(src)
   }, [src])
 
   return (
@@ -49,14 +51,15 @@ export const ImageWithFallback = memo(function ImageWithFallback({
         </div>
       ) : (
         <img
+          key={src}
           ref={imgRef}
           src={src}
           alt={alt}
           loading="lazy"
           decoding="async"
           draggable={false}
-          onLoad={() => setLoaded(true)}
-          onError={() => setFailed(true)}
+          onLoad={() => setLoadedSrc(src)}
+          onError={() => setFailedSrc(src)}
           className={cn(
             'h-full w-full object-cover [backface-visibility:hidden]',
             instant

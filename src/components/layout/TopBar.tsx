@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router'
-import { ChevronLeft, ChevronRight, Disc3, Moon, Settings2, Sun } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Disc3, Menu, Moon, Settings2, Sun } from 'lucide-react'
 import { SearchBox } from './SearchBox'
 import { UserMenu } from './UserMenu'
 import { usePlayerStore } from '../../store/player'
@@ -12,10 +12,19 @@ export function TopBar() {
   const toggleNowPlaying = usePlayerStore((state) => state.toggleNowPlaying)
   const theme = useUiStore((state) => state.theme)
   const toggleTheme = useUiStore((state) => state.toggleTheme)
+  const toggleSidebar = useUiStore((state) => state.toggleSidebar)
 
   return (
     <header className="pushbar-glass relative z-50 flex h-[54px] flex-none items-center gap-3 px-4">
-      <div className="flex items-center gap-1">
+      <button
+        type="button"
+        aria-label="打开导航"
+        onClick={toggleSidebar}
+        className="pressable flex h-7 w-7 items-center justify-center rounded-[7px] text-black/45 transition-colors hover:bg-black/5 hover:text-black/75 md:hidden"
+      >
+        <Menu className="h-4 w-4" />
+      </button>
+      <div className="flex items-center gap-1 max-md:hidden">
         <button
           type="button"
           aria-label="后退"
@@ -44,7 +53,7 @@ export function TopBar() {
           aria-label={theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'}
           title={theme === 'dark' ? '浅色模式' : '深色模式'}
           onClick={toggleTheme}
-          className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/40 transition-colors hover:bg-black/5 hover:text-black/75"
+          className="pressable max-md:hidden flex h-7 w-7 items-center justify-center rounded-full text-black/40 transition-colors hover:bg-black/5 hover:text-black/75"
         >
           {theme === 'dark' ? <Sun className="h-[15px] w-[15px]" /> : <Moon className="h-[15px] w-[15px]" />}
         </button>
@@ -52,7 +61,7 @@ export function TopBar() {
           <button
             type="button"
             onClick={() => toggleNowPlaying()}
-            className={`pressable flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[11.5px] transition-colors ${
+            className={`pressable max-md:hidden flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[11.5px] transition-colors ${
               showNowPlaying
                 ? 'bg-[#0066cc]/10 text-[#0066cc]'
                 : 'text-black/40 hover:bg-black/5 hover:text-black/70'

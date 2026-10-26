@@ -7,6 +7,7 @@ import { EmptyState } from '../components/common/EmptyState'
 import { Pager } from '../components/common/Pager'
 import { fetchMvList } from '../api'
 import { cn } from '../lib/format'
+import { useDocumentTitle } from '../lib/title'
 import { toast } from '../lib/toast'
 import type { Mv } from '../types'
 
@@ -20,6 +21,7 @@ const ORDERS = ['最热', '最新', '上升最快']
 const PAGE_SIZE = 24
 
 function LatestMvPage() {
+  useDocumentTitle('最新 MV')
   const [area, setArea] = useState('全部')
   const [type, setType] = useState('全部')
   const [order, setOrder] = useState('最热')

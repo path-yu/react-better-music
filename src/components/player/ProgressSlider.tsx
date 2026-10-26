@@ -52,12 +52,28 @@ export function ProgressSlider({ value, buffered = 0, onChange, className }: Pro
         value={percent}
         aria-label="播放进度"
         className="relative z-10 h-4 w-full cursor-pointer appearance-none bg-transparent opacity-0"
-        onPointerDown={() => {
+        onPointerDown={(event) => {
+          // Capture the pointer so releasing outside the input still commits
+          // the seek instead of leaving the slider stuck in drag mode.
+          event.currentTarget.setPointerCapture(event.pointerId)
           draggingRef.current = true
           setDragging(true)
         }}
-        onPointerUp={() => finishDrag(true)}
-        onPointerCancel={() => finishDrag(false)}
+        onPointerUp={(event) => {
+          if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId)
+          }
+          finishDrag(true)
+        }}
+        onPointerCancel={(event) => {
+          if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId)
+          }
+          finishDrag(false)
+        }}
+        onLostPointerCapture={() => {
+          if (draggingRef.current) finishDrag(true)
+        }}
         onChange={(event) => {
           const next = Number(event.target.value)
           if (draggingRef.current) {

@@ -21,6 +21,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const contentRef = useRef<HTMLElement>(null)
   const loginOpen = useUiStore((state) => state.loginOpen)
   const closeLogin = useUiStore((state) => state.closeLogin)
+  const sidebarOpen = useUiStore((state) => state.sidebarOpen)
+  const closeSidebar = useUiStore((state) => state.closeSidebar)
   const theme = useUiStore((state) => state.theme)
   const initSession = useUserStore((state) => state.initSession)
   const hasQueue = usePlayerStore((state) => state.queue.length > 0)
@@ -28,6 +30,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     applyTheme(theme)
   }, [theme])
+
+  useEffect(() => {
+    closeSidebar()
+  }, [pathname, closeSidebar])
 
   useEffect(() => {
     void initSession()
@@ -89,8 +95,47 @@ export function AppShell({ children }: { children: ReactNode }) {
     const element = contentRef.current
     if (!element) return
     const key = `scroll:${pathname}`
-    const saved = sessionStorage.getItem(key)
-    element.scrollTop = saved ? Number(saved) : 0
+    const saved = Number(sessionStorage.getItem(key) ?? 0)
+
+    // `.apple-content` uses smooth scrolling; restoring must be instant or
+    // reading scrollTop right after the assignment returns a stale value.
+    const setScroll = (top: number) => {
+      const previous = element.style.scrollBehavior
+      element.style.scrollBehavior = 'auto'
+      element.scrollTop = top
+      element.style.scrollBehavior = previous
+    }
+
+    if (!saved) {
+      setScroll(0)
+      return
+    }
+
+    let retryTimer: number | undefined
+    let guard: number | undefined
+    let stopped = false
+
+    const stop = () => {
+      stopped = true
+      if (retryTimer !== undefined) window.clearInterval(retryTimer)
+      if (guard !== undefined) window.clearTimeout(guard)
+    }
+
+    const restore = () => {
+      if (stopped) return
+      setScroll(saved)
+      // Pages render skeletons before their data arrives, so the saved offset
+      // is often unreachable at first; keep retrying while the content grows.
+      if (Math.abs(element.scrollTop - saved) <= 1) stop()
+    }
+
+    restore()
+    if (Math.abs(element.scrollTop - saved) > 1) {
+      retryTimer = window.setInterval(restore, 100)
+      guard = window.setTimeout(stop, 2500)
+    }
+
+    return stop
   }, [pathname])
 
   useEffect(() => {
@@ -108,7 +153,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="app-shell">
       <div className="app-window">
         <TitleBar />
-        <div className="app-body">
+        <div className={sidebarOpen ? 'app-body nav-open' : 'app-body'}>
           <Sidebar />
           <div className="main-column relative overflow-hidden">
             <TopBar />
@@ -117,6 +162,14 @@ export function AppShell({ children }: { children: ReactNode }) {
             </main>
           </div>
         </div>
+        {sidebarOpen ? (
+          <button
+            type="button"
+            aria-label="关闭导航"
+            className="sidebar-backdrop"
+            onClick={closeSidebar}
+          />
+        ) : null}
         <NowPlaying />
         <QueuePanel />
         {hasQueue && <PlayerBar />}

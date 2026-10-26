@@ -1,6 +1,7 @@
 import type { FFmpeg } from '@ffmpeg/ffmpeg'
 import { apiUrl } from './http'
 import { isDesktopApp, saveDownloadFile } from './desktopDownloads'
+import { toast } from './toast'
 import { useSettingsStore } from '../store/settings'
 
 interface CacheMeta {
@@ -38,6 +39,7 @@ let dbPromise: Promise<IDBDatabase> | null = null
 let ffmpegPromise: Promise<FfmpegBundle> | null = null
 let writeQueue: Promise<void> = Promise.resolve()
 const pending = new Map<number, Promise<void>>()
+let cacheWarningShown = false
 
 interface FfmpegBundle {
   ffmpeg: FFmpeg
@@ -165,9 +167,11 @@ async function trimCache(db: IDBDatabase) {
 async function loadFfmpeg(): Promise<FfmpegBundle> {
   if (!ffmpegPromise) {
     ffmpegPromise = (async () => {
-      const [{ FFmpeg }, { fetchFile }] = await Promise.all([
+      const [{ FFmpeg }, { fetchFile }, core, wasm] = await Promise.all([
         import('@ffmpeg/ffmpeg'),
         import('@ffmpeg/util'),
+        import('@ffmpeg/core?url'),
+        import('@ffmpeg/core/wasm?url'),
       ])
       const ffmpeg = new FFmpeg()
       const logs: string[] = []
@@ -175,7 +179,9 @@ async function loadFfmpeg(): Promise<FfmpegBundle> {
         logs.push(message)
         if (logs.length > 60) logs.shift()
       })
-      await ffmpeg.load()
+      // Use the bundled core instead of the default CDN download so offline
+      // desktop builds can still transcode cached audio.
+      await ffmpeg.load({ coreURL: core.default, wasmURL: wasm.default })
       return { ffmpeg, fetchFile, logs }
     })().catch((error) => {
       ffmpegPromise = null
@@ -185,7 +191,7 @@ async function loadFfmpeg(): Promise<FfmpegBundle> {
   return ffmpegPromise
 }
 
-async function transcodeAndStore(song: CacheableSong) {
+async function transcodeAndStore(song: CacheableSong, source?: Blob) {
   const existing = await getCachedAudio(song.id)
   if (existing) return
 
@@ -198,7 +204,9 @@ async function transcodeAndStore(song: CacheableSong) {
   const proxied = apiUrl('/audio/proxy', { url: song.url })
 
   try {
-    const bytes = await fetchFile(proxied)
+    // A neighbour prefetch already holds the bytes: reuse them instead of
+    // downloading the whole track a second time.
+    const bytes = await fetchFile(source ?? proxied)
     await ffmpeg.writeFile(input, bytes)
     const code = await ffmpeg.exec([
       '-i',
@@ -234,19 +242,32 @@ async function transcodeAndStore(song: CacheableSong) {
   }
 }
 
-export function cacheSong(song: CacheableSong) {
+function enqueueCache(song: CacheableSong, source?: Blob) {
   if (typeof indexedDB === 'undefined' || pending.has(song.id)) return
   // ffmpeg shares one virtual filesystem, so cache jobs must run in sequence.
   const task = writeQueue
-    .then(() => transcodeAndStore(song))
+    .then(() => transcodeAndStore(song, source))
     .catch((error) => {
       console.warn('[song cache] failed:', error)
+      if (!cacheWarningShown) {
+        cacheWarningShown = true
+        toast.warning('音频缓存暂不可用，本次播放不会写入本地缓存')
+      }
     })
     .finally(() => {
       pending.delete(song.id)
     })
   writeQueue = task
   pending.set(song.id, task)
+}
+
+export function cacheSong(song: CacheableSong) {
+  enqueueCache(song)
+}
+
+/** Cache from a Blob already downloaded by the neighbour prefetch. */
+export function cacheSongFromBlob(song: CacheableSong, blob: Blob) {
+  enqueueCache(song, blob)
 }
 
 export interface CachedAudioItem {
@@ -287,12 +308,28 @@ function cacheFileName(meta: CacheMeta) {
   return `${safe || 'cached-song'}.opus`
 }
 
-/** Export the given cached tracks to the configured download folder. */
+function downloadBlob(blob: Blob, name: string) {
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = name
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 10000)
+}
+
+/**
+ * Export the given cached tracks. Desktop writes each .opus into the configured
+ * folder; browsers get a single ZIP because repeated automatic downloads are
+ * blocked by many browsers.
+ */
 export async function downloadCachedAudio(ids: number[]): Promise<number> {
   if (typeof indexedDB === 'undefined' || !ids.length) return 0
   const db = await openDb()
   const desktop = isDesktopApp()
-  let exported = 0
+  const entries: Array<{ meta: CacheMeta; blob: Blob }> = []
+
   for (const id of ids) {
     const meta = await requestResult<CacheMeta | undefined>(
       db.transaction(META_STORE, 'readonly').objectStore(META_STORE).get(id),
@@ -302,21 +339,50 @@ export async function downloadCachedAudio(ids: number[]): Promise<number> {
       db.transaction(AUDIO_STORE, 'readonly').objectStore(AUDIO_STORE).get(id),
     )
     if (!record) continue
-    if (desktop) {
-      // Write straight into the user-configured folder via the Bun process.
-      await saveDownloadFile(cacheFileName(meta), record.blob)
-    } else {
-      const url = URL.createObjectURL(record.blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = cacheFileName(meta)
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      window.setTimeout(() => URL.revokeObjectURL(url), 10000)
-    }
-    exported += 1
-    await new Promise((resolve) => window.setTimeout(resolve, 250))
+    entries.push({ meta, blob: record.blob })
   }
-  return exported
+
+  if (!entries.length) return 0
+
+  if (desktop) {
+    for (const { meta, blob } of entries) {
+      // Write straight into the user-configured folder via the Bun process.
+      await saveDownloadFile(cacheFileName(meta), blob)
+      await new Promise((resolve) => window.setTimeout(resolve, 250))
+    }
+    return entries.length
+  }
+
+  if (entries.length === 1) {
+    downloadBlob(entries[0].blob, cacheFileName(entries[0].meta))
+    return 1
+  }
+
+  const { zipSync } = await import('fflate')
+  const files: Record<string, Uint8Array> = {}
+  const used = new Set<string>()
+  for (const { meta, blob } of entries) {
+    const base = cacheFileName(meta)
+    let name = base
+    let index = 1
+    while (used.has(name)) {
+      name = base.replace(/\.opus$/i, ` (${index}).opus`)
+      index += 1
+    }
+    used.add(name)
+    files[name] = new Uint8Array(await blob.arrayBuffer())
+  }
+
+  const archive = zipSync(files, { level: 0 })
+  const date = new Date()
+  const stamp = [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('')
+  downloadBlob(
+    new Blob([archive as unknown as BlobPart], { type: 'application/zip' }),
+    `声屿缓存-${stamp}.zip`,
+  )
+  return entries.length
 }

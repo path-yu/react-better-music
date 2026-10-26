@@ -11,6 +11,7 @@ import {
 import { PlaylistCard } from '../../components/cards/PlaylistCard'
 import { fetchPlaylistTags, fetchTopPlaylists } from '../../api'
 import { getArrLast, cn } from '../../lib/format'
+import { useDocumentTitle } from '../../lib/title'
 import { toast } from '../../lib/toast'
 import type { Playlist } from '../../types'
 
@@ -19,6 +20,7 @@ export const Route = createFileRoute('/songlists/')({
 })
 
 function SonglistsPage() {
+  useDocumentTitle('推荐歌单')
   const [tags, setTags] = useState<string[]>(['全部'])
   const [activeTag, setActiveTag] = useState('全部')
   const [playlists, setPlaylists] = useState<Playlist[]>([])

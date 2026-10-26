@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, CalendarDays, Eye, Play } from 'lucide-react'
 import { Avatar, Skeleton } from '@pikoloo/darwin-ui'
@@ -13,6 +13,7 @@ import {
   fetchSimilarMv,
 } from '../../api'
 import { formatDate, formatNumber } from '../../lib/format'
+import { useDocumentTitle } from '../../lib/title'
 import { toast } from '../../lib/toast'
 import { usePlayerStore } from '../../store/player'
 import type { Mv } from '../../types'
@@ -37,6 +38,24 @@ function MvDetailPage() {
   const [author, setAuthor] = useState<AuthorInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [videoLoading, setVideoLoading] = useState(true)
+  useDocumentTitle(detail?.name ?? 'MV')
+  const resumeMusicRef = useRef(false)
+
+  const resumeMusic = () => {
+    if (!resumeMusicRef.current) return
+    resumeMusicRef.current = false
+    usePlayerStore.getState().setPlaying(true)
+  }
+
+  useEffect(() => {
+    // Leaving the MV page stops the video; restore the music that we paused.
+    return () => {
+      if (resumeMusicRef.current) {
+        resumeMusicRef.current = false
+        usePlayerStore.getState().setPlaying(true)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -134,7 +153,15 @@ function MvDetailPage() {
                 controls
                 playsInline
                 className="h-full w-full"
-                onPlay={() => usePlayerStore.getState().setPlaying(false)}
+                onPlay={() => {
+                  const state = usePlayerStore.getState()
+                  if (!state.playing || !state.queue.length) return
+                  // Remember that we interrupted playback so it can be
+                  // restored when the video ends or the page is left.
+                  resumeMusicRef.current = true
+                  state.setPlaying(false)
+                }}
+                onEnded={resumeMusic}
               />
             ) : (
               <div className="flex h-full flex-col items-center justify-center gap-2 text-white/40">

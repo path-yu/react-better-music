@@ -52,6 +52,30 @@ export class ApiError extends Error {
   }
 }
 
+const REQUEST_TIMEOUT = 15_000
+const UPLOAD_TIMEOUT = 60_000
+
+/**
+ * Compose the caller's signal with a timeout. A request that never settles
+ * would otherwise leave the UI on a skeleton forever.
+ */
+function withTimeout(signal: AbortSignal | undefined, timeout: number) {
+  const controller = new AbortController()
+  const timer = window.setTimeout(() => controller.abort(), timeout)
+  const forwardAbort = () => controller.abort()
+  if (signal) {
+    if (signal.aborted) controller.abort()
+    else signal.addEventListener('abort', forwardAbort, { once: true })
+  }
+  return {
+    signal: controller.signal,
+    cleanup: () => {
+      window.clearTimeout(timer)
+      signal?.removeEventListener('abort', forwardAbort)
+    },
+  }
+}
+
 async function parse<T>(response: Response): Promise<T> {
   const text = await response.text()
   let payload: unknown = text
@@ -129,52 +153,73 @@ async function runWithSession<T>(path: string, run: () => Promise<Response>) {
 }
 
 export function get<T>(path: string, params?: Query, signal?: AbortSignal) {
-  return runWithSession<T>(path, () =>
-    fetch(buildUrl(path, withSessionCookie(path, params)), {
-      method: 'GET',
-      credentials: 'include',
-      signal,
-    }),
-  )
+  return runWithSession<T>(path, async () => {
+    const timeout = withTimeout(signal, REQUEST_TIMEOUT)
+    try {
+      return await fetch(buildUrl(path, withSessionCookie(path, params)), {
+        method: 'GET',
+        credentials: 'include',
+        signal: timeout.signal,
+      })
+    } finally {
+      timeout.cleanup()
+    }
+  })
 }
 
 export function post<T>(path: string, body?: BodyInit | null, params?: Query, signal?: AbortSignal) {
-  return runWithSession<T>(path, () =>
-    fetch(buildUrl(path, withSessionCookie(path, params)), {
-      method: 'POST',
-      credentials: 'include',
-      body,
-      signal,
-    }),
-  )
+  return runWithSession<T>(path, async () => {
+    const timeout = withTimeout(signal, REQUEST_TIMEOUT)
+    try {
+      return await fetch(buildUrl(path, withSessionCookie(path, params)), {
+        method: 'POST',
+        credentials: 'include',
+        body,
+        signal: timeout.signal,
+      })
+    } finally {
+      timeout.cleanup()
+    }
+  })
 }
 
 export function postForm<T>(path: string, params: Query, signal?: AbortSignal) {
-  const run = () => {
-    const body = new URLSearchParams()
-    Object.entries(withSessionCookie(path, params) ?? {}).forEach(([key, value]) => {
-      if (value === undefined || value === null) return
-      body.append(key, String(value))
-    })
-    return fetch(`${API_BASE}${path}`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body,
-      signal,
-    })
+  const run = async () => {
+    const timeout = withTimeout(signal, REQUEST_TIMEOUT)
+    try {
+      const body = new URLSearchParams()
+      Object.entries(withSessionCookie(path, params) ?? {}).forEach(([key, value]) => {
+        if (value === undefined || value === null) return
+        body.append(key, String(value))
+      })
+      return await fetch(`${API_BASE}${path}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body,
+        signal: timeout.signal,
+      })
+    } finally {
+      timeout.cleanup()
+    }
   }
   return runWithSession<T>(path, run)
 }
 
 export function uploadFile<T>(path: string, file: File, params?: Query) {
-  return runWithSession<T>(path, () => {
-    const formData = new FormData()
-    formData.append('imgFile', file)
-    return fetch(buildUrl(path, withSessionCookie(path, params)), {
-      method: 'POST',
-      credentials: 'include',
-      body: formData,
-    })
+  return runWithSession<T>(path, async () => {
+    const timeout = withTimeout(undefined, UPLOAD_TIMEOUT)
+    try {
+      const formData = new FormData()
+      formData.append('imgFile', file)
+      return await fetch(buildUrl(path, withSessionCookie(path, params)), {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+        signal: timeout.signal,
+      })
+    } finally {
+      timeout.cleanup()
+    }
   })
 }

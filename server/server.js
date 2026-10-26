@@ -272,8 +272,9 @@ async function constructServer(moduleDefs) {
    * CORS headers, so the browser cannot fetch audio bytes directly.
    */
   app.get('/audio/proxy', async (req, res) => {
-    const raw =
-      typeof req.query.url === 'string' ? decodeURIComponent(req.query.url) : ''
+    // Express has already decoded the query string; decoding again would throw
+    // on media URLs that contain a literal percent sign.
+    const raw = typeof req.query.url === 'string' ? req.query.url : ''
     if (!raw || !/^https?:\/\/[^/]*music\.126\.net\//.test(raw)) {
       res.status(400).json({ code: 400, msg: 'Invalid audio url' })
       return
@@ -303,7 +304,9 @@ async function constructServer(moduleDefs) {
         const value = response.headers[name]
         if (value) res.setHeader(name, value)
       }
-      res.setHeader('Cache-Control', 'no-store')
+      // Signed media URLs stay valid for roughly 20 minutes; let the browser
+      // reuse the bytes for a while instead of re-downloading on every replay.
+      res.setHeader('Cache-Control', 'private, max-age=300')
       response.data.pipe(res)
       response.data.on('error', () => res.destroy())
     } catch (error) {

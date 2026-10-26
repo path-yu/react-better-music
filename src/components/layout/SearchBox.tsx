@@ -66,14 +66,15 @@ export function SearchBox() {
   useEffect(() => {
     const value = keyword.trim()
     const requestId = ++requestIdRef.current
+    const controller = new AbortController()
     if (!value) {
       setSuggest({ songs: [], playlists: [] })
       setLoading(false)
-      return
+      return () => controller.abort()
     }
     setLoading(true)
     const timer = window.setTimeout(() => {
-      fetchSearchSuggest(value)
+      fetchSearchSuggest(value, controller.signal)
         .then((result) => {
           if (requestIdRef.current !== requestId) return
           setSuggest(result)
@@ -83,7 +84,10 @@ export function SearchBox() {
           if (requestIdRef.current === requestId) setLoading(false)
         })
     }, 280)
-    return () => window.clearTimeout(timer)
+    return () => {
+      window.clearTimeout(timer)
+      controller.abort()
+    }
   }, [keyword])
 
   useEffect(() => {
@@ -110,14 +114,17 @@ export function SearchBox() {
 
   const handleSongClick = async (song: Song) => {
     try {
+      let playable = song
       if (!song.al.picUrl && song.al.id) {
         const album = await fetchAlbumDetail(song.al.id)
-        if (album?.picUrl) song.al.picUrl = album.picUrl
+        if (album?.picUrl) {
+          playable = { ...song, al: { ...song.al, picUrl: album.picUrl } }
+        }
       }
       if (hasQueue) {
-        await insertPlay(song)
+        await insertPlay(playable)
       } else {
-        await playSong(song)
+        await playSong(playable)
       }
       setOpen(false)
     } catch {
@@ -144,7 +151,11 @@ export function SearchBox() {
         }}
         onFocus={() => setOpen(true)}
         onKeyDown={(event) => {
-          if (event.key === 'Enter') goSearch()
+          if (event.key === 'Enter') {
+            // Enter is also used to confirm IME candidates; don't search then.
+            if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return
+            goSearch()
+          }
           if (event.key === 'Escape') setOpen(false)
         }}
         rightIcon={

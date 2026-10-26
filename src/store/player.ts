@@ -9,6 +9,7 @@ import {
 } from '../api'
 import { buildLyricLines, isEmptyLyric, type LyricLine } from '../lib/lyric'
 import { apiUrl } from '../lib/http'
+import { getAudio } from '../lib/audio'
 import { getCachedAudio, hasCachedAudio } from '../lib/songCache'
 import {
   clearPrefetchedAudio,
@@ -16,6 +17,7 @@ import {
   prefetchAudio,
   retainPrefetchedAudio,
 } from '../lib/audioPrefetch'
+import { createCoalescedStorage } from '../lib/persistStorage'
 import { toast } from '../lib/toast'
 import { useSettingsStore } from './settings'
 import type { Song } from '../types'
@@ -37,6 +39,8 @@ interface PlayerState {
   sourceReady: boolean
   /** True while playing a blob read from the offline cache (skip caching again). */
   audioFromCache: boolean
+  /** Blob downloaded by the neighbour prefetch, reused when caching this track. */
+  audioBlob: Blob | null
   loadRequestId: number
   showNowPlaying: boolean
   showQueue: boolean
@@ -129,6 +133,51 @@ function hasFreshUrl(song: Song) {
   )
 }
 
+type PersistedPlayerState = Pick<
+  PlayerState,
+  'queue' | 'currentIndex' | 'playlistId' | 'mode' | 'volume'
+>
+
+const MAX_PERSISTED_QUEUE = 1000
+
+let persistedWindow: {
+  source: Song[]
+  index: number
+  queue: Song[]
+  offset: number
+} | null = null
+
+/** Persisted songs keep only what restore needs; lyrics and media URLs are re-fetched. */
+function persistQueue(queue: Song[], currentIndex: number) {
+  const cached = persistedWindow
+  if (cached && cached.source === queue && cached.index === currentIndex) {
+    return cached
+  }
+  const size = Math.min(queue.length, MAX_PERSISTED_QUEUE)
+  const offset =
+    queue.length > MAX_PERSISTED_QUEUE
+      ? Math.min(
+          Math.max(0, currentIndex - Math.floor(MAX_PERSISTED_QUEUE / 2)),
+          queue.length - MAX_PERSISTED_QUEUE,
+        )
+      : 0
+  const compacted: Song[] = queue.slice(offset, offset + size).map((song) => ({
+    id: song.id,
+    name: song.name,
+    ar: song.ar,
+    al: song.al,
+    dt: song.dt,
+    fee: song.fee,
+    mv: song.mv,
+    mvid: song.mvid,
+    alia: song.alia,
+    tns: song.tns,
+    like: song.like,
+  }))
+  persistedWindow = { source: queue, index: currentIndex, queue: compacted, offset }
+  return persistedWindow
+}
+
 export const usePlayerStore = create<PlayerState>()(
   persist(
     (set, get) => {
@@ -160,10 +209,9 @@ export const usePlayerStore = create<PlayerState>()(
           prefetchTimer = undefined
         }
 
-        const findNeighbor = (direction: 1 | -1) => {
+        const findNext = () => {
           for (let step = 1; step < queue.length; step += 1) {
-            const candidateIndex =
-              ((index + direction * step) % queue.length + queue.length) % queue.length
+            const candidateIndex = (index + step) % queue.length
             const candidate = queue[candidateIndex]
             if (candidate && candidate.fee !== 0) {
               return { index: candidateIndex, song: candidate }
@@ -171,15 +219,13 @@ export const usePlayerStore = create<PlayerState>()(
           }
           return null
         }
-        const found = [findNeighbor(1), findNeighbor(-1)].filter(
-          (entry): entry is { index: number; song: Song } => entry !== null,
-        )
-        const neighbors = found.filter(
-          (entry, position) =>
-            found.findIndex((item) => item.song.id === entry.song.id) === position,
-        )
+        // Only the next track is prefetched: downloading the previous one as
+        // well doubled the bandwidth and Blob memory for a case users rarely
+        // hit.
+        const next = findNext()
+        const neighbors = next ? [next] : []
 
-        // Only the reachable neighbours may keep their prefetched audio.
+        // Only the reachable neighbour may keep its prefetched audio.
         retainPrefetchedAudio(neighbors.map((entry) => entry.song.id))
         if (!neighbors.length) return
 
@@ -203,10 +249,16 @@ export const usePlayerStore = create<PlayerState>()(
           return { songId: song.id, url, trialEnd }
         })
 
+        // Lossless/Hi-Res files can reach dozens of megabytes; keep those as
+        // streams instead of holding a full Blob in memory.
+        const level = useSettingsStore.getState().playLevel
+        const allowDownload = level !== 'lossless' && level !== 'hires'
+
         void Promise.all(resolves).then((results) => {
           if (token !== prefetchToken || get().currentIndex !== index) return
           const start = () => {
             if (token !== prefetchToken || get().currentIndex !== index) return
+            if (!allowDownload) return
             for (const result of results) {
               if (result) void prefetchAudio(result.songId, result.url, result.trialEnd)
             }
@@ -258,6 +310,7 @@ export const usePlayerStore = create<PlayerState>()(
           audioUrl: '',
           sourceReady: false,
           audioFromCache: false,
+          audioBlob: null,
         })
         try {
           // Prefer audio cached in IndexedDB (ffmpeg-transcoded Opus).
@@ -279,7 +332,7 @@ export const usePlayerStore = create<PlayerState>()(
           // A neighbour preload is already a local Blob: play it immediately.
           const prefetched = consumePrefetchedAudio(song.id)
           if (prefetched) {
-            set({ audioUrl: prefetched.url, sourceReady: true })
+            set({ audioUrl: prefetched.url, sourceReady: true, audioBlob: prefetched.blob })
             if (prefetched.trialEnd && prefetched.trialEnd > 0) {
               toast.warning(
                 `当前仅可试听 ${prefetched.trialEnd} 秒，登录或开通会员后可播放完整版`,
@@ -323,6 +376,7 @@ export const usePlayerStore = create<PlayerState>()(
             audioUrl: '',
             sourceReady: false,
             audioFromCache: false,
+            audioBlob: null,
           })
           toast.warning(error instanceof Error ? error.message : '歌曲加载失败')
           return false
@@ -409,7 +463,13 @@ export const usePlayerStore = create<PlayerState>()(
           return
         }
         let index = currentIndex
-        for (let attempt = 0; attempt < queue.length; attempt += 1) {
+        // Sequential playback stops at the end of the queue; only previous /
+        // loop modes wrap around.
+        const maxSteps =
+          direction === 1 && mode === 'order'
+            ? queue.length - 1 - currentIndex
+            : queue.length
+        for (let attempt = 0; attempt < maxSteps; attempt += 1) {
           index = (index + direction + queue.length) % queue.length
           const song = queue[index]
           if (!song || song.fee === 0) continue
@@ -448,6 +508,7 @@ export const usePlayerStore = create<PlayerState>()(
         audioUrl: '',
         sourceReady: false,
         audioFromCache: false,
+        audioBlob: null,
         loadRequestId: 0,
         showNowPlaying: false,
         showQueue: false,
@@ -549,6 +610,14 @@ export const usePlayerStore = create<PlayerState>()(
             const ok = await loadAt(currentIndex)
             if (!ok) return
           }
+          // A trial that already hit its limit should restart from the top
+          // instead of immediately pausing again.
+          const active = get().queue[get().currentIndex]
+          const audio = getAudio()
+          if (audio && active?.trialEnd && audio.currentTime >= active.trialEnd) {
+            audio.currentTime = 0
+            set({ currentTime: 0 })
+          }
           set({ playing: true })
         },
 
@@ -638,8 +707,11 @@ export const usePlayerStore = create<PlayerState>()(
             audioUrl: '',
             sourceReady: false,
             audioFromCache: false,
+            audioBlob: null,
             heartMode: false,
             heartLoading: false,
+            showNowPlaying: false,
+            showQueue: false,
           })
           toast.info('播放列表已清空')
         },
@@ -658,6 +730,7 @@ export const usePlayerStore = create<PlayerState>()(
               audioUrl: freshUrl ? apiUrl('/audio/proxy', { url: freshUrl }) : '',
               sourceReady: true,
               audioFromCache: false,
+              audioBlob: null,
               lyricLines: readLyrics(fresh),
               lyricLoading: false,
             })
@@ -697,13 +770,22 @@ export const usePlayerStore = create<PlayerState>()(
     },
     {
       name: 'react-music-player',
-      partialize: (state) => ({
-        queue: state.queue,
-        currentIndex: state.currentIndex,
-        playlistId: state.playlistId,
-        mode: state.mode,
-        volume: state.volume,
-      }),
+      storage: createCoalescedStorage<PersistedPlayerState>(),
+      partialize: (state): PersistedPlayerState => {
+        const persisted = persistQueue(state.queue, state.currentIndex)
+        return {
+          queue: persisted.queue,
+          currentIndex: persisted.queue.length
+            ? Math.min(
+                persisted.queue.length - 1,
+                Math.max(0, state.currentIndex - persisted.offset),
+              )
+            : 0,
+          playlistId: state.playlistId,
+          mode: state.mode,
+          volume: state.volume,
+        }
+      },
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.lyricLines = readLyrics(state.queue[state.currentIndex])

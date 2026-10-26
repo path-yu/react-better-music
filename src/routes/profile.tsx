@@ -8,6 +8,7 @@ import { useUserStore } from '../store/user'
 import { useUiStore } from '../store/ui'
 import { getImageSize } from '../lib/image'
 import { toast } from '../lib/toast'
+import { useDocumentTitle } from '../lib/title'
 import regionJson from '../data/region.json'
 import type { UserProfile } from '../types'
 
@@ -79,6 +80,7 @@ function ProfilePage() {
   const [city, setCity] = useState('')
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  useDocumentTitle('个人信息')
 
   useEffect(() => {
     if (!isLogin) return

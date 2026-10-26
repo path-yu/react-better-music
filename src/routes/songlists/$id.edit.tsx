@@ -14,6 +14,7 @@ import { useUserStore } from '../../store/user'
 import { useUiStore } from '../../store/ui'
 import { getImageSize } from '../../lib/image'
 import { toast } from '../../lib/toast'
+import { useDocumentTitle } from '../../lib/title'
 import type { Playlist } from '../../types'
 
 export const Route = createFileRoute('/songlists/$id/edit')({
@@ -37,6 +38,7 @@ function EditPlaylistPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  useDocumentTitle(detail ? `编辑「${detail.name}」` : '编辑歌单')
 
   useEffect(() => {
     fetchPlaylistTags()

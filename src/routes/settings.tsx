@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import {
   Download,
@@ -25,6 +25,7 @@ import {
   pickDownloadDir,
 } from '../lib/desktopDownloads'
 import { formatDate, formatDuration } from '../lib/format'
+import { useDocumentTitle } from '../lib/title'
 import { toast } from '../lib/toast'
 
 export const Route = createFileRoute('/settings')({
@@ -38,6 +39,7 @@ function formatBytes(bytes: number) {
 }
 
 function SettingsPage() {
+  useDocumentTitle('设置')
   const cacheBitrate = useSettingsStore((state) => state.cacheBitrate)
   const setCacheBitrate = useSettingsStore((state) => state.setCacheBitrate)
   const [items, setItems] = useState<CachedAudioItem[]>([])
@@ -45,6 +47,7 @@ function SettingsPage() {
   const [selected, setSelected] = useState<number[]>([])
   const [clearing, setClearing] = useState(false)
   const [confirmingClear, setConfirmingClear] = useState(false)
+  const clearConfirmTimer = useRef<number | null>(null)
   const [downloading, setDownloading] = useState(false)
   const [downloadingId, setDownloadingId] = useState<number | null>(null)
   const desktop = isDesktopApp()
@@ -79,6 +82,15 @@ function SettingsPage() {
     void loadCache()
   }, [loadCache])
 
+  useEffect(() => {
+    return () => {
+      if (clearConfirmTimer.current !== null) {
+        window.clearTimeout(clearConfirmTimer.current)
+        clearConfirmTimer.current = null
+      }
+    }
+  }, [])
+
   const totalBytes = useMemo(
     () => items.reduce((total, item) => total + item.size, 0),
     [items],
@@ -99,8 +111,18 @@ function SettingsPage() {
     if (clearing || loading || !items.length) return
     if (!confirmingClear) {
       setConfirmingClear(true)
-      window.setTimeout(() => setConfirmingClear(false), 3000)
+      if (clearConfirmTimer.current !== null) {
+        window.clearTimeout(clearConfirmTimer.current)
+      }
+      clearConfirmTimer.current = window.setTimeout(() => {
+        clearConfirmTimer.current = null
+        setConfirmingClear(false)
+      }, 3000)
       return
+    }
+    if (clearConfirmTimer.current !== null) {
+      window.clearTimeout(clearConfirmTimer.current)
+      clearConfirmTimer.current = null
     }
     setConfirmingClear(false)
     setClearing(true)
@@ -124,7 +146,9 @@ function SettingsPage() {
       toast.success(
         desktop && downloadDir
           ? `已导出 ${count} 首缓存音乐到 ${downloadDir}`
-          : `已导出 ${count} 首缓存音乐，请查看下载目录`,
+          : selected.length > 1
+            ? `已导出 ${count} 首缓存音乐（ZIP 压缩包）`
+            : `已导出 ${count} 首缓存音乐，请查看下载目录`,
       )
     } catch {
       toast.error('导出缓存失败')
@@ -352,7 +376,7 @@ function SettingsPage() {
             <p className="text-[11px] leading-relaxed text-black/30">
               {desktop
                 ? '下载会保存为 .opus 文件到上方设置的下载目录。'
-                : '下载会导出为 .opus 文件；浏览器可能询问是否允许下载多个文件。'}
+                : '下载会导出为 .opus 文件；多选下载会打包为一个 ZIP 压缩包。'}
             </p>
             <Button
               variant={confirmingClear ? 'destructive' : 'secondary'}

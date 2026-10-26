@@ -38,6 +38,9 @@ export function CommentSection({
   const [replyContent, setReplyContent] = useState('')
   const [replySubmitting, setReplySubmitting] = useState(false)
   const requestIdRef = useRef(0)
+  // Offset is tracked separately from the local list length: a posted comment
+  // is prepended locally and must not shift the next server page.
+  const serverCountRef = useRef(0)
   const isLogin = useUserStore((state) => state.isLogin)
 
   const fetcher =
@@ -51,13 +54,16 @@ export function CommentSection({
     const requestId = ++requestIdRef.current
     setLoading(true)
     setData({ total: 0, comments: [] })
+    serverCountRef.current = 0
     fetchPage(0)
       .then((response) => {
         if (requestIdRef.current !== requestId) return
+        const comments = response.comments ?? []
+        serverCountRef.current = comments.length
         setData({
           total: response.total ?? 0,
           hotComments: response.hotComments ?? [],
-          comments: response.comments ?? [],
+          comments,
         })
       })
       .catch(() => {
@@ -73,15 +79,21 @@ export function CommentSection({
     if (loadingMore) return
     setLoadingMore(true)
     try {
-      const offset = data.comments.length
+      const offset = serverCountRef.current
       const last = getArrLast(data.comments)
       const before = data.total > 5000 && last ? last.time : undefined
       const response = await fetchPage(offset, before)
-      setData((prev) => ({
-        ...prev,
-        total: response.total ?? prev.total,
-        comments: [...prev.comments, ...(response.comments ?? [])],
-      }))
+      const fetched = response.comments ?? []
+      serverCountRef.current = offset + fetched.length
+      setData((prev) => {
+        const seen = new Set(prev.comments.map((comment) => comment.commentId))
+        const additions = fetched.filter((comment) => !seen.has(comment.commentId))
+        return {
+          ...prev,
+          total: response.total ?? prev.total,
+          comments: [...prev.comments, ...additions],
+        }
+      })
     } catch {
       toast.error('加载更多评论失败')
     } finally {

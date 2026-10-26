@@ -30,7 +30,11 @@ export function NowPlaying() {
   const playing = usePlayerStore((state) => state.playing)
   const audioReady = usePlayerStore((state) => state.audioReady)
   const sourceReady = usePlayerStore((state) => state.sourceReady)
-  const currentTime = usePlayerStore((state) => state.currentTime)
+  // Playback progress changes several times per second; keep the overlay from
+  // re-rendering while it is closed.
+  const currentTime = usePlayerStore((state) =>
+    state.showNowPlaying ? state.currentTime : 0,
+  )
   const lyricLines = usePlayerStore((state) => state.lyricLines)
   const lyricLoading = usePlayerStore((state) => state.lyricLoading)
   const toggleNowPlaying = usePlayerStore((state) => state.toggleNowPlaying)
@@ -52,6 +56,7 @@ export function NowPlaying() {
   }, [currentSong?.id])
 
   useEffect(() => {
+    if (!show) return
     let active = true
     setDominantColor(null)
     void extractDominantColor(currentSong?.al.picUrl).then((color) => {
@@ -60,7 +65,7 @@ export function NowPlaying() {
     return () => {
       active = false
     }
-  }, [currentSong?.al.picUrl])
+  }, [show, currentSong?.al.picUrl])
 
   useEffect(() => {
     if (!show) return
@@ -141,7 +146,7 @@ export function NowPlaying() {
               className="pressable flex h-8 items-center gap-1.5 rounded-full bg-black/5 px-3 text-[11px] text-black/55 hover:bg-black/10 hover:text-black"
             >
               <ChevronDown className="h-3.5 w-3.5" />
-              收起
+              <span className="max-md:hidden">收起</span>
             </button>
             <button
               type="button"
@@ -227,7 +232,7 @@ export function NowPlaying() {
           </div>
           <div
             className={cn(
-              'relative hidden min-h-0 flex-col rounded-[22px] md:flex',
+              'relative flex min-h-0 flex-col rounded-[22px] max-md:min-h-[420px]',
               panel === 'comments' && 'border border-white/60 bg-white/45 backdrop-blur-xl',
             )}
           >

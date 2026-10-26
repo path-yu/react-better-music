@@ -24,13 +24,15 @@ import { SongTable } from '../../components/songs/SongTable'
 import { PlayAllButton } from '../../components/songs/PlayAllButton'
 import { CommentSection } from '../../components/comments/CommentSection'
 import {
-  fetchAllPlaylistTracks,
   fetchPlaylistDetail,
+  fetchPlaylistTracks,
+  fetchRemainingPlaylistTracks,
   updatePlaylistSubscribe,
 } from '../../api'
 import { useUserStore } from '../../store/user'
 import { useUiStore } from '../../store/ui'
 import { toast } from '../../lib/toast'
+import { useDocumentTitle } from '../../lib/title'
 import {
   formatDate,
   formatNumber,
@@ -53,6 +55,7 @@ function PlaylistDetailPage() {
   const [keyword, setKeyword] = useState('')
   const [descExpanded, setDescExpanded] = useState(false)
   const [subscribing, setSubscribing] = useState(false)
+  useDocumentTitle(detail?.name ?? '歌单')
 
   const isLogin = useUserStore((state) => state.isLogin)
   const profile = useUserStore((state) => state.profile)
@@ -60,27 +63,41 @@ function PlaylistDetailPage() {
   const openLogin = useUiStore((state) => state.openLogin)
 
   useEffect(() => {
-    let cancelled = false
+    const controller = new AbortController()
     setLoading(true)
     setDetail(null)
     setSongs([])
     setKeyword('')
-    fetchPlaylistDetail(id)
-      .then(async (playlist) => {
-        if (cancelled) return
+
+    const load = async () => {
+      try {
+        // Detail and the first track page start together; remaining pages load
+        // in the background with bounded concurrency.
+        const [playlist, first] = await Promise.all([
+          fetchPlaylistDetail(id, controller.signal),
+          fetchPlaylistTracks(id, 300, 0, controller.signal),
+        ])
+        if (controller.signal.aborted) return
         setDetail(playlist)
-        const tracks = await fetchAllPlaylistTracks(id, playlist.trackCount)
-        if (!cancelled) setSongs(tracks)
-      })
-      .catch(() => {
-        if (!cancelled) toast.error('歌单加载失败')
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-    return () => {
-      cancelled = true
+        setSongs(first)
+        setLoading(false)
+        if (playlist.trackCount > first.length) {
+          const rest = await fetchRemainingPlaylistTracks(
+            id,
+            playlist.trackCount,
+            controller.signal,
+          )
+          if (!controller.signal.aborted) setSongs([...first, ...rest])
+        }
+      } catch {
+        if (controller.signal.aborted) return
+        toast.error('歌单加载失败')
+        setLoading(false)
+      }
     }
+    void load()
+
+    return () => controller.abort()
   }, [id])
 
   const filteredSongs = useMemo(() => {

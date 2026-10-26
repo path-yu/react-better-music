@@ -80,36 +80,66 @@ export async function fetchPlaylistTags() {
   return res.tags ?? []
 }
 
-export async function fetchPlaylistDetail(id: string | number) {
-  const res = await get<{ playlist: Playlist }>('/playlist/detail', {
-    id,
-    timestamp: Date.now(),
-  })
+const TRACK_PAGE_SIZE = 300
+const TRACK_FETCH_CONCURRENCY = 3
+
+export async function fetchPlaylistDetail(id: string | number, signal?: AbortSignal) {
+  const res = await get<{ playlist: Playlist }>(
+    '/playlist/detail',
+    { id, timestamp: Date.now() },
+    signal,
+  )
   return normalizePlaylist(res.playlist)
 }
 
-export async function fetchPlaylistTracks(id: string | number, limit = 300, offset = 0) {
+export async function fetchPlaylistTracks(
+  id: string | number,
+  limit = TRACK_PAGE_SIZE,
+  offset = 0,
+  signal?: AbortSignal,
+) {
   const res = await get<{ songs?: Parameters<typeof normalizeSongs>[0] }>(
     '/playlist/track/all',
     { id, limit, offset, timestamp: Date.now() },
+    signal,
   )
   return normalizeSongs(res.songs)
 }
 
-export async function fetchAllPlaylistTracks(id: string | number, trackCount: number) {
-  const first = await fetchPlaylistTracks(id, 300, 0)
-  if (trackCount <= 300) return first
-  const requests: Array<Promise<Song[]>> = []
-  const pages = Math.ceil((trackCount - 300) / 300)
-  for (let index = 1; index <= pages; index += 1) {
-    requests.push(fetchPlaylistTracks(id, 300, index * 300))
+/**
+ * Load the pages after the first one with bounded concurrency. A 5000-track
+ * playlist used to fire 16 parallel requests at once, which the local API
+ * rate-limits.
+ */
+export async function fetchRemainingPlaylistTracks(
+  id: string | number,
+  trackCount: number,
+  signal?: AbortSignal,
+) {
+  const pages = Math.max(
+    0,
+    Math.ceil((trackCount - TRACK_PAGE_SIZE) / TRACK_PAGE_SIZE),
+  )
+  const songs: Song[] = []
+
+  for (let start = 0; start < pages; start += TRACK_FETCH_CONCURRENCY) {
+    if (signal?.aborted) break
+    const batchSize = Math.min(TRACK_FETCH_CONCURRENCY, pages - start)
+    const batch = Array.from({ length: batchSize }, (_, index) =>
+      fetchPlaylistTracks(
+        id,
+        TRACK_PAGE_SIZE,
+        (start + index + 1) * TRACK_PAGE_SIZE,
+        signal,
+      ),
+    )
+    const settled = await Promise.allSettled(batch)
+    settled.forEach((result) => {
+      if (result.status === 'fulfilled') songs.push(...result.value)
+    })
   }
-  const rest = await Promise.allSettled(requests)
-  const merged = [...first]
-  rest.forEach((item) => {
-    if (item.status === 'fulfilled') merged.push(...item.value)
-  })
-  return merged
+
+  return songs
 }
 
 export async function updatePlaylistInfo(params: {
@@ -320,13 +350,13 @@ export async function fetchHotSearchList() {
   return res.data ?? []
 }
 
-export async function fetchSearchSuggest(keywords: string) {
+export async function fetchSearchSuggest(keywords: string, signal?: AbortSignal) {
   const res = await get<{
     result?: {
       songs?: Parameters<typeof normalizeSongs>[0]
       playlists?: Playlist[]
     }
-  }>('/search/suggest', { keywords })
+  }>('/search/suggest', { keywords }, signal)
   return {
     songs: normalizeSongs(res.result?.songs).slice(0, 6),
     playlists: (res.result?.playlists ?? []).slice(0, 4).map(normalizePlaylist),
@@ -338,13 +368,13 @@ export async function searchAll(params: {
   type: '1' | '100' | '1000'
   limit?: number
   offset?: number
-}) {
+}, signal?: AbortSignal) {
   const res = await get<{ result?: SearchResult }>('/cloudsearch', {
     ...params,
     limit: params.limit ?? 30,
     offset: params.offset ?? 0,
     timestamp: Date.now(),
-  })
+  }, signal)
   const result = res.result ?? {}
   return {
     ...result,

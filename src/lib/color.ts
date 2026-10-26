@@ -3,6 +3,25 @@ import { apiUrl } from './http'
 const colorCache = new Map<string, string>()
 
 function toRgb(value: string): [number, number, number] | null {
+  const hex = value.trim().match(/^#([\da-f]{3,8})$/i)
+  if (hex) {
+    const digits = hex[1]
+    if (digits.length === 3 || digits.length === 4) {
+      return [
+        parseInt(digits[0] + digits[0], 16),
+        parseInt(digits[1] + digits[1], 16),
+        parseInt(digits[2] + digits[2], 16),
+      ]
+    }
+    if (digits.length === 6 || digits.length === 8) {
+      return [
+        parseInt(digits.slice(0, 2), 16),
+        parseInt(digits.slice(2, 4), 16),
+        parseInt(digits.slice(4, 6), 16),
+      ]
+    }
+    return null
+  }
   const match = value.match(/rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/)
   if (!match) return null
   return [Number(match[1]), Number(match[2]), Number(match[3])]

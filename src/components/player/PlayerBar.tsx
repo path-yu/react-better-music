@@ -28,7 +28,7 @@ import { useUserStore } from '../../store/user'
 import { PLAY_QUALITY_OPTIONS, useSettingsStore } from '../../store/settings'
 import { cn, formatArtists, formatDuration } from '../../lib/format'
 import { registerAudio, setAudioVolume } from '../../lib/audio'
-import { cacheSong } from '../../lib/songCache'
+import { cacheSong, cacheSongFromBlob } from '../../lib/songCache'
 import { toast } from '../../lib/toast'
 import type { PlayLevel } from '../../types'
 
@@ -37,6 +37,7 @@ export function PlayerBar() {
   const retriedRef = useRef<number | null>(null)
   const lastPlayTokenRef = useRef<number | null>(null)
   const switchingRef = useRef(false)
+  const trialNotifiedRef = useRef(false)
 
   const queue = usePlayerStore((state) => state.queue)
   const currentIndex = usePlayerStore((state) => state.currentIndex)
@@ -51,6 +52,7 @@ export function PlayerBar() {
   const sourceReady = usePlayerStore((state) => state.sourceReady)
   const audioReady = usePlayerStore((state) => state.audioReady)
   const audioFromCache = usePlayerStore((state) => state.audioFromCache)
+  const audioBlob = usePlayerStore((state) => state.audioBlob)
   const heartMode = usePlayerStore((state) => state.heartMode)
   const heartLoading = usePlayerStore((state) => state.heartLoading)
 
@@ -73,6 +75,9 @@ export function PlayerBar() {
   const playLevel = useSettingsStore((state) => state.playLevel)
   const setPlayLevel = useSettingsStore((state) => state.setPlayLevel)
   const [qualityOpen, setQualityOpen] = useState(false)
+  // Real duration reported by the media element; trial clips are shorter than
+  // the catalogue duration in song.dt.
+  const [mediaDuration, setMediaDuration] = useState(0)
 
   const likedIds = useUserStore((state) => state.likedIds)
   const likeSong = useUserStore((state) => state.likeSong)
@@ -101,6 +106,7 @@ export function PlayerBar() {
   useEffect(() => {
     if (lastPlayTokenRef.current === playToken) return
     lastPlayTokenRef.current = playToken
+    trialNotifiedRef.current = false
     const audio = audioRef.current
     if (!audio) return
     switchingRef.current = true
@@ -131,6 +137,7 @@ export function PlayerBar() {
       setCurrentTime(0)
       setBuffered(0)
       setAudioReady(false)
+      setMediaDuration(0)
       audio.src = audioUrl
       audio.load()
       retriedRef.current = null
@@ -158,21 +165,28 @@ export function PlayerBar() {
     const handler = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
       const tag = target?.tagName
+      // Text fields keep their native shortcuts.
       if (
         tag === 'INPUT' ||
         tag === 'TEXTAREA' ||
         tag === 'SELECT' ||
-        target?.isContentEditable ||
-        target?.closest('[role="slider"]')
+        target?.isContentEditable
       ) {
         return
       }
+      const interactive = Boolean(
+        target?.closest('button, a, [role="button"], [role="slider"]'),
+      )
       if (event.code === 'Space') {
+        // Space activates a focused button/link; only control playback when
+        // the page itself has focus.
+        if (interactive) return
         event.preventDefault()
         void usePlayerStore.getState().togglePlay()
         return
       }
-      if (event.code === 'ArrowUp' || event.code === 'ArrowDown') {
+      // Volume uses Alt + arrows so plain arrow keys still scroll the page.
+      if (event.altKey && (event.code === 'ArrowUp' || event.code === 'ArrowDown')) {
         event.preventDefault()
         const state = usePlayerStore.getState()
         const step = event.shiftKey ? 1 : 5
@@ -189,23 +203,28 @@ export function PlayerBar() {
   // Downloading the whole file and loading ffmpeg.wasm immediately competes
   // with the first audio buffer and makes the initial playback noticeably slow.
   useEffect(() => {
-    if (!playing || !audioReady || !currentSong?.url || audioFromCache) return
+    if (!playing || !audioReady || audioFromCache || !currentSong) return
+    if (!audioBlob && !currentSong.url) return
     const songId = currentSong.id
     const timer = window.setTimeout(() => {
       const state = usePlayerStore.getState()
       const active = state.queue[state.currentIndex]
-      if (!active || active.id !== songId || !state.playing || !active.url) return
-      if (state.audioFromCache) return
-      cacheSong({
+      if (!active || active.id !== songId || !state.playing || state.audioFromCache) return
+      const meta = {
         id: active.id,
         name: active.name,
-        url: active.url,
+        url: active.url ?? '',
         artists: formatArtists(active.ar),
         duration: active.dt,
-      })
+      }
+      if (audioBlob) {
+        cacheSongFromBlob(meta, audioBlob)
+      } else if (active.url) {
+        cacheSong(meta)
+      }
     }, 10000)
     return () => window.clearTimeout(timer)
-  }, [playing, audioReady, currentSong?.id, currentSong?.url, audioFromCache])
+  }, [playing, audioReady, currentSong?.id, currentSong?.url, audioFromCache, audioBlob])
 
   if (!queue.length || !currentSong) {
     return (
@@ -215,15 +234,20 @@ export function PlayerBar() {
     )
   }
 
-  const duration = currentSong.dt || 0
+  const sourceMatches =
+    Boolean(audioUrl) && audioRef.current?.getAttribute('src') === audioUrl
+  // A trial clip is limited to freeTrialInfo.end seconds even when the media
+  // file itself is longer; otherwise prefer the loaded media duration.
+  const trialDuration =
+    currentSong.trialEnd && currentSong.trialEnd > 0 ? currentSong.trialEnd * 1000 : 0
+  const duration =
+    trialDuration || (sourceMatches ? mediaDuration : 0) || currentSong.dt || 0
   const loadingSource = playing && !sourceReady
   const buffering = playing && sourceReady && !audioReady
   const busy = loadingSource || buffering
   const percent = duration ? Math.min(100, (currentTime * 1000 * 100) / duration) : 0
   // While the audio element still points at the previous track, force the
   // progress UI to zero so stale timeupdate events can never leak through.
-  const sourceMatches =
-    Boolean(audioUrl) && audioRef.current?.getAttribute('src') === audioUrl
   const displayTime = sourceMatches ? currentTime : 0
   const displayPercent = sourceMatches ? percent : 0
   const displayBuffered = sourceMatches ? buffered : 0
@@ -269,7 +293,7 @@ export function PlayerBar() {
     )
 
   return (
-    <div className="player-glass relative z-30 grid h-[76px] grid-cols-[minmax(170px,1fr)_minmax(300px,1.5fr)_minmax(150px,1fr)] items-center gap-4 px-4">
+    <div className="player-glass relative z-30 grid h-[76px] grid-cols-[minmax(170px,1fr)_minmax(300px,1.5fr)_minmax(150px,1fr)] items-center gap-4 px-4 max-md:grid-cols-[minmax(0,1fr)_auto] max-md:gap-2 max-md:px-3">
       <div className="flex min-w-0 items-center gap-3">
         <button
           type="button"
@@ -298,6 +322,11 @@ export function PlayerBar() {
             <span className="min-w-0 truncate text-[12.5px] font-medium text-black/80 hover:text-[#0066cc]">
               {currentSong.name}
             </span>
+            {currentSong.trialEnd ? (
+              <span className="shrink-0 rounded-[3px] bg-[#ff9500]/12 px-1 text-[9px] text-[#b36b00]">
+                试听
+              </span>
+            ) : null}
             <button
               type="button"
               aria-label={liked ? '取消喜欢' : '喜欢'}
@@ -305,7 +334,7 @@ export function PlayerBar() {
                 event.stopPropagation()
                 void likeSong(currentSong.id, !liked)
               }}
-              className="pressable shrink-0"
+              className="pressable shrink-0 max-md:hidden"
             >
               <Heart
                 className={cn(
@@ -328,8 +357,8 @@ export function PlayerBar() {
         </div>
       </div>
 
-      <div className="flex flex-col items-center">
-        <div className="flex items-center gap-5">
+      <div className="flex flex-col items-center max-md:items-end">
+        <div className="flex items-center gap-5 max-md:gap-3">
           <button
             type="button"
             title={heartMode ? '关闭心动模式' : '心动模式'}
@@ -338,7 +367,7 @@ export function PlayerBar() {
             disabled={heartLoading}
             onClick={() => void toggleHeartMode()}
             className={cn(
-              'pressable transition-colors disabled:opacity-50',
+              'pressable transition-colors disabled:opacity-50 max-md:hidden',
               heartMode ? 'text-[#ff2d55]' : 'text-black/35 hover:text-black/70',
             )}
           >
@@ -396,17 +425,17 @@ export function PlayerBar() {
           <button
             type="button"
             onClick={() => toggleQueue()}
-            className="pressable text-black/35 transition-colors hover:text-black/70"
+            className="pressable text-black/35 transition-colors hover:text-black/70 max-md:hidden"
             title="播放列表"
           >
             <ListMusic className="h-[15px] w-[15px]" />
           </button>
         </div>
 
-        <div className="mt-1.5 flex w-full items-center gap-2.5">
+        <div className="mt-1.5 flex w-full items-center gap-2.5 max-md:absolute max-md:inset-x-0 max-md:top-0 max-md:mt-0 max-md:px-3">
           <span
             data-testid="elapsed-time"
-            className="w-9 shrink-0 text-right text-[10px] tabular-nums text-black/35"
+            className="w-9 shrink-0 text-right text-[10px] tabular-nums text-black/35 max-md:hidden"
           >
             {formatDuration(displayTime * 1000)}
           </span>
@@ -416,13 +445,13 @@ export function PlayerBar() {
             buffered={displayBuffered}
             onChange={handleSeek}
           />
-          <span className="w-9 shrink-0 text-[10px] tabular-nums text-black/35">
+          <span className="w-9 shrink-0 text-[10px] tabular-nums text-black/35 max-md:hidden">
             {formatDuration(duration)}
           </span>
         </div>
       </div>
 
-      <div className="flex items-center justify-end gap-2">
+      <div className="flex items-center justify-end gap-2 max-md:hidden">
         <Popover open={qualityOpen} onOpenChange={setQualityOpen}>
           <PopoverTrigger asChild>
             <button
@@ -508,6 +537,12 @@ export function PlayerBar() {
       <audio
         ref={audioRef}
         preload="auto"
+        onLoadedMetadata={(event) => {
+          const audio = event.currentTarget
+          if (!audioUrl || audio.getAttribute('src') !== audioUrl) return
+          const value = audio.duration
+          setMediaDuration(Number.isFinite(value) && value > 0 ? value * 1000 : 0)
+        }}
         onLoadedData={() => {
           const audio = audioRef.current
           if (audio && audioUrl && audio.getAttribute('src') === audioUrl) {
@@ -551,6 +586,16 @@ export function PlayerBar() {
           if (audioUrl && audio.getAttribute('src') !== audioUrl) return
           setCurrentTime(audio.currentTime)
           updateBuffered()
+
+          const trialEnd = currentSong.trialEnd
+          if (trialEnd && trialEnd > 0 && audio.currentTime >= trialEnd) {
+            audio.pause()
+            usePlayerStore.getState().setPlaying(false)
+            if (!trialNotifiedRef.current) {
+              trialNotifiedRef.current = true
+              toast.warning('试听结束，登录或开通会员可播放完整版')
+            }
+          }
         }}
         onProgress={updateBuffered}
         onEnded={() => {

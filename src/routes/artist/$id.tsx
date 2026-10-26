@@ -15,6 +15,7 @@ import {
   fetchSimilarArtists,
 } from '../../api'
 import { cn, formatDate, formatNumber } from '../../lib/format'
+import { useDocumentTitle } from '../../lib/title'
 import { toast } from '../../lib/toast'
 import type { ArtistAlbum, ArtistProfile, ArtistSummary, Mv, Song } from '../../types'
 
@@ -33,6 +34,7 @@ function ArtistPage() {
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('songs')
   const [descExpanded, setDescExpanded] = useState(false)
+  useDocumentTitle(profile?.name ?? '歌手')
 
   useEffect(() => {
     let cancelled = false
@@ -44,23 +46,24 @@ function ArtistPage() {
     setSimilar([])
     setDescExpanded(false)
 
-    Promise.all([
+    Promise.allSettled([
       fetchArtistProfile(id),
       fetchArtistTopSongs(id),
       fetchArtistAlbums(id, 30),
       fetchArtistMvs(id, 12),
       fetchSimilarArtists(id),
     ])
-      .then(([artist, topSongs, artistAlbums, artistMvs, similarArtists]) => {
+      .then((results) => {
         if (cancelled) return
-        setProfile(artist)
-        setSongs(topSongs)
-        setAlbums(artistAlbums)
-        setMvs(artistMvs)
-        setSimilar(similarArtists)
-      })
-      .catch(() => {
-        if (!cancelled) toast.error('歌手信息加载失败')
+        const [artistResult, songsResult, albumsResult, mvsResult, similarResult] = results
+        if (artistResult.status === 'fulfilled') setProfile(artistResult.value)
+        if (songsResult.status === 'fulfilled') setSongs(songsResult.value)
+        if (albumsResult.status === 'fulfilled') setAlbums(albumsResult.value)
+        if (mvsResult.status === 'fulfilled') setMvs(mvsResult.value)
+        if (similarResult.status === 'fulfilled') setSimilar(similarResult.value)
+        if (results.some((result) => result.status === 'rejected')) {
+          toast.error('部分歌手信息加载失败')
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false)

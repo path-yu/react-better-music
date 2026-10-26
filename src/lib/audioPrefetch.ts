@@ -3,12 +3,15 @@ import { apiUrl } from './http'
 interface PrefetchEntry {
   songId: number
   url: string
+  blob: Blob
   trialEnd: number | null
   createdAt: number
 }
 
-/** Neighbours only: next + previous (plus one in-flight transition). */
+/** Neighbours only: the next track plus one in-flight transition. */
 const MAX_ENTRIES = 3
+/** Guard against holding very large lossless files in memory. */
+const MAX_PREFETCH_BYTES = 32 * 1024 * 1024
 
 const entries = new Map<number, PrefetchEntry>()
 const controllers = new Map<number, AbortController>()
@@ -86,12 +89,17 @@ export function prefetchAudio(
         signal: controller.signal,
       })
       if (!response.ok) return false
+      const length = Number(response.headers.get('content-length') ?? 0)
+      if (length > MAX_PREFETCH_BYTES) return false
       const blob = await response.blob()
       // The neighbour may have been dropped while the response was streaming.
-      if (controller.signal.aborted || !blob.size) return false
+      if (controller.signal.aborted || !blob.size || blob.size > MAX_PREFETCH_BYTES) {
+        return false
+      }
       entries.set(songId, {
         songId,
         url: URL.createObjectURL(blob),
+        blob,
         trialEnd,
         createdAt: Date.now(),
       })

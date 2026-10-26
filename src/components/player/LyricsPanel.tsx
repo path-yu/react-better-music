@@ -35,17 +35,17 @@ function wordStyle(
   }
 }
 
-export function LyricsPanel({
-  lines,
-  activeIndex,
+/**
+ * Word-by-word highlighting is the only lyric content that needs a high refresh
+ * rate; isolating it keeps the rest of the list from re-rendering at 30fps.
+ */
+function ActiveWords({
+  words,
   currentTimeMs,
-  onSeek,
-  className,
-  compact,
-}: LyricsPanelProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const lineRefs = useRef<Record<number, HTMLButtonElement | null>>({})
-  const lastActiveRef = useRef(-1)
+}: {
+  words: LyricWord[]
+  currentTimeMs: number
+}) {
   const [clockMs, setClockMs] = useState(currentTimeMs)
 
   useEffect(() => {
@@ -68,6 +68,33 @@ export function LyricsPanel({
     if (audio && !audio.paused) return
     setClockMs(currentTimeMs)
   }, [currentTimeMs])
+
+  return (
+    <>
+      {words.map((word, index) => (
+        <span
+          key={`${index}-${word.startTime}`}
+          className="lyric-word"
+          style={wordStyle(word, clockMs, true)}
+        >
+          {word.content}
+        </span>
+      ))}
+    </>
+  )
+}
+
+export function LyricsPanel({
+  lines,
+  activeIndex,
+  currentTimeMs,
+  onSeek,
+  className,
+  compact,
+}: LyricsPanelProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const lineRefs = useRef<Record<number, HTMLButtonElement | null>>({})
+  const lastActiveRef = useRef(-1)
 
   useEffect(() => {
     const container = containerRef.current
@@ -130,17 +157,11 @@ export function LyricsPanel({
                   compact ? 'text-[12px]' : 'text-[14px]',
                 )}
               >
-                {active && hasWords
-                  ? line.words!.map((word, wordIndex) => (
-                      <span
-                        key={`${wordIndex}-${word.startTime}`}
-                        className="lyric-word"
-                        style={wordStyle(word, clockMs, true)}
-                      >
-                        {word.content}
-                      </span>
-                    ))
-                  : line.content}
+                {active && hasWords ? (
+                  <ActiveWords words={line.words!} currentTimeMs={currentTimeMs} />
+                ) : (
+                  line.content
+                )}
               </span>
               {line.translate ? (
                 <span

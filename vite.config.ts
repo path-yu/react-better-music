@@ -26,12 +26,13 @@ export default defineConfig(({ mode }) => ({
   },
   server: {
     port: 5173,
-    host: true,
+    // Keep the API proxy reachable only from this machine.
+    host: 'localhost',
     proxy,
   },
   preview: {
     port: 4173,
-    host: true,
+    host: 'localhost',
     proxy,
   },
   plugins: [

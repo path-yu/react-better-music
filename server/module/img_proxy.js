@@ -5,7 +5,8 @@ const axios = require('axios')
 const ALLOWED_HOST = /^https?:\/\/[^/]*music\.126\.net\//
 
 module.exports = async (query) => {
-  const raw = typeof query.url === 'string' ? decodeURIComponent(query.url) : ''
+  // Express has already decoded the query value.
+  const raw = typeof query.url === 'string' ? query.url : ''
   if (!raw || !ALLOWED_HOST.test(raw)) {
     throw {
       status: 400,

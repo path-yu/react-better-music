@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Heart, Pause, Play, Volume2 } from 'lucide-react'
 import { ImageWithFallback } from '../common/ImageWithFallback'
@@ -31,13 +31,13 @@ export function SongTable({
   className,
   showHeader = true,
 }: SongTableProps) {
-  const [hovered, setHovered] = useState<number | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const initQueue = usePlayerStore((state) => state.initQueue)
   const togglePlay = usePlayerStore((state) => state.togglePlay)
   const currentSong = usePlayerStore((state) => state.queue[state.currentIndex])
   const playing = usePlayerStore((state) => state.playing)
   const likedIds = useUserStore((state) => state.likedIds)
+  const likedSet = useMemo(() => new Set(likedIds), [likedIds])
   const likeSong = useUserStore((state) => state.likeSong)
   const isLogin = useUserStore((state) => state.isLogin)
 
@@ -85,46 +85,47 @@ export function SongTable({
 
   const renderRow = (song: Song, index: number, virtual = false) => {
     const active = currentSong?.id === song.id
-    const liked = likedIds.includes(song.id)
+    const liked = likedSet.has(song.id)
     return (
       <div
         key={`${song.id}-${index}`}
-        onDoubleClick={() => handlePlay(index)}
-        onMouseEnter={() => setHovered(index)}
-        onMouseLeave={() => setHovered(null)}
+        onClick={(event) => {
+          // Nested buttons (play / like / artist links) handle their own clicks.
+          if ((event.target as HTMLElement).closest('button, a')) return
+          handlePlay(index)
+        }}
         className={cn(
           gridClass,
-          'rounded-[10px] px-3 py-2 transition-colors',
+          'group rounded-[10px] px-3 py-2 transition-colors',
           virtual && 'h-full',
-          active ? 'bg-[#0066cc]/6' : hovered === index ? 'bg-black/4' : '',
+          active ? 'bg-[#0066cc]/6' : 'hover:bg-black/4',
         )}
       >
-        <div className="flex h-6 items-center justify-center">
-          {hovered === index ? (
-            <button
-              type="button"
-              aria-label={active && playing ? '暂停' : '播放'}
-              onClick={() => handlePlay(index)}
-              className="pressable text-[#0066cc]"
-            >
-              {active && playing ? (
-                <Pause className="h-3.5 w-3.5 fill-current" />
-              ) : (
-                <Play className="h-3.5 w-3.5 fill-current" />
-              )}
-            </button>
-          ) : active ? (
+        <div className="relative flex h-6 items-center justify-center">
+          {active ? (
             <Volume2
               className={cn(
-                'h-3.5 w-3.5 text-[#0066cc]',
+                'h-3.5 w-3.5 text-[#0066cc] transition-opacity group-hover:opacity-0',
                 playing ? 'animate-pulse' : 'opacity-60',
               )}
             />
           ) : (
-            <span className="text-[10.5px] tabular-nums text-black/25">
+            <span className="text-[10.5px] tabular-nums text-black/25 transition-opacity group-hover:opacity-0">
               {index < 9 ? `0${index + 1}` : index + 1}
             </span>
           )}
+          <button
+            type="button"
+            aria-label={active && playing ? '暂停' : '播放'}
+            onClick={() => handlePlay(index)}
+            className="pressable absolute inset-0 flex items-center justify-center text-[#0066cc] opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
+          >
+            {active && playing ? (
+              <Pause className="h-3.5 w-3.5 fill-current" />
+            ) : (
+              <Play className="h-3.5 w-3.5 fill-current" />
+            )}
+          </button>
         </div>
 
         <div className="flex min-w-0 items-center gap-2.5">
@@ -172,8 +173,8 @@ export function SongTable({
               void likeSong(song.id, !liked)
             }}
             className={cn(
-              'pressable shrink-0 transition-opacity',
-              liked ? 'opacity-100' : hovered === index ? 'opacity-100' : 'opacity-0',
+              'pressable shrink-0 transition-opacity focus-visible:opacity-100',
+              liked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
             )}
           >
             <Heart

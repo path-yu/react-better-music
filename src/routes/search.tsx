@@ -9,6 +9,7 @@ import { SongTable } from '../components/songs/SongTable'
 import { PlayAllButton } from '../components/songs/PlayAllButton'
 import { searchAll } from '../api'
 import { formatNumber } from '../lib/format'
+import { useDocumentTitle } from '../lib/title'
 import { toast } from '../lib/toast'
 import type { ArtistSummary, Playlist, Song } from '../types'
 
@@ -26,6 +27,7 @@ const ARTIST_PAGE_SIZE = 20
 function SearchPage() {
   const { keyword } = Route.useSearch()
   const navigate = useNavigate()
+  useDocumentTitle(keyword.trim() ? `搜索「${keyword.trim()}」` : '搜索')
   const [tab, setTab] = useState('songs')
   const [page, setPage] = useState(1)
   const [songs, setSongs] = useState<Song[]>([])
@@ -48,7 +50,7 @@ function SearchPage() {
 
   useEffect(() => {
     if (!keyword.trim()) return
-    let cancelled = false
+    const controller = new AbortController()
     setLoading(true)
     const pageSize =
       tab === 'songs'
@@ -56,14 +58,17 @@ function SearchPage() {
         : tab === 'artists'
           ? ARTIST_PAGE_SIZE
           : PLAYLIST_PAGE_SIZE
-    searchAll({
-      keywords: keyword,
-      type: tab === 'songs' ? '1' : tab === 'artists' ? '100' : '1000',
-      limit: pageSize,
-      offset: (page - 1) * pageSize,
-    })
+    searchAll(
+      {
+        keywords: keyword,
+        type: tab === 'songs' ? '1' : tab === 'artists' ? '100' : '1000',
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
+      },
+      controller.signal,
+    )
       .then((result) => {
-        if (cancelled) return
+        if (controller.signal.aborted) return
         if (tab === 'songs') {
           setSongs(result.songs ?? [])
           setSongTotal(result.songCount ?? 0)
@@ -76,14 +81,12 @@ function SearchPage() {
         }
       })
       .catch(() => {
-        if (!cancelled) toast.error('搜索失败')
+        if (!controller.signal.aborted) toast.error('搜索失败')
       })
       .finally(() => {
-        if (!cancelled) setLoading(false)
+        if (!controller.signal.aborted) setLoading(false)
       })
-    return () => {
-      cancelled = true
-    }
+    return () => controller.abort()
   }, [keyword, tab, page])
 
   const pageSize =

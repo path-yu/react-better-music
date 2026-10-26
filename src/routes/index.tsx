@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
   ChevronLeft,
@@ -21,43 +21,93 @@ import {
 } from '../api'
 import { usePlayerStore } from '../store/player'
 import { formatDuration, cn } from '../lib/format'
+import { useDocumentTitle } from '../lib/title'
 import type { Banner, Mv, Playlist, Song } from '../types'
 
 export const Route = createFileRoute('/')({
   component: DiscoveryPage,
 })
 
+/** Loads one home section and exposes an error flag plus a retry action. */
+function useSection<T>(load: () => Promise<T>, initial: T) {
+  const [data, setData] = useState<T>(initial)
+  const [loading, setLoading] = useState(true)
+  const [failed, setFailed] = useState(false)
+  const [attempt, setAttempt] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setFailed(false)
+    load()
+      .then((value) => {
+        if (!cancelled) setData(value)
+      })
+      .catch(() => {
+        if (!cancelled) setFailed(true)
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [load, attempt])
+
+  const retry = useCallback(() => setAttempt((value) => value + 1), [])
+
+  return { data, loading, failed, retry }
+}
+
+function SectionError({ title, onRetry }: { title: string; onRetry: () => void }) {
+  return (
+    <EmptyState
+      title={title}
+      description="请检查网络或本地 API 服务"
+      action={
+        <Button
+          variant="secondary"
+          size="sm"
+          className="rounded-full text-[11.5px]"
+          onClick={onRetry}
+        >
+          重试
+        </Button>
+      }
+    />
+  )
+}
+
 function DiscoveryPage() {
   const navigate = useNavigate()
-  const [banners, setBanners] = useState<Banner[]>([])
-  const [bannerLoading, setBannerLoading] = useState(true)
-  const [playlists, setPlaylists] = useState<Playlist[]>([])
-  const [playlistLoading, setPlaylistLoading] = useState(true)
-  const [songs, setSongs] = useState<Song[]>([])
-  const [songLoading, setSongLoading] = useState(true)
-  const [mvs, setMvs] = useState<Mv[]>([])
-  const [mvLoading, setMvLoading] = useState(true)
+  useDocumentTitle('发现音乐')
   const [index, setIndex] = useState(0)
   const [hovered, setHovered] = useState(false)
 
-  useEffect(() => {
-    fetchBanners()
-      .then(setBanners)
-      .catch(() => undefined)
-      .finally(() => setBannerLoading(false))
-    fetchPersonalized(15)
-      .then(setPlaylists)
-      .catch(() => undefined)
-      .finally(() => setPlaylistLoading(false))
-    fetchDailyRecommendSongs()
-      .then(setSongs)
-      .catch(() => undefined)
-      .finally(() => setSongLoading(false))
-    fetchRecommendMv(4)
-      .then(setMvs)
-      .catch(() => undefined)
-      .finally(() => setMvLoading(false))
-  }, [])
+  const {
+    data: banners,
+    loading: bannerLoading,
+    failed: bannerFailed,
+    retry: retryBanners,
+  } = useSection(fetchBanners, [] as Banner[])
+  const {
+    data: playlists,
+    loading: playlistLoading,
+    failed: playlistFailed,
+    retry: retryPlaylists,
+  } = useSection(fetchPersonalized, [] as Playlist[])
+  const {
+    data: songs,
+    loading: songLoading,
+    failed: songFailed,
+    retry: retrySongs,
+  } = useSection(fetchDailyRecommendSongs, [] as Song[])
+  const {
+    data: mvs,
+    loading: mvLoading,
+    failed: mvFailed,
+    retry: retryMvs,
+  } = useSection(fetchRecommendMv, [] as Mv[])
 
   useEffect(() => {
     if (hovered || banners.length <= 1) return
@@ -91,6 +141,8 @@ function DiscoveryPage() {
       >
         {bannerLoading ? (
           <Skeleton className="h-[280px] w-full rounded-[22px]" />
+        ) : bannerFailed ? (
+          <SectionError title="轮播加载失败" onRetry={retryBanners} />
         ) : currentBanner ? (
           <div
             role="button"
@@ -169,12 +221,16 @@ function DiscoveryPage() {
               </div>
             ))}
           </div>
-        ) : (
+        ) : playlistFailed ? (
+          <SectionError title="推荐歌单加载失败" onRetry={retryPlaylists} />
+        ) : playlists.length ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {playlists.map((playlist) => (
               <PlaylistCard key={playlist.id} playlist={playlist} />
             ))}
           </div>
+        ) : (
+          <EmptyState title="暂无推荐歌单" />
         )}
         <div className="mt-4 flex justify-end">
           <Button
@@ -203,6 +259,8 @@ function DiscoveryPage() {
               <Skeleton key={item} className="h-[56px] w-full rounded-[12px]" />
             ))}
           </div>
+        ) : songFailed ? (
+          <SectionError title="每日推荐加载失败" onRetry={retrySongs} />
         ) : (
           <DailySongGrid songs={songs} />
         )}
@@ -219,12 +277,16 @@ function DiscoveryPage() {
               </div>
             ))}
           </div>
-        ) : (
+        ) : mvFailed ? (
+          <SectionError title="MV 推荐加载失败" onRetry={retryMvs} />
+        ) : mvs.length ? (
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             {mvs.map((mv) => (
               <MvCard key={mv.id} mv={mv} />
             ))}
           </div>
+        ) : (
+          <EmptyState title="暂无 MV 推荐" />
         )}
         <div className="mt-4 flex justify-end">
           <Button

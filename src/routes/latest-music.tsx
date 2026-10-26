@@ -5,6 +5,7 @@ import { SongTable } from '../components/songs/SongTable'
 import { PlayAllButton } from '../components/songs/PlayAllButton'
 import { fetchNewSongs } from '../api'
 import { cn } from '../lib/format'
+import { useDocumentTitle } from '../lib/title'
 import { toast } from '../lib/toast'
 import type { Song } from '../types'
 
@@ -23,6 +24,7 @@ const TYPES = [
 type NewSongType = (typeof TYPES)[number]['value']
 
 function LatestMusicPage() {
+  useDocumentTitle('最新音乐')
   const [type, setType] = useState<NewSongType>(0)
   const [songs, setSongs] = useState<Song[]>([])
   const [loading, setLoading] = useState(true)
