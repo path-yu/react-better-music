@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import {
   AudioLines,
   Check,
+  ChevronDown,
   ChevronUp,
   Heart,
   ListMusic,
@@ -320,7 +321,11 @@ export function PlayerBar() {
             instant
           />
           <span className="absolute inset-0 flex items-center justify-center rounded-[8px] bg-black/35 text-white opacity-0 transition-opacity group-hover:opacity-100">
-            <ChevronUp className="h-5 w-5" />
+            {showNowPlaying ? (
+              <ChevronDown className="h-5 w-5" />
+            ) : (
+              <ChevronUp className="h-5 w-5" />
+            )}
           </span>
         </button>
 
@@ -358,7 +363,7 @@ export function PlayerBar() {
             >
               <Heart
                 className={cn(
-                  'h-[13px] w-[13px] transition-colors',
+                  'h-4 w-4 transition-colors',
                   liked ? 'fill-[#ff2d55] text-[#ff2d55]' : 'text-black/30 hover:text-black/60',
                 )}
               />
@@ -548,9 +553,13 @@ export function PlayerBar() {
           type="button"
           onClick={() => toggleNowPlaying()}
           className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/45 transition-colors hover:bg-black/5 hover:text-black/75"
-          aria-label="展开播放页"
+          aria-label={showNowPlaying ? '收起播放页' : '展开播放页'}
         >
-          <ChevronUp className="h-[16px] w-[16px]" />
+          {showNowPlaying ? (
+            <ChevronDown className="h-[16px] w-[16px]" />
+          ) : (
+            <ChevronUp className="h-[16px] w-[16px]" />
+          )}
         </button>
       </div>
 

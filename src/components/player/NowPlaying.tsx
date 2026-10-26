@@ -87,7 +87,6 @@ export function NowPlaying() {
   if (!show || !currentSong) return null
 
   const liked = likedIds.includes(currentSong.id)
-  const discSpinning = playing && audioReady
   const loadingSource = playing && !sourceReady
   const buffering = playing && sourceReady && !audioReady
   const busy = loadingSource || buffering
@@ -118,7 +117,7 @@ export function NowPlaying() {
       <div className="relative flex h-full flex-col pb-[76px]">
         <div className="flex h-[58px] flex-none items-center justify-between px-6">
         
-          <div className="flex items-center gap-2">
+          {/* <div className="flex items-center gap-2">
             <button
               type="button"
               aria-label="收起播放页"
@@ -149,7 +148,7 @@ export function NowPlaying() {
             >
               <ListMusic className="h-4 w-4" />
             </button>
-          </div>
+          </div> */}
         </div>
 
         <div className="grid flex-1 grid-cols-1 gap-4 overflow-y-auto px-6 pb-5 md:grid-cols-[minmax(220px,0.9fr)_minmax(250px,1.1fr)] xl:gap-6 xl:px-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -180,26 +179,24 @@ export function NowPlaying() {
               </div>
             </div>
 
-            <div className="relative mt-5 flex now-disc items-center justify-center">
-              <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.9),rgba(0,0,0,0.08))] shadow-[0_24px_50px_-22px_rgba(0,0,0,0.45)]" />
-              <div className="absolute inset-[7%] rounded-full border border-white/50 bg-[conic-gradient(from_0deg,rgba(0,0,0,0.10),rgba(0,0,0,0.03),rgba(0,0,0,0.12),rgba(0,0,0,0.03),rgba(0,0,0,0.10))]" />
-              <div className="absolute inset-[13%] rounded-full bg-[repeating-radial-gradient(circle,rgba(0,0,0,0.18),rgba(0,0,0,0.18)_1px,transparent_1px,transparent_5px)] opacity-40" />
-              <div
-                data-disc-spinning={discSpinning}
-                className={cn(
-                  'relative h-[62%] w-[62%] overflow-hidden rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.35)] disc-spin',
-                  !discSpinning && 'disc-paused',
-                )}
-              >
-                <ImageWithFallback
-                  src={currentSong.al.picUrl}
-                  alt={currentSong.name}
-                  rounded="rounded-full"
-                  className="h-full w-full"
-                  resize="800y800"
-                />
-                <div className="absolute inset-0 rounded-full border border-white/15" />
-                <div className="disc-spindle absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/80 shadow-inner" />
+            <div className="relative mt-6 flex items-center justify-center">
+              <div className="now-disc relative">
+                {dominantColor ? (
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute -inset-5 rounded-[30px] opacity-40 blur-2xl transition-colors duration-500"
+                    style={{ backgroundColor: dominantColor }}
+                  />
+                ) : null}
+                <div className="album-cover relative h-full w-full">
+                  <ImageWithFallback
+                    src={currentSong.al.picUrl}
+                    alt={currentSong.name}
+                    rounded="rounded-[14px]"
+                    className="h-full w-full"
+                    resize="800y800"
+                  />
+                </div>
               </div>
             </div>
           </div>

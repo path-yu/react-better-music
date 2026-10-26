@@ -243,7 +243,7 @@ export function CommentSection({
             <span className="ml-1.5 font-normal text-black/30">({list.length})</span>
           </p>
         ) : null}
-        <div className="divide-y divide-black/6">
+        <div className="comment-list">
           {list.map((comment) => (
             <div key={comment.commentId} className="flex gap-3 py-4">
               <Avatar
