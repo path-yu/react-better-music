@@ -2,51 +2,9 @@
  * Bridge to the Electrobun main process for native download handling.
  * Only available in the packaged desktop app (VITE_DESKTOP=true).
  */
-const BRIDGE_BASE = 'http://127.0.0.1:13002'
-const BRIDGE_TIMEOUT = 15_000
+import { bridgeFetch, isDesktopApp, requestJson } from './desktopBridge'
 
-/**
- * The main process appends a per-launch token to the view URL. The router may
- * rewrite the URL before the first request, so main.tsx stashes it on window
- * as soon as the app boots.
- */
-function bridgeAuthHeaders(): Record<string, string> {
-  const injected = (window as typeof window & { __bridgeToken?: string }).__bridgeToken
-  const token =
-    injected ?? new URLSearchParams(window.location.search).get('bridgeToken') ?? ''
-  return token ? { 'x-bridge-token': token } : {}
-}
-
-export function isDesktopApp() {
-  return import.meta.env.VITE_DESKTOP === 'true'
-}
-
-/** The main process may be busy (or restarting); never leave the UI waiting. */
-async function bridgeFetch(path: string, init?: RequestInit) {
-  const controller = new AbortController()
-  const timer = window.setTimeout(() => controller.abort(), BRIDGE_TIMEOUT)
-  try {
-    return await fetch(`${BRIDGE_BASE}${path}`, {
-      ...init,
-      mode: 'cors',
-      headers: bridgeAuthHeaders(),
-      signal: controller.signal,
-    })
-  } catch (error) {
-    if (controller.signal.aborted) throw new Error('下载服务响应超时', { cause: error })
-    throw error
-  } finally {
-    window.clearTimeout(timer)
-  }
-}
-
-async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await bridgeFetch(path, init)
-  if (!response.ok) {
-    throw new Error(`下载服务请求失败 (${response.status})`)
-  }
-  return (await response.json()) as T
-}
+export { isDesktopApp }
 
 export async function getDownloadDir(): Promise<string> {
   const data = await requestJson<{ dir?: string }>('/download-dir')

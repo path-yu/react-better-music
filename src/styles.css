@@ -181,6 +181,68 @@ html.desktop .app-window {
   white-space: nowrap;
 }
 
+/* ---------- Electrobun custom title bar ---------- */
+
+.desktop-titlebar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 38px;
+  flex: none;
+  padding: 0 0 0 16px;
+  background: rgba(246, 246, 248, 0.78);
+  backdrop-filter: saturate(180%) blur(24px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  user-select: none;
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+/* macOS keeps its native traffic lights, which sit in a shorter title bar. */
+.desktop-titlebar--mac {
+  height: 30px;
+  padding-left: 78px;
+}
+
+.desktop-titlebar__controls {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  margin-left: auto;
+}
+
+.desktop-titlebar__button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: rgba(0, 0, 0, 0.5);
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.desktop-titlebar__button:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.8);
+}
+
+.desktop-titlebar__button:focus-visible {
+  outline: 2px solid #0066cc;
+  outline-offset: -2px;
+}
+
+.desktop-titlebar__button--close:hover {
+  background: #e81123;
+  color: #ffffff;
+}
+
 .app-body {
   display: flex;
   flex: 1;
@@ -602,6 +664,25 @@ html.desktop .app-window {
 .dark .titlebar {
   background: rgba(30, 30, 32, 0.82);
   border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .desktop-titlebar {
+  background: rgba(30, 30, 32, 0.82);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .desktop-titlebar__button {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.dark .desktop-titlebar__button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.dark .desktop-titlebar__button--close:hover {
+  background: #e81123;
+  color: #ffffff;
 }
 
 .dark .titlebar-title {

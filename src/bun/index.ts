@@ -32,6 +32,10 @@ function createMainWindow() {
   const window = new BrowserWindow({
     title: '声屿',
     url: `views://mainview/index.html?bridgeToken=${encodeURIComponent(BRIDGE_TOKEN)}`,
+    // The renderer draws its own title bar (drag region + window buttons).
+    // `hiddenInset` keeps the native traffic lights on macOS and, on Windows /
+    // Linux, removes the system caption while keeping the resize border.
+    titleBarStyle: 'hiddenInset',
     frame: {
       width: 1440,
       height: 900,
@@ -171,6 +175,44 @@ function uniqueDownloadPath(name: string) {
   return target
 }
 
+/* ------------------------------ window controls ----------------------------- */
+
+/** Mirrors the real window state so the custom title bar can render correctly. */
+function currentWindowState() {
+  const win = mainWindow
+  return {
+    maximized: win?.isMaximized() ?? false,
+    minimized: win?.isMinimized() ?? false,
+    fullScreen: win?.isFullScreen() ?? false,
+  }
+}
+
+/**
+ * Applies a window action requested by the renderer's custom title bar.
+ * Returns null when the action is unknown.
+ */
+function applyWindowAction(action: string | null) {
+  const win = mainWindow
+  if (!win) return null
+
+  switch (action) {
+    case 'minimize':
+      win.minimize()
+      return currentWindowState()
+    case 'toggle-maximize':
+      if (win.isMaximized()) win.unmaximize()
+      else win.maximize()
+      return currentWindowState()
+    case 'close':
+      // Same path as the native close button: `will-close` hides the window to
+      // the tray so playback keeps running.
+      win.requestClose()
+      return currentWindowState()
+    default:
+      return null
+  }
+}
+
 const DEV_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/
 
 function bridgeHeaders(request: Request) {
@@ -205,6 +247,19 @@ try {
         return new Response('Unauthorized', { status: 401, headers })
       }
       try {
+        if (url.pathname === '/window-state' && request.method === 'GET') {
+          return Response.json(currentWindowState(), { headers })
+        }
+        if (url.pathname === '/window-action' && request.method === 'POST') {
+          const state = applyWindowAction(url.searchParams.get('action'))
+          if (!state) {
+            return Response.json(
+              { error: 'unsupported window action' },
+              { status: 400, headers },
+            )
+          }
+          return Response.json(state, { headers })
+        }
         if (url.pathname === '/download-dir' && request.method === 'GET') {
           return Response.json({ dir: downloadDir }, { headers })
         }
