@@ -50,7 +50,7 @@ function requestErrorMessage(error: unknown, fallback: string) {
 }
 
 export function LoginModal({ open, onOpenChange }: LoginModalProps) {
-  const [mode, setMode] = useState<LoginMode>('captcha')
+  const [mode, setMode] = useState<LoginMode>('qr')
   const [phone, setPhone] = useState('')
   const [captcha, setCaptcha] = useState('')
   const [countdown, setCountdown] = useState(0)
@@ -122,7 +122,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
   // Reset to the verification-code login every time the modal opens.
   useEffect(() => {
     if (open) return
-    setMode('captcha')
+    setMode('qr')
     setPhone('')
     setCaptcha('')
     setCountdown(0)

@@ -21,6 +21,8 @@ export const Route = createFileRoute('/songlists/$id/edit')({
   component: EditPlaylistPage,
 })
 
+const MAX_COVER_BYTES = 5 * 1024 * 1024
+
 function EditPlaylistPage() {
   const { id } = Route.useParams()
   const navigate = useNavigate()
@@ -128,6 +130,14 @@ function EditPlaylistPage() {
     const file = event.target.files?.[0]
     event.target.value = ''
     if (!file) return
+    if (!file.type.startsWith('image/')) {
+      toast.warning('请选择图片文件')
+      return
+    }
+    if (file.size > MAX_COVER_BYTES) {
+      toast.warning('图片不能超过 5MB')
+      return
+    }
     setUploading(true)
     try {
       const size = await getImageSize(file)
@@ -280,6 +290,7 @@ function EditPlaylistPage() {
             alt={name}
             rounded="rounded-[12px]"
             className="aspect-square w-full"
+            resize="400y400"
           />
           <Button
             variant="secondary"

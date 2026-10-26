@@ -144,8 +144,10 @@ function SettingsPage() {
     try {
       const count = await downloadCachedAudio(selected)
       toast.success(
-        desktop && downloadDir
-          ? `已导出 ${count} 首缓存音乐到 ${downloadDir}`
+        desktop
+          ? downloadDir
+            ? `已导出 ${count} 首缓存音乐到 ${downloadDir}`
+            : `已导出 ${count} 首缓存音乐到下载目录`
           : selected.length > 1
             ? `已导出 ${count} 首缓存音乐（ZIP 压缩包）`
             : `已导出 ${count} 首缓存音乐，请查看下载目录`,

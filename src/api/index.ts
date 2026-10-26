@@ -233,16 +233,16 @@ type CommentQuery = {
   before?: number
 }
 
-export function fetchMusicComments(params: CommentQuery) {
-  return get<CommentResponse>('/comment/music', { ...params, timestamp: Date.now() })
+export function fetchMusicComments(params: CommentQuery, signal?: AbortSignal) {
+  return get<CommentResponse>('/comment/music', { ...params, timestamp: Date.now() }, signal)
 }
 
-export function fetchPlaylistComments(params: CommentQuery) {
-  return get<CommentResponse>('/comment/playlist', { ...params, timestamp: Date.now() })
+export function fetchPlaylistComments(params: CommentQuery, signal?: AbortSignal) {
+  return get<CommentResponse>('/comment/playlist', { ...params, timestamp: Date.now() }, signal)
 }
 
-export function fetchMvComments(params: CommentQuery) {
-  return get<CommentResponse>('/comment/mv', { ...params, timestamp: Date.now() })
+export function fetchMvComments(params: CommentQuery, signal?: AbortSignal) {
+  return get<CommentResponse>('/comment/mv', { ...params, timestamp: Date.now() }, signal)
 }
 
 export function sendComment(params: {
@@ -269,20 +269,23 @@ export function likeComment(params: {
 
 /* ----------------------------------- mv ---------------------------------- */
 
-export async function fetchMvList(options: {
-  limit?: number
-  offset?: number
-  area?: string
-  order?: string
-  type?: string
-}) {
+export async function fetchMvList(
+  options: {
+    limit?: number
+    offset?: number
+    area?: string
+    order?: string
+    type?: string
+  },
+  signal?: AbortSignal,
+) {
   const res = await get<{ data?: Mv[]; count?: number }>('/mv/all', {
     limit: options.limit ?? 50,
     offset: options.offset ?? 0,
     area: options.area ?? '全部',
     order: options.order ?? '最热',
     type: options.type ?? '全部',
-  })
+  }, signal)
   return {
     list: (res.data ?? []).map(normalizeMv),
     count: res.count ?? 0,
@@ -368,13 +371,17 @@ export async function searchAll(params: {
 
 /* --------------------------------- artist -------------------------------- */
 
-export async function fetchArtistProfile(id: number | string) {
-  const res = await get<{ data?: { artist?: ArtistProfile } }>('/artist/detail', { id })
+export async function fetchArtistProfile(id: number | string, signal?: AbortSignal) {
+  const res = await get<{ data?: { artist?: ArtistProfile } }>(
+    '/artist/detail',
+    { id },
+    signal,
+  )
   return res.data?.artist ?? null
 }
 
-export async function fetchArtistTopSongs(id: number | string) {
-  const res = await get<{ songs?: RawSong[] }>('/artist/top/song', { id })
+export async function fetchArtistTopSongs(id: number | string, signal?: AbortSignal) {
+  const res = await get<{ songs?: RawSong[] }>('/artist/top/song', { id }, signal)
   return normalizeSongs(res.songs).slice(0, 50)
 }
 
@@ -382,19 +389,29 @@ export async function fetchArtistAlbums(
   id: number | string,
   limit = 30,
   offset = 0,
+  signal?: AbortSignal,
 ) {
-  const res = await get<{ hotAlbums?: ArtistAlbum[] }>('/artist/album', {
-    id,
-    limit,
-    offset,
-  })
+  const res = await get<{ hotAlbums?: ArtistAlbum[] }>(
+    '/artist/album',
+    {
+      id,
+      limit,
+      offset,
+    },
+    signal,
+  )
   return (res.hotAlbums ?? []).map((album) => ({
     ...album,
     picUrl: album.picUrl ?? album.blurPicUrl,
   }))
 }
 
-export async function fetchArtistMvs(id: number | string, limit = 12, offset = 0) {
+export async function fetchArtistMvs(
+  id: number | string,
+  limit = 12,
+  offset = 0,
+  signal?: AbortSignal,
+) {
   const res = await get<{
     mvs?: Array<{
       id: number
@@ -406,7 +423,7 @@ export async function fetchArtistMvs(id: number | string, limit = 12, offset = 0
       publishTime?: string
       artistName?: string
     }>
-  }>('/artist/mv', { id, limit, offset })
+  }>('/artist/mv', { id, limit, offset }, signal)
   return (res.mvs ?? []).map((mv) =>
     normalizeMv({
       id: mv.id,
@@ -420,8 +437,8 @@ export async function fetchArtistMvs(id: number | string, limit = 12, offset = 0
   )
 }
 
-export async function fetchSimilarArtists(id: number | string) {
-  const res = await get<{ artists?: ArtistSummary[] }>('/simi/artist', { id })
+export async function fetchSimilarArtists(id: number | string, signal?: AbortSignal) {
+  const res = await get<{ artists?: ArtistSummary[] }>('/simi/artist', { id }, signal)
   return res.artists ?? []
 }
 

@@ -6,10 +6,9 @@ import type { Playlist } from '../../types'
 
 interface PlaylistCardProps {
   playlist: Playlist
-  compact?: boolean
 }
 
-export function PlaylistCard({ playlist, compact }: PlaylistCardProps) {
+export function PlaylistCard({ playlist }: PlaylistCardProps) {
   const navigate = useNavigate()
 
   return (
@@ -29,7 +28,8 @@ export function PlaylistCard({ playlist, compact }: PlaylistCardProps) {
           src={playlist.coverImgUrl}
           alt={playlist.name}
           rounded="rounded-[9px]"
-          className={compact ? 'aspect-square w-full' : 'aspect-square w-full'}
+          resize="320y320"
+          className="aspect-square w-full"
           imageClassName="transition-transform duration-500 group-hover:scale-[1.04]"
         />
         <div className="absolute right-1.5 top-1.5 flex items-center gap-1 rounded-full bg-black/35 px-1.5 py-0.5 text-[9px] text-white backdrop-blur-sm">

@@ -183,6 +183,7 @@ function SearchPage() {
                     alt={playlist.name}
                     rounded="rounded-[8px]"
                     className="h-14 w-14 shrink-0"
+                    resize="128y128"
                   />
                   <div className="min-w-0 flex-1">
                     <p className="line-clamp-1 text-[12.5px] text-black/75 group-hover:text-[#0066cc]">
@@ -234,6 +235,7 @@ function SearchPage() {
                     alt={artist.name}
                     rounded="rounded-full"
                     className="h-14 w-14 shrink-0"
+                    resize="128y128"
                   />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[12.5px] text-black/75 group-hover:text-[#0066cc]">

@@ -41,6 +41,7 @@ function ArtistPage() {
   useDocumentTitle(profile?.name ?? '歌手')
 
   useEffect(() => {
+    const controller = new AbortController()
     let cancelled = false
     setLoading(true)
     setProfile(null)
@@ -52,11 +53,11 @@ function ArtistPage() {
     setBioHeight(0)
 
     Promise.allSettled([
-      fetchArtistProfile(id),
-      fetchArtistTopSongs(id),
-      fetchArtistAlbums(id, 30),
-      fetchArtistMvs(id, 12),
-      fetchSimilarArtists(id),
+      fetchArtistProfile(id, controller.signal),
+      fetchArtistTopSongs(id, controller.signal),
+      fetchArtistAlbums(id, 30, 0, controller.signal),
+      fetchArtistMvs(id, 12, 0, controller.signal),
+      fetchSimilarArtists(id, controller.signal),
     ])
       .then((results) => {
         if (cancelled) return
@@ -76,6 +77,7 @@ function ArtistPage() {
 
     return () => {
       cancelled = true
+      controller.abort()
     }
   }, [id])
 
@@ -128,6 +130,7 @@ function ArtistPage() {
             alt={profile.name}
             rounded="rounded-full"
             className="artwork-shadow h-[168px] w-[168px] shrink-0"
+            resize="400y400"
           />
           <div className="min-w-0 flex-1 text-center md:text-left">
             <span className="eyebrow">歌手</span>
@@ -242,6 +245,7 @@ function ArtistPage() {
                     alt={album.name}
                     rounded="rounded-[9px]"
                     className="aspect-square w-full"
+                    resize="320y320"
                   />
                   <p className="mt-2 line-clamp-2 text-[12px] leading-[1.4] text-black/75">
                     {album.name}
@@ -289,6 +293,7 @@ function ArtistPage() {
                   alt={artist.name}
                   rounded="rounded-full"
                   className="h-14 w-14 shrink-0"
+                  resize="128y128"
                 />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[12.5px] text-black/75 group-hover:text-[#0066cc]">

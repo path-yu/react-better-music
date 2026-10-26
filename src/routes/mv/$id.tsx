@@ -13,6 +13,7 @@ import {
   fetchSimilarMv,
 } from '../../api'
 import { formatDate, formatNumber } from '../../lib/format'
+import { resizedImageUrl } from '../../lib/image'
 import { useDocumentTitle } from '../../lib/title'
 import { toast } from '../../lib/toast'
 import { usePlayerStore } from '../../store/player'
@@ -149,7 +150,7 @@ function MvDetailPage() {
               <video
                 key={videoUrl}
                 src={videoUrl}
-                poster={detail.cover}
+                poster={resizedImageUrl(detail.cover, '640y360') ?? undefined}
                 controls
                 playsInline
                 className="h-full w-full"
@@ -224,6 +225,7 @@ function MvDetailPage() {
                   alt={mv.name}
                   rounded="rounded-[8px]"
                   className="aspect-video w-[112px] shrink-0"
+                  resize="320y180"
                   imageClassName="transition-transform duration-500 group-hover:scale-105"
                 />
                 <div className="min-w-0 flex-1">

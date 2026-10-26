@@ -309,6 +309,7 @@ export function PlayerBar() {
             alt={currentSong.name}
             rounded="rounded-[8px]"
             className="h-[46px] w-[46px] transform-gpu"
+            resize="128y128"
             instant
           />
           <span className="absolute inset-0 flex items-center justify-center rounded-[8px] bg-black/35 text-white opacity-0 transition-opacity group-hover:opacity-100">

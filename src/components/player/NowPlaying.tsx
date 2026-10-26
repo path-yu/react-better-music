@@ -224,6 +224,7 @@ export function NowPlaying() {
                   alt={currentSong.name}
                   rounded="rounded-full"
                   className="h-full w-full"
+                  resize="800y800"
                 />
                 <div className="absolute inset-0 rounded-full border border-white/15" />
                 <div className="disc-spindle absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/80 shadow-inner" />

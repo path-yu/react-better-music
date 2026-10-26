@@ -156,6 +156,7 @@ function DiscoveryPage() {
               alt={currentBanner.typeTitle ?? '推荐'}
               rounded="rounded-[22px]"
               className="h-full w-full"
+              resize="1200y600"
               imageClassName="transition-transform duration-[900ms] group-hover:scale-[1.02]"
             />
             {currentBanner.typeTitle ? (
@@ -359,6 +360,7 @@ function DailySongGrid({ songs }: { songs: Song[] }) {
                 alt={song.name}
                 rounded="rounded-[7px]"
                 className="h-10 w-10"
+                resize="96y96"
               />
               <span className="absolute inset-0 flex items-center justify-center rounded-[7px] bg-black/30 text-white opacity-0 transition-opacity group-hover:opacity-100">
                 <Play className="h-3 w-3 fill-current" />

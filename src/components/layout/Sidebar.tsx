@@ -210,6 +210,7 @@ function PlaylistRow({
         alt={playlist.name}
         rounded="rounded-[5px]"
         className="h-[22px] w-[22px] shrink-0"
+        resize="64y64"
       />
       <span
         className={cn(

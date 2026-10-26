@@ -31,11 +31,21 @@ function LatestMvPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const controller = new AbortController()
     let cancelled = false
     setLoading(true)
-    fetchMvList({ area, type, order, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE })
+    fetchMvList(
+      { area, type, order, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE },
+      controller.signal,
+    )
       .then((result) => {
         if (cancelled) return
+        // Without a total count the next page is speculative; if it turns out
+        // to be empty, step back instead of leaving the user on a blank page.
+        if (!result.list.length && page > 1) {
+          setPage(page - 1)
+          return
+        }
         setList(result.list)
         setPageCount(
           result.count
@@ -53,6 +63,7 @@ function LatestMvPage() {
       })
     return () => {
       cancelled = true
+      controller.abort()
     }
   }, [area, type, order, page])
 

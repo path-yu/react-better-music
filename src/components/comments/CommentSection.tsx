@@ -46,16 +46,17 @@ export function CommentSection({
   const fetcher =
     type === 0 ? fetchMusicComments : type === 1 ? fetchMvComments : fetchPlaylistComments
 
-  const fetchPage = async (offset: number, before?: number) => {
-    return fetcher({ id: resourceId, limit: PAGE_SIZE, offset, before })
+  const fetchPage = async (offset: number, before?: number, signal?: AbortSignal) => {
+    return fetcher({ id: resourceId, limit: PAGE_SIZE, offset, before }, signal)
   }
 
   useEffect(() => {
+    const controller = new AbortController()
     const requestId = ++requestIdRef.current
     setLoading(true)
     setData({ total: 0, comments: [] })
     serverCountRef.current = 0
-    fetchPage(0)
+    fetchPage(0, undefined, controller.signal)
       .then((response) => {
         if (requestIdRef.current !== requestId) return
         const comments = response.comments ?? []
@@ -67,11 +68,16 @@ export function CommentSection({
         })
       })
       .catch(() => {
-        if (requestIdRef.current === requestId) toast.error('评论加载失败')
+        if (requestIdRef.current === requestId && !controller.signal.aborted) {
+          toast.error('评论加载失败')
+        }
       })
       .finally(() => {
-        if (requestIdRef.current === requestId) setLoading(false)
+        if (requestIdRef.current === requestId && !controller.signal.aborted) {
+          setLoading(false)
+        }
       })
+    return () => controller.abort()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type, resourceId])
 
@@ -110,6 +116,7 @@ export function CommentSection({
     content: string
     commentId?: number
   }) => {
+    const requestId = requestIdRef.current
     const res = await sendComment({
       t: params.t,
       type,
@@ -117,6 +124,9 @@ export function CommentSection({
       content: params.content,
       commentId: params.commentId,
     })
+    // The user may have switched to another song/MV while posting; never apply
+    // the response to the new resource's list.
+    if (requestIdRef.current !== requestId) return
     if (res.code !== 200 || !res.comment) {
       throw new Error('评论失败')
     }
@@ -180,6 +190,7 @@ export function CommentSection({
       return
     }
     const nextLiked = !comment.liked
+    const requestId = requestIdRef.current
     try {
       const res = await likeComment({
         t: nextLiked ? 1 : 0,
@@ -187,6 +198,7 @@ export function CommentSection({
         type,
         id: resourceId,
       })
+      if (requestIdRef.current !== requestId) return
       if (res.code !== 200) {
         toast.error('操作失败')
         return
@@ -217,7 +229,7 @@ export function CommentSection({
             ),
       }))
     } catch {
-      toast.error('操作失败')
+      if (requestIdRef.current === requestId) toast.error('操作失败')
     }
   }
 

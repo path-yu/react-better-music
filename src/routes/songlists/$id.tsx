@@ -197,6 +197,7 @@ function PlaylistDetailPage() {
           alt={detail.name}
           rounded="rounded-[16px]"
           className="artwork-shadow h-[208px] w-[208px] shrink-0"
+          resize="500y500"
         />
         <div className="min-w-0 flex-1">
           <span className="inline-flex items-center rounded-full bg-[#0066cc]/8 px-2.5 py-0.5 text-[10px] font-medium text-[#0066cc]">

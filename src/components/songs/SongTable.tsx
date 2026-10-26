@@ -95,6 +95,7 @@ const SongRow = memo(function SongRow({
           src={song.al.picUrl}
           alt={song.name}
           rounded="rounded-[6px]"
+          resize="96y96"
           className="h-9 w-9 shrink-0"
         />
         <div className="min-w-0 flex-1">

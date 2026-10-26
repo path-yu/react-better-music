@@ -1,6 +1,7 @@
 import { memo, useLayoutEffect, useRef, useState } from 'react'
 import { Music2 } from 'lucide-react'
 import { cn } from '../../lib/format'
+import { resizedImageUrl } from '../../lib/image'
 
 interface ImageWithFallbackProps {
   src?: string | null
@@ -10,6 +11,8 @@ interface ImageWithFallbackProps {
   rounded?: string
   /** Skip the materialize transition (useful for tiny, repaint-prone covers). */
   instant?: boolean
+  /** CDN resize hint, e.g. "300y300" or "480y270" (NetEase hosts only). */
+  resize?: string
 }
 
 export const ImageWithFallback = memo(function ImageWithFallback({
@@ -19,23 +22,25 @@ export const ImageWithFallback = memo(function ImageWithFallback({
   imageClassName,
   rounded = 'rounded-[12px]',
   instant = false,
+  resize,
 }: ImageWithFallbackProps) {
   const imgRef = useRef<HTMLImageElement>(null)
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null)
   const [failedSrc, setFailedSrc] = useState<string | null>(null)
+  const resolvedSrc = resizedImageUrl(src, resize)
   // Tracking the source instead of a boolean means a new image is never
   // rendered with the previous image's "loaded" state for a frame.
-  const loaded = Boolean(src) && loadedSrc === src
-  const failed = Boolean(src) && failedSrc === src
+  const loaded = Boolean(resolvedSrc) && loadedSrc === resolvedSrc
+  const failed = Boolean(resolvedSrc) && failedSrc === resolvedSrc
 
   useLayoutEffect(() => {
     const image = imgRef.current
-    if (!src || !image?.complete) return
+    if (!resolvedSrc || !image?.complete) return
     // Cached images may finish before React attaches onLoad; check the element
     // directly before the first paint so they don't flash.
-    if (image.naturalWidth > 0) setLoadedSrc(src)
-    else if (image.currentSrc) setFailedSrc(src)
-  }, [src])
+    if (image.naturalWidth > 0) setLoadedSrc(resolvedSrc)
+    else if (image.currentSrc) setFailedSrc(resolvedSrc)
+  }, [resolvedSrc])
 
   return (
     <div
@@ -45,21 +50,21 @@ export const ImageWithFallback = memo(function ImageWithFallback({
         className,
       )}
     >
-      {failed || !src ? (
+      {failed || !resolvedSrc ? (
         <div className="image-fallback flex h-full w-full items-center justify-center bg-gradient-to-br from-[#ececf0] to-[#dedee4] text-black/20">
           <Music2 className="h-8 w-8" strokeWidth={1.5} />
         </div>
       ) : (
         <img
-          key={src}
+          key={resolvedSrc}
           ref={imgRef}
-          src={src}
+          src={resolvedSrc}
           alt={alt}
           loading="lazy"
           decoding="async"
           draggable={false}
-          onLoad={() => setLoadedSrc(src)}
-          onError={() => setFailedSrc(src)}
+          onLoad={() => setLoadedSrc(resolvedSrc)}
+          onError={() => setFailedSrc(resolvedSrc)}
           className={cn(
             'h-full w-full object-cover [backface-visibility:hidden]',
             instant

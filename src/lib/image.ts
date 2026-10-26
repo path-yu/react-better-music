@@ -1,3 +1,20 @@
+const CDN_IMAGE_HOST = /^https?:\/\/[^/]*music\.126\.net\//i
+
+/**
+ * NetEase's image CDN accepts `param=WxH` to resize/crop on the fly. Lists and
+ * cards render covers far smaller than the original file, so ask for the
+ * displayed size instead of downloading a multi-megapixel JPEG.
+ */
+export function resizedImageUrl(src: string | null | undefined, size?: string) {
+  if (!src) return src
+  if (!CDN_IMAGE_HOST.test(src)) return src
+  // The CDN occasionally returns http URLs, which a secure page rejects.
+  const secure = src.replace(/^http:\/\//i, 'https://')
+  if (!size) return secure
+  if (/[?&]param=/.test(secure)) return secure
+  return `${secure}${secure.includes('?') ? '&' : '?'}param=${size}`
+}
+
 export function getImageSize(file: File): Promise<{ width: number; height: number }> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
