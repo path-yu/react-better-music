@@ -30,7 +30,8 @@ export function SearchBox() {
   const navigate = useNavigate()
   const [keyword, setKeyword] = useState('')
   const [open, setOpen] = useState(false)
-  const [defaultKeyword, setDefaultKeyword] = useState('搜索音乐、歌单')
+  // Empty until the API answers; the placeholder falls back to a static hint.
+  const [defaultKeyword, setDefaultKeyword] = useState('')
   const [hotList, setHotList] = useState<Array<{ searchWord: string; score: number }>>([])
   const [suggest, setSuggest] = useState<SuggestState>({ songs: [], playlists: [] })
   const [loading, setLoading] = useState(false)
@@ -138,7 +139,7 @@ export function SearchBox() {
       <Input.Search
         value={keyword}
         size="sm"
-        placeholder={defaultKeyword}
+        placeholder={defaultKeyword || '搜索音乐、歌单'}
         onChange={(event) => {
           setKeyword(event.target.value)
           setOpen(true)
@@ -148,25 +149,31 @@ export function SearchBox() {
           if (event.key === 'Enter') {
             // Enter is also used to confirm IME candidates; don't search then.
             if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return
-            goSearch()
+            // Empty field: Enter takes the recommended keyword shown as the
+            // placeholder (strip its leading emoji before searching).
+            const recommended = defaultKeyword.replace(/^[^\p{L}\p{N}]+/u, '').trim()
+            goSearch(keyword.trim() || recommended || undefined)
           }
           if (event.key === 'Escape') setOpen(false)
         }}
-        rightIcon={
-          keyword ? (
-            <button
-              type="button"
-              aria-label="清空搜索"
-              className="pressable text-black/35 hover:text-black/70"
-              onClick={() => setKeyword('')}
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          ) : undefined
-        }
         wrapperClassName="w-full"
-        className="h-9 rounded-full bg-white/80 pl-9"
+        className="h-9 rounded-full bg-white/80 pl-9 pr-9"
       />
+
+      {/* Own clear button: the slot provided by the input was not clickable and
+          did not centre vertically, so it is positioned against the wrapper. */}
+      {keyword ? (
+        <button
+          type="button"
+          aria-label="清空搜索"
+          onClick={() => setKeyword('')}
+          // Keep the caret in the field while clearing, like a native search box.
+          onMouseDown={(event) => event.preventDefault()}
+          className="pressable absolute right-1.5 top-1/2 z-10 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-black/40 transition-colors hover:bg-black/10 hover:text-black/70"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      ) : null}
 
       {open && (
         <div className="absolute left-0 top-full z-[80] mt-2 w-[420px] overflow-hidden rounded-[16px] border border-black/10 bg-white/95 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.35)] backdrop-blur-xl fade-up">
