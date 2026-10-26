@@ -6,6 +6,7 @@ import { ImageWithFallback } from '../../components/common/ImageWithFallback'
 import { ArtistLinks } from '../../components/common/ArtistLinks'
 import { EmptyState } from '../../components/common/EmptyState'
 import { CommentSection } from '../../components/comments/CommentSection'
+import { MvVideoPlayer } from '../../components/mv/MvVideoPlayer'
 import {
   fetchArtistDetail,
   fetchMvDetail,
@@ -46,6 +47,15 @@ function MvDetailPage() {
     if (!resumeMusicRef.current) return
     resumeMusicRef.current = false
     usePlayerStore.getState().setPlaying(true)
+  }
+
+  const handleVideoPlay = () => {
+    const state = usePlayerStore.getState()
+    if (!state.playing || !state.queue.length) return
+    // Remember that we interrupted playback so it can be restored when the
+    // video ends or the page is left.
+    resumeMusicRef.current = true
+    state.setPlaying(false)
   }
 
   useEffect(() => {
@@ -147,21 +157,11 @@ function MvDetailPage() {
             {videoLoading ? (
               <Skeleton className="h-full w-full rounded-[16px]" />
             ) : videoUrl ? (
-              <video
+              <MvVideoPlayer
                 key={videoUrl}
                 src={videoUrl}
                 poster={resizedImageUrl(detail.cover, '640y360') ?? undefined}
-                controls
-                playsInline
-                className="h-full w-full"
-                onPlay={() => {
-                  const state = usePlayerStore.getState()
-                  if (!state.playing || !state.queue.length) return
-                  // Remember that we interrupted playback so it can be
-                  // restored when the video ends or the page is left.
-                  resumeMusicRef.current = true
-                  state.setPlaying(false)
-                }}
+                onPlay={handleVideoPlay}
                 onEnded={resumeMusic}
               />
             ) : (

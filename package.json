@@ -30,6 +30,7 @@
     "@tanstack/react-router": "1.170.46",
     "@tanstack/react-router-devtools": "1.167.2",
     "@tanstack/react-virtual": "^3.14.22",
+    "@videojs/react": "10.2.0",
     "fflate": "^0.8.3",
     "lucide-react": "^1.61.0",
     "react": "^19.2.0",
