@@ -1,24 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouterState } from '@tanstack/react-router'
-import {
-  ChevronDown,
-  Heart,
-  ListMusic,
-  Loader2,
-  MessageSquareText,
-} from 'lucide-react'
+import { Loader2, MessageSquareText } from 'lucide-react'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
 import { LyricsPanel } from './LyricsPanel'
 import { CommentSection } from '../comments/CommentSection'
 import { usePlayerStore } from '../../store/player'
-import { useUserStore } from '../../store/user'
 import { findLyricIndex } from '../../lib/lyric'
 import { seekAudio } from '../../lib/audio'
 import { extractDominantColor } from '../../lib/color'
 import { cn } from '../../lib/format'
 
-// TEMPORARY: pinned artwork for judging the ambient backdrop.
 export function NowPlaying() {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const show = usePlayerStore((state) => state.showNowPlaying)
@@ -38,9 +30,6 @@ export function NowPlaying() {
   const lyricLines = usePlayerStore((state) => state.lyricLines)
   const lyricLoading = usePlayerStore((state) => state.lyricLoading)
   const toggleNowPlaying = usePlayerStore((state) => state.toggleNowPlaying)
-  const toggleQueue = usePlayerStore((state) => state.toggleQueue)
-  const likedIds = useUserStore((state) => state.likedIds)
-  const likeSong = useUserStore((state) => state.likeSong)
   const [panel, setPanel] = useState<'lyrics' | 'comments'>('lyrics')
   const [dominantColor, setDominantColor] = useState<string | null>(null)
 
@@ -86,7 +75,6 @@ export function NowPlaying() {
 
   if (!show || !currentSong) return null
 
-  const liked = likedIds.includes(currentSong.id)
   const loadingSource = playing && !sourceReady
   const buffering = playing && sourceReady && !audioReady
   const busy = loadingSource || buffering
@@ -116,39 +104,48 @@ export function NowPlaying() {
           immersive content clear of it. */}
       <div className="relative flex h-full flex-col pb-[76px]">
         <div className="flex h-[58px] flex-none items-center justify-between px-6">
-        
-          {/* <div className="flex items-center gap-2">
-            <button
-              type="button"
-              aria-label="收起播放页"
-              onClick={() => toggleNowPlaying(false)}
-              className="pressable flex h-8 items-center gap-1.5 rounded-full bg-black/5 px-3 text-[11px] text-black/55 hover:bg-black/10 hover:text-black"
-            >
-              <ChevronDown className="h-3.5 w-3.5" />
-              <span className="max-md:hidden">收起</span>
-            </button>
-            <button
-              type="button"
-              aria-label={liked ? '取消喜欢' : '喜欢'}
-              onClick={() => void likeSong(currentSong.id, !liked)}
-              className="pressable flex h-8 w-8 items-center justify-center rounded-full bg-black/5 hover:bg-black/10"
-            >
-              <Heart
-                className={cn(
-                  'h-4 w-4',
-                  liked ? 'fill-[#ff2d55] text-[#ff2d55]' : 'text-black/45',
-                )}
-              />
-            </button>
-            <button
-              type="button"
-              aria-label="播放列表"
-              onClick={() => toggleQueue(true)}
-              className="pressable flex h-8 w-8 items-center justify-center rounded-full bg-black/5 text-black/45 hover:bg-black/10 hover:text-black/75"
-            >
-              <ListMusic className="h-4 w-4" />
-            </button>
-          </div> */}
+          {/* <p className="eyebrow">正在播放</p> */}
+
+          {/*
+            顶部操作暂时隐藏，恢复时需一并加回：
+              · lucide-react 的 ChevronDown / Heart / ListMusic
+              · usePlayerStore 的 toggleQueue
+              · useUserStore 的 likedIds、likeSong，以及
+                `const liked = likedIds.includes(currentSong.id)`
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                aria-label="收起播放页"
+                onClick={() => toggleNowPlaying(false)}
+                className="pressable flex h-8 items-center gap-1.5 rounded-full bg-white/10 px-3 text-[11px] text-white/70 transition-colors hover:bg-white/16 hover:text-white"
+              >
+                <ChevronDown className="h-3.5 w-3.5" />
+                <span className="max-md:hidden">收起</span>
+              </button>
+              <button
+                type="button"
+                aria-label={liked ? '取消喜欢' : '喜欢'}
+                onClick={() => void likeSong(currentSong.id, !liked)}
+                className="pressable flex h-8 w-8 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/16"
+              >
+                <Heart
+                  className={cn(
+                    'h-4 w-4',
+                    liked ? 'fill-[#ff2d55] text-[#ff2d55]' : 'text-white/60',
+                  )}
+                />
+              </button>
+              <button
+                type="button"
+                aria-label="播放列表"
+                onClick={() => toggleQueue(true)}
+                className="pressable flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/60 transition-colors hover:bg-white/16 hover:text-white"
+              >
+                <ListMusic className="h-4 w-4" />
+              </button>
+            </div>
+          */}
         </div>
 
         <div className="grid flex-1 grid-cols-1 gap-4 overflow-y-auto px-6 pb-5 md:grid-cols-[minmax(220px,0.9fr)_minmax(250px,1.1fr)] xl:gap-6 xl:px-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
