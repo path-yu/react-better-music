@@ -1,6 +1,13 @@
 @import "tailwindcss";
 @import "@pikoloo/darwin-ui/styles.css";
 
+/*
+ * The app toggles `.dark` on <html>, but Tailwind's default `dark:` variant
+ * follows `prefers-color-scheme`, so the few `dark:` utilities ignored the
+ * user's choice. Bind the variant to the class instead.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root,
 [data-theme="light"] {
   /* Apple action blue replaces Darwin's monochrome primary */
@@ -69,6 +76,40 @@ input[type='search']::-webkit-search-decoration {
   display: none;
   -webkit-appearance: none;
   appearance: none;
+}
+
+/*
+ * iOS continuous corners (squircle / superellipse) for every element.
+ *
+ * `*` (not a class selector) is used on purpose: radii also come from
+ * darwin-ui, inline styles and pseudo-elements, so anything narrower would miss
+ * surfaces. `corner-shape` only has an effect when `border-radius` is non-zero,
+ * and engines without support ignore the declaration — the plain rounded
+ * rectangle stays as the fallback.
+ */
+@supports (corner-shape: squircle) {
+  *,
+  *::before,
+  *::after {
+    corner-shape: squircle;
+  }
+
+  /*
+   * Fully round shapes must stay round: a superellipse corner on a 50% radius
+   * turns circles (avatars, slider knobs, window dots, pills) into squircles.
+   * `:where()` keeps this at zero specificity and it comes last, so it wins
+   * over the universal rule without fighting component styles.
+   */
+  :where(
+      [class*='rounded-full'],
+      .traffic-dot,
+      .pill,
+      .disc-spindle,
+      .seek-slider__thumb,
+      .volume-slider__thumb
+    ) {
+    corner-shape: round;
+  }
 }
 
 /* 滚动条默认隐藏，仅在容器滚动时显示（由 AppShell 的全局滚动监听切换 is-scrolling）。
@@ -194,6 +235,9 @@ html.desktop .app-window {
 
 .desktop-titlebar {
   position: relative;
+  /* Above the immersive overlay (z-index 60): window buttons and the drag
+     region must stay reachable while the now-playing view is open. */
+  z-index: 80;
   display: flex;
   align-items: center;
   height: 38px;
@@ -511,6 +555,24 @@ html.desktop .app-window {
     0 1px 2px rgba(0, 0, 0, 0.2),
     0 10px 26px -8px rgba(0, 0, 0, 0.55),
     0 34px 64px -30px rgba(0, 0, 0, 0.62);
+  transition:
+    box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* The cover links to the album page, so it lifts slightly under the pointer
+   (`.pressable`'s 0.95 squash is too heavy for a 300px surface). */
+.album-cover:not(:disabled):hover {
+  transform: translateY(-2px);
+}
+
+.album-cover:not(:disabled):active {
+  transform: translateY(-1px) scale(0.995);
+}
+
+.album-cover:focus-visible {
+  outline: 2px solid var(--apple-blue);
+  outline-offset: 4px;
 }
 
 .album-cover::after {

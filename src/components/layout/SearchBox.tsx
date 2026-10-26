@@ -176,7 +176,7 @@ export function SearchBox() {
       ) : null}
 
       {open && (
-        <div className="absolute left-0 top-full z-[80] mt-2 w-[420px] overflow-hidden rounded-[16px] border border-black/10 bg-white/95 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.35)] backdrop-blur-xl fade-up">
+        <div className="absolute left-0 top-full z-[80] mt-2 w-full min-w-[280px] overflow-hidden rounded-[16px] border border-black/10 bg-white/95 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.35)] backdrop-blur-xl fade-up">
           <div className="max-h-[480px] overflow-y-auto">
             {!showSuggest && (
               <>

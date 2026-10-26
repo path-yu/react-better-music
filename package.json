@@ -17,6 +17,8 @@
     "build:electrobun": "tsc --noEmit && node scripts/prepare-electrobun-api.mjs && vite build --mode electrobun",
     "desktop:dev": "hutch run dev",
     "desktop:build": "hutch run build",
+    "desktop:installer": "node scripts/installer/build.mjs",
+    "desktop:release": "pnpm desktop:build && pnpm desktop:installer",
     "generate-routes": "tsr generate",
     "preview": "vite preview"
   },

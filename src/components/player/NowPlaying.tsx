@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useRouterState } from '@tanstack/react-router'
-import { Loader2, MessageSquareText } from 'lucide-react'
+import { useNavigate, useRouterState } from '@tanstack/react-router'
+import { Disc3, Loader2, MessageSquareText } from 'lucide-react'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
 import { LyricsPanel } from './LyricsPanel'
@@ -12,6 +12,7 @@ import { extractDominantColor } from '../../lib/color'
 import { cn } from '../../lib/format'
 
 export function NowPlaying() {
+  const navigate = useNavigate()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const show = usePlayerStore((state) => state.showNowPlaying)
   const queue = usePlayerStore((state) => state.queue)
@@ -81,6 +82,13 @@ export function NowPlaying() {
 
   const handleSeek = (timeMs: number) => {
     seekAudio(timeMs / 1000)
+  }
+
+  const albumId = currentSong.al.id
+  const openAlbum = () => {
+    if (!albumId) return
+    // Navigating changes `pathname`, which closes this overlay via the effect above.
+    void navigate({ to: '/albums/$id', params: { id: String(albumId) } })
   }
 
   return (
@@ -158,7 +166,14 @@ export function NowPlaying() {
               <p className="mt-2 text-[13px] text-black/45">
                 <ArtistLinks artists={currentSong.ar} />
                 <span className="mx-2 text-black/20">·</span>
-                {currentSong.al.name}
+                <button
+                  type="button"
+                  onClick={openAlbum}
+                  disabled={!albumId}
+                  className="pressable rounded-[3px] underline-offset-2 transition-colors hover:text-white hover:underline disabled:cursor-default"
+                >
+                  {currentSong.al.name}
+                </button>
               </p>
               {/* Fixed-height status slot: the text appears/disappears while the
                   column is vertically centered, so mounting it conditionally
@@ -185,7 +200,13 @@ export function NowPlaying() {
                     style={{ backgroundColor: dominantColor }}
                   />
                 ) : null}
-                <div className="album-cover relative h-full w-full">
+                <button
+                  type="button"
+                  onClick={openAlbum}
+                  disabled={!albumId}
+                  aria-label={albumId ? `打开专辑 ${currentSong.al.name}` : undefined}
+                  className="album-cover group relative block h-full w-full cursor-pointer disabled:cursor-default"
+                >
                   <ImageWithFallback
                     src={currentSong.al.picUrl}
                     alt={currentSong.name}
@@ -193,7 +214,14 @@ export function NowPlaying() {
                     className="h-full w-full"
                     resize="800y800"
                   />
-                </div>
+                  {/* Hover hint so the cover reads as a link into the album. */}
+                  <span className="pointer-events-none absolute inset-0 flex items-end justify-center bg-black/25 p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100">
+                    <span className="flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-[11px] font-medium text-black/80 shadow-sm">
+                      <Disc3 className="h-3.5 w-3.5" />
+                      查看专辑
+                    </span>
+                  </span>
+                </button>
               </div>
             </div>
           </div>

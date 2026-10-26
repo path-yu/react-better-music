@@ -6,17 +6,17 @@
 
 ## 应用截图
 
-| 发现音乐 | 全屏播放页 |
+| 发现音乐 | 全屏播放 |
 | --- | --- |
-| ![发现音乐](assets/screenshots/01-home.png) | ![全屏播放页](assets/screenshots/06-now-playing.png) |
-
-| 推荐歌单 | 搜索结果 |
-| --- | --- |
-| ![推荐歌单](assets/screenshots/02-songlists.png) | ![搜索结果](assets/screenshots/04-search.png) |
+| ![发现音乐](assets/screenshots/01-home.png) | ![全屏播放](assets/screenshots/06-now-playing.png) |
 
 | 最新音乐 | 最新 MV |
 | --- | --- |
 | ![最新音乐](assets/screenshots/03-latest-music.png) | ![最新 MV](assets/screenshots/08-latest-mv.png) |
+
+| 推荐歌单 | 搜索结果 |
+| --- | --- |
+| ![推荐歌单](assets/screenshots/02-songlists.png) | ![搜索结果](assets/screenshots/04-search.png) |
 
 | 歌手详情 | 设置与缓存管理 |
 | --- | --- |
@@ -25,24 +25,22 @@
 ## 功能
 
 - **发现**：首页轮播、推荐歌单、最新音乐、最新 MV
-- **搜索**：单曲 / 歌单 / 歌手三个标签页，支持分页；输入框为空时按回车直接搜索占位符里的推荐词
+- **搜索**：单曲 / 歌单 / 歌手三个标签页，支持分页
 - **歌单与歌手**：歌单详情、歌手详情、热门作品、专辑、MV、相似歌手
 - **播放器**：音质切换（标准 / 较高 / 极高 / 无损 / Hi-Res）、自动预取下一首播放地址、播放队列、顺序 / 随机 / 单曲循环、音量、心动模式（智能播放）
 - **快捷键**：`Space` 播放 / 暂停，`Alt` + `↑` / `↓` 调节音量（按住 `Shift` 微调）
 - **歌词**：逐字歌词（YRC）渐变高亮，无逐字数据时使用普通 LRC
-- **全屏播放页**：方形专辑封面（主色光晕、玻璃边缘高光）、背景随封面动态取色、沉浸式歌词（仅当前行清晰，其余按距离逐级高斯模糊）、歌词 / 评论双面板
-- **MV 播放**：基于 Video.js 10 的 React 组件与 macOS 风格皮肤，支持全屏、画中画、音量、快捷键，播 MV 时自动暂停音乐并在结束后恢复
+- **全屏播放页**：CD 唱片、专辑色渐变背景、沉浸式歌词
 - **登录**：手机验证码 / 扫码登录，登录 Cookie 本地持久化，过期自动调用 `/login/refresh`；未登录时使用游客 Cookie
 - **本地缓存**：ffmpeg.wasm 将播放过的歌曲转码为 Opus 存入 IndexedDB，可在设置中选择 64 / 96 / 128kbps，查看缓存列表、单曲或批量下载、一键清除
 - **外观**：浅色 / 深色模式切换，隐藏式滚动条，Apple 风格动效
-- **桌面端**：Electrobun 原生窗口，隐藏系统标题栏并自绘标题栏（可拖动、最小化 / 最大化 / 关闭，关闭后隐藏到托盘），内置本地 API 服务，无需额外启动后端
+- **桌面端**：Electrobun 原生窗口，内置本地 API 服务，无需额外启动后端
 
 ## 技术栈
 
 - React 19、TypeScript、Vite 8
 - TanStack Router（文件路由）、Zustand（状态管理）、TanStack Virtual（虚拟列表）
 - Tailwind CSS v4、[@pikoloo/darwin-ui](https://www.npmjs.com/package/@pikoloo/darwin-ui)
-- [@videojs/react](https://videojs.org/docs/framework/react) 10（MV 播放器与皮肤）
 - NetEaseCloudMusicApiEnhanced（`server/` 本地 API）
 - ffmpeg.wasm + IndexedDB（音频缓存）
 - Electrobun + Hutch + Bun（Windows 桌面端）
@@ -67,14 +65,15 @@ pnpm dev
 
 桌面端由 Electrobun 驱动，构建时会把 `server/` 打包成单文件并嵌入 Bun 主进程，因此运行安装版时不需要单独启动 `dev:api`。
 
-窗口使用 `hiddenInset` 样式：没有系统标题栏，标题栏由渲染层绘制（`src/components/layout/TitleBar.tsx`），通过 `src/bun` 暴露的 `/window-state`、`/window-action` 接口完成最小化、最大化与关闭；macOS 保留原生红黄绿按钮，Windows / Linux 使用自绘按钮，关闭走 `will-close` 隐藏到托盘，音乐继续播放。
-
 ```bash
 # 开发模式（需要 Hutch CLI 在 PATH 中）
 pnpm desktop:dev
 
-# 构建 Windows 安装包
+# 构建 Windows 安装包（Electrobun 自带）
 pnpm desktop:build
+
+# 可选：再生成一个支持自选安装目录的安装包（需要 Inno Setup 6）
+pnpm desktop:installer
 ```
 
 桌面主进程（`src/bun`）的类型检查需要先同步 Electrobun 依赖，再执行 `pnpm typecheck:desktop`。
@@ -84,17 +83,36 @@ pnpm desktop:build
 - `声屿-Setup.exe`
 - `声屿-Setup.tar.zst`（需与安装器放在同一目录）
 
+Electrobun 自带的 `Setup.exe` 是「每用户自解压安装器」：固定装到 `%LOCALAPPDATA%\Programs\声屿`，提示框只有安装进度，**没有安装目录选择页，也没有可用的命令行参数改路径**（`win.*` 配置里同样没有对应字段）。需要让用户自选目录时，用 Inno Setup 脚本再包一层：
+
+```bash
+# 1) 安装 Inno Setup 6（一次性）
+winget install --id JRSoftware.InnoSetup -e
+
+# 2) 先产出 build/stable-win-x64/声屿/，再打自定义安装器
+pnpm desktop:release
+```
+
+产物为 `build/installer/声屿-Setup-Custom.exe`，脚本见 `scripts/installer/app.iss`、编译入口 `scripts/installer/build.mjs`（会依次从 `ISCC` 环境变量、PATH、`%LOCALAPPDATA%\Programs\Inno Setup 6`、`Program Files` 里找 `ISCC.exe`，找不到会提示安装命令）：
+
+- 有「选择目标位置」页（`DisableDirPage=no`）；
+- 默认装到 `%LOCALAPPDATA%\Programs\声屿`（免管理员），也可选择「为所有用户安装」装到 `Program Files`；
+- 安装前会先用 `tar` 解开 `声屿-Setup.tar.zst`，安装的是**解压后的应用镜像**（`bin/` + `Resources/app`、`main.js`、`version.json` 等），与 Electrobun 自己装完的目录完全一致 —— 装「安装源包」（`Resources` 里只有一个 `.tar.zst`）会让 launcher 报 `The installer package is incomplete`；
+- 会创建开始菜单、可选桌面快捷方式和卸载项。
+
+注意：同一个版本不要同时装 `Setup.exe` 与 `Setup-Custom.exe`，两者会各自注册卸载信息。
+
 Web 构建使用 `dist/`，桌面端构建使用 `dist-electrobun/`，互不覆盖。
 
 ## 项目结构
 
 ```text
 src/
-  bun/           Electrobun 主进程（内嵌 API、窗口图标、窗口控制接口）
-  components/    布局、播放器、MV 播放器、歌曲列表、评论、通用组件
+  bun/           Electrobun 主进程（内嵌 API、窗口图标）
+  components/    布局、播放器、歌曲列表、通用组件
   routes/        文件路由页面（首页、歌单、搜索、歌手、MV、设置等）
   store/         Zustand 状态（播放器、用户、UI、设置）
-  lib/           HTTP、会话 Cookie、音频缓存、歌词、取色、桌面桥、格式化
+  lib/           HTTP、会话 Cookie、音频缓存、歌词、格式化
 server/          本地 NetEaseCloudMusicApiEnhanced 服务
 scripts/         桌面端 API 打包脚本
 assets/          图标与 README 截图
@@ -118,9 +136,9 @@ assets/          图标与 README 截图
 | `pnpm preview` | 预览 Web 构建产物 |
 | `pnpm desktop:dev` | 启动 Electrobun 开发版 |
 | `pnpm desktop:build` | 构建 Electrobun 安装包 |
+| `pnpm desktop:installer` | 用 Inno Setup 生成支持自选目录的安装包 |
+| `pnpm desktop:release` | 构建 + 生成自定义目录安装包 |
 | `pnpm generate-routes` | 重新生成 TanStack 路由树 |
-| `pnpm test` | 运行单元测试 |
-| `pnpm lint` | ESLint 检查 |
 
 ## 环境变量
 
