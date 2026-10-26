@@ -8,12 +8,19 @@ interface ProgressSliderProps {
   className?: string
 }
 
+/**
+ * macOS-style seek bar: a 4px rounded track (AppKit's mini scrubber height)
+ * with a 13px white knob that stays inside the track at both ends.
+ */
+const THUMB_SIZE = 13
+
 export function ProgressSlider({ value, buffered = 0, onChange, className }: ProgressSliderProps) {
   const [dragging, setDragging] = useState(false)
   const [preview, setPreview] = useState<number | null>(null)
   const draggingRef = useRef(false)
   const pendingRef = useRef<number | null>(null)
   const percent = Math.min(100, Math.max(0, preview ?? value))
+  const bufferedPercent = Math.min(100, Math.max(0, buffered))
 
   const finishDrag = (commit: boolean) => {
     draggingRef.current = false
@@ -25,24 +32,21 @@ export function ProgressSlider({ value, buffered = 0, onChange, className }: Pro
   }
 
   return (
-    <div className={cn('group relative flex h-4 w-full items-center', className)}>
-      <div className="absolute h-[3px] w-full rounded-full bg-black/10" />
+    <div className={cn('seek-slider relative flex h-5 w-full items-center', className)}>
+      <div className="seek-slider__track" />
       <div
-        className="absolute h-[3px] rounded-full bg-black/20 transition-[width] duration-200"
-        style={{ width: `${Math.min(100, Math.max(0, buffered))}%` }}
+        className="seek-slider__buffer"
+        style={{ width: `${bufferedPercent}%` }}
       />
       <div
         data-testid="progress-fill"
         data-value={percent.toFixed(2)}
-        className="absolute h-[3px] rounded-full bg-[#0066cc]"
+        className="seek-slider__fill"
         style={{ width: `${percent}%` }}
       />
       <div
-        className={cn(
-          'pointer-events-none absolute h-[9px] w-[9px] -translate-x-1/2 rounded-full bg-white shadow-[0_1px_4px_rgba(0,0,0,0.35)] transition-opacity',
-          dragging ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
-        )}
-        style={{ left: `${percent}%` }}
+        className={cn('seek-slider__thumb', dragging && 'is-dragging')}
+        style={{ left: `calc(${percent}% - ${((percent / 100) * THUMB_SIZE).toFixed(2)}px)` }}
       />
       <input
         type="range"
@@ -51,7 +55,7 @@ export function ProgressSlider({ value, buffered = 0, onChange, className }: Pro
         step={0.1}
         value={percent}
         aria-label="播放进度"
-        className="relative z-10 h-4 w-full cursor-pointer appearance-none bg-transparent opacity-0"
+        className="seek-slider__input relative z-10 h-5 w-full cursor-pointer appearance-none bg-transparent opacity-0"
         onPointerDown={(event) => {
           // Capture the pointer so releasing outside the input still commits
           // the seek instead of leaving the slider stuck in drag mode.

@@ -7,6 +7,12 @@ interface VolumeSliderProps {
   className?: string
 }
 
+/**
+ * Vertical twin of `ProgressSlider`: same macOS tokens (4px rounded track,
+ * 13px white knob) defined once in `styles.css` for both sliders.
+ */
+const THUMB_SIZE = 13
+
 export function VolumeSlider({ value, onChange, className }: VolumeSliderProps) {
   const trackRef = useRef<HTMLDivElement>(null)
   const [dragging, setDragging] = useState(false)
@@ -82,21 +88,17 @@ export function VolumeSlider({ value, onChange, className }: VolumeSliderProps) 
       onPointerCancel={endDrag}
       onKeyDown={handleKeyDown}
       className={cn(
-        'group relative flex h-[112px] w-7 cursor-pointer touch-none select-none items-center justify-center outline-none',
+        'volume-slider relative flex h-[112px] w-7 cursor-pointer touch-none select-none items-center justify-center outline-none',
         className,
       )}
     >
-      <div className="relative h-full w-[4px] rounded-full bg-black/10">
+      <div className="volume-slider__track">
+        <div className="volume-slider__fill" style={{ height: `${percent}%` }} />
         <div
-          className="absolute bottom-0 left-0 w-full rounded-full bg-[#0066cc]"
-          style={{ height: `${percent}%` }}
-        />
-        <div
-          className={cn(
-            'pointer-events-none absolute left-1/2 h-3 w-3 -translate-x-1/2 translate-y-1/2 rounded-full bg-white shadow-[0_1px_4px_rgba(0,0,0,0.3)] ring-1 ring-black/5 transition-transform',
-            dragging ? 'scale-110' : 'group-hover:scale-110',
-          )}
-          style={{ bottom: `${percent}%` }}
+          className={cn('volume-slider__thumb', dragging && 'is-dragging')}
+          style={{
+            bottom: `calc(${percent}% - ${((percent / 100) * THUMB_SIZE).toFixed(2)}px)`,
+          }}
         />
       </div>
     </div>

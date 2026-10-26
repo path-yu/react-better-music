@@ -1042,6 +1042,113 @@ html.desktop .app-window {
   mask-image: linear-gradient(to bottom, #000 65%, transparent 100%);
 }
 
+/* ---------- macOS-style sliders (seek bar / volume) ---------- */
+
+/*
+ * Shared palette so the horizontal seek bar and the vertical volume slider stay
+ * identical. The 13px knob is mirrored by THUMB_SIZE in both components.
+ */
+.seek-slider,
+.volume-slider {
+  --slider-track: rgba(0, 0, 0, 0.12);
+  --slider-buffer: rgba(0, 0, 0, 0.2);
+  --slider-fill: var(--apple-blue);
+  --slider-thumb-shadow:
+    0 0 0 0.5px rgba(0, 0, 0, 0.16), 0 1px 3px rgba(0, 0, 0, 0.28);
+  --slider-focus-ring: 0 0 0 3px rgba(0, 102, 204, 0.35);
+}
+
+.dark .seek-slider,
+.dark .volume-slider {
+  --slider-track: rgba(255, 255, 255, 0.16);
+  --slider-buffer: rgba(255, 255, 255, 0.3);
+  /* Brighter system blue: #0066cc is too dim against the #1c1c1e chrome. */
+  --slider-fill: #0a84ff;
+  --slider-thumb-shadow:
+    0 0 0 0.5px rgba(0, 0, 0, 0.4), 0 1px 4px rgba(0, 0, 0, 0.5);
+  --slider-focus-ring: 0 0 0 3px rgba(10, 132, 255, 0.45);
+}
+
+.seek-slider__track,
+.seek-slider__buffer,
+.seek-slider__fill {
+  position: absolute;
+  top: 50%;
+  height: 4px;
+  margin-top: -2px;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.seek-slider__track {
+  inset-inline: 0;
+  background: var(--slider-track);
+}
+
+.seek-slider__buffer {
+  left: 0;
+  background: var(--slider-buffer);
+}
+
+.seek-slider__fill {
+  left: 0;
+  background: var(--slider-fill);
+}
+
+.seek-slider__thumb,
+.volume-slider__thumb {
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: var(--slider-thumb-shadow);
+  pointer-events: none;
+  transition:
+    transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.18s ease;
+}
+
+.seek-slider__thumb {
+  top: 50%;
+  margin-top: -6.5px;
+}
+
+/* The knob is always visible; it only grows under the pointer/while scrubbing. */
+.seek-slider:hover .seek-slider__thumb,
+.seek-slider__thumb.is-dragging,
+.volume-slider:hover .volume-slider__thumb,
+.volume-slider__thumb.is-dragging {
+  transform: scale(1.12);
+}
+
+.seek-slider:has(.seek-slider__input:focus-visible) .seek-slider__thumb,
+.volume-slider:focus-visible .volume-slider__thumb {
+  box-shadow: var(--slider-focus-ring), var(--slider-thumb-shadow);
+}
+
+/* Vertical variant used by the volume popover. */
+.volume-slider__track {
+  position: relative;
+  width: 4px;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--slider-track);
+}
+
+.volume-slider__fill {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  border-radius: 999px;
+  background: var(--slider-fill);
+}
+
+.volume-slider__thumb {
+  left: 50%;
+  margin-left: -6.5px;
+}
+
 /* ---------- Video.js 10 player skin ---------- */
 
 /*
