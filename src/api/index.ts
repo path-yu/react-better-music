@@ -170,7 +170,11 @@ export async function updatePlaylistCover(file: File, imgSize: number, id: strin
 }
 
 export async function updatePlaylistSubscribe(params: { id: string | number; t: 1 | 2 }) {
-  return get<ApiResponse>('/playlist/subscribe', { ...params, timestamp: Date.now() })
+  const res = await get<ApiResponse>('/playlist/subscribe', { ...params, timestamp: Date.now() })
+  // `subscribed` is part of the detail payload; a cached copy would show the
+  // pre-toggle state when the user navigates back within the TTL.
+  if (res.code === 200) invalidateApiCache(['/playlist/detail'])
+  return res
 }
 
 /* ---------------------------------- song --------------------------------- */

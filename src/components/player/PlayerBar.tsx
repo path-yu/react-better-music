@@ -317,8 +317,17 @@ export function PlayerBar() {
         </button>
 
         <div
+          role="button"
+          tabIndex={0}
           className="min-w-0 flex-1 cursor-pointer"
           onClick={() => toggleNowPlaying()}
+          onKeyDown={(event) => {
+            if (event.target !== event.currentTarget) return
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault()
+              toggleNowPlaying()
+            }
+          }}
           title={showNowPlaying ? '收起播放页' : '打开播放页'}
         >
           <div className="flex items-center gap-2">

@@ -115,7 +115,7 @@ const playableQueue = (songs: Song[]) => songs.filter((song) => song.fee !== 0)
 // NetEase media URLs expire after roughly 20 minutes; treat anything older
 // than this as stale and resolve it again before playback.
 const URL_TTL = 10 * 60 * 1000
-// Give the current track a head start before downloading both neighbours.
+// Give the current track a head start before downloading the next one.
 const AUDIO_PREFETCH_DELAY = 1800
 
 let prefetchTimer: number | undefined
@@ -198,10 +198,11 @@ export const usePlayerStore = create<PlayerState>()(
         return request
       }
 
-      // Resolve both neighbours' URLs right away and download their audio once
-      // the current track is ready, so next/prev can start from a local blob.
+      // Resolve the next track's URL right away and download its audio once
+      // the current track is ready, so the next transition can start from a
+      // local blob.
       const prefetchNeighbors = (index: number, delay = AUDIO_PREFETCH_DELAY) => {
-        const { queue } = get()
+        const { queue, mode } = get()
         const token = prefetchToken + 1
         prefetchToken = token
         if (prefetchTimer !== undefined) {
@@ -210,8 +211,11 @@ export const usePlayerStore = create<PlayerState>()(
         }
 
         const findNext = () => {
-          for (let step = 1; step < queue.length; step += 1) {
-            const candidateIndex = (index + step) % queue.length
+          // Random jumps are unpredictable and single-track loop replays the
+          // same song, so only sequential playback has a reliable neighbour.
+          if (mode !== 'order') return null
+          for (let step = 1; index + step < queue.length; step += 1) {
+            const candidateIndex = index + step
             const candidate = queue[candidateIndex]
             if (candidate && candidate.fee !== 0) {
               return { index: candidateIndex, song: candidate }
@@ -442,10 +446,14 @@ export const usePlayerStore = create<PlayerState>()(
         const { queue, currentIndex, mode } = get()
         if (!queue.length) return
         if (mode === 'random' && queue.length > 1) {
-          let nextIndex = currentIndex
-          while (nextIndex === currentIndex) {
-            nextIndex = Math.floor(Math.random() * queue.length)
+          const candidates = queue
+            .map((song, index) => (song && song.fee !== 0 ? index : -1))
+            .filter((index) => index >= 0 && index !== currentIndex)
+          if (!candidates.length) {
+            set({ playing: false })
+            return
           }
+          const nextIndex = candidates[Math.floor(Math.random() * candidates.length)]
           set((state) => ({
             currentIndex: nextIndex,
             playing: true,
@@ -458,9 +466,13 @@ export const usePlayerStore = create<PlayerState>()(
             lyricLoading: true,
             playToken: state.playToken + 1,
           }))
-          await loadAt(nextIndex)
-          maybeRefillHeart()
-          return
+          const ok = await loadAt(nextIndex)
+          if (ok) {
+            maybeRefillHeart()
+            return
+          }
+          // Fall through to the sequential scan so a failed random pick does
+          // not leave the player silently stuck on an empty source.
         }
         let index = currentIndex
         // Sequential playback stops at the end of the queue; only previous /
@@ -524,10 +536,13 @@ export const usePlayerStore = create<PlayerState>()(
             return
           }
           const target = songs[index]
-          const targetIndex = Math.max(
-            0,
-            target ? list.findIndex((song) => song.id === target.id) : 0,
-          )
+          if (target && target.fee === 0) {
+            toast.warning(`「${target.name}」暂无音源`)
+            return
+          }
+          const targetIndex = target
+            ? Math.max(0, list.findIndex((song) => song.id === target.id))
+            : 0
           set((state) => ({
             queue: list,
             currentIndex: targetIndex,
@@ -745,7 +760,7 @@ export const usePlayerStore = create<PlayerState>()(
 
         prefetchNext() {
           // onLoadedData has fired, so the current track no longer needs the
-          // bandwidth head start: download both neighbours right away.
+          // bandwidth head start: download the next track right away.
           prefetchNeighbors(get().currentIndex, 0)
         },
 

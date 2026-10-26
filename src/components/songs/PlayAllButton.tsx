@@ -19,7 +19,14 @@ export function PlayAllButton({ songs, playlistId, label = '播放全部' }: Pla
       toast.warning('暂无可播放歌曲')
       return
     }
-    void initQueue(songs, 0, playlistId)
+    // Start from the first playable track: initQueue rejects an unplayable
+    // target instead of silently falling back to index 0.
+    const start = songs.findIndex((song) => song.fee !== 0)
+    if (start < 0) {
+      toast.warning('该列表暂无可播放歌曲')
+      return
+    }
+    void initQueue(songs, start, playlistId)
   }
 
   return (

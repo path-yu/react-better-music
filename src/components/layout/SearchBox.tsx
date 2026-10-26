@@ -43,8 +43,6 @@ export function SearchBox() {
   const removeSearchHistory = useUserStore((state) => state.removeSearchHistory)
   const clearSearchHistory = useUserStore((state) => state.clearSearchHistory)
   const playSong = usePlayerStore((state) => state.playSong)
-  const insertPlay = usePlayerStore((state) => state.playSong)
-  const hasQueue = usePlayerStore((state) => state.queue.length > 0)
 
   useEffect(() => {
     fetchDefaultSearchKeyword()
@@ -121,11 +119,7 @@ export function SearchBox() {
           playable = { ...song, al: { ...song.al, picUrl: album.picUrl } }
         }
       }
-      if (hasQueue) {
-        await insertPlay(playable)
-      } else {
-        await playSong(playable)
-      }
+      await playSong(playable)
       setOpen(false)
     } catch {
       toast.error('播放失败')

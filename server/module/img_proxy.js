@@ -10,11 +10,13 @@ module.exports = async (query) => {
   if (!raw || !ALLOWED_HOST.test(raw)) {
     throw {
       status: 400,
-      body: { code: 400, msg: 'Invalid image url', url: raw, queryUrl: query.url },
+      body: { code: 400, msg: 'Invalid image url' },
     }
   }
 
-  const url = raw.includes('?') ? `${raw}&param=64y64` : `${raw}?param=64y64`
+  const url = /([?&])param=/.test(raw)
+    ? raw
+    : `${raw}${raw.includes('?') ? '&' : '?'}param=64y64`
   try {
     const response = await axios.get(url, {
       responseType: 'arraybuffer',
@@ -36,13 +38,13 @@ module.exports = async (query) => {
       },
     }
   } catch (error) {
+    // Keep the internal reason in the server log, not in the HTTP response.
+    console.error('[img_proxy]', error.message)
     throw {
       status: 502,
       body: {
         code: 502,
         msg: 'Image fetch failed',
-        detail: error.message,
-        url,
       },
     }
   }

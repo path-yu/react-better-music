@@ -16,6 +16,7 @@ export function QueuePanel() {
   const playing = usePlayerStore((state) => state.playing)
   const toggleQueue = usePlayerStore((state) => state.toggleQueue)
   const playAt = usePlayerStore((state) => state.playAt)
+  const togglePlay = usePlayerStore((state) => state.togglePlay)
   const clearQueue = usePlayerStore((state) => state.clearQueue)
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -31,6 +32,15 @@ export function QueuePanel() {
   if (!show) return null
 
   const virtualItems = virtualizer.getVirtualItems()
+
+  const handleRowPlay = (index: number) => {
+    // Clicking the active row should pause/resume, not restart from zero.
+    if (index === currentIndex) {
+      void togglePlay()
+      return
+    }
+    void playAt(index)
+  }
 
   return (
     <div className="absolute inset-x-0 bottom-[76px] top-0 z-[70] flex justify-end">
@@ -92,10 +102,10 @@ export function QueuePanel() {
                   <div
                     role="button"
                     tabIndex={0}
-                    onClick={() => void playAt(virtualRow.index)}
+                    onClick={() => handleRowPlay(virtualRow.index)}
                     onKeyDown={(event) => {
                       if (event.target !== event.currentTarget) return
-                      if (event.key === 'Enter') void playAt(virtualRow.index)
+                      if (event.key === 'Enter') handleRowPlay(virtualRow.index)
                     }}
                     className={cn(
                       'group flex h-full w-full cursor-pointer items-center gap-2.5 px-4 text-left transition-colors',

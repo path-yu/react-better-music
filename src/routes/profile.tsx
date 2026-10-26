@@ -43,6 +43,7 @@ const genderOptions = [
   { value: '1', label: '男' },
   { value: '2', label: '女' },
 ]
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024
 
 function daysInMonth(month: number, year: number) {
   if (month === 2) return year % 4 === 0 ? 29 : 28
@@ -172,6 +173,14 @@ function ProfilePage() {
     const file = event.target.files?.[0]
     event.target.value = ''
     if (!file) return
+    if (!file.type.startsWith('image/')) {
+      toast.warning('请选择图片文件')
+      return
+    }
+    if (file.size > MAX_AVATAR_BYTES) {
+      toast.warning('图片不能超过 5MB')
+      return
+    }
     setUploading(true)
     try {
       const size = await getImageSize(file)

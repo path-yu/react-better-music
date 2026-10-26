@@ -73,6 +73,8 @@ pnpm desktop:dev
 pnpm desktop:build
 ```
 
+桌面主进程（`src/bun`）的类型检查需要先同步 Electrobun 依赖，再执行 `pnpm typecheck:desktop`。
+
 构建产物位于 `build/stable-win-x64/`：
 
 - `声屿-Setup.exe`

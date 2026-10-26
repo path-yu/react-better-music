@@ -9,6 +9,7 @@
     "dev": "vite dev --port 5173",
     "dev:api": "node server/app.js",
     "typecheck": "tsc --noEmit",
+    "typecheck:desktop": "tsc --noEmit -p tsconfig.bun.json",
     "lint": "eslint src",
     "test": "vitest run",
     "test:watch": "vitest",

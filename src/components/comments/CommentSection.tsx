@@ -77,12 +77,16 @@ export function CommentSection({
 
   const handleLoadMore = async () => {
     if (loadingMore) return
+    // Capture the page identity: the resource may change while the request is
+    // in flight, and its response must not be appended to the new list.
+    const requestId = requestIdRef.current
+    const offset = serverCountRef.current
+    const last = getArrLast(data.comments)
+    const before = data.total > 5000 && last ? last.time : undefined
     setLoadingMore(true)
     try {
-      const offset = serverCountRef.current
-      const last = getArrLast(data.comments)
-      const before = data.total > 5000 && last ? last.time : undefined
       const response = await fetchPage(offset, before)
+      if (requestIdRef.current !== requestId) return
       const fetched = response.comments ?? []
       serverCountRef.current = offset + fetched.length
       setData((prev) => {
@@ -95,7 +99,7 @@ export function CommentSection({
         }
       })
     } catch {
-      toast.error('加载更多评论失败')
+      if (requestIdRef.current === requestId) toast.error('加载更多评论失败')
     } finally {
       setLoadingMore(false)
     }

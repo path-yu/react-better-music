@@ -123,14 +123,6 @@ function SonglistsPage() {
         </span>
       </div>
 
-      {/* {loading ? (
-        <Skeleton className="mt-5 h-[176px] w-full rounded-[20px]" />
-      ) : hero ? (
-    null
-      ) : (
-        <EmptyState title="暂无精品歌单" />
-      )} */}
-
       <div className="sticky top-0 z-20 -mx-8 mt-5 bg-white/88 px-8 py-2.5 backdrop-blur-xl">
         <div className="flex items-center gap-2">
           <button

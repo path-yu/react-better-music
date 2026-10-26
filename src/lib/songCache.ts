@@ -40,6 +40,8 @@ let ffmpegPromise: Promise<FfmpegBundle> | null = null
 let writeQueue: Promise<void> = Promise.resolve()
 const pending = new Map<number, Promise<void>>()
 let cacheWarningShown = false
+// Bumped by clearAudioCache so jobs queued before a clear cannot write back.
+let cacheEpoch = 0
 
 interface FfmpegBundle {
   ffmpeg: FFmpeg
@@ -191,7 +193,8 @@ async function loadFfmpeg(): Promise<FfmpegBundle> {
   return ffmpegPromise
 }
 
-async function transcodeAndStore(song: CacheableSong, source?: Blob) {
+async function transcodeAndStore(song: CacheableSong, epoch: number, source?: Blob) {
+  if (epoch !== cacheEpoch) return
   const existing = await getCachedAudio(song.id)
   if (existing) return
 
@@ -227,6 +230,7 @@ async function transcodeAndStore(song: CacheableSong, source?: Blob) {
     if (!(data instanceof Uint8Array) || data.length === 0) {
       throw new Error('ffmpeg produced an empty file')
     }
+    if (epoch !== cacheEpoch) return
     await putCachedAudio(
       song.id,
       song.name,
@@ -244,9 +248,10 @@ async function transcodeAndStore(song: CacheableSong, source?: Blob) {
 
 function enqueueCache(song: CacheableSong, source?: Blob) {
   if (typeof indexedDB === 'undefined' || pending.has(song.id)) return
+  const epoch = cacheEpoch
   // ffmpeg shares one virtual filesystem, so cache jobs must run in sequence.
   const task = writeQueue
-    .then(() => transcodeAndStore(song, source))
+    .then(() => transcodeAndStore(song, epoch, source))
     .catch((error) => {
       console.warn('[song cache] failed:', error)
       if (!cacheWarningShown) {
@@ -295,6 +300,7 @@ export async function listCachedAudio(): Promise<CachedAudioItem[]> {
 
 export async function clearAudioCache() {
   if (typeof indexedDB === 'undefined') return
+  cacheEpoch += 1
   const db = await openDb()
   const transaction = db.transaction([AUDIO_STORE, META_STORE], 'readwrite')
   transaction.objectStore(AUDIO_STORE).clear()

@@ -291,6 +291,10 @@ export const useUserStore = create<UserState>()(
 // The HTTP layer falls back to a guest cookie when /login/refresh fails; make
 // sure the UI stops showing the stale profile as if it were still signed in.
 onLoginExpired(() => {
+  // The session may have expired during the periodic cookie refresh, not just
+  // while a request was in flight; never keep serving the previous account's
+  // cached reads.
+  clearApiCache()
   useUserStore.setState({
     isLogin: false,
     profile: null,

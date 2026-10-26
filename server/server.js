@@ -294,6 +294,18 @@ async function constructServer(moduleDefs) {
         headers,
         validateStatus: () => true,
       })
+      // Only successful media responses are worth caching. A transient 403/404
+      // must not be stored for five minutes with the audio cache headers.
+      if (response.status !== 200 && response.status !== 206) {
+        response.data.on('error', () => undefined)
+        response.data.destroy()
+        res.setHeader('Cache-Control', 'no-store')
+        res.status(502).json({
+          code: 502,
+          msg: 'Audio fetch failed',
+        })
+        return
+      }
       res.status(response.status)
       for (const name of [
         'content-type',
@@ -310,10 +322,11 @@ async function constructServer(moduleDefs) {
       response.data.pipe(res)
       response.data.on('error', () => res.destroy())
     } catch (error) {
+      console.error('[audio proxy]', error.message)
+      res.setHeader('Cache-Control', 'no-store')
       res.status(502).json({
         code: 502,
         msg: 'Audio fetch failed',
-        detail: error.message,
       })
     }
   })

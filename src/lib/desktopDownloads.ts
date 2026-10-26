@@ -3,6 +3,7 @@
  * Only available in the packaged desktop app (VITE_DESKTOP=true).
  */
 const BRIDGE_BASE = 'http://127.0.0.1:13002'
+const BRIDGE_TIMEOUT = 15_000
 
 /**
  * The main process appends a per-launch token to the view URL. The router may
@@ -20,12 +21,27 @@ export function isDesktopApp() {
   return import.meta.env.VITE_DESKTOP === 'true'
 }
 
+/** The main process may be busy (or restarting); never leave the UI waiting. */
+async function bridgeFetch(path: string, init?: RequestInit) {
+  const controller = new AbortController()
+  const timer = window.setTimeout(() => controller.abort(), BRIDGE_TIMEOUT)
+  try {
+    return await fetch(`${BRIDGE_BASE}${path}`, {
+      ...init,
+      mode: 'cors',
+      headers: bridgeAuthHeaders(),
+      signal: controller.signal,
+    })
+  } catch (error) {
+    if (controller.signal.aborted) throw new Error('下载服务响应超时', { cause: error })
+    throw error
+  } finally {
+    window.clearTimeout(timer)
+  }
+}
+
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${BRIDGE_BASE}${path}`, {
-    ...init,
-    mode: 'cors',
-    headers: bridgeAuthHeaders(),
-  })
+  const response = await bridgeFetch(path, init)
   if (!response.ok) {
     throw new Error(`下载服务请求失败 (${response.status})`)
   }
@@ -49,15 +65,10 @@ export async function openDownloadDir(): Promise<void> {
 }
 
 export async function saveDownloadFile(name: string, blob: Blob): Promise<string> {
-  const response = await fetch(
-    `${BRIDGE_BASE}/save-file?name=${encodeURIComponent(name)}`,
-    {
-      method: 'POST',
-      body: blob,
-      mode: 'cors',
-      headers: bridgeAuthHeaders(),
-    },
-  )
+  const response = await bridgeFetch(`/save-file?name=${encodeURIComponent(name)}`, {
+    method: 'POST',
+    body: blob,
+  })
   if (!response.ok) {
     throw new Error(`保存文件失败 (${response.status})`)
   }

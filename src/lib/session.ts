@@ -83,15 +83,24 @@ export function notifyLoginExpired() {
 
 async function requestCookie(path: string, params?: Record<string, string>) {
   const search = new URLSearchParams(params).toString()
-  const response = await fetch(`${API_BASE}${path}${search ? `?${search}` : ''}`, {
-    method: 'GET',
-    credentials: 'include',
-  })
-  const text = await response.text()
+  // Cookie bootstrap/refresh happens before the app is usable; a hung socket
+  // must not keep `initSession` waiting forever.
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 10_000)
   try {
-    return (text ? JSON.parse(text) : {}) as CookieResponse
-  } catch {
-    return {} as CookieResponse
+    const response = await fetch(`${API_BASE}${path}${search ? `?${search}` : ''}`, {
+      method: 'GET',
+      credentials: 'include',
+      signal: controller.signal,
+    })
+    const text = await response.text()
+    try {
+      return (text ? JSON.parse(text) : {}) as CookieResponse
+    } catch {
+      return {} as CookieResponse
+    }
+  } finally {
+    clearTimeout(timer)
   }
 }
 
