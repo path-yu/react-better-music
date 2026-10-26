@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ChevronDown, Disc3, Music2, Video } from 'lucide-react'
-import { Skeleton, Tabs, TabsContent, TabsList, TabsTrigger } from '@pikoloo/darwin-ui'
+import { Skeleton, Tabs, TabsContent, TabsList, TabsTrigger, Button } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../../components/common/ImageWithFallback'
 import { EmptyState } from '../../components/common/EmptyState'
 import { MvCard } from '../../components/cards/MvCard'
@@ -37,6 +37,8 @@ function ArtistPage() {
   const [tab, setTab] = useState('songs')
   const [bioExpanded, setBioExpanded] = useState(false)
   const [bioHeight, setBioHeight] = useState(0)
+  const [albumsLoadingMore, setAlbumsLoadingMore] = useState(false)
+  const [albumsDone, setAlbumsDone] = useState(false)
   const bioTextRef = useRef<HTMLParagraphElement>(null)
   useDocumentTitle(profile?.name ?? '歌手')
 
@@ -51,11 +53,15 @@ function ArtistPage() {
     setSimilar([])
     setBioExpanded(false)
     setBioHeight(0)
+    setAlbumsLoadingMore(false)
+    setAlbumsDone(false)
 
     Promise.allSettled([
       fetchArtistProfile(id, controller.signal),
       fetchArtistTopSongs(id, controller.signal),
-      fetchArtistAlbums(id, 30, 0, controller.signal),
+      // Album latency grows with the page size upstream, so load a small first
+      // page and fetch the rest only when the user asks for it.
+      fetchArtistAlbums(id, 12, 0, controller.signal),
       fetchArtistMvs(id, 12, 0, controller.signal),
       fetchSimilarArtists(id, controller.signal),
     ])
@@ -64,7 +70,10 @@ function ArtistPage() {
         const [artistResult, songsResult, albumsResult, mvsResult, similarResult] = results
         if (artistResult.status === 'fulfilled') setProfile(artistResult.value)
         if (songsResult.status === 'fulfilled') setSongs(songsResult.value)
-        if (albumsResult.status === 'fulfilled') setAlbums(albumsResult.value)
+        if (albumsResult.status === 'fulfilled') {
+          setAlbums(albumsResult.value)
+          if (albumsResult.value.length < 12) setAlbumsDone(true)
+        }
         if (mvsResult.status === 'fulfilled') setMvs(mvsResult.value)
         if (similarResult.status === 'fulfilled') setSimilar(similarResult.value)
         if (results.some((result) => result.status === 'rejected')) {
@@ -120,6 +129,27 @@ function ArtistPage() {
     .filter(Boolean)
     .join(' / ')
   const playlistId = `artist-${id}`
+
+  const handleLoadMoreAlbums = async () => {
+    if (albumsLoadingMore || albumsDone) return
+    setAlbumsLoadingMore(true)
+    try {
+      const next = await fetchArtistAlbums(id, 12, albums.length)
+      if (!next.length) {
+        setAlbumsDone(true)
+        return
+      }
+      setAlbums((current) => {
+        const seen = new Set(current.map((album) => album.id))
+        return [...current, ...next.filter((album) => !seen.has(album.id))]
+      })
+      if (next.length < 12) setAlbumsDone(true)
+    } catch {
+      toast.error('专辑加载失败')
+    } finally {
+      setAlbumsLoadingMore(false)
+    }
+  }
 
   return (
     <div className="px-8 pb-16 pt-6">
@@ -237,36 +267,51 @@ function ArtistPage() {
 
         <TabsContent value="albums" className="mt-3">
           {albums.length ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-              {albums.map((album) => (
-                <button
-                  key={album.id}
-                  type="button"
-                  onClick={() =>
-                    void navigate({
-                      to: '/albums/$id',
-                      params: { id: String(album.id) },
-                    })
-                  }
-                  className="apple-card group p-2.5 text-left transition-colors hover:bg-white/80"
-                >
-                  <ImageWithFallback
-                    src={album.picUrl}
-                    alt={album.name}
-                    rounded="rounded-[9px]"
-                    className="aspect-square w-full"
-                    resize="240y240"
-                  />
-                  <span className="mt-2 line-clamp-2 block text-[12px] leading-[1.4] text-black/75 transition-colors group-hover:text-[#0066cc]">
-                    {album.name}
-                  </span>
-                  <span className="mt-1 block text-[10px] text-black/30">
-                    {formatDate(album.publishTime).slice(0, 4)}
-                    {album.size ? ` · ${album.size} 首` : ''}
-                  </span>
-                </button>
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                {albums.map((album) => (
+                  <button
+                    key={album.id}
+                    type="button"
+                    onClick={() =>
+                      void navigate({
+                        to: '/albums/$id',
+                        params: { id: String(album.id) },
+                      })
+                    }
+                    className="apple-card group p-2.5 text-left transition-colors hover:bg-white/80"
+                  >
+                    <ImageWithFallback
+                      src={album.picUrl}
+                      alt={album.name}
+                      rounded="rounded-[9px]"
+                      className="aspect-square w-full"
+                      resize="240y240"
+                    />
+                    <span className="mt-2 line-clamp-2 block text-[12px] leading-[1.4] text-black/75 transition-colors group-hover:text-[#0066cc]">
+                      {album.name}
+                    </span>
+                    <span className="mt-1 block text-[10px] text-black/30">
+                      {formatDate(album.publishTime).slice(0, 4)}
+                      {album.size ? ` · ${album.size} 首` : ''}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              {!albumsDone && albums.length < (profile.albumSize ?? Infinity) ? (
+                <div className="mt-4 flex justify-center">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="rounded-full px-4"
+                    loading={albumsLoadingMore}
+                    onClick={() => void handleLoadMoreAlbums()}
+                  >
+                    加载更多专辑
+                  </Button>
+                </div>
+              ) : null}
+            </>
           ) : (
             <EmptyState title="暂无专辑" />
           )}

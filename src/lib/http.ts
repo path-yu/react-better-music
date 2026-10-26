@@ -158,6 +158,8 @@ async function runWithSession<T>(path: string, run: () => Promise<Response>) {
 interface ReadCacheRule {
   prefix: string
   ttl: number
+  /** Serve expired browsing data while refreshing it in the background. */
+  swr?: boolean
 }
 
 /**
@@ -171,12 +173,12 @@ const READ_CACHE_RULES: ReadCacheRule[] = [
   { prefix: '/top/song', ttl: 2 * 60_000 },
   { prefix: '/top/playlist', ttl: 2 * 60_000 },
   { prefix: '/playlist/highquality/tags', ttl: 10 * 60_000 },
-  { prefix: '/playlist/detail', ttl: 60_000 },
-  { prefix: '/playlist/track/all', ttl: 60_000 },
+  { prefix: '/playlist/detail', ttl: 5 * 60_000 },
+  { prefix: '/playlist/track/all', ttl: 5 * 60_000 },
   { prefix: '/mv/first', ttl: 2 * 60_000 },
   { prefix: '/mv/all', ttl: 2 * 60_000 },
   { prefix: '/mv/detail', ttl: 5 * 60_000 },
-  { prefix: '/mv/url', ttl: 60_000 },
+  { prefix: '/mv/url', ttl: 60_000, swr: false },
   { prefix: '/simi/mv', ttl: 5 * 60_000 },
   { prefix: '/artist/detail', ttl: 5 * 60_000 },
   { prefix: '/artist/top/song', ttl: 5 * 60_000 },
@@ -185,7 +187,8 @@ const READ_CACHE_RULES: ReadCacheRule[] = [
   { prefix: '/simi/artist', ttl: 5 * 60_000 },
   { prefix: '/album', ttl: 5 * 60_000 },
   { prefix: '/lyric/new', ttl: 10 * 60_000 },
-  { prefix: '/song/url/v1', ttl: 60_000 },
+  { prefix: '/song/url/v1', ttl: 60_000, swr: false },
+  { prefix: '/search/suggest', ttl: 60_000 },
   { prefix: '/search/default', ttl: 5 * 60_000 },
   { prefix: '/search/hot', ttl: 5 * 60_000 },
 ]
@@ -298,6 +301,27 @@ export function get<T>(path: string, params?: Query, signal?: AbortSignal) {
   const key = readCacheKey(path, params)
   const cached = readCache.get(key)
   if (cached && cached.expiresAt > Date.now()) {
+    return abortable(Promise.resolve(cached.data as T), signal)
+  }
+
+  // Stale-while-revalidate: browsing data is shown immediately even after its
+  // TTL, while a background request refreshes it for the next navigation.
+  // Signed media URLs opt out (`swr: false`) because a stale URL may be invalid.
+  if (cached && rule.swr !== false) {
+    if (!readInflight.has(key)) {
+      const refreshEpoch = readCacheEpoch
+      const refresh = runGet<T>(path, params)
+        .then((data) => {
+          if (refreshEpoch === readCacheEpoch && cacheablePayload(data)) {
+            storeReadCache(key, data, rule.ttl)
+          }
+          return data
+        })
+        .finally(() => {
+          if (readInflight.get(key) === refresh) readInflight.delete(key)
+        })
+      readInflight.set(key, refresh)
+    }
     return abortable(Promise.resolve(cached.data as T), signal)
   }
 
