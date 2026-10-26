@@ -679,23 +679,27 @@ html.desktop .app-window {
   width: 128%;
   height: 128%;
   object-fit: cover;
-  /* Fixed artwork surface: mid-dark so near-white lyrics have contrast. */
-  filter: blur(64px) saturate(170%) brightness(0.72);
+  /* Pushed down hard: pale covers would otherwise leave a glaring, washed-out
+     page with unreadable white text. */
+  filter: blur(64px) saturate(160%) brightness(0.46);
   transform: scale(1.02);
 }
 
-/* Light scrim: the artwork wash fades into the app parchment at the edges so
-   ink text, the glass tabs and the player bar all stay readable. */
+/* A flat floor plus gradients keeps the surface dark for *any* cover, so the
+   white type never depends on how bright the artwork happens to be. */
 .nowplaying-ambient__scrim {
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(0deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0) 52%),
-    linear-gradient(180deg, rgba(0, 0, 0, 0.24) 0%, rgba(0, 0, 0, 0) 22%),
+  /* Colour must live in `background-color`: a colour inside a multi-layer
+     `background` shorthand is invalid and would drop every layer. */
+  background-color: rgba(9, 9, 12, 0.3);
+  background-image:
+    linear-gradient(0deg, rgba(0, 0, 0, 0.44) 0%, rgba(0, 0, 0, 0) 54%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.22) 0%, rgba(0, 0, 0, 0) 22%),
     radial-gradient(
       125% 100% at 50% 32%,
       rgba(0, 0, 0, 0) 42%,
-      rgba(0, 0, 0, 0.3) 100%
+      rgba(0, 0, 0, 0.32) 100%
     );
 }
 
@@ -769,6 +773,7 @@ html.desktop .app-window {
   transform-origin: left center;
   transition:
     opacity 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 0.34s cubic-bezier(0.16, 1, 0.3, 1),
     transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -777,9 +782,18 @@ html.desktop .app-window {
   transform: scale(1.03);
 }
 
+/* Apple Music defocuses every context line so the sung one reads as in focus. */
+.lyric-line.is-blurred {
+  filter: blur(var(--lyric-blur, 0px));
+}
+
 /* Hovering a faded line brightens it before seeking (Apple uses #ffffffa3). */
 .lyric-line:not(.is-active):hover {
   opacity: 0.75;
+}
+
+.lyric-line.is-blurred:hover {
+  filter: none;
 }
 
 /* Our lyrics column is narrower than Apple's 40vw stage, so the type is fluid

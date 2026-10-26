@@ -129,9 +129,10 @@ export function LyricsPanel({
         {lines.map((line, index) => {
           const active = index === activeIndex
           const away = activeIndex < 0 ? 0 : Math.abs(index - activeIndex)
-          // Apple's context lines sit at a dim tertiary white; a gentle falloff
-          // with distance keeps the stack readable without any blur.
+          // Apple's context lines sit at a dim tertiary white and are defocused;
+          // only the line being sung stays sharp.
           const opacity = active ? 1 : Math.max(0.3, 0.55 - away * 0.06)
+          const blur = active || activeIndex < 0 ? 0 : Math.min(2.8, 0.9 + away * 0.42)
           const hasWords = Boolean(line.words?.length)
           return (
             <button
@@ -141,8 +142,17 @@ export function LyricsPanel({
               }}
               type="button"
               onClick={() => onSeek(line.time)}
-              style={{ '--lyric-opacity': opacity } as CSSProperties}
-              className={cn('lyric-line block w-full text-left', active && 'is-active')}
+              style={
+                {
+                  '--lyric-opacity': opacity,
+                  '--lyric-blur': `${blur.toFixed(2)}px`,
+                } as CSSProperties
+              }
+              className={cn(
+                'lyric-line block w-full text-left',
+                active && 'is-active',
+                blur > 0 && 'is-blurred',
+              )}
             >
               <span className="lyric-line__text block">
                 {active && hasWords ? (
