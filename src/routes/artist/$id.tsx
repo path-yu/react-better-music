@@ -245,7 +245,7 @@ function ArtistPage() {
                     alt={album.name}
                     rounded="rounded-[9px]"
                     className="aspect-square w-full"
-                    resize="320y320"
+                    resize="240y240"
                   />
                   <p className="mt-2 line-clamp-2 text-[12px] leading-[1.4] text-black/75">
                     {album.name}

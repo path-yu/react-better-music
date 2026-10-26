@@ -6,9 +6,10 @@ import type { Playlist } from '../../types'
 
 interface PlaylistCardProps {
   playlist: Playlist
+  priority?: boolean
 }
 
-export function PlaylistCard({ playlist }: PlaylistCardProps) {
+export function PlaylistCard({ playlist, priority }: PlaylistCardProps) {
   const navigate = useNavigate()
 
   return (
@@ -28,7 +29,8 @@ export function PlaylistCard({ playlist }: PlaylistCardProps) {
           src={playlist.coverImgUrl}
           alt={playlist.name}
           rounded="rounded-[9px]"
-          resize="320y320"
+          resize="240y240"
+          priority={priority}
           className="aspect-square w-full"
           imageClassName="transition-transform duration-500 group-hover:scale-[1.04]"
         />

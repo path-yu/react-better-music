@@ -31,10 +31,14 @@ export function UserMenu() {
 
   if (!isLogin || !profile) {
     return (
-      <Button size="sm" variant="primary" className="pressable rounded-full px-4" onClick={openLogin}>
-        <UserRound className="mr-1.5 h-3.5 w-3.5" />
+      <button
+        type="button"
+        onClick={openLogin}
+        className="pressable flex items-center gap-1.5 rounded-full bg-[#0066cc] px-4 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-[#0071e3]"
+      >
+        <UserRound className="h-3.5 w-3.5" />
         登录
-      </Button>
+      </button>
     )
   }
 

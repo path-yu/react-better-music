@@ -23,7 +23,7 @@ export function MvCard({ mv, className }: MvCardProps) {
           src={mv.cover}
           alt={mv.name}
           rounded="rounded-[12px]"
-          resize="480y270"
+          resize="400y225"
           className="aspect-video w-full"
           imageClassName="transition-transform duration-500 group-hover:scale-[1.04]"
         />

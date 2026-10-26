@@ -13,6 +13,8 @@ interface ImageWithFallbackProps {
   instant?: boolean
   /** CDN resize hint, e.g. "300y300" or "480y270" (NetEase hosts only). */
   resize?: string
+  /** Above-the-fold/LCP images should load eagerly with a high priority. */
+  priority?: boolean
 }
 
 export const ImageWithFallback = memo(function ImageWithFallback({
@@ -23,6 +25,7 @@ export const ImageWithFallback = memo(function ImageWithFallback({
   rounded = 'rounded-[12px]',
   instant = false,
   resize,
+  priority = false,
 }: ImageWithFallbackProps) {
   const imgRef = useRef<HTMLImageElement>(null)
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null)
@@ -60,7 +63,8 @@ export const ImageWithFallback = memo(function ImageWithFallback({
           ref={imgRef}
           src={resolvedSrc}
           alt={alt}
-          loading="lazy"
+          loading={priority ? 'eager' : 'lazy'}
+          fetchPriority={priority ? 'high' : 'auto'}
           decoding="async"
           draggable={false}
           onLoad={() => setLoadedSrc(resolvedSrc)}

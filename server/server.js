@@ -9,6 +9,7 @@ const exec = require('child_process').exec
 const cache = require('./util/apicache').middleware
 const { cookieToJson, getCookieHeader, hasCookie } = require('./util/index')
 const fileUpload = require('express-fileupload')
+const compression = require('compression')
 const decode = require('safe-decode-uri-component')
 const logger = require('./util/logger.js')
 const { APP_CONF } = require('./util/config.json')
@@ -198,6 +199,9 @@ async function constructServer(moduleDefs) {
   const { CORS_ALLOW_ORIGIN } = process.env
   const allowOrigins = parseCorsAllowOrigins(CORS_ALLOW_ORIGIN)
   app.set('trust proxy', true)
+  // JSON payloads (banners, playlists, lyrics) are highly compressible; the
+  // local API is the first hop for every route in the web build.
+  app.use(compression())
 
   /**
    * Serving static files

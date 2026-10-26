@@ -147,16 +147,18 @@ function DiscoveryPage() {
           <div
             role="button"
             tabIndex={0}
+            aria-label={currentBanner.typeTitle ?? '推荐轮播'}
             onClick={() => handleBannerClick(currentBanner)}
             onKeyDown={(event) => event.key === 'Enter' && handleBannerClick(currentBanner)}
             className="group relative block h-[clamp(190px,24vw,300px)] w-full cursor-pointer overflow-hidden rounded-[22px] bg-[#f0f0f2]"
           >
             <ImageWithFallback
               src={currentBanner.imageUrl}
-              alt={currentBanner.typeTitle ?? '推荐'}
+              alt=""
               rounded="rounded-[22px]"
               className="h-full w-full"
               resize="1200y600"
+              priority
               imageClassName="transition-transform duration-[900ms] group-hover:scale-[1.02]"
             />
             {currentBanner.typeTitle ? (
@@ -199,12 +201,17 @@ function DiscoveryPage() {
                   key={banner.imageUrl}
                   type="button"
                   aria-label={`第 ${dotIndex + 1} 张`}
+                  aria-current={dotIndex === index ? 'true' : undefined}
                   onClick={() => setIndex(dotIndex)}
-                  className={cn(
-                    'h-[3px] rounded-full transition-all',
-                    dotIndex === index ? 'w-5 bg-white' : 'w-[7px] bg-white/45',
-                  )}
-                />
+                  className="flex h-6 w-6 items-center justify-center"
+                >
+                  <span
+                    className={cn(
+                      'block h-[3px] rounded-full transition-all',
+                      dotIndex === index ? 'w-5 bg-white' : 'w-[7px] bg-white/45',
+                    )}
+                  />
+                </button>
               ))}
             </div>
           </>
@@ -226,8 +233,12 @@ function DiscoveryPage() {
           <SectionError title="推荐歌单加载失败" onRetry={retryPlaylists} />
         ) : playlists.length ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {playlists.map((playlist) => (
-              <PlaylistCard key={playlist.id} playlist={playlist} />
+            {playlists.map((playlist, index) => (
+              <PlaylistCard
+                key={playlist.id}
+                playlist={playlist}
+                priority={index < 4}
+              />
             ))}
           </div>
         ) : (
@@ -321,7 +332,7 @@ function SectionTitle({
           {icon}
           {title}
         </h2>
-        {subtitle ? <p className="mt-1 text-[11px] text-black/35">{subtitle}</p> : null}
+        {subtitle ? <p className="mt-1 text-[11px] text-black/55">{subtitle}</p> : null}
       </div>
     </div>
   )
