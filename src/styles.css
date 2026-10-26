@@ -554,10 +554,33 @@ html.desktop .app-window {
 
 .nowplaying-overlay {
   position: absolute;
-  inset: 0 0 76px 0;
+  /* Full-bleed: the artwork backdrop continues behind the player bar so the
+     bottom edge has no seam (content is padded by the bar height instead). */
+  inset: 0;
   z-index: 60;
   overflow: hidden;
+  /* Fixed artwork surface: it keeps its own dark palette regardless of the app
+     theme, so the page never flips when the user toggles light/dark outside. */
+  --apple-ink: #f5f5f7;
+  --apple-body: #f5f5f7;
+  --apple-muted: #98989d;
+  --apple-parchment: #1c1c1e;
+  --apple-pearl: #232325;
+  --apple-hairline: rgba(255, 255, 255, 0.12);
+  --apple-divider: rgba(255, 255, 255, 0.08);
+  color: var(--apple-ink);
   animation: nowplaying-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* The overlay carries its own `.dark` class (it stays dark even when the app is
+   light), so the nested `.dark .nowplaying-overlay ...` border tweaks never
+   match; mirror them on the element itself. */
+.nowplaying-overlay.dark [class~='border-white/60'] {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.nowplaying-overlay.dark [class~='border-white/50'] {
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 /* 播放详情页保持沉浸式：歌词等所有滚动区域都不显示滚动条。 */
@@ -570,9 +593,127 @@ html.desktop .app-window {
   display: none;
 }
 
+/*
+ * Comment composer. It used `bg-white`, which the dark theme turns into an
+ * opaque #232325 block — pasted on top of a translucent panel. Keep it a real
+ * card on light pages and a translucent field on the artwork surface.
+ */
+.comment-composer {
+  background-color: #ffffff;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.dark .comment-composer {
+  background-color: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.dark .comment-composer:focus-within {
+  background-color: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+/* Darwin form controls inherit page colours; on the artwork surface the input
+   text has to be light (the placeholder used to render dark-on-dark). */
+.nowplaying-overlay textarea,
+.nowplaying-overlay input {
+  color: #f5f5f7;
+  caret-color: #5ac8fa;
+  /* Darwin ships `focus:` / `active:` surfaces of its own, which repainted the
+     field on click. The composer card owns the surface, so keep it transparent
+     in every state. */
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.nowplaying-overlay textarea:focus,
+.nowplaying-overlay input:focus,
+.nowplaying-overlay textarea:active,
+.nowplaying-overlay input:active {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  outline: none;
+}
+
+.nowplaying-overlay textarea::placeholder,
+.nowplaying-overlay input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* `0/140` sits on the dark field at 34% white, which is too dim to read. */
+.nowplaying-overlay[class~='dark'] [class~='text-black/25'] {
+  color: rgba(255, 255, 255, 0.58);
+}
+
+/* The bar rides on top of the same artwork backdrop, so it is a thin frosted
+   layer rather than a solid strip — no seam with the lyrics screen above. */
+.player-glass--immersive,
+.dark .player-glass.player-glass--immersive {
+  /* Same recipe as the view above it: a thin dark frosted layer so the bar is a
+     continuation of the artwork surface rather than its own strip. */
+  background: linear-gradient(
+    180deg,
+    rgba(8, 8, 10, 0.12) 0%,
+    rgba(8, 8, 10, 0.36) 100%
+  );
+  border-top-color: rgba(255, 255, 255, 0.06);
+  backdrop-filter: saturate(170%) blur(32px);
+  -webkit-backdrop-filter: saturate(170%) blur(32px);
+}
+
+/* ---------- immersive now-playing backdrop ---------- */
+
+.nowplaying-ambient {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  /* Keep the grain's blend mode from reaching the page behind. */
+  isolation: isolate;
+}
+
+/* Apple Music uses the cover itself (`background-size: cover`), blurred, at
+   full strength — no white veil and no extra colour tint. */
+.nowplaying-ambient__art {
+  position: absolute;
+  inset: -14%;
+  width: 128%;
+  height: 128%;
+  object-fit: cover;
+  /* Fixed artwork surface: mid-dark so near-white lyrics have contrast. */
+  filter: blur(64px) saturate(170%) brightness(0.72);
+  transform: scale(1.02);
+}
+
+/* Light scrim: the artwork wash fades into the app parchment at the edges so
+   ink text, the glass tabs and the player bar all stay readable. */
+.nowplaying-ambient__scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(0deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0) 52%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.24) 0%, rgba(0, 0, 0, 0) 22%),
+    radial-gradient(
+      125% 100% at 50% 32%,
+      rgba(0, 0, 0, 0) 42%,
+      rgba(0, 0, 0, 0.3) 100%
+    );
+}
+
+/* A hint of film grain hides banding in the huge blurred gradient. */
+.nowplaying-ambient__grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
 .lyrics-viewport {
-  --lyric-active: #0066cc;
-  --lyric-dim: rgba(0, 0, 0, 0.28);
+  /* Apple's lyric tokens: current line `--systemPrimary-onDark` (#ffffffeb),
+     context `#ffffff40`-`#ffffff80`. */
+  --lyric-active: #ffffffeb;
+  --lyric-sub: rgba(255, 255, 255, 0.6);
+  --lyric-dim: rgba(255, 255, 255, 0.4);
   -webkit-mask-image: linear-gradient(
     to bottom,
     transparent 0%,
@@ -593,10 +734,7 @@ html.desktop .app-window {
   );
 }
 
-.dark .lyrics-viewport {
-  --lyric-active: #2997ff;
-  --lyric-dim: rgba(255, 255, 255, 0.3);
-}
+
 
 .tag-scroller {
   -webkit-mask-image: linear-gradient(
@@ -617,6 +755,60 @@ html.desktop .app-window {
 
 .lyric-word {
   white-space: pre-wrap;
+}
+
+/* Apple Music style: every line shares one colour, depth comes from opacity and
+   a gaussian blur that grows with the distance from the active line. */
+/* One weight for every line: only opacity changes, so switching lines never
+   reflows the list (Apple Music keeps the lyrics bolder than plain body text). */
+.lyric-line {
+  color: var(--lyric-active);
+  font-weight: 600;
+  opacity: var(--lyric-opacity, 1);
+  padding-block: 0.62em;
+  transform-origin: left center;
+  transition:
+    opacity 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Apple nudges the current line up a touch; more than this fights the scroll. */
+.lyric-line.is-active {
+  transform: scale(1.03);
+}
+
+/* Hovering a faded line brightens it before seeking (Apple uses #ffffffa3). */
+.lyric-line:not(.is-active):hover {
+  opacity: 0.75;
+}
+
+/* Our lyrics column is narrower than Apple's 40vw stage, so the type is fluid
+   instead of following their 28/38/50px viewport ladder. */
+.lyric-line__text {
+  font-size: clamp(18px, 1.7vw, 28px);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.lyric-line__translate {
+  color: var(--lyric-sub);
+  /* Apple's supplementary size is 0.54 × the line size. */
+  font-size: 0.54em;
+  line-height: 1.4;
+}
+
+.lyrics-viewport--compact .lyric-line {
+  padding-block: 0.35em;
+}
+
+.lyrics-viewport--compact .lyric-line__text {
+  font-size: 12.5px;
+  line-height: 1.45;
+  letter-spacing: 0;
+}
+
+.lyrics-viewport--compact .lyric-line__translate {
+  font-size: 0.85em;
 }
 
 @keyframes nowplaying-enter {

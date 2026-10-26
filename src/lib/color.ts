@@ -1,6 +1,6 @@
 import { apiUrl } from './http'
 
-const colorCache = new Map<string, string>()
+const paletteCache = new Map<string, string[]>()
 
 function toRgb(value: string): [number, number, number] | null {
   const hex = value.trim().match(/^#([\da-f]{3,8})$/i)
@@ -39,6 +39,14 @@ export function mixColor(color: string, base: string, amount: number) {
     Math.round(channel * ratio + target[index] * (1 - ratio)),
   )
   return `rgb(${channels.join(', ')})`
+}
+
+/** Same colour, but translucent — used for the ambient now-playing gradients. */
+export function withAlpha(color: string, alpha: number) {
+  const rgb = toRgb(color)
+  if (!rgb) return color
+  const value = Math.min(1, Math.max(0, alpha))
+  return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${value})`
 }
 
 function loadImage(url: string): Promise<HTMLImageElement | null> {
@@ -81,24 +89,24 @@ async function loadProxiedImage(src: string): Promise<HTMLImageElement | null> {
   }
 }
 
-function sampleColor(image: HTMLImageElement): string | null {
+interface Bucket {
+  r: number
+  g: number
+  b: number
+  count: number
+  score: number
+}
+
+function sampleBuckets(image: HTMLImageElement): Bucket[] {
   const canvas = document.createElement('canvas')
   try {
     const size = 32
     canvas.width = size
     canvas.height = size
     const context = canvas.getContext('2d', { willReadFrequently: true })
-    if (!context) return null
+    if (!context) return []
     context.drawImage(image, 0, 0, size, size)
     const { data } = context.getImageData(0, 0, size, size)
-
-    interface Bucket {
-      r: number
-      g: number
-      b: number
-      count: number
-      score: number
-    }
 
     const buckets = new Map<number, Bucket>()
     for (let index = 0; index < data.length; index += 4) {
@@ -132,50 +140,86 @@ function sampleColor(image: HTMLImageElement): string | null {
       }
     }
 
-    let best: Bucket | null = null
-    for (const bucket of buckets.values()) {
-      if (!best || bucket.score > best.score) best = bucket
-    }
-    if (!best) return null
-
-    return `rgb(${Math.round(best.r / best.count)}, ${Math.round(
-      best.g / best.count,
-    )}, ${Math.round(best.b / best.count)})`
+    return [...buckets.values()]
   } catch {
-    return null
+    return []
   } finally {
     canvas.width = 0
     canvas.height = 0
   }
 }
 
+function bucketColor(bucket: Bucket) {
+  return `rgb(${Math.round(bucket.r / bucket.count)}, ${Math.round(
+    bucket.g / bucket.count,
+  )}, ${Math.round(bucket.b / bucket.count)})`
+}
+
+function bucketDistance(a: Bucket, b: Bucket) {
+  return Math.hypot(
+    a.r / a.count - b.r / b.count,
+    a.g / a.count - b.g / b.count,
+    a.b / a.count - b.b / b.count,
+  )
+}
+
 /**
- * Extract a vibrant dominant color from an artwork image using a small
+ * Apple Music builds its lyrics backdrop as a mesh of several artwork colours,
+ * not a single tint. Return the most prominent yet visually distinct buckets.
+ */
+function samplePalette(image: HTMLImageElement, count: number): string[] {
+  const buckets = sampleBuckets(image).sort((a, b) => b.score - a.score)
+  if (!buckets.length) return []
+
+  const picked: Bucket[] = []
+  for (const bucket of buckets) {
+    if (picked.length === count) break
+    if (picked.every((entry) => bucketDistance(entry, bucket) >= 64)) picked.push(bucket)
+  }
+  // Palettes with fewer distinct hues still need enough stops for the mesh.
+  for (const bucket of buckets) {
+    if (picked.length === count) break
+    if (!picked.includes(bucket)) picked.push(bucket)
+  }
+  return picked.map(bucketColor)
+}
+
+/**
+ * Extract a small, visually distinct palette from an artwork image using a
  * quantised canvas sample. A resized probe URL is requested first so the
  * CORS request never reuses a non-CORS cache entry from a regular <img>.
  */
-export async function extractDominantColor(src?: string | null): Promise<string | null> {
-  if (!src) return Promise.resolve(null)
-  const cached = colorCache.get(src)
-  if (cached) return Promise.resolve(cached)
+export async function extractArtworkPalette(
+  src?: string | null,
+  count = 4,
+): Promise<string[]> {
+  if (!src) return []
+  const cached = paletteCache.get(src)
+  if (cached) return cached.slice(0, count)
 
   const separator = src.includes('?') ? '&' : '?'
   const probe = `${src}${separator}param=64y64`
 
-  let color = null
+  let palette: string[] = []
   const proxied = await loadProxiedImage(src)
-  if (proxied) color = sampleColor(proxied)
+  if (proxied) palette = samplePalette(proxied, 5)
 
-  if (!color) {
+  if (!palette.length) {
     const probeImage = await loadImage(probe)
-    if (probeImage) color = sampleColor(probeImage)
+    if (probeImage) palette = samplePalette(probeImage, 5)
   }
 
-  if (!color) {
+  if (!palette.length) {
     const fallbackImage = await loadImage(src)
-    if (fallbackImage) color = sampleColor(fallbackImage)
+    if (fallbackImage) palette = samplePalette(fallbackImage, 5)
   }
 
-  if (color) colorCache.set(src, color)
-  return color
+  if (palette.length) paletteCache.set(src, palette)
+  return palette.slice(0, count)
+}
+
+/** Backwards compatible single-colour helper. */
+export async function extractDominantColor(src?: string | null): Promise<string | null> {
+  const [color] = await extractArtworkPalette(src, 1)
+  return color ?? null
 }

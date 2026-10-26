@@ -121,18 +121,17 @@ export function LyricsPanel({
       ref={containerRef}
       className={cn(
         'lyrics-viewport relative h-full overflow-y-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+        compact && 'lyrics-viewport--compact',
         className,
       )}
     >
       <div className={compact ? 'py-16' : 'py-[38%]'}>
         {lines.map((line, index) => {
           const active = index === activeIndex
-          const distance = activeIndex < 0 ? 99 : Math.abs(index - activeIndex)
-          const opacity = active
-            ? 1
-            : activeIndex < 0
-              ? 0.55
-              : Math.max(0.26, 0.78 - distance * 0.09)
+          const away = activeIndex < 0 ? 0 : Math.abs(index - activeIndex)
+          // Apple's context lines sit at a dim tertiary white; a gentle falloff
+          // with distance keeps the stack readable without any blur.
+          const opacity = active ? 1 : Math.max(0.3, 0.55 - away * 0.06)
           const hasWords = Boolean(line.words?.length)
           return (
             <button
@@ -142,21 +141,10 @@ export function LyricsPanel({
               }}
               type="button"
               onClick={() => onSeek(line.time)}
-              style={{ opacity }}
-              className={cn(
-                'block w-full text-left transition-all duration-300',
-                compact ? 'py-1.5' : 'py-2.5',
-                active
-                  ? 'scale-[1.02] font-semibold text-[#0066cc]'
-                  : 'text-black/40 hover:text-black/65',
-              )}
+              style={{ '--lyric-opacity': opacity } as CSSProperties}
+              className={cn('lyric-line block w-full text-left', active && 'is-active')}
             >
-              <span
-                className={cn(
-                  'block leading-snug',
-                  compact ? 'text-[12px]' : 'text-[14px]',
-                )}
-              >
+              <span className="lyric-line__text block">
                 {active && hasWords ? (
                   <ActiveWords words={line.words!} currentTimeMs={currentTimeMs} />
                 ) : (
@@ -164,14 +152,7 @@ export function LyricsPanel({
                 )}
               </span>
               {line.translate ? (
-                <span
-                  className={cn(
-                    'mt-0.5 block text-[11px] leading-snug',
-                    active ? 'text-[#0066cc]/65' : 'text-black/25',
-                  )}
-                >
-                  {line.translate}
-                </span>
+                <span className="lyric-line__translate mt-1 block">{line.translate}</span>
               ) : null}
             </button>
           )

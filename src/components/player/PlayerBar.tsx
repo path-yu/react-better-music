@@ -296,7 +296,14 @@ export function PlayerBar() {
     )
 
   return (
-    <div className="player-glass relative z-30 grid h-[76px] grid-cols-[minmax(170px,1fr)_minmax(300px,1.5fr)_minmax(150px,1fr)] items-center gap-4 px-4 max-md:grid-cols-[minmax(0,1fr)_auto] max-md:gap-2 max-md:px-3">
+    <div
+      className={cn(
+        'player-glass relative grid h-[76px] grid-cols-[minmax(170px,1fr)_minmax(300px,1.5fr)_minmax(150px,1fr)] items-center gap-4 px-4 max-md:grid-cols-[minmax(0,1fr)_auto] max-md:gap-2 max-md:px-3',
+        // While the immersive view is open, the bar floats above that artwork
+        // backdrop as frosted glass instead of sitting in its own strip.
+        showNowPlaying ? 'dark player-glass--immersive z-[70]' : 'z-30',
+      )}
+    >
       <div className="flex min-w-0 items-center gap-3">
         <button
           type="button"

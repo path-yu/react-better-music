@@ -322,7 +322,7 @@ export function CommentSection({
       </div>
 
       {showComposer && (
-        <div className="mt-4 rounded-[16px] border border-black/8 bg-white p-3">
+        <div className="comment-composer mt-4 rounded-[16px] border p-3">
           <Textarea
             value={content}
             onChange={(event) => setContent(event.target.value)}

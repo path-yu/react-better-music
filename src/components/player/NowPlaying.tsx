@@ -6,8 +6,6 @@ import {
   ListMusic,
   Loader2,
   MessageSquareText,
-  Moon,
-  Sun,
 } from 'lucide-react'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
@@ -15,18 +13,20 @@ import { LyricsPanel } from './LyricsPanel'
 import { CommentSection } from '../comments/CommentSection'
 import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
-import { useUiStore } from '../../store/ui'
 import { findLyricIndex } from '../../lib/lyric'
 import { seekAudio } from '../../lib/audio'
-import { extractDominantColor, mixColor } from '../../lib/color'
+import { extractDominantColor } from '../../lib/color'
 import { cn } from '../../lib/format'
 
+// TEMPORARY: pinned artwork for judging the ambient backdrop.
 export function NowPlaying() {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const show = usePlayerStore((state) => state.showNowPlaying)
   const queue = usePlayerStore((state) => state.queue)
   const currentIndex = usePlayerStore((state) => state.currentIndex)
   const currentSong = queue[currentIndex]
+  // Backdrop follows the current cover; the colour wash is sampled from it.
+  const artwork = currentSong?.al.picUrl
   const playing = usePlayerStore((state) => state.playing)
   const audioReady = usePlayerStore((state) => state.audioReady)
   const sourceReady = usePlayerStore((state) => state.sourceReady)
@@ -41,8 +41,6 @@ export function NowPlaying() {
   const toggleQueue = usePlayerStore((state) => state.toggleQueue)
   const likedIds = useUserStore((state) => state.likedIds)
   const likeSong = useUserStore((state) => state.likeSong)
-  const theme = useUiStore((state) => state.theme)
-  const toggleTheme = useUiStore((state) => state.toggleTheme)
   const [panel, setPanel] = useState<'lyrics' | 'comments'>('lyrics')
   const [dominantColor, setDominantColor] = useState<string | null>(null)
 
@@ -59,13 +57,13 @@ export function NowPlaying() {
     if (!show) return
     let active = true
     setDominantColor(null)
-    void extractDominantColor(currentSong?.al.picUrl).then((color) => {
+    void extractDominantColor(artwork).then((color) => {
       if (active) setDominantColor(color)
     })
     return () => {
       active = false
     }
-  }, [show, currentSong?.al.picUrl])
+  }, [show, artwork])
 
   useEffect(() => {
     if (!show) return
@@ -76,20 +74,10 @@ export function NowPlaying() {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [show, toggleNowPlaying])
 
-  const background = useMemo(() => {
-    const base = theme === 'dark' ? '#121212' : '#ffffff'
-    if (!dominantColor) return base
-    const tint = mixColor(dominantColor, base, theme === 'dark' ? 0.42 : 0.28)
-    return `linear-gradient(180deg, ${tint} 0%, ${base} 78%, ${base} 100%)`
-  }, [dominantColor, theme])
-
-  const veil = useMemo(
-    () =>
-      theme === 'dark'
-        ? 'linear-gradient(180deg, rgba(18,18,18,0.18) 0%, rgba(18,18,18,0.6) 52%, rgba(18,18,18,0.9) 84%, #121212 100%)'
-        : 'linear-gradient(180deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.7) 52%, rgba(255,255,255,0.94) 84%, #ffffff 100%)',
-    [theme],
-  )
+  // Apple Music's lyrics screen is literally the artwork: the container carries
+  // `background-image: url(cover)` + `background-color: var(--nowPlayingBackdropBG)`
+  // and `.now-playing-structure` lays a `linear-gradient(0deg,#0006,#0000 50%)`
+  // scrim on top. No white veil, no extra tints.
 
   const activeIndex = useMemo(
     () => findLyricIndex(lyricLines, currentTime * 1000),
@@ -110,34 +98,26 @@ export function NowPlaying() {
 
   return (
     <div
-      className="nowplaying-overlay"
-      style={{ backgroundColor: theme === 'dark' ? '#121212' : '#ffffff' }}
+      className="nowplaying-overlay dark"
+      style={{ backgroundColor: '#0f0f12' }}
     >
-      <div className="absolute inset-0 overflow-hidden">
-        {currentSong.al.picUrl ? (
-          <img
-            src={currentSong.al.picUrl}
-            alt=""
-            aria-hidden
-            className="h-full w-full scale-[1.35] object-cover blur-[80px] saturate-150"
-            style={{ opacity: theme === 'dark' ? 0.72 : 0.58 }}
-          />
+      <div
+        className="nowplaying-ambient"
+        aria-hidden="true"
+        style={dominantColor ? { backgroundColor: dominantColor } : undefined}
+      >
+        {artwork ? (
+          <img src={artwork} alt="" className="nowplaying-ambient__art" />
         ) : null}
-        {dominantColor ? (
-          <div
-            className="absolute inset-0"
-            style={{ background, opacity: theme === 'dark' ? 0.45 : 0.4 }}
-          />
-        ) : null}
-        <div className="absolute inset-0" style={{ background: veil }} />
+        <div className="nowplaying-ambient__scrim" />
+        <div className="nowplaying-ambient__grain" />
       </div>
 
-      <div className="relative flex h-full flex-col">
+      {/* The player bar floats over the bottom of the backdrop, so keep the
+          immersive content clear of it. */}
+      <div className="relative flex h-full flex-col pb-[76px]">
         <div className="flex h-[58px] flex-none items-center justify-between px-6">
-          <div>
-            <p className="eyebrow">正在播放</p>
-          </div>
-
+        
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -147,14 +127,6 @@ export function NowPlaying() {
             >
               <ChevronDown className="h-3.5 w-3.5" />
               <span className="max-md:hidden">收起</span>
-            </button>
-            <button
-              type="button"
-              aria-label={theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'}
-              onClick={toggleTheme}
-              className="pressable flex h-8 w-8 items-center justify-center rounded-full bg-black/5 text-black/45 hover:bg-black/10 hover:text-black/75"
-            >
-              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
             <button
               type="button"
@@ -237,32 +209,34 @@ export function NowPlaying() {
               panel === 'comments' && 'border border-white/60 bg-white/45 backdrop-blur-xl',
             )}
           >
-            <div className="flex flex-none items-center gap-1 px-3 py-2">
-              <button
-                type="button"
-                onClick={() => setPanel('lyrics')}
-                className={cn(
-                  'rounded-full px-3 py-1 text-[11px] transition-colors',
-                  panel === 'lyrics'
-                    ? 'bg-white/80 font-medium text-[#0066cc]'
-                    : 'text-black/40 hover:text-black/65',
-                )}
-              >
-                歌词
-              </button>
-              <button
-                type="button"
-                onClick={() => setPanel('comments')}
-                className={cn(
-                  'flex items-center gap-1 rounded-full px-3 py-1 text-[11px] transition-colors',
-                  panel === 'comments'
-                    ? 'bg-white/80 font-medium text-[#0066cc]'
-                    : 'text-black/40 hover:text-black/65',
-                )}
-              >
-                <MessageSquareText className="h-3 w-3" />
-                评论
-              </button>
+            <div className="flex flex-none items-center px-3 py-2">
+              <div className="flex items-center gap-0.5 rounded-full bg-white/10 p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setPanel('lyrics')}
+                  className={cn(
+                    'rounded-full px-3 py-1 text-[11.5px] transition-colors',
+                    panel === 'lyrics'
+                      ? 'bg-white/22 font-medium text-white'
+                      : 'text-white/50 hover:text-white/75',
+                  )}
+                >
+                  歌词
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPanel('comments')}
+                  className={cn(
+                    'flex items-center gap-1 rounded-full px-3 py-1 text-[11.5px] transition-colors',
+                    panel === 'comments'
+                      ? 'bg-white/22 font-medium text-white'
+                      : 'text-white/50 hover:text-white/75',
+                  )}
+                >
+                  <MessageSquareText className="h-3 w-3" />
+                  评论
+                </button>
+              </div>
             </div>
             <div className="relative min-h-0 flex-1">
               {panel === 'lyrics' ? (
