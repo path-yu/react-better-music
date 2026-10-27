@@ -12,17 +12,30 @@ module.exports = async (query, request) => {
     const result = await matchID(query.id, query.source)
     const proxy = process.env.PROXY_URL
     logger.info('开始解灰', query.id, result)
+    const url = result?.data?.url || ''
+    if (!url) {
+      // No provider matched; return a normal "not found" instead of crashing
+      // on `result.data.url`.
+      return {
+        status: 404,
+        body: {
+          code: 404,
+          msg: result?.message || '未找到可用音源',
+          data: [],
+        },
+      }
+    }
     const useProxy = process.env.ENABLE_PROXY || 'false'
-    if (result.data.url && result.data.url.includes('kuwo')) {
-      result.proxyUrl =
-        useProxy === 'true' ? proxy + result.data.url : result.data.url
+    let proxyUrl = ''
+    if (url.includes('kuwo')) {
+      proxyUrl = useProxy === 'true' ? proxy + url : url
     }
     return {
       status: 200,
       body: {
         code: 200,
-        data: result.data.url,
-        proxyUrl: result.proxyUrl || '',
+        data: url,
+        proxyUrl,
       },
     }
   } catch (e) {

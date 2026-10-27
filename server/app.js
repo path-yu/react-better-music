@@ -10,9 +10,16 @@ async function start() {
   }
   // 启动时更新anonymous_token
   const generateConfig = require('./generateConfig')
-  await generateConfig()
+  // The HTTP server does not need the network bootstrap to listen: request.js
+  // caches the anonymous token at require time, so refresh it in the background
+  // instead of delaying `pnpm dev:api` by a few external round-trips.
+  void generateConfig().catch((error) => {
+    console.error('[dev api] config bootstrap failed:', error)
+  })
   require('./server').serveNcmApi({
-    checkVersion: true,
+    // `npm info` takes ~1.6 s and the package is not on the public registry;
+    // the version warning is not worth blocking the dev server for.
+    checkVersion: false,
   })
 }
 start()

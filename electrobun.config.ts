@@ -19,6 +19,9 @@ export default {
     copy: {
       'dist-electrobun/index.html': 'views/mainview/index.html',
       'dist-electrobun/assets': 'views/mainview/assets',
+      // The API runs as a separate Bun process so its 12 MB bundle is parsed
+      // off the UI thread; it must sit next to bun/index.js at runtime.
+      'server/desktop-api.bundle.cjs': 'bun/api.cjs',
       'assets/app-icon.ico': 'app-icon.ico',
       'assets/tray-icon.png': 'tray-icon.png',
       'assets/tray.ps1': 'tray.ps1',

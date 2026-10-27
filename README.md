@@ -63,7 +63,7 @@ pnpm dev
 
 ## 桌面端
 
-桌面端由 Electrobun 驱动，构建时会把 `server/` 打包成单文件并嵌入 Bun 主进程，因此运行安装版时不需要单独启动 `dev:api`。
+桌面端由 Electrobun 驱动，构建时会把 `server/` 打包成单文件，由自带的 Bun 运行时（`bin/bun.exe`）以独立子进程启动；安装版无需安装 Node.js，也不需要单独启动 `dev:api`。
 
 ```bash
 # 开发模式（需要 Hutch CLI 在 PATH 中）
