@@ -34,7 +34,7 @@ export function UserMenu() {
       <button
         type="button"
         onClick={openLogin}
-        className="pressable flex items-center gap-1.5 rounded-full bg-[#0066cc] px-4 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-[#0071e3]"
+        className="pressable flex items-center gap-1.5 rounded-full bg-accent px-4 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-accent-hover"
       >
         <UserRound className="h-3.5 w-3.5" />
         登录
@@ -63,7 +63,7 @@ export function UserMenu() {
         align="end"
         sideOffset={10}
         glass
-        className="-ml-[290px] w-[290px] p-0"
+        className="user-menu-popover p-0"
       >
         <div className="p-4">
           <div className="flex items-center gap-3">
@@ -73,11 +73,11 @@ export function UserMenu() {
                 {profile.nickname}
               </p>
               <div className="mt-1 flex items-center gap-1.5">
-                <Badge variant="secondary" className="rounded-full text-[10px]">
+                <Badge variant="secondary" className="rounded-full text-[11px]">
                   Lv.{level || 1}
                 </Badge>
                 {profile.vipType ? (
-                  <Badge variant="warning" className="rounded-full text-[10px]">
+                  <Badge variant="warning" className="rounded-full text-[11px]">
                     VIP
                   </Badge>
                 ) : null}
@@ -85,7 +85,7 @@ export function UserMenu() {
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-3 rounded-[12px] bg-black/4 py-2.5">
+          <div className="mt-4 grid grid-cols-3 rounded-[14px] bg-black/4 py-2.5">
             {[
               { label: '动态', value: profile.eventCount ?? 0 },
               { label: '关注', value: profile.follows ?? 0 },
@@ -93,7 +93,7 @@ export function UserMenu() {
             ].map((item) => (
               <div key={item.label} className="text-center">
                 <p className="text-[13px] font-semibold text-black/80">{item.value}</p>
-                <p className="mt-0.5 text-[10px] text-black/35">{item.label}</p>
+                <p className="mt-0.5 text-[11px] text-black/35">{item.label}</p>
               </div>
             ))}
           </div>
@@ -114,7 +114,7 @@ export function UserMenu() {
         <div className="border-t border-black/8 p-1.5">
           <button
             type="button"
-            className="flex w-full items-center gap-2 rounded-[9px] px-2.5 py-2 text-[12px] text-black/70 transition-colors hover:bg-black/5"
+            className="flex w-full items-center gap-2 rounded-[10px] px-2.5 py-2 text-[12px] text-black/70 transition-colors hover:bg-black/5"
             onClick={() => {
               setOpen(false)
               void navigate({ to: '/profile' })
@@ -125,7 +125,7 @@ export function UserMenu() {
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 rounded-[9px] px-2.5 py-2 text-[12px] text-[#d70015] transition-colors hover:bg-[#d70015]/8"
+            className="flex w-full items-center gap-2 rounded-[10px] px-2.5 py-2 text-[12px] text-[#d70015] transition-colors hover:bg-[#d70015]/8"
             onClick={() => {
               setOpen(false)
               void logout()

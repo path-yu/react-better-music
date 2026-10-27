@@ -9,6 +9,7 @@ import {
   Skeleton,
 } from '@pikoloo/darwin-ui'
 import { PlaylistCard } from '../../components/cards/PlaylistCard'
+import { EmptyState } from '../../components/common/EmptyState'
 import { fetchPlaylistTags, fetchTopPlaylists } from '../../api'
 import { getArrLast, cn } from '../../lib/format'
 import { useDocumentTitle } from '../../lib/title'
@@ -25,6 +26,8 @@ function SonglistsPage() {
   const [activeTag, setActiveTag] = useState('全部')
   const [playlists, setPlaylists] = useState<Playlist[]>([])
   const [loading, setLoading] = useState(true)
+  const [failed, setFailed] = useState(false)
+  const [attempt, setAttempt] = useState(0)
   const [loadingMore, setLoadingMore] = useState(false)
   const [more, setMore] = useState(false)
   const [tagMenuOpen, setTagMenuOpen] = useState(false)
@@ -71,6 +74,7 @@ function SonglistsPage() {
   useEffect(() => {
     let cancelled = false
     setLoading(true)
+    setFailed(false)
     setPlaylists([])
     fetchTopPlaylists({ cat: activeTag, limit: 40 })
       .then((result) => {
@@ -79,7 +83,9 @@ function SonglistsPage() {
         setMore(result.more)
       })
       .catch(() => {
-        if (!cancelled) toast.error('歌单加载失败')
+        if (cancelled) return
+        setFailed(true)
+        toast.error('歌单加载失败')
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -87,7 +93,9 @@ function SonglistsPage() {
     return () => {
       cancelled = true
     }
-  }, [activeTag])
+  }, [activeTag, attempt])
+
+  const retry = () => setAttempt((value) => value + 1)
 
   const loadMore = async () => {
     const last = getArrLast(playlists)
@@ -118,7 +126,7 @@ function SonglistsPage() {
           </p>
         </div>
         <span className="flex items-center gap-1.5 rounded-full border border-black/8 bg-white px-3 py-1.5 text-[11px] text-black/40">
-          <Sparkles className="h-3.5 w-3.5 text-[#0066cc]" />
+          <Sparkles className="h-3.5 w-3.5 text-accent" />
           精品歌单
         </span>
       </div>
@@ -133,7 +141,7 @@ function SonglistsPage() {
               tagScrollerRef.current?.scrollBy({ left: -260, behavior: 'smooth' })
             }
             className={cn(
-              'pressable flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-black/8 bg-white text-black/45 hover:text-black/75',
+              'pressable flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-black/8 bg-white text-black/45 hover:text-black/75 max-md:h-9 max-md:w-9',
               !canScrollTagsLeft && 'pointer-events-none opacity-25',
             )}
           >
@@ -153,7 +161,7 @@ function SonglistsPage() {
                 className={cn(
                   'shrink-0 rounded-full px-3 py-1.5 text-[11.5px] transition-colors',
                   activeTag === tag
-                    ? 'bg-[#0066cc] text-white'
+                    ? 'bg-accent text-white'
                     : 'border border-black/8 bg-[#f5f5f7] text-black/55 hover:bg-[#ececf0] hover:text-black/75',
                 )}
               >
@@ -170,7 +178,7 @@ function SonglistsPage() {
               tagScrollerRef.current?.scrollBy({ left: 260, behavior: 'smooth' })
             }
             className={cn(
-              'pressable flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-black/8 bg-white text-black/45 hover:text-black/75',
+              'pressable flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-black/8 bg-white text-black/45 hover:text-black/75 max-md:h-9 max-md:w-9',
               !canScrollTagsRight && 'pointer-events-none opacity-25',
             )}
           >
@@ -187,7 +195,13 @@ function SonglistsPage() {
                 <ChevronDown className="h-3 w-3" />
               </button>
             </PopoverTrigger>
-            <PopoverContent side="bottom" align="end" sideOffset={8} glass className="w-[380px] p-3">
+            <PopoverContent
+              side="bottom"
+              align="end"
+              sideOffset={8}
+              glass
+              className="w-[min(380px,calc(100vw-24px))] max-w-[calc(100vw-24px)] p-3"
+            >
               <p className="text-[11px] text-black/35">全部分类</p>
               <div className="mt-2 flex max-h-[300px] flex-wrap gap-1.5 overflow-y-auto">
                 {tags.map((tag) => (
@@ -198,7 +212,7 @@ function SonglistsPage() {
                     className={cn(
                       'rounded-full px-2.5 py-1 text-[11px] transition-colors',
                       activeTag === tag
-                        ? 'bg-[#0066cc] text-white'
+                        ? 'bg-accent text-white'
                         : 'bg-[#f5f5f7] text-black/55 hover:bg-[#ececf0] hover:text-black/75',
                     )}
                   >
@@ -211,19 +225,30 @@ function SonglistsPage() {
         </div>
       </div>
 
-      {loading ? (
+      {failed ? (
+        <EmptyState
+          variant="error"
+          title="歌单加载失败"
+          description="请检查网络或本地 API 服务后重试"
+          onRetry={retry}
+        />
+      ) : loading ? (
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {Array.from({ length: 15 }).map((_, index) => (
             <div key={index} className="apple-card p-2.5">
-              <Skeleton className="aspect-square w-full rounded-[9px]" />
+              <Skeleton className="aspect-square w-full rounded-[10px]" />
               <Skeleton className="mt-2 h-3 w-4/5 rounded-full" />
             </div>
           ))}
         </div>
       ) : (
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {playlists.map((playlist) => (
-            <PlaylistCard key={`${playlist.id}-${playlist.updateTime ?? ''}`} playlist={playlist} />
+          {playlists.map((playlist, index) => (
+            <PlaylistCard
+              key={`${playlist.id}-${playlist.updateTime ?? ''}`}
+              playlist={playlist}
+              priority={index < 10}
+            />
           ))}
         </div>
       )}

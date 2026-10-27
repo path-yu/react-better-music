@@ -266,3 +266,33 @@ foreach ($p in @('prefers-reduced-motion','aria-live','h-7 w-7','h-8 w-8',
   Select-String -Pattern 'text-\[(9|10|10\.5|11)px\]' -AllMatches |
   ForEach-Object { $_.Matches } | Measure-Object).Count
 ```
+
+---
+
+## 10. 修复状态（2026-10-27 批次）
+
+> 第 1–3 批已按文档落地；度量快照保留为改造前基线。
+
+| 编号 | 状态 | 落地方式 |
+| --- | --- | --- |
+| P0-1 | 已完成 | `styles.css` 顶部 `prefers-reduced-motion` 全局降级，`.disc-spin` 静止 |
+| P0-2 | 已完成 | 队列面板、移动端侧栏监听 Esc，关闭后焦点回到触发按钮 |
+| P0-3 | 已完成 | 图标按钮 `max-md:h-10 max-md:w-10`（40px），桌面保留原视觉尺寸 |
+| P0-4 | 已完成 | 桌面仅列内滚动（`md:overflow-hidden`），移动端单层外层滚动，歌词视口 `max-md:overflow-visible` |
+| P0-5 | 已完成 | `ToastBridge` 增加 `role="status" aria-live="polite"` 镜像区，重复文案可再次播报 |
+| P1-1 | 已完成 | 9/10/10.5px 全部提升到 11px，层级改用颜色/字重表达 |
+| P1-2 | 已完成 | 新增 `@theme inline` 的 `accent` / `accent-hover`，业务代码不再出现 `#0066cc` / `#0071e3` |
+| P1-3 | 已完成 | 队列、用户菜单、音质浮层、分类浮层、MV 侧栏、二维码改为视口上限写法 |
+| P1-4 | 已完成 | 搜索建议支持 ↑/↓ 选中、Enter 进入、`aria-activedescendant` 同步与滚动跟随 |
+| P1-5 | 已完成 | 设置页新增「快捷键」区块；播放/音量按钮补充 title |
+| P1-6 | 已完成 | 进度条 `aria-valuetext="1:23 / 3:45"`，音量条 `aria-valuetext="音量 50%"` |
+| P1-7 | 已完成 | `EmptyState` 支持 `variant="error"` + `onRetry`，搜索页/歌单页失败态可重试 |
+| P2-1 | 已完成 | 路由内容 160ms 淡入（`.route-fade`），随 reduce-motion 降级 |
+| P2-2 | 已完成 | `prefers-reduced-transparency` / `prefers-contrast` 下玻璃层改为不透明 |
+| P2-3 | 已完成 | 沉浸页顶部工具条恢复（收起 / 喜欢 / 播放列表） |
+| P2-4 | 部分完成 | 已建立 `--ink-1/2/3` 语义 token 与 `text-ink-*` 工具类；存量 `text-black/*` 按文档建议作为单独立项分阶段迁移 |
+| P2-5 | 已完成 | 圆角收敛为 6/10/14/18/22/28 六档 |
+| P2-6 | 已完成 | `@supports` 段补充浏览器支持说明（Chromium 139+，其余回退普通圆角） |
+| P2-7 | 已完成 | 轮播、首页卡片、歌单/专辑/歌手详情首图、MV 首行、歌曲表前 8 行补 `priority` |
+| P2-8 | 已完成 | 沉浸页打开时标题栏经 `:has()` 切换为深色玻璃 |
+

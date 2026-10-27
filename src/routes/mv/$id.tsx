@@ -122,11 +122,11 @@ function MvDetailPage() {
         <Skeleton className="h-4 w-24 rounded-full" />
         <div className="mt-4 flex gap-6">
           <div className="flex-1">
-            <Skeleton className="aspect-video w-full rounded-[16px]" />
+            <Skeleton className="aspect-video w-full rounded-[18px]" />
             <Skeleton className="mt-5 h-6 w-2/5 rounded-full" />
             <Skeleton className="mt-3 h-3 w-1/4 rounded-full" />
           </div>
-          <Skeleton className="h-[420px] w-[300px] rounded-[16px]" />
+          <Skeleton className="h-[420px] w-[300px] rounded-[18px]" />
         </div>
       </div>
     )
@@ -153,9 +153,9 @@ function MvDetailPage() {
 
       <div className="mt-4 flex flex-col gap-7 lg:flex-row">
         <div className="min-w-0 flex-1">
-          <div className="relative aspect-video w-full overflow-hidden rounded-[16px] bg-black">
+          <div className="relative aspect-video w-full overflow-hidden rounded-[18px] bg-black">
             {videoLoading ? (
-              <Skeleton className="h-full w-full rounded-[16px]" />
+              <Skeleton className="h-full w-full rounded-[18px]" />
             ) : videoUrl ? (
               <MvVideoPlayer
                 key={videoUrl}
@@ -192,7 +192,7 @@ function MvDetailPage() {
           </div>
 
           {author ? (
-            <div className="mt-5 flex items-start gap-3 rounded-[16px] border border-black/8 bg-[#fafafc] p-4">
+            <div className="mt-5 flex items-start gap-3 rounded-[18px] border border-black/8 bg-[#fafafc] p-4">
               <Avatar src={author.picUrl} alt={author.name} size="md" />
               <div className="min-w-0">
                 <p className="text-[13px] font-medium text-black/80">{author.name}</p>
@@ -210,7 +210,7 @@ function MvDetailPage() {
           </div>
         </div>
 
-        <aside className="w-full shrink-0 lg:w-[300px]">
+        <aside className="w-full shrink-0 lg:w-[clamp(240px,24vw,300px)]">
           <p className="section-title text-[16px]">相关推荐</p>
           <div className="mt-3 flex flex-col gap-2.5">
             {similar.slice(0, 8).map((mv) => (
@@ -218,21 +218,21 @@ function MvDetailPage() {
                 key={mv.id}
                 type="button"
                 onClick={() => void navigate({ to: '/mv/$id', params: { id: String(mv.id) } })}
-                className="group flex items-center gap-3 rounded-[12px] p-1.5 text-left transition-colors hover:bg-black/4"
+                className="group flex items-center gap-3 rounded-[14px] p-1.5 text-left transition-colors hover:bg-black/4"
               >
                 <ImageWithFallback
                   src={mv.cover}
                   alt={mv.name}
-                  rounded="rounded-[8px]"
+                  rounded="rounded-[10px]"
                   className="aspect-video w-[112px] shrink-0"
                   resize="320y180"
                   imageClassName="transition-transform duration-500 group-hover:scale-105"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="line-clamp-2 text-[11.5px] leading-snug text-black/70 group-hover:text-[#0066cc]">
+                  <p className="line-clamp-2 text-[11.5px] leading-snug text-black/70 group-hover:text-accent">
                     {mv.name}
                   </p>
-                  <p className="mt-1 truncate text-[10px] text-black/30">{mv.artistName}</p>
+                  <p className="mt-1 truncate text-[11px] text-black/30">{mv.artistName}</p>
                 </div>
               </button>
             ))}

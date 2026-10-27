@@ -35,6 +35,22 @@ export function AppShell({ children }: { children: ReactNode }) {
     closeSidebar()
   }, [pathname, closeSidebar])
 
+  // The mobile drawer is a floating layer, so Escape must dismiss it and hand
+  // focus back to the menu button that opened it.
+  useEffect(() => {
+    if (!sidebarOpen) return
+    const trigger =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeSidebar()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      trigger?.focus()
+    }
+  }, [sidebarOpen, closeSidebar])
+
   useEffect(() => {
     void initSession()
   }, [initSession])
@@ -158,7 +174,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="main-column relative overflow-hidden">
             <TopBar />
             <main ref={contentRef} className="apple-content relative">
-              {children}
+              {/* Keyed by route so each navigation fades in from scratch. */}
+              <div key={pathname} className="route-fade">
+                {children}
+              </div>
             </main>
           </div>
         </div>

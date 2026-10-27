@@ -80,6 +80,7 @@ export function VolumeSlider({ value, onChange, className }: VolumeSliderProps) 
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={Math.round(percent)}
+      aria-valuetext={`音量 ${Math.round(percent)}%`}
       data-testid="volume-slider"
       data-value={percent.toFixed(0)}
       onPointerDown={handlePointerDown}

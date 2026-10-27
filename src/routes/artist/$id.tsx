@@ -103,7 +103,7 @@ function ArtistPage() {
   if (loading) {
     return (
       <div className="px-8 pb-16 pt-6">
-        <div className="flex flex-col items-center gap-6 rounded-[20px] border border-black/8 bg-white/55 p-6 md:flex-row md:items-end">
+        <div className="flex flex-col items-center gap-6 rounded-[22px] border border-black/8 bg-white/55 p-6 md:flex-row md:items-end">
           <Skeleton className="h-[168px] w-[168px] rounded-full" />
           <div className="flex-1 space-y-3">
             <Skeleton className="h-3 w-16 rounded-full" />
@@ -112,7 +112,7 @@ function ArtistPage() {
             <Skeleton className="h-3 w-4/5 rounded-full" />
           </div>
         </div>
-        <Skeleton className="mt-6 h-[420px] w-full rounded-[16px]" />
+        <Skeleton className="mt-6 h-[420px] w-full rounded-[18px]" />
       </div>
     )
   }
@@ -153,7 +153,7 @@ function ArtistPage() {
 
   return (
     <div className="px-8 pb-16 pt-6">
-      <div className="rounded-[20px] border border-black/8 bg-white/55 p-6 backdrop-blur-xl">
+      <div className="rounded-[22px] border border-black/8 bg-white/55 p-6 backdrop-blur-xl">
         <div className="flex flex-col items-center gap-6 md:flex-row md:items-end">
           <ImageWithFallback
             src={profile.cover ?? profile.picUrl}
@@ -161,6 +161,7 @@ function ArtistPage() {
             rounded="rounded-full"
             className="artwork-shadow h-[168px] w-[168px] shrink-0"
             resize="400y400"
+            priority
           />
           <div className="min-w-0 flex-1 text-center md:text-left">
             <span className="eyebrow">歌手</span>
@@ -174,7 +175,7 @@ function ArtistPage() {
                 {profile.identities.map((identity) => (
                   <span
                     key={identity}
-                    className="rounded-full border border-black/8 bg-white/60 px-2 py-0.5 text-[10px] text-black/45"
+                    className="rounded-full border border-black/8 bg-white/60 px-2 py-0.5 text-[11px] text-black/45"
                   >
                     {identity}
                   </span>
@@ -196,7 +197,7 @@ function ArtistPage() {
                 {formatNumber(profile.mvSize)} 个 MV
               </span>
               {profile.rank?.rank ? (
-                <span className="rounded-full bg-[#0066cc]/8 px-2 py-0.5 text-[10px] text-[#0066cc]">
+                <span className="rounded-full bg-accent/8 px-2 py-0.5 text-[11px] text-accent">
                   歌手榜 No.{profile.rank.rank}
                 </span>
               ) : null}
@@ -227,7 +228,7 @@ function ArtistPage() {
                     type="button"
                     aria-expanded={bioExpanded}
                     onClick={() => setBioExpanded((value) => !value)}
-                    className="mt-1.5 inline-flex items-center gap-1 text-[10.5px] text-[#0066cc] transition-colors hover:text-[#0071e3]"
+                    className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-accent transition-colors hover:text-accent-hover"
                   >
                     {bioExpanded ? '收起' : '展开全部'}
                     <ChevronDown
@@ -284,14 +285,14 @@ function ArtistPage() {
                     <ImageWithFallback
                       src={album.picUrl}
                       alt={album.name}
-                      rounded="rounded-[9px]"
+                      rounded="rounded-[10px]"
                       className="aspect-square w-full"
                       resize="240y240"
                     />
-                    <span className="mt-2 line-clamp-2 block text-[12px] leading-[1.4] text-black/75 transition-colors group-hover:text-[#0066cc]">
+                    <span className="mt-2 line-clamp-2 block text-[12px] leading-[1.4] text-black/75 transition-colors group-hover:text-accent">
                       {album.name}
                     </span>
-                    <span className="mt-1 block text-[10px] text-black/30">
+                    <span className="mt-1 block text-[11px] text-black/30">
                       {formatDate(album.publishTime).slice(0, 4)}
                       {album.size ? ` · ${album.size} 首` : ''}
                     </span>
@@ -351,10 +352,10 @@ function ArtistPage() {
                   resize="128y128"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[12.5px] text-black/75 group-hover:text-[#0066cc]">
+                  <p className="truncate text-[12.5px] text-black/75 group-hover:text-accent">
                     {artist.name}
                   </p>
-                  <p className="mt-0.5 truncate text-[10.5px] text-black/35">
+                  <p className="mt-0.5 truncate text-[11px] text-black/35">
                     {artist.alias?.[0] ??
                       artist.transNames?.[0] ??
                       (artist.fansCount ? `${formatNumber(artist.fansCount)} 粉丝` : '相似歌手')}

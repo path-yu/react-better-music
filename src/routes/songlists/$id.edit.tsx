@@ -194,7 +194,7 @@ function EditPlaylistPage() {
 
       <div className="mt-4">
         <h1 className="headline-lg flex items-center gap-2">
-          <Pencil className="h-5 w-5 text-[#0066cc]" />
+          <Pencil className="h-5 w-5 text-accent" />
           编辑歌单信息
         </h1>
         <p className="mt-1.5 text-[12px] text-black/35">修改歌单名称、标签、简介与封面</p>
@@ -224,7 +224,7 @@ function EditPlaylistPage() {
                   key={tag}
                   type="button"
                   onClick={() => toggleTag(tag)}
-                  className="rounded-full bg-[#0066cc] px-2.5 py-1 text-[11px] text-white"
+                  className="rounded-full bg-accent px-2.5 py-1 text-[11px] text-white"
                 >
                   {tag} ×
                 </button>
@@ -237,9 +237,9 @@ function EditPlaylistPage() {
                     key={tag}
                     type="button"
                     onClick={() => toggleTag(tag)}
-                    className={`rounded-full px-2.5 py-1 text-[10.5px] transition-colors ${
+                    className={`rounded-full px-2.5 py-1 text-[11px] transition-colors ${
                       tags.includes(tag)
-                        ? 'bg-[#0066cc]/10 text-[#0066cc]'
+                        ? 'bg-accent/10 text-accent'
                         : 'bg-[#f5f5f7] text-black/45 hover:bg-[#ececf0] hover:text-black/70'
                     }`}
                   >
@@ -288,7 +288,7 @@ function EditPlaylistPage() {
           <ImageWithFallback
             src={cover}
             alt={name}
-            rounded="rounded-[12px]"
+            rounded="rounded-[14px]"
             className="aspect-square w-full"
             resize="400y400"
           />

@@ -64,7 +64,7 @@ export function Sidebar() {
                 type="button"
                 onClick={() => void navigate({ to: item.to })}
                 className={cn(
-                  'flex h-[30px] items-center gap-2.5 rounded-[8px] px-2.5 text-left text-[12.5px] transition-colors',
+                  'flex h-[30px] items-center gap-2.5 rounded-[10px] px-2.5 max-md:h-10 text-left text-[12.5px] transition-colors',
                   isActive(item.to)
                     ? 'bg-black/8 font-medium text-black'
                     : 'text-black/65 hover:bg-black/4 hover:text-black',
@@ -73,7 +73,7 @@ export function Sidebar() {
                 <Icon
                   className={cn(
                     'h-[15px] w-[15px] shrink-0',
-                    isActive(item.to) ? 'text-[#0066cc]' : 'text-black/40',
+                    isActive(item.to) ? 'text-accent' : 'text-black/40',
                   )}
                   strokeWidth={1.9}
                 />
@@ -90,7 +90,7 @@ export function Sidebar() {
             type="button"
             onClick={() => toggleNowPlaying(true)}
             className={cn(
-              'mb-1 flex h-[30px] w-full items-center gap-2.5 rounded-[8px] px-2.5 text-left text-[12.5px] transition-colors',
+              'mb-1 flex h-[30px] w-full items-center gap-2.5 rounded-[10px] px-2.5 max-md:h-10 text-left text-[12.5px] transition-colors',
               showNowPlaying
                 ? 'bg-black/8 font-medium text-black'
                 : 'text-black/65 hover:bg-black/4 hover:text-black',
@@ -99,7 +99,7 @@ export function Sidebar() {
             <Disc3
               className={cn(
                 'h-[15px] w-[15px] shrink-0',
-                showNowPlaying ? 'text-[#0066cc]' : 'text-black/40',
+                showNowPlaying ? 'text-accent' : 'text-black/40',
               )}
               strokeWidth={1.9}
             />
@@ -110,7 +110,7 @@ export function Sidebar() {
         <p className="eyebrow px-2.5 pb-1.5 pt-2">我的音乐</p>
 
         {!isLogin ? (
-          <div className="mt-1 rounded-[12px] border border-black/8 bg-white/55 p-3">
+          <div className="mt-1 rounded-[14px] border border-black/8 bg-white/55 p-3">
             <div className="flex items-center gap-2 text-[12px] text-black/45">
               <UserRound className="h-4 w-4" />
               登录后查看我的歌单
@@ -132,7 +132,7 @@ export function Sidebar() {
                 type="button"
                 onClick={() => goPlaylist(likedPlaylist.id)}
                 className={cn(
-                  'flex h-[30px] items-center gap-2.5 rounded-[8px] px-2.5 text-left text-[12.5px] transition-colors',
+                  'flex h-[30px] items-center gap-2.5 rounded-[10px] px-2.5 max-md:h-10 text-left text-[12.5px] transition-colors',
                   playlistActive(likedPlaylist.id)
                     ? 'bg-black/8 font-medium text-black'
                     : 'text-black/65 hover:bg-black/4 hover:text-black',
@@ -201,14 +201,14 @@ function PlaylistRow({
       type="button"
       onClick={onClick}
       className={cn(
-        'flex h-[32px] items-center gap-2 rounded-[8px] px-2 text-left transition-colors',
+        'flex h-[32px] items-center gap-2 rounded-[10px] px-2 text-left transition-colors max-md:h-10',
         active ? 'bg-black/8' : 'hover:bg-black/4',
       )}
     >
       <ImageWithFallback
         src={playlist.coverImgUrl}
         alt={playlist.name}
-        rounded="rounded-[5px]"
+        rounded="rounded-[6px]"
         className="h-[22px] w-[22px] shrink-0"
         resize="64y64"
       />

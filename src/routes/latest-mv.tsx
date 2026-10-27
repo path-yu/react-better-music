@@ -77,7 +77,7 @@ function LatestMvPage() {
     <div className="px-8 pb-14 pt-6">
       <div>
         <h1 className="headline-lg flex items-center gap-2">
-          <Film className="h-5 w-5 text-[#0066cc]" />
+          <Film className="h-5 w-5 text-accent" />
           最新 MV
         </h1>
         <p className="mt-1.5 text-[12px] text-black/35">按地区、类型与热度浏览音乐视频</p>
@@ -94,7 +94,7 @@ function LatestMvPage() {
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 8 }).map((_, index) => (
               <div key={index}>
-                <Skeleton className="aspect-video w-full rounded-[12px]" />
+                <Skeleton className="aspect-video w-full rounded-[14px]" />
                 <Skeleton className="mt-2 h-3 w-3/5 rounded-full" />
                 <Skeleton className="mt-1.5 h-2.5 w-2/5 rounded-full" />
               </div>
@@ -102,8 +102,8 @@ function LatestMvPage() {
           </div>
         ) : list.length ? (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-            {list.map((mv) => (
-              <MvCard key={mv.id} mv={mv} />
+            {list.map((mv, index) => (
+              <MvCard key={mv.id} mv={mv} priority={index < 4} />
             ))}
           </div>
         ) : (
@@ -129,7 +129,7 @@ function FilterRow({
 }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="w-8 shrink-0 text-[10.5px] font-medium text-black/30">{label}</span>
+      <span className="w-8 shrink-0 text-[11px] font-medium text-black/30">{label}</span>
       <div className="flex flex-wrap gap-1.5">
         {options.map((option) => (
           <button
@@ -139,7 +139,7 @@ function FilterRow({
             className={cn(
               'rounded-full px-2.5 py-1 text-[11px] transition-colors',
               value === option
-                ? 'bg-[#0066cc] text-white'
+                ? 'bg-accent text-white'
                 : 'text-black/45 hover:bg-black/5 hover:text-black/70',
             )}
           >

@@ -116,7 +116,7 @@ function PlaylistDetailPage() {
     return (
       <div className="px-8 pt-8">
         <div className="flex gap-6">
-          <Skeleton className="h-[208px] w-[208px] rounded-[16px]" />
+          <Skeleton className="h-[208px] w-[208px] rounded-[18px]" />
           <div className="flex-1">
             <Skeleton className="h-4 w-16 rounded-full" />
             <Skeleton className="mt-3 h-8 w-[42%] rounded-full" />
@@ -125,7 +125,7 @@ function PlaylistDetailPage() {
             <Skeleton className="mt-5 h-9 w-[240px] rounded-full" />
           </div>
         </div>
-        <Skeleton className="mt-8 h-[300px] w-full rounded-[16px]" />
+        <Skeleton className="mt-8 h-[300px] w-full rounded-[18px]" />
       </div>
     )
   }
@@ -195,12 +195,13 @@ function PlaylistDetailPage() {
         <ImageWithFallback
           src={detail.coverImgUrl}
           alt={detail.name}
-          rounded="rounded-[16px]"
+          rounded="rounded-[18px]"
           className="artwork-shadow h-[208px] w-[208px] shrink-0"
           resize="400y400"
+          priority
         />
         <div className="min-w-0 flex-1">
-          <span className="inline-flex items-center rounded-full bg-[#0066cc]/8 px-2.5 py-0.5 text-[10px] font-medium text-[#0066cc]">
+          <span className="inline-flex items-center rounded-full bg-accent/8 px-2.5 py-0.5 text-[11px] font-medium text-accent">
             歌单
           </span>
           <div className="mt-2.5 flex items-center gap-2.5">
@@ -215,7 +216,7 @@ function PlaylistDetailPage() {
                     params: { id: String(detail.id) },
                   })
                 }
-                className="pressable rounded-full p-1.5 text-black/35 transition-colors hover:bg-black/5 hover:text-[#0066cc]"
+                className="pressable rounded-full p-1.5 text-black/35 transition-colors hover:bg-black/5 hover:text-accent"
               >
                 <Pencil className="h-4 w-4" />
               </button>
@@ -229,7 +230,7 @@ function PlaylistDetailPage() {
                 alt={detail.creator?.nickname}
                 size="xs"
               />
-              <span className="font-medium text-[#0066cc]">{detail.creator?.nickname}</span>
+              <span className="font-medium text-accent">{detail.creator?.nickname}</span>
             </div>
             {detail.createTime ? (
               <span className="flex items-center gap-1">
@@ -247,7 +248,7 @@ function PlaylistDetailPage() {
               {detail.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full border border-black/8 px-2 py-0.5 text-[10px] text-black/50"
+                  className="rounded-full border border-black/8 px-2 py-0.5 text-[11px] text-black/50"
                 >
                   {tag}
                 </span>
@@ -268,7 +269,7 @@ function PlaylistDetailPage() {
               {detail.description.length > 120 ? (
                 <button
                   type="button"
-                  className="mt-1 text-[10.5px] text-[#0066cc]"
+                  className="mt-1 text-[11px] text-accent"
                   onClick={() => setDescExpanded((value) => !value)}
                 >
                   {descExpanded ? '收起' : '展开'}
@@ -278,7 +279,7 @@ function PlaylistDetailPage() {
           ) : isOwner ? (
             <button
               type="button"
-              className="mt-2 text-[11px] text-[#0066cc]"
+              className="mt-2 text-[11px] text-accent"
               onClick={() =>
                 void navigate({
                   to: '/songlists/$id/edit',
@@ -329,11 +330,11 @@ function PlaylistDetailPage() {
           <TabsList>
             <TabsTrigger value="songs">
               歌曲列表
-              <span className="ml-1 text-[10px] text-black/30">{songs.length}</span>
+              <span className="ml-1 text-[11px] text-black/30">{songs.length}</span>
             </TabsTrigger>
             <TabsTrigger value="comments">
               评论
-              <span className="ml-1 text-[10px] text-black/30">热议</span>
+              <span className="ml-1 text-[11px] text-black/30">热议</span>
             </TabsTrigger>
           </TabsList>
           {tab === 'songs' ? (

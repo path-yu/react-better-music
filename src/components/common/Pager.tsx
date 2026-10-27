@@ -62,7 +62,7 @@ export function Pager({ page, pageCount, onChange, className }: PagerProps) {
       >
         <ChevronLeft className="h-3.5 w-3.5" />
       </Button>
-      {start > 1 ? <span className="text-[10px] text-black/25">…</span> : null}
+      {start > 1 ? <span className="text-[11px] text-black/25">…</span> : null}
       {pages.map((item) => (
         <button
           key={item}
@@ -71,14 +71,14 @@ export function Pager({ page, pageCount, onChange, className }: PagerProps) {
           className={cn(
             'h-7 min-w-7 rounded-full px-2 text-[11px] tabular-nums transition-colors',
             item === page
-              ? 'bg-[#0066cc] font-medium text-white'
+              ? 'bg-accent font-medium text-white'
               : 'border border-black/8 bg-white text-black/50 hover:bg-black/4',
           )}
         >
           {item}
         </button>
       ))}
-      {end < pageCount ? <span className="text-[10px] text-black/25">…</span> : null}
+      {end < pageCount ? <span className="text-[11px] text-black/25">…</span> : null}
       <Button
         variant="ghost"
         size="sm"
@@ -100,7 +100,7 @@ export function Pager({ page, pageCount, onChange, className }: PagerProps) {
         <ChevronsRight className="h-3.5 w-3.5" />
       </Button>
 
-      <label className="ml-1 flex items-center gap-1 text-[10.5px] text-black/30">
+      <label className="ml-1 flex items-center gap-1 text-[11px] text-black/30">
         <input
           type="text"
           inputMode="numeric"
@@ -114,7 +114,7 @@ export function Pager({ page, pageCount, onChange, className }: PagerProps) {
               commit()
             }
           }}
-          className="h-7 w-11 rounded-full border border-black/8 bg-white px-2 text-center text-[11px] tabular-nums text-black/60 outline-none transition-colors focus:border-[#0066cc]/50"
+          className="h-7 w-11 rounded-full border border-black/8 bg-white px-2 text-center text-[11px] tabular-nums text-black/60 outline-none transition-colors focus:border-accent/50"
         />
         <span className="tabular-nums">/ {pageCount}</span>
       </label>

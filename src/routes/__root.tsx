@@ -42,7 +42,7 @@ function RootNotFound() {
         <div className="mt-5 flex justify-center">
           <Link
             to="/"
-            className="pressable rounded-full bg-[#0066cc] px-4 py-1.5 text-[12px] text-white hover:bg-[#0071e3]"
+            className="pressable rounded-full bg-accent px-4 py-1.5 text-[12px] text-white hover:bg-accent-hover"
           >
             返回首页
           </Link>

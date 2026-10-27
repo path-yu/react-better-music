@@ -40,13 +40,13 @@ export function TitleBar() {
         <span className="traffic-dot green" />
       </div>
       <div className="titlebar-title flex items-center gap-1.5">
-        <Music2 className="h-3.5 w-3.5 text-[#0066cc]" strokeWidth={2.2} />
+        <Music2 className="h-3.5 w-3.5 text-accent" strokeWidth={2.2} />
         声屿
         {subtitle && subtitle !== '发现音乐' ? (
           <span className="font-normal text-black/35">— {subtitle}</span>
         ) : null}
       </div>
-      <div className="ml-auto flex items-center gap-1.5 text-[10.5px] text-black/30">
+      <div className="ml-auto flex items-center gap-1.5 text-[11px] text-black/30">
         <span className="hidden sm:inline">macOS Edition</span>
       </div>
     </div>
@@ -114,7 +114,7 @@ function DesktopTitleBar({ subtitle }: { subtitle?: string }) {
       onDoubleClick={nativeControls ? undefined : handleBarDoubleClick}
     >
       <div className="titlebar-title flex items-center gap-1.5">
-        <Music2 className="h-3.5 w-3.5 text-[#0066cc]" strokeWidth={2.2} />
+        <Music2 className="h-3.5 w-3.5 text-accent" strokeWidth={2.2} />
         声屿
         {subtitle && subtitle !== '发现音乐' ? (
           <span className="font-normal text-black/35">— {subtitle}</span>

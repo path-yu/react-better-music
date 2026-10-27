@@ -71,7 +71,7 @@ function AlbumDetailPage() {
     return (
       <div className="px-8 pt-8">
         <div className="flex gap-6">
-          <Skeleton className="h-[208px] w-[208px] rounded-[16px]" />
+          <Skeleton className="h-[208px] w-[208px] rounded-[18px]" />
           <div className="flex-1">
             <Skeleton className="h-4 w-16 rounded-full" />
             <Skeleton className="mt-3 h-8 w-[42%] rounded-full" />
@@ -80,7 +80,7 @@ function AlbumDetailPage() {
             <Skeleton className="mt-5 h-9 w-[200px] rounded-full" />
           </div>
         </div>
-        <Skeleton className="mt-8 h-[300px] w-full rounded-[16px]" />
+        <Skeleton className="mt-8 h-[300px] w-full rounded-[18px]" />
       </div>
     )
   }
@@ -118,18 +118,19 @@ function AlbumDetailPage() {
         <ImageWithFallback
           src={album.picUrl}
           alt={album.name}
-          rounded="rounded-[16px]"
+          rounded="rounded-[18px]"
           className="artwork-shadow h-[208px] w-[208px] shrink-0"
           resize="400y400"
+          priority
         />
         <div className="min-w-0 flex-1">
-          <span className="inline-flex items-center rounded-full bg-[#0066cc]/8 px-2.5 py-0.5 text-[10px] font-medium text-[#0066cc]">
+          <span className="inline-flex items-center rounded-full bg-accent/8 px-2.5 py-0.5 text-[11px] font-medium text-accent">
             专辑
           </span>
           <h1 className="headline-lg mt-2.5 line-clamp-2 text-[28px]">{album.name}</h1>
 
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11.5px] text-black/40">
-            <ArtistLinks artists={artists} className="font-medium text-[#0066cc]" />
+            <ArtistLinks artists={artists} className="font-medium text-accent" />
             {album.publishTime ? (
               <span className="flex items-center gap-1">
                 <CalendarDays className="h-3 w-3" />
@@ -158,7 +159,7 @@ function AlbumDetailPage() {
               {description.length > 120 ? (
                 <button
                   type="button"
-                  className="mt-1 text-[10.5px] text-[#0066cc]"
+                  className="mt-1 text-[11px] text-accent"
                   onClick={() => setDescExpanded((value) => !value)}
                 >
                   {descExpanded ? '收起' : '展开'}
@@ -192,7 +193,7 @@ function AlbumDetailPage() {
       <div className="sticky top-0 z-20 -mx-8 mt-7 flex items-center justify-between gap-4 border-b border-black/8 bg-white/90 px-8 py-2 backdrop-blur-xl">
         <p className="text-[12px] font-medium text-black/70">
           歌曲列表
-          <span className="ml-1 text-[10px] text-black/30">{songs.length}</span>
+          <span className="ml-1 text-[11px] text-black/30">{songs.length}</span>
         </p>
         <Input.Search
           value={keyword}

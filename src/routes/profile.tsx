@@ -249,7 +249,7 @@ function ProfilePage() {
     <div className="mx-auto max-w-[900px] px-8 pb-16 pt-7">
       <div>
         <h1 className="headline-lg flex items-center gap-2">
-          <UserRound className="h-5 w-5 text-[#0066cc]" />
+          <UserRound className="h-5 w-5 text-accent" />
           个人信息
         </h1>
         <p className="mt-1.5 text-[12px] text-black/35">修改昵称、头像、性别与地区资料</p>
@@ -287,7 +287,7 @@ function ProfilePage() {
                   onClick={() => setGender(option.value)}
                   className={`rounded-full px-3 py-1.5 text-[11.5px] transition-colors ${
                     gender === option.value
-                      ? 'bg-[#0066cc] text-white'
+                      ? 'bg-accent text-white'
                       : 'border border-black/8 bg-[#f5f5f7] text-black/50 hover:bg-[#ececf0]'
                   }`}
                 >
@@ -369,13 +369,13 @@ function ProfilePage() {
               type="button"
               aria-label="更换头像"
               onClick={handleAvatarPick}
-              className="media-chip pressable absolute bottom-1 right-1 flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#0066cc] shadow-md"
+              className="media-chip pressable absolute bottom-1 right-1 flex h-8 w-8 items-center justify-center rounded-full bg-white text-accent shadow-md max-md:h-10 max-md:w-10"
             >
               <Camera className="h-4 w-4" />
             </button>
           </div>
           <p className="mt-4 text-[13px] font-medium text-black/75">{nickname || '未设置昵称'}</p>
-          <p className="mt-1 line-clamp-2 text-center text-[10.5px] text-black/35">
+          <p className="mt-1 line-clamp-2 text-center text-[11px] text-black/35">
             {signature || '这个人很懒，什么都没写'}
           </p>
           <Button

@@ -37,6 +37,9 @@ function SearchPage() {
   const [artists, setArtists] = useState<ArtistSummary[]>([])
   const [artistTotal, setArtistTotal] = useState(0)
   const [loading, setLoading] = useState(false)
+  // A failed request must not look like an empty result set.
+  const [failed, setFailed] = useState(false)
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     setPage(1)
@@ -46,12 +49,14 @@ function SearchPage() {
     setSongTotal(0)
     setPlaylistTotal(0)
     setArtistTotal(0)
+    setFailed(false)
   }, [keyword])
 
   useEffect(() => {
     if (!keyword.trim()) return
     const controller = new AbortController()
     setLoading(true)
+    setFailed(false)
     const pageSize =
       tab === 'songs'
         ? SONG_PAGE_SIZE
@@ -81,13 +86,17 @@ function SearchPage() {
         }
       })
       .catch(() => {
-        if (!controller.signal.aborted) toast.error('搜索失败')
+        if (controller.signal.aborted) return
+        setFailed(true)
+        toast.error('搜索失败')
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false)
       })
     return () => controller.abort()
-  }, [keyword, tab, page])
+  }, [keyword, tab, page, attempt])
+
+  const retry = () => setAttempt((value) => value + 1)
 
   const pageSize =
     tab === 'songs'
@@ -142,26 +151,44 @@ function SearchPage() {
         </div>
 
         <TabsContent value="songs" className="mt-3">
-          <div className="mb-2 flex items-center justify-between text-[11px] text-black/35">
-            <span>共找到 {songTotal} 首单曲</span>
-          </div>
-          <SongTable
-            songs={songs}
-            playlistId={`search-${keyword}-${page}`}
-            loading={loading}
-            emptyText="没有找到相关单曲"
-          />
-          <Pager page={page} pageCount={pageCount} onChange={setPage} className="mt-6" />
+          {failed ? (
+            <EmptyState
+              variant="error"
+              title="搜索失败"
+              description="请检查网络或本地 API 服务后重试"
+              onRetry={retry}
+            />
+          ) : (
+            <>
+              <div className="mb-2 flex items-center justify-between text-[11px] text-black/35">
+                <span>共找到 {songTotal} 首单曲</span>
+              </div>
+              <SongTable
+                songs={songs}
+                playlistId={`search-${keyword}-${page}`}
+                loading={loading}
+                emptyText="没有找到相关单曲"
+              />
+              <Pager page={page} pageCount={pageCount} onChange={setPage} className="mt-6" />
+            </>
+          )}
         </TabsContent>
 
         <TabsContent value="playlists" className="mt-3">
           <div className="mb-2 text-[11px] text-black/35">
             共找到 {playlistTotal} 个歌单
           </div>
-          {loading ? (
+          {failed ? (
+            <EmptyState
+              variant="error"
+              title="歌单加载失败"
+              description="请检查网络或本地 API 服务后重试"
+              onRetry={retry}
+            />
+          ) : loading ? (
             <div className="space-y-2">
               {Array.from({ length: 6 }).map((_, index) => (
-                <Skeleton key={index} className="h-[68px] w-full rounded-[12px]" />
+                <Skeleton key={index} className="h-[68px] w-full rounded-[14px]" />
               ))}
             </div>
           ) : playlists.length ? (
@@ -176,25 +203,25 @@ function SearchPage() {
                       params: { id: String(playlist.id) },
                     })
                   }
-                  className="group flex w-full items-center gap-3 rounded-[12px] px-2 py-2 text-left transition-colors hover:bg-black/4"
+                  className="group flex w-full items-center gap-3 rounded-[14px] px-2 py-2 text-left transition-colors hover:bg-black/4"
                 >
                   <ImageWithFallback
                     src={playlist.coverImgUrl}
                     alt={playlist.name}
-                    rounded="rounded-[8px]"
+                    rounded="rounded-[10px]"
                     className="h-14 w-14 shrink-0"
                     resize="128y128"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="line-clamp-1 text-[12.5px] text-black/75 group-hover:text-[#0066cc]">
+                    <p className="line-clamp-1 text-[12.5px] text-black/75 group-hover:text-accent">
                       {playlist.name}
                     </p>
-                    <p className="mt-1 flex items-center gap-2 text-[10.5px] text-black/30">
+                    <p className="mt-1 flex items-center gap-2 text-[11px] text-black/30">
                       <span>{playlist.trackCount} 首</span>
                       <span>by {playlist.creator?.nickname}</span>
                     </p>
                   </div>
-                  <span className="flex shrink-0 items-center gap-1 text-[10.5px] text-black/30">
+                  <span className="flex shrink-0 items-center gap-1 text-[11px] text-black/30">
                     <ListMusic className="h-3 w-3" />
                     {formatNumber(playlist.playCount)}
                   </span>
@@ -210,7 +237,14 @@ function SearchPage() {
           <div className="mb-2 text-[11px] text-black/35">
             共找到 {artistTotal} 位歌手
           </div>
-          {loading ? (
+          {failed ? (
+            <EmptyState
+              variant="error"
+              title="歌手加载失败"
+              description="请检查网络或本地 API 服务后重试"
+              onRetry={retry}
+            />
+          ) : loading ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {Array.from({ length: 8 }).map((_, index) => (
                 <Skeleton key={index} className="h-[84px] w-full rounded-[14px]" />
@@ -238,15 +272,15 @@ function SearchPage() {
                     resize="128y128"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[12.5px] text-black/75 group-hover:text-[#0066cc]">
+                    <p className="truncate text-[12.5px] text-black/75 group-hover:text-accent">
                       {artist.name}
                     </p>
-                    <p className="mt-0.5 truncate text-[10.5px] text-black/35">
+                    <p className="mt-0.5 truncate text-[11px] text-black/35">
                       {artist.alias?.[0] ??
                         artist.transNames?.[0] ??
                         `${artist.albumSize ?? 0} 张专辑`}
                     </p>
-                    <p className="mt-0.5 text-[10px] text-black/25">
+                    <p className="mt-0.5 text-[11px] text-black/25">
                       {artist.albumSize ?? 0} 张专辑 · {artist.mvSize ?? 0} 个 MV
                     </p>
                   </div>

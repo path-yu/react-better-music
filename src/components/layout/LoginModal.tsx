@@ -321,10 +321,14 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
 
         <TabsContent value="qr" className="mt-4">
           <div className="flex flex-col items-center pb-1">
-            <div className="qr-surface relative flex h-[210px] w-[210px] items-center justify-center overflow-hidden rounded-[18px] border border-black/8 bg-white">
+            <div className="qr-surface relative flex h-[min(210px,70vw)] w-[min(210px,70vw)] items-center justify-center overflow-hidden rounded-[18px] border border-black/8 bg-white">
               {loading && <Loader2 className="h-7 w-7 animate-spin text-black/35" />}
               {!loading && qrImage && (
-                <img src={qrImage} alt="登录二维码" className="h-[200px] w-[200px]" />
+                <img
+                  src={qrImage}
+                  alt="登录二维码"
+                  className="h-[min(200px,66vw)] w-[min(200px,66vw)]"
+                />
               )}
               {!loading && status === 800 && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/80 text-white backdrop-blur-sm">

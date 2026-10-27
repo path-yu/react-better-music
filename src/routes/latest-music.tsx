@@ -52,7 +52,7 @@ function LatestMusicPage() {
       <div className="flex items-end justify-between">
         <div>
           <h1 className="headline-lg flex items-center gap-2">
-            <Music2 className="h-5 w-5 text-[#0066cc]" />
+            <Music2 className="h-5 w-5 text-accent" />
             最新音乐
           </h1>
           <p className="mt-1.5 text-[12px] text-black/35">每日更新的华语与全球新歌速递</p>
@@ -69,7 +69,7 @@ function LatestMusicPage() {
             className={cn(
               'rounded-full px-3.5 py-1.5 text-[11.5px] transition-colors',
               type === item.value
-                ? 'bg-[#0066cc] text-white'
+                ? 'bg-accent text-white'
                 : 'border border-black/8 bg-[#f5f5f7] text-black/55 hover:bg-[#ececf0] hover:text-black/75',
             )}
           >

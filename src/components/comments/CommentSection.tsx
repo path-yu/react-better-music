@@ -254,7 +254,7 @@ export function CommentSection({
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-[12px] font-medium text-[#0066cc]">
+                  <span className="text-[12px] font-medium text-accent">
                     {comment.user?.nickname}
                   </span>
                   {hot ? (
@@ -267,14 +267,14 @@ export function CommentSection({
                   {comment.content}
                 </p>
                 {comment.beReplied?.[0] ? (
-                  <div className="mt-2 rounded-[9px] bg-black/4 px-3 py-2 text-[11.5px] leading-relaxed text-black/55">
-                    <span className="text-[#0066cc]">
+                  <div className="mt-2 rounded-[10px] bg-black/4 px-3 py-2 text-[11.5px] leading-relaxed text-black/55">
+                    <span className="text-accent">
                       @{comment.beReplied[0].user?.nickname}：
                     </span>
                     {comment.beReplied[0].content}
                   </div>
                 ) : null}
-                <div className="mt-2 flex items-center gap-4 text-[10.5px] text-black/30">
+                <div className="mt-2 flex items-center gap-4 text-[11px] text-black/30">
                   <span>{formatDate(comment.time, true)}</span>
                   <button
                     type="button"
@@ -322,7 +322,7 @@ export function CommentSection({
       </div>
 
       {showComposer && (
-        <div className="comment-composer mt-4 rounded-[16px] border p-3">
+        <div className="comment-composer mt-4 rounded-[18px] border p-3">
           <Textarea
             value={content}
             onChange={(event) => setContent(event.target.value)}
@@ -332,7 +332,7 @@ export function CommentSection({
             className="min-h-[76px] border-0 bg-transparent text-[12.5px] focus:ring-0"
           />
           <div className="mt-2 flex items-center justify-between">
-            <span className="text-[10.5px] text-black/25">{content.length}/140</span>
+            <span className="text-[11px] text-black/25">{content.length}/140</span>
             <Button
               size="sm"
               variant="primary"

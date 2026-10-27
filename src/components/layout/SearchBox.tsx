@@ -18,6 +18,7 @@ import {
 } from '../../api'
 import { useUserStore } from '../../store/user'
 import { usePlayerStore } from '../../store/player'
+import { cn } from '../../lib/format'
 import { toast } from '../../lib/toast'
 import type { Playlist, Song } from '../../types'
 
@@ -36,6 +37,9 @@ export function SearchBox() {
   const [suggest, setSuggest] = useState<SuggestState>({ songs: [], playlists: [] })
   const [loading, setLoading] = useState(false)
   const [hotLoading, setHotLoading] = useState(false)
+  // Index into the flattened suggestion list: 0 = "search keyword",
+  // 1..n = songs, then the playlists.
+  const [activeIndex, setActiveIndex] = useState(-1)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const requestIdRef = useRef(0)
 
@@ -133,6 +137,43 @@ export function SearchBox() {
   }
 
   const showSuggest = keyword.trim().length > 0
+  const songOffset = 1
+  const playlistOffset = songOffset + suggest.songs.length
+  const optionCount = showSuggest && !loading ? playlistOffset + suggest.playlists.length : 0
+
+  // A new query (or a fresh response) invalidates the highlighted row.
+  useEffect(() => {
+    setActiveIndex(-1)
+  }, [keyword, suggest, open])
+
+  // Keep the keyboard-selected row inside the 480px-high suggestion viewport.
+  useEffect(() => {
+    if (activeIndex < 0) return
+    document
+      .getElementById(`search-option-${activeIndex}`)
+      ?.scrollIntoView({ block: 'nearest' })
+  }, [activeIndex])
+
+  const activateOption = (index: number) => {
+    if (index <= 0) {
+      goSearch()
+      return
+    }
+    const song = suggest.songs[index - songOffset]
+    if (song) {
+      void handleSongClick(song)
+      return
+    }
+    const playlist = suggest.playlists[index - playlistOffset]
+    if (playlist) handlePlaylistClick(playlist.id)
+  }
+
+  const optionProps = (index: number) => ({
+    id: `search-option-${index}`,
+    role: 'option' as const,
+    'aria-selected': activeIndex === index,
+    onMouseEnter: () => setActiveIndex(index),
+  })
 
   return (
     <div ref={wrapperRef} className="relative w-full max-w-[420px]">
@@ -145,16 +186,40 @@ export function SearchBox() {
           setOpen(true)
         }}
         onFocus={() => setOpen(true)}
+        role="combobox"
+        aria-label="搜索"
+        aria-autocomplete="list"
+        aria-expanded={showSuggest && open}
+        aria-controls="search-suggest-list"
+        aria-activedescendant={activeIndex >= 0 ? `search-option-${activeIndex}` : undefined}
         onKeyDown={(event) => {
+          // Enter is also used to confirm IME candidates; ignore those keys.
+          if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return
+          if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            if (!optionCount) return
+            event.preventDefault()
+            setActiveIndex((current) => {
+              const next = event.key === 'ArrowDown' ? current + 1 : current - 1
+              return (next + optionCount) % optionCount
+            })
+            return
+          }
           if (event.key === 'Enter') {
-            // Enter is also used to confirm IME candidates; don't search then.
-            if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return
+            if (activeIndex >= 0) {
+              event.preventDefault()
+              activateOption(activeIndex)
+              return
+            }
             // Empty field: Enter takes the recommended keyword shown as the
             // placeholder (strip its leading emoji before searching).
             const recommended = defaultKeyword.replace(/^[^\p{L}\p{N}]+/u, '').trim()
             goSearch(keyword.trim() || recommended || undefined)
+            return
           }
-          if (event.key === 'Escape') setOpen(false)
+          if (event.key === 'Escape') {
+            setOpen(false)
+            setActiveIndex(-1)
+          }
         }}
         wrapperClassName="w-full"
         className="h-9 rounded-full bg-white/80 pl-9 pr-9"
@@ -166,17 +231,20 @@ export function SearchBox() {
         <button
           type="button"
           aria-label="清空搜索"
-          onClick={() => setKeyword('')}
+          onClick={() => {
+            setKeyword('')
+            setActiveIndex(-1)
+          }}
           // Keep the caret in the field while clearing, like a native search box.
           onMouseDown={(event) => event.preventDefault()}
-          className="pressable absolute right-1.5 top-1/2 z-10 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-black/40 transition-colors hover:bg-black/10 hover:text-black/70"
+          className="pressable absolute right-1.5 top-1/2 z-10 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-black/40 transition-colors hover:bg-black/10 hover:text-black/70 max-md:h-8 max-md:w-8"
         >
           <X className="h-3.5 w-3.5" />
         </button>
       ) : null}
 
       {open && (
-        <div className="absolute left-0 top-full z-[80] mt-2 w-full min-w-[280px] overflow-hidden rounded-[16px] border border-black/10 bg-white/95 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.35)] backdrop-blur-xl fade-up">
+        <div className="absolute left-0 top-full z-[80] mt-2 w-full min-w-[280px] overflow-hidden rounded-[18px] border border-black/10 bg-white/95 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.35)] backdrop-blur-xl fade-up">
           <div className="max-h-[480px] overflow-y-auto">
             {!showSuggest && (
               <>
@@ -236,7 +304,7 @@ export function SearchBox() {
                         >
                           <span
                             className={`w-4 text-[13px] font-semibold ${
-                              index < 3 ? 'text-[#0066cc]' : 'text-black/30'
+                              index < 3 ? 'text-accent' : 'text-black/30'
                             }`}
                           >
                             {index + 1}
@@ -254,7 +322,7 @@ export function SearchBox() {
             )}
 
             {showSuggest && (
-              <div className="py-2">
+              <div id="search-suggest-list" role="listbox" aria-label="搜索建议" className="py-2">
                 {loading ? (
                   <div className="flex h-28 items-center justify-center">
                     <Loader2 className="h-5 w-5 animate-spin text-black/30" />
@@ -263,60 +331,84 @@ export function SearchBox() {
                   <>
                     <button
                       type="button"
+                      {...optionProps(0)}
                       onClick={() => goSearch()}
-                      className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-[13px] text-[#0066cc] transition-colors hover:bg-black/4"
+                      className={cn(
+                        'flex w-full items-center gap-2 px-4 py-2.5 text-left text-[13px] text-accent transition-colors hover:bg-black/4',
+                        activeIndex === 0 && 'bg-black/6',
+                      )}
                     >
                       <Search className="h-3.5 w-3.5" />
                       搜索 “{keyword}”
                     </button>
 
                     {suggest.songs.length > 0 && (
-                      <p className="flex items-center gap-1.5 px-4 pb-1 pt-2 text-[11px] text-black/35">
+                      <p
+                        role="presentation"
+                        className="flex items-center gap-1.5 px-4 pb-1 pt-2 text-[11px] text-black/35"
+                      >
                         <Music2 className="h-3 w-3" />
                         单曲
                       </p>
                     )}
-                    {suggest.songs.map((song) => (
-                      <button
-                        key={song.id}
-                        type="button"
-                        onClick={() => void handleSongClick(song)}
-                        className="group flex w-full items-center gap-2 px-4 py-2 text-left transition-colors hover:bg-black/4"
-                      >
-                        <Play className="h-3 w-3 shrink-0 text-[#0066cc] opacity-0 transition-opacity group-hover:opacity-100" />
-                        <span className="min-w-0 flex-1 truncate text-[13px] text-black/80">
-                          {song.name}
-                          {song.alia?.[0] ? (
-                            <span className="text-black/35">（{song.alia[0]}）</span>
-                          ) : null}
-                        </span>
-                        <span className="max-w-[140px] shrink-0 truncate text-[11px] text-black/35">
-                          {song.ar.map((artist) => artist.name).join(' / ')}
-                        </span>
-                      </button>
-                    ))}
+                    {suggest.songs.map((song, songIndex) => {
+                      const optionIndex = songOffset + songIndex
+                      return (
+                        <button
+                          key={song.id}
+                          type="button"
+                          {...optionProps(optionIndex)}
+                          onClick={() => void handleSongClick(song)}
+                          className={cn(
+                            'group flex w-full items-center gap-2 px-4 py-2 text-left transition-colors hover:bg-black/4',
+                            activeIndex === optionIndex && 'bg-black/6',
+                          )}
+                        >
+                          <Play className="h-3 w-3 shrink-0 text-accent opacity-0 transition-opacity group-hover:opacity-100" />
+                          <span className="min-w-0 flex-1 truncate text-[13px] text-black/80">
+                            {song.name}
+                            {song.alia?.[0] ? (
+                              <span className="text-black/35">（{song.alia[0]}）</span>
+                            ) : null}
+                          </span>
+                          <span className="max-w-[140px] shrink-0 truncate text-[11px] text-black/35">
+                            {song.ar.map((artist) => artist.name).join(' / ')}
+                          </span>
+                        </button>
+                      )
+                    })}
 
                     {suggest.playlists.length > 0 && (
-                      <p className="flex items-center gap-1.5 px-4 pb-1 pt-2 text-[11px] text-black/35">
+                      <p
+                        role="presentation"
+                        className="flex items-center gap-1.5 px-4 pb-1 pt-2 text-[11px] text-black/35"
+                      >
                         <Music2 className="h-3 w-3" />
                         歌单
                       </p>
                     )}
-                    {suggest.playlists.map((playlist) => (
-                      <button
-                        key={playlist.id}
-                        type="button"
-                        onClick={() => handlePlaylistClick(playlist.id)}
-                        className="flex w-full items-center gap-2 px-4 py-2 text-left transition-colors hover:bg-black/4"
-                      >
-                        <span className="min-w-0 flex-1 truncate text-[13px] text-black/80">
-                          {playlist.name}
-                        </span>
-                        <span className="shrink-0 text-[11px] text-black/30">
-                          {playlist.trackCount} 首
-                        </span>
-                      </button>
-                    ))}
+                    {suggest.playlists.map((playlist, playlistIndex) => {
+                      const optionIndex = playlistOffset + playlistIndex
+                      return (
+                        <button
+                          key={playlist.id}
+                          type="button"
+                          {...optionProps(optionIndex)}
+                          onClick={() => handlePlaylistClick(playlist.id)}
+                          className={cn(
+                            'flex w-full items-center gap-2 px-4 py-2 text-left transition-colors hover:bg-black/4',
+                            activeIndex === optionIndex && 'bg-black/6',
+                          )}
+                        >
+                          <span className="min-w-0 flex-1 truncate text-[13px] text-black/80">
+                            {playlist.name}
+                          </span>
+                          <span className="shrink-0 text-[11px] text-black/30">
+                            {playlist.trackCount} 首
+                          </span>
+                        </button>
+                      )
+                    })}
 
                     {!suggest.songs.length && !suggest.playlists.length && (
                       <p className="px-4 py-8 text-center text-[12px] text-black/35">

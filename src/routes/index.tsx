@@ -162,7 +162,7 @@ function DiscoveryPage() {
               imageClassName="transition-transform duration-[900ms] group-hover:scale-[1.02]"
             />
             {currentBanner.typeTitle ? (
-              <span className="absolute left-4 top-4 rounded-full bg-black/30 px-2.5 py-1 text-[10px] text-white backdrop-blur-md">
+              <span className="absolute left-4 top-4 rounded-full bg-black/30 px-2.5 py-1 text-[11px] text-white backdrop-blur-md">
                 {currentBanner.typeTitle}
               </span>
             ) : null}
@@ -178,7 +178,7 @@ function DiscoveryPage() {
               aria-label="上一张"
               onClick={() => step(-1)}
               className={cn(
-                'absolute left-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-black/60 shadow-md backdrop-blur-md transition-all hover:bg-white hover:text-black',
+                'absolute left-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-black/60 shadow-md backdrop-blur-md transition-all hover:bg-white hover:text-black max-md:h-10 max-md:w-10',
                 hovered ? 'opacity-100' : 'opacity-0',
               )}
             >
@@ -189,7 +189,7 @@ function DiscoveryPage() {
               aria-label="下一张"
               onClick={() => step(1)}
               className={cn(
-                'absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-black/60 shadow-md backdrop-blur-md transition-all hover:bg-white hover:text-black',
+                'absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-black/60 shadow-md backdrop-blur-md transition-all hover:bg-white hover:text-black max-md:h-10 max-md:w-10',
                 hovered ? 'opacity-100' : 'opacity-0',
               )}
             >
@@ -224,7 +224,7 @@ function DiscoveryPage() {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {Array.from({ length: 10 }).map((_, item) => (
               <div key={item} className="apple-card p-2.5">
-                <Skeleton className="aspect-square w-full rounded-[9px]" />
+                <Skeleton className="aspect-square w-full rounded-[10px]" />
                 <Skeleton className="mt-2 h-3 w-4/5 rounded-full" />
               </div>
             ))}
@@ -248,7 +248,7 @@ function DiscoveryPage() {
           <Button
             variant="link"
             size="sm"
-            className="text-[11.5px] text-[#0066cc]"
+            className="text-[11.5px] text-accent"
             onClick={() => void navigate({ to: '/songlists' })}
           >
             查看全部歌单
@@ -263,12 +263,12 @@ function DiscoveryPage() {
           subtitle={
             new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' })
           }
-          icon={<Sparkles className="h-4 w-4 text-[#0066cc]" />}
+          icon={<Sparkles className="h-4 w-4 text-accent" />}
         />
         {songLoading ? (
           <div className="grid gap-2 md:grid-cols-2">
             {Array.from({ length: 8 }).map((_, item) => (
-              <Skeleton key={item} className="h-[56px] w-full rounded-[12px]" />
+              <Skeleton key={item} className="h-[56px] w-full rounded-[14px]" />
             ))}
           </div>
         ) : songFailed ? (
@@ -284,7 +284,7 @@ function DiscoveryPage() {
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             {Array.from({ length: 4 }).map((_, item) => (
               <div key={item}>
-                <Skeleton className="aspect-video w-full rounded-[12px]" />
+                <Skeleton className="aspect-video w-full rounded-[14px]" />
                 <Skeleton className="mt-2 h-3 w-3/5 rounded-full" />
               </div>
             ))}
@@ -293,8 +293,8 @@ function DiscoveryPage() {
           <SectionError title="MV 推荐加载失败" onRetry={retryMvs} />
         ) : mvs.length ? (
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            {mvs.map((mv) => (
-              <MvCard key={mv.id} mv={mv} />
+            {mvs.map((mv, index) => (
+              <MvCard key={mv.id} mv={mv} priority={index < 4} />
             ))}
           </div>
         ) : (
@@ -304,7 +304,7 @@ function DiscoveryPage() {
           <Button
             variant="link"
             size="sm"
-            className="text-[11.5px] text-[#0066cc]"
+            className="text-[11.5px] text-accent"
             onClick={() => void navigate({ to: '/latest-mv' })}
           >
             查看全部 MV
@@ -361,19 +361,19 @@ function DailySongGrid({ songs }: { songs: Song[] }) {
               if (event.key === 'Enter') void initQueue(songs, index, listId)
             }}
             className={cn(
-              'group flex cursor-pointer items-center gap-3 rounded-[12px] px-2.5 py-2 text-left transition-colors',
-              active ? 'bg-[#0066cc]/6' : 'hover:bg-black/4',
+              'group flex cursor-pointer items-center gap-3 rounded-[14px] px-2.5 py-2 text-left transition-colors',
+              active ? 'bg-accent/6' : 'hover:bg-black/4',
             )}
           >
             <span className="relative shrink-0">
               <ImageWithFallback
                 src={song.al.picUrl}
                 alt={song.name}
-                rounded="rounded-[7px]"
+                rounded="rounded-[6px]"
                 className="h-10 w-10"
                 resize="96y96"
               />
-              <span className="absolute inset-0 flex items-center justify-center rounded-[7px] bg-black/30 text-white opacity-0 transition-opacity group-hover:opacity-100">
+              <span className="absolute inset-0 flex items-center justify-center rounded-[6px] bg-black/30 text-white opacity-0 transition-opacity group-hover:opacity-100">
                 <Play className="h-3 w-3 fill-current" />
               </span>
             </span>
@@ -382,27 +382,27 @@ function DailySongGrid({ songs }: { songs: Song[] }) {
                 <span
                   className={cn(
                     'truncate text-[12px]',
-                    active ? 'font-medium text-[#0066cc]' : 'text-black/78',
+                    active ? 'font-medium text-accent' : 'text-black/78',
                   )}
                 >
                   {song.name}
                 </span>
                 {song.fee === 1 ? (
-                  <span className="rounded-[3px] bg-[#ff2d55]/10 px-1 text-[9px] text-[#ff2d55]">
+                  <span className="rounded-[6px] bg-[#ff2d55]/10 px-1 text-[11px] text-[#ff2d55]">
                     VIP
                   </span>
                 ) : null}
               </div>
-              <p className="mt-0.5 truncate text-[10.5px] text-black/35">
+              <p className="mt-0.5 truncate text-[11px] text-black/35">
                 <ArtistLinks artists={song.ar} />
               </p>
             </div>
-            <span className="flex shrink-0 items-center gap-1 text-[10px] tabular-nums text-black/25">
+            <span className="flex shrink-0 items-center gap-1 text-[11px] tabular-nums text-black/25">
               <Clock3 className="h-3 w-3" />
               {formatDuration(song.dt)}
             </span>
             {playing && active ? (
-              <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-[#0066cc]" />
+              <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-accent" />
             ) : null}
           </div>
         )

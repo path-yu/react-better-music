@@ -100,12 +100,19 @@ export function LyricsPanel({
     const container = containerRef.current
     const active = lineRefs.current[activeIndex]
     if (!container || !active) return
-    const top = active.offsetTop - container.clientHeight / 2 + active.offsetHeight / 2
     // A seek can jump many lines; scrolling smoothly across a long distance
     // fights the next update and makes the whole panel look shaky.
     const jump = Math.abs(activeIndex - lastActiveRef.current)
     lastActiveRef.current = activeIndex
-    container.scrollTo({ top: Math.max(0, top), behavior: jump > 2 ? 'auto' : 'smooth' })
+    const behavior: ScrollBehavior = jump > 2 ? 'auto' : 'smooth'
+    // On mobile the viewport is not scrollable on purpose (the whole page is);
+    // keep the active line centred by scrolling its nearest ancestor instead.
+    if (container.scrollHeight <= container.clientHeight + 1) {
+      active.scrollIntoView({ block: 'center', inline: 'nearest', behavior })
+      return
+    }
+    const top = active.offsetTop - container.clientHeight / 2 + active.offsetHeight / 2
+    container.scrollTo({ top: Math.max(0, top), behavior })
   }, [activeIndex])
 
   if (!lines.length) {
@@ -121,6 +128,8 @@ export function LyricsPanel({
       ref={containerRef}
       className={cn(
         'lyrics-viewport relative h-full overflow-y-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+        // Mobile keeps a single outer scroll container for the whole page.
+        'max-md:h-auto max-md:overflow-visible',
         compact && 'lyrics-viewport--compact',
         className,
       )}

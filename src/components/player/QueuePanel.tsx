@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { ListMusic, Trash2, Volume2, X } from 'lucide-react'
 import { Button } from '@pikoloo/darwin-ui'
@@ -29,6 +29,22 @@ export function QueuePanel() {
     overscan: 8,
   })
 
+  // Escape closes the panel, matching every other macOS overlay; focus returns
+  // to whatever opened it (the queue button in the player bar).
+  useEffect(() => {
+    if (!show) return
+    const trigger =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') toggleQueue(false)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      trigger?.focus()
+    }
+  }, [show, toggleQueue])
+
   if (!show) return null
 
   const virtualItems = virtualizer.getVirtualItems()
@@ -50,10 +66,14 @@ export function QueuePanel() {
         className="absolute inset-0 bg-black/20 backdrop-blur-[2px]"
         onClick={() => toggleQueue(false)}
       />
-      <aside className="relative flex h-full w-[360px] flex-col border-l border-black/10 bg-[#fbfbfd]/95 shadow-[-20px_0_50px_-20px_rgba(0,0,0,0.3)] backdrop-blur-xl fade-up max-md:w-full">
+      <aside
+        role="dialog"
+        aria-label="播放列表"
+        className="relative flex h-full w-[min(360px,100%)] flex-col border-l border-black/10 bg-[#fbfbfd]/95 shadow-[-20px_0_50px_-20px_rgba(0,0,0,0.3)] backdrop-blur-xl fade-up"
+      >
         <div className="flex items-center justify-between border-b border-black/8 px-4 py-3.5">
           <div className="flex items-center gap-2">
-            <ListMusic className="h-4 w-4 text-[#0066cc]" />
+            <ListMusic className="h-4 w-4 text-accent" />
             <p className="text-[13px] font-semibold text-black/80">播放列表</p>
             <span className="text-[11px] text-black/35">{queue.length} 首</span>
           </div>
@@ -71,7 +91,7 @@ export function QueuePanel() {
               type="button"
               aria-label="关闭"
               onClick={() => toggleQueue(false)}
-              className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/40 hover:bg-black/5 hover:text-black/70"
+              className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/40 hover:bg-black/5 hover:text-black/70 max-md:h-10 max-md:w-10"
             >
               <X className="h-4 w-4" />
             </button>
@@ -109,19 +129,19 @@ export function QueuePanel() {
                     }}
                     className={cn(
                       'group flex h-full w-full cursor-pointer items-center gap-2.5 px-4 text-left transition-colors',
-                      active ? 'bg-[#0066cc]/8' : 'hover:bg-black/4',
+                      active ? 'bg-accent/8' : 'hover:bg-black/4',
                     )}
                   >
                     <span className="flex w-4 shrink-0 justify-center">
                       {active ? (
                         <Volume2
                           className={cn(
-                            'h-3.5 w-3.5 text-[#0066cc]',
+                            'h-3.5 w-3.5 text-accent',
                             playing ? 'animate-pulse' : 'opacity-60',
                           )}
                         />
                       ) : (
-                        <span className="text-[10px] tabular-nums text-black/25">
+                        <span className="text-[11px] tabular-nums text-black/25">
                           {virtualRow.index + 1}
                         </span>
                       )}
@@ -131,32 +151,32 @@ export function QueuePanel() {
                         <span
                           className={cn(
                             'min-w-0 truncate text-[12px]',
-                            active ? 'font-medium text-[#0066cc]' : 'text-black/75',
+                            active ? 'font-medium text-accent' : 'text-black/75',
                           )}
                         >
                           {song.name}
                         </span>
                         {song.fee === 1 ? (
-                          <span className="shrink-0 rounded bg-[#ff2d55]/10 px-1 text-[9px] text-[#ff2d55]">
+                          <span className="shrink-0 rounded bg-[#ff2d55]/10 px-1 text-[11px] text-[#ff2d55]">
                             VIP
                           </span>
                         ) : null}
                         {song.fee === 0 ? (
-                          <span className="shrink-0 rounded bg-black/6 px-1 text-[9px] text-black/35">
+                          <span className="shrink-0 rounded bg-black/6 px-1 text-[11px] text-black/35">
                             无音源
                           </span>
                         ) : null}
                         {song.mv || song.mvid ? (
-                          <span className="shrink-0 rounded bg-[#0066cc]/10 px-1 text-[9px] text-[#0066cc]">
+                          <span className="shrink-0 rounded bg-accent/10 px-1 text-[11px] text-accent">
                             MV
                           </span>
                         ) : null}
                       </div>
-                      <p className="truncate text-[10.5px] text-black/35">
+                      <p className="truncate text-[11px] text-black/35">
                         <ArtistLinks artists={song.ar} />
                       </p>
                     </div>
-                    <span className="shrink-0 text-[10px] tabular-nums text-black/25">
+                    <span className="shrink-0 text-[11px] tabular-nums text-black/25">
                       {formatDuration(song.dt)}
                     </span>
                   </div>
@@ -166,7 +186,7 @@ export function QueuePanel() {
           </div>
         </div>
 
-        <div className="border-t border-black/8 px-4 py-3 text-center text-[10.5px] text-black/30">
+        <div className="border-t border-black/8 px-4 py-3 text-center text-[11px] text-black/30">
           点击歌曲开始播放
         </div>
       </aside>

@@ -31,6 +31,8 @@ interface SongRowProps {
   playing: boolean
   liked: boolean
   virtual?: boolean
+  /** The first screenful loads eagerly; the rest stays lazy. */
+  priority?: boolean
   onPlay: (index: number) => void
   onLike: (id: number, liked: boolean) => void
 }
@@ -46,6 +48,7 @@ const SongRow = memo(function SongRow({
   playing,
   liked,
   virtual = false,
+  priority = false,
   onPlay,
   onLike,
 }: SongRowProps) {
@@ -60,19 +63,19 @@ const SongRow = memo(function SongRow({
         SONG_GRID,
         'group rounded-[10px] px-3 py-2 transition-colors',
         virtual && 'h-full',
-        active ? 'bg-[#0066cc]/6' : 'hover:bg-black/4',
+        active ? 'bg-accent/6' : 'hover:bg-black/4',
       )}
     >
       <div className="relative flex h-6 items-center justify-center">
         {active ? (
           <Volume2
             className={cn(
-              'h-3.5 w-3.5 text-[#0066cc] transition-opacity group-hover:opacity-0',
+              'h-3.5 w-3.5 text-accent transition-opacity group-hover:opacity-0',
               playing ? 'animate-pulse' : 'opacity-60',
             )}
           />
         ) : (
-          <span className="text-[10.5px] tabular-nums text-black/25 transition-opacity group-hover:opacity-0">
+          <span className="text-[11px] tabular-nums text-black/25 transition-opacity group-hover:opacity-0">
             {index < 9 ? `0${index + 1}` : index + 1}
           </span>
         )}
@@ -80,7 +83,7 @@ const SongRow = memo(function SongRow({
           type="button"
           aria-label={active && playing ? '暂停' : '播放'}
           onClick={() => onPlay(index)}
-          className="pressable absolute inset-0 flex items-center justify-center text-[#0066cc] opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
+          className="pressable absolute inset-0 flex items-center justify-center text-accent opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
         >
           {active && playing ? (
             <Pause className="h-3.5 w-3.5 fill-current" />
@@ -96,6 +99,7 @@ const SongRow = memo(function SongRow({
           alt={song.name}
           rounded="rounded-[6px]"
           resize="96y96"
+          priority={priority}
           className="h-9 w-9 shrink-0"
         />
         <div className="min-w-0 flex-1">
@@ -103,28 +107,28 @@ const SongRow = memo(function SongRow({
             <span
               className={cn(
                 'truncate text-[12.5px]',
-                active ? 'font-medium text-[#0066cc]' : 'text-black/80',
+                active ? 'font-medium text-accent' : 'text-black/80',
               )}
             >
               {song.name}
             </span>
             {song.mv || song.mvid ? (
-              <span className="shrink-0 rounded-[3px] bg-[#0066cc]/10 px-1 text-[9px] font-medium text-[#0066cc]">
+              <span className="shrink-0 rounded-[6px] bg-accent/10 px-1 text-[11px] font-medium text-accent">
                 MV
               </span>
             ) : null}
             {song.fee === 1 ? (
-              <span className="shrink-0 rounded-[3px] bg-[#ff2d55]/10 px-1 text-[9px] font-medium text-[#ff2d55]">
+              <span className="shrink-0 rounded-[6px] bg-[#ff2d55]/10 px-1 text-[11px] font-medium text-[#ff2d55]">
                 VIP
               </span>
             ) : null}
             {song.fee === 0 ? (
-              <span className="shrink-0 rounded-[3px] bg-black/6 px-1 text-[9px] text-black/35">
+              <span className="shrink-0 rounded-[6px] bg-black/6 px-1 text-[11px] text-black/35">
                 无音源
               </span>
             ) : null}
           </div>
-          <p className="song-artist-mobile mt-0.5 truncate text-[10.5px] text-black/35">
+          <p className="song-artist-mobile mt-0.5 truncate text-[11px] text-black/35">
             <ArtistLinks artists={song.ar} />
           </p>
         </div>
@@ -150,7 +154,7 @@ const SongRow = memo(function SongRow({
         <ArtistLinks artists={song.ar} />
       </p>
       <p className="song-meta truncate text-[11.5px] text-black/40">{song.al.name}</p>
-      <p className="text-right text-[10.5px] tabular-nums text-black/30">
+      <p className="text-right text-[11px] tabular-nums text-black/30">
         {formatDuration(song.dt)}
       </p>
     </div>
@@ -210,10 +214,10 @@ export function SongTable({
 
   if (loading) {
     return (
-      <div className={cn('overflow-hidden rounded-[16px] border border-black/8', className)}>
+      <div className={cn('overflow-hidden rounded-[18px] border border-black/8', className)}>
         {Array.from({ length: 8 }).map((_, index) => (
           <div key={index} className="flex items-center gap-3 border-b border-black/5 px-4 py-3">
-            <Skeleton className="h-9 w-9 rounded-[7px]" />
+            <Skeleton className="h-9 w-9 rounded-[6px]" />
             <Skeleton className="h-3 w-[26%] rounded-full" />
             <Skeleton className="h-3 w-[18%] rounded-full" />
             <Skeleton className="ml-auto h-3 w-10 rounded-full" />
@@ -238,6 +242,7 @@ export function SongTable({
         playing={active && playing}
         liked={likedSet.has(song.id)}
         virtual={virtual}
+        priority={index < 8}
         onPlay={handlePlay}
         onLike={handleLike}
       />
@@ -248,7 +253,7 @@ export function SongTable({
     <div
       className={cn(
         SONG_GRID,
-        'border-b border-black/8 bg-white/88 px-3 py-2 text-[10.5px] font-medium text-black/35 backdrop-blur-xl',
+        'border-b border-black/8 bg-white/88 px-3 py-2 text-[11px] font-medium text-black/35 backdrop-blur-xl',
         !isVirtual && 'sticky top-0 z-10',
       )}
     >

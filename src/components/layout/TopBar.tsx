@@ -20,7 +20,7 @@ export function TopBar() {
         type="button"
         aria-label="打开导航"
         onClick={toggleSidebar}
-        className="pressable flex h-7 w-7 items-center justify-center rounded-[7px] text-black/45 transition-colors hover:bg-black/5 hover:text-black/75 md:hidden"
+        className="pressable flex h-7 w-7 items-center justify-center rounded-[6px] text-black/45 transition-colors hover:bg-black/5 hover:text-black/75 max-md:h-10 max-md:w-10 md:hidden"
       >
         <Menu className="h-4 w-4" />
       </button>
@@ -29,7 +29,7 @@ export function TopBar() {
           type="button"
           aria-label="后退"
           onClick={() => window.history.back()}
-          className="pressable flex h-7 w-7 items-center justify-center rounded-[7px] text-black/45 transition-colors hover:bg-black/5 hover:text-black/75"
+          className="pressable flex h-7 w-7 items-center justify-center rounded-[6px] text-black/45 transition-colors hover:bg-black/5 hover:text-black/75 max-md:h-10 max-md:w-10"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -37,7 +37,7 @@ export function TopBar() {
           type="button"
           aria-label="前进"
           onClick={() => window.history.forward()}
-          className="pressable flex h-7 w-7 items-center justify-center rounded-[7px] text-black/45 transition-colors hover:bg-black/5 hover:text-black/75"
+          className="pressable flex h-7 w-7 items-center justify-center rounded-[6px] text-black/45 transition-colors hover:bg-black/5 hover:text-black/75 max-md:h-10 max-md:w-10"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -53,7 +53,7 @@ export function TopBar() {
           aria-label={theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'}
           title={theme === 'dark' ? '浅色模式' : '深色模式'}
           onClick={toggleTheme}
-          className="pressable max-md:hidden flex h-7 w-7 items-center justify-center rounded-full text-black/40 transition-colors hover:bg-black/5 hover:text-black/75"
+          className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/40 transition-colors hover:bg-black/5 hover:text-black/75 max-md:hidden"
         >
           {theme === 'dark' ? <Sun className="h-[15px] w-[15px]" /> : <Moon className="h-[15px] w-[15px]" />}
         </button>
@@ -63,7 +63,7 @@ export function TopBar() {
             onClick={() => toggleNowPlaying()}
             className={`pressable max-md:hidden flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[11.5px] transition-colors ${
               showNowPlaying
-                ? 'bg-[#0066cc]/10 text-[#0066cc]'
+                ? 'bg-accent/10 text-accent'
                 : 'text-black/40 hover:bg-black/5 hover:text-black/70'
             }`}
           >
@@ -76,7 +76,7 @@ export function TopBar() {
           aria-label="设置"
           title="设置"
           onClick={() => navigate({ to: '/settings' })}
-          className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/40 transition-colors hover:bg-black/5 hover:text-black/75"
+          className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/40 transition-colors hover:bg-black/5 hover:text-black/75 max-md:h-10 max-md:w-10"
         >
           <Settings2 className="h-[15px] w-[15px]" />
         </button>

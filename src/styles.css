@@ -8,6 +8,19 @@
  */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * Design tokens for Tailwind utilities. They resolve through the runtime
+ * variables below, so `text-accent` / `text-ink-2` follow the light/dark theme
+ * without a hand-maintained list of `[class~="..."]` overrides.
+ */
+@theme inline {
+  --color-accent: var(--apple-blue);
+  --color-accent-hover: var(--apple-blue-focus);
+  --color-ink-1: var(--ink-1);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+}
+
 :root,
 [data-theme="light"] {
   /* Apple action blue replaces Darwin's monochrome primary */
@@ -20,9 +33,17 @@
   --apple-blue: #0066cc;
   --apple-blue-focus: #0071e3;
   --apple-blue-dark: #2997ff;
+  /* RGB channels keep translucent tints in sync with the accent token. */
+  --apple-blue-rgb: 0 102 204;
+  /* Accent for content that stays on a white surface in both themes. */
+  --apple-blue-on-light: #0066cc;
   --apple-ink: #1d1d1f;
   --apple-body: #1d1d1f;
   --apple-muted: #7a7a7a;
+  /* Semantic text ink: hierarchy without inventing a class name per opacity. */
+  --ink-1: rgba(0, 0, 0, 0.85);
+  --ink-2: rgba(0, 0, 0, 0.5);
+  --ink-3: rgba(0, 0, 0, 0.35);
   --apple-parchment: #f5f5f7;
   --apple-pearl: #fafafc;
   --apple-hairline: #e5e5ea;
@@ -40,6 +61,27 @@
   --z-alert: 1100;
   --z-fullscreen: 1200;
   --z-toast: 2000;
+}
+
+/*
+ * Honour the OS "reduce motion" setting. The app ships page transitions,
+ * rotating artwork and pulsing indicators, none of which are essential, so
+ * they collapse to their final frame instead of animating.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* A static pose instead of a 24s rotation (no end state to snap to). */
+  .disc-spin {
+    animation: none !important;
+  }
 }
 
 * {
@@ -79,7 +121,14 @@ input[type='search']::-webkit-search-decoration {
 }
 
 /*
+ * Radius scale: 6 / 10 / 14 / 18 / 22 / 28 px. Tailwind arbitrary values and
+ * component rules all pick from this ladder (P2-5), so new surfaces do not
+ * reintroduce a one-off radius; circles keep `rounded-full`.
+ *
  * iOS continuous corners (squircle / superellipse) for every element.
+ *
+ * Browser support: `corner-shape` ships in Chromium 139+; Safari and Firefox
+ * ignore the declaration and fall back to plain rounded rectangles (P2-6).
  *
  * `*` (not a class selector) is used on purpose: radii also come from
  * darwin-ui, inline styles and pseudo-elements, so anything narrower would miss
@@ -163,7 +212,7 @@ input[type='search']::-webkit-search-decoration {
   max-width: 1440px;
   height: 100%;
   margin: 0 auto;
-  border-radius: 16px;
+  border-radius: 18px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.92);
   box-shadow:
@@ -287,13 +336,37 @@ html.desktop .app-window {
 }
 
 .desktop-titlebar__button:focus-visible {
-  outline: 2px solid #0066cc;
+  outline: 2px solid var(--apple-blue);
   outline-offset: -2px;
 }
 
 .desktop-titlebar__button--close:hover {
   background: #e81123;
   color: #ffffff;
+}
+
+/*
+ * The immersive now-playing view is full-bleed and dark. When it is open the
+ * chrome above it (native title bar) switches to dark glass, otherwise a light
+ * strip sits on top of the artwork.
+ */
+.app-window:has(.nowplaying-overlay) .desktop-titlebar,
+.app-window:has(.nowplaying-overlay) .titlebar {
+  background: rgba(20, 20, 22, 0.82);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.app-window:has(.nowplaying-overlay) .titlebar-title {
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.app-window:has(.nowplaying-overlay) .desktop-titlebar__button {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.app-window:has(.nowplaying-overlay) .desktop-titlebar__button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .app-body {
@@ -481,7 +554,7 @@ html.desktop .app-window {
 }
 
 .pill-secondary:hover {
-  background: rgba(0, 102, 204, 0.06);
+  background: rgb(var(--apple-blue-rgb) / 0.06);
 }
 
 .pressable {
@@ -962,6 +1035,10 @@ html.desktop .app-window {
 
 .dark {
   color-scheme: dark;
+  /* Accent flips once here; every `*-accent` utility follows automatically. */
+  --apple-blue: #2997ff;
+  --apple-blue-focus: #0a84ff;
+  --apple-blue-rgb: 41 151 255;
   --apple-ink: #f5f5f7;
   --apple-body: #f5f5f7;
   --apple-muted: #98989d;
@@ -970,6 +1047,9 @@ html.desktop .app-window {
   --apple-hairline: rgba(255, 255, 255, 0.12);
   --apple-divider: rgba(255, 255, 255, 0.08);
   --apple-blue-dark: #2997ff;
+  --ink-1: rgba(255, 255, 255, 0.92);
+  --ink-2: rgba(255, 255, 255, 0.62);
+  --ink-3: rgba(255, 255, 255, 0.46);
   --product-shadow: rgba(0, 0, 0, 0.55) 3px 5px 30px 0;
   /* Darwin theme variables for hover / secondary surfaces */
   --accent: 240 3.7% 16%;
@@ -1143,14 +1223,6 @@ html.desktop .app-window {
   color: rgba(255, 255, 255, 0.18);
 }
 
-.dark [class~="text-[#0066cc]"]:not(.media-chip) {
-  color: #2997ff;
-}
-
-.dark [class~="text-[#0066cc]/65"] {
-  color: rgba(41, 151, 255, 0.65);
-}
-
 .dark [class~="text-[#d70015]"] {
   color: #ff6961;
 }
@@ -1179,12 +1251,22 @@ html.desktop .app-window {
   color: rgba(255, 255, 255, 0.72);
 }
 
-.dark [class~="hover:text-[#0066cc]"]:hover {
-  color: #2997ff;
+/* Accent tints: 8% of #2997ff reads fainter than 8% of #0066cc, so nudge the
+   alpha up on dark surfaces (mirrors the old hand-written overrides). */
+.dark [class~="bg-accent/4"] {
+  background-color: rgb(var(--apple-blue-rgb) / 0.1);
 }
 
-.dark .group:hover [class~="group-hover:text-[#0066cc]"] {
-  color: #2997ff;
+.dark [class~="bg-accent/6"] {
+  background-color: rgb(var(--apple-blue-rgb) / 0.12);
+}
+
+.dark [class~="bg-accent/8"] {
+  background-color: rgb(var(--apple-blue-rgb) / 0.14);
+}
+
+.dark [class~="bg-accent/10"] {
+  background-color: rgb(var(--apple-blue-rgb) / 0.16);
 }
 
 /* Surfaces */
@@ -1242,18 +1324,6 @@ html.desktop .app-window {
 
 .dark [class~="bg-[#fbfbfd]/95"] {
   background-color: rgba(28, 28, 30, 0.96);
-}
-
-.dark [class~="bg-[#0066cc]/10"] {
-  background-color: rgba(41, 151, 255, 0.16);
-}
-
-.dark [class~="bg-[#0066cc]/8"] {
-  background-color: rgba(41, 151, 255, 0.14);
-}
-
-.dark [class~="bg-[#0066cc]/6"] {
-  background-color: rgba(41, 151, 255, 0.12);
 }
 
 .dark [class~="bg-[#ff2d55]/10"] {
@@ -1337,7 +1407,7 @@ html.desktop .app-window {
 /* Media overlays that must stay white in both themes */
 .dark .media-chip {
   background-color: rgba(255, 255, 255, 0.9);
-  color: #0066cc;
+  color: var(--apple-blue-on-light);
 }
 
 .dark .qr-surface {
@@ -1370,6 +1440,94 @@ html.desktop .app-window {
   mask-image: linear-gradient(to bottom, #000 65%, transparent 100%);
 }
 
+/* ---------- route transition ---------- */
+
+/*
+ * Page content fades in on navigation. 160ms keeps it below the "feels slow"
+ * threshold and it collapses to a single frame under reduce-motion (P0-1).
+ */
+@keyframes route-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.route-fade {
+  animation: route-fade-in 0.16s ease both;
+}
+
+/* ---------- reduced transparency / higher contrast ---------- */
+
+/*
+ * Glass is decorative. When the OS asks for less transparency (or more
+ * contrast), every frosted layer becomes an opaque surface instead of stacking
+ * three backdrops on the immersive page.
+ */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .titlebar,
+  .desktop-titlebar,
+  .sidebar-glass,
+  .pushbar-glass,
+  .player-glass {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .sidebar-glass {
+    background: #f4f4f7;
+  }
+
+  .pushbar-glass {
+    background: #ffffff;
+  }
+
+  .player-glass {
+    background: #fafafc;
+  }
+
+  .dark .sidebar-glass {
+    background: #1c1c1e;
+  }
+
+  .dark .pushbar-glass {
+    background: #1e1e20;
+  }
+
+  .dark .player-glass {
+    background: #18181a;
+  }
+
+  .player-glass--immersive,
+  .dark .player-glass.player-glass--immersive {
+    background: rgba(12, 12, 14, 0.92);
+  }
+
+  .nowplaying-ambient__art {
+    filter: blur(28px) saturate(120%) brightness(0.38);
+  }
+
+  .nowplaying-overlay [class~='backdrop-blur-xl'] {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
+/* ---------- popovers ---------- */
+
+/*
+ * darwin-ui's open animation replaces the `translateX(-100%)` that `align="end"`
+ * uses, so the user menu is pulled left with a margin instead. Both the width
+ * and the shift follow the viewport, so split/narrow windows never clip it.
+ */
+.user-menu-popover {
+  width: min(290px, calc(100vw - 24px));
+  margin-left: calc(min(290px, calc(100vw - 24px)) * -1);
+}
+
 /* ---------- macOS-style sliders (seek bar / volume) ---------- */
 
 /*
@@ -1383,18 +1541,18 @@ html.desktop .app-window {
   --slider-fill: var(--apple-blue);
   --slider-thumb-shadow:
     0 0 0 0.5px rgba(0, 0, 0, 0.16), 0 1px 3px rgba(0, 0, 0, 0.28);
-  --slider-focus-ring: 0 0 0 3px rgba(0, 102, 204, 0.35);
+  --slider-focus-ring: 0 0 0 3px rgb(var(--apple-blue-rgb) / 0.35);
 }
 
 .dark .seek-slider,
 .dark .volume-slider {
   --slider-track: rgba(255, 255, 255, 0.16);
   --slider-buffer: rgba(255, 255, 255, 0.3);
-  /* Brighter system blue: #0066cc is too dim against the #1c1c1e chrome. */
-  --slider-fill: #0a84ff;
+  /* Brighter system blue: the light accent is too dim on #1c1c1e chrome. */
+  --slider-fill: var(--apple-blue-focus);
   --slider-thumb-shadow:
     0 0 0 0.5px rgba(0, 0, 0, 0.4), 0 1px 4px rgba(0, 0, 0, 0.5);
-  --slider-focus-ring: 0 0 0 3px rgba(10, 132, 255, 0.45);
+  --slider-focus-ring: 0 0 0 3px rgb(var(--apple-blue-rgb) / 0.45);
 }
 
 .seek-slider__track,

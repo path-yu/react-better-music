@@ -24,7 +24,7 @@ export function ArtistLinks({ artists, className }: ArtistLinksProps) {
             }}
             onDoubleClick={(event) => event.stopPropagation()}
             className={cn(
-              'cursor-pointer rounded-sm text-left transition-colors hover:text-[#0066cc] hover:underline',
+              'cursor-pointer rounded-sm text-left transition-colors hover:text-accent hover:underline',
             )}
           >
             {artist.name}

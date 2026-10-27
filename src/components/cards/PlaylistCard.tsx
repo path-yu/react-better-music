@@ -24,21 +24,21 @@ export function PlaylistCard({ playlist, priority }: PlaylistCardProps) {
       }}
       className="apple-card apple-card-hover group cursor-pointer p-2.5"
     >
-      <div className="relative overflow-hidden rounded-[9px]">
+      <div className="relative overflow-hidden rounded-[10px]">
         <ImageWithFallback
           src={playlist.coverImgUrl}
           alt={playlist.name}
-          rounded="rounded-[9px]"
+          rounded="rounded-[10px]"
           resize="240y240"
           priority={priority}
           className="aspect-square w-full"
           imageClassName="transition-transform duration-500 group-hover:scale-[1.04]"
         />
-        <div className="absolute right-1.5 top-1.5 flex items-center gap-1 rounded-full bg-black/35 px-1.5 py-0.5 text-[9px] text-white backdrop-blur-sm">
+        <div className="absolute right-1.5 top-1.5 flex items-center gap-1 rounded-full bg-black/35 px-1.5 py-0.5 text-[11px] text-white backdrop-blur-sm">
           <Play className="h-2.5 w-2.5 fill-current" />
           {formatNumber(playlist.playCount)}
         </div>
-        <span className="media-chip absolute bottom-2 right-2 flex h-8 w-8 translate-y-1 items-center justify-center rounded-full bg-white/90 text-[#0066cc] opacity-0 shadow-md transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+        <span className="media-chip absolute bottom-2 right-2 flex h-8 w-8 translate-y-1 items-center justify-center rounded-full bg-white/90 text-accent opacity-0 shadow-md transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
           <Play className="ml-0.5 h-3.5 w-3.5 fill-current" />
         </span>
       </div>

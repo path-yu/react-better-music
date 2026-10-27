@@ -315,12 +315,12 @@ export function PlayerBar() {
           <ImageWithFallback
             src={currentSong.al.picUrl}
             alt={currentSong.name}
-            rounded="rounded-[8px]"
+            rounded="rounded-[10px]"
             className="h-[46px] w-[46px] transform-gpu"
             resize="128y128"
             instant
           />
-          <span className="absolute inset-0 flex items-center justify-center rounded-[8px] bg-black/35 text-white opacity-0 transition-opacity group-hover:opacity-100">
+          <span className="absolute inset-0 flex items-center justify-center rounded-[10px] bg-black/35 text-white opacity-0 transition-opacity group-hover:opacity-100">
             {showNowPlaying ? (
               <ChevronDown className="h-5 w-5" />
             ) : (
@@ -344,11 +344,11 @@ export function PlayerBar() {
           title={showNowPlaying ? '收起播放页' : '打开播放页'}
         >
           <div className="flex items-center gap-2">
-            <span className="min-w-0 truncate text-[12.5px] font-medium text-black/80 hover:text-[#0066cc]">
+            <span className="min-w-0 truncate text-[12.5px] font-medium text-black/80 hover:text-accent">
               {currentSong.name}
             </span>
             {currentSong.trialEnd ? (
-              <span className="shrink-0 rounded-[3px] bg-[#ff9500]/12 px-1 text-[9px] text-[#b36b00]">
+              <span className="shrink-0 rounded-[6px] bg-[#ff9500]/12 px-1 text-[11px] text-[#b36b00]">
                 试听
               </span>
             ) : null}
@@ -369,10 +369,10 @@ export function PlayerBar() {
               />
             </button>
           </div>
-          <p className="mt-0.5 flex items-center gap-1 truncate text-[10.5px] text-black/40">
+          <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-black/40">
             {loadingSource ? (
               <>
-                <Loader2 className="h-3 w-3 flex-none animate-spin text-[#0066cc]" />
+                <Loader2 className="h-3 w-3 flex-none animate-spin text-accent" />
                 正在加载音源…
               </>
             ) : (
@@ -392,7 +392,7 @@ export function PlayerBar() {
             disabled={heartLoading}
             onClick={() => void toggleHeartMode()}
             className={cn(
-              'pressable transition-colors disabled:opacity-50 max-md:hidden',
+              'pressable flex h-8 w-8 items-center justify-center transition-colors disabled:opacity-50 max-md:hidden',
               heartMode ? 'text-[#ff2d55]' : 'text-black/35 hover:text-black/70',
             )}
           >
@@ -409,8 +409,8 @@ export function PlayerBar() {
             }
             onClick={cycleMode}
             className={cn(
-              'pressable transition-colors',
-              mode === 'order' ? 'text-black/35 hover:text-black/70' : 'text-[#0066cc]',
+              'pressable flex h-8 w-8 items-center justify-center transition-colors max-md:h-10 max-md:w-10',
+              mode === 'order' ? 'text-black/35 hover:text-black/70' : 'text-accent',
             )}
           >
             {modeIcon}
@@ -419,7 +419,7 @@ export function PlayerBar() {
             type="button"
             aria-label="上一首"
             onClick={() => void prev()}
-            className="pressable text-black/65 hover:text-black"
+            className="pressable flex h-8 w-8 items-center justify-center text-black/65 hover:text-black max-md:h-10 max-md:w-10"
           >
             <SkipBack className="h-[17px] w-[17px] fill-current" />
           </button>
@@ -429,7 +429,8 @@ export function PlayerBar() {
               loadingSource ? '正在加载音源' : buffering ? '正在缓冲' : playing ? '暂停' : '播放'
             }
             onClick={() => void togglePlay()}
-            className="pressable flex h-[32px] w-[32px] items-center justify-center rounded-full bg-[#0066cc] text-white shadow-[0_2px_8px_rgba(0,102,204,0.35)] hover:bg-[#0071e3]"
+            title={playing ? '暂停（空格）' : '播放（空格）'}
+            className="pressable flex h-[32px] w-[32px] items-center justify-center rounded-full bg-accent text-white shadow-[0_2px_8px_rgba(0,102,204,0.35)] hover:bg-accent-hover max-md:h-10 max-md:w-10"
           >
             {busy ? (
               <Loader2 className="h-[15px] w-[15px] animate-spin" />
@@ -443,14 +444,14 @@ export function PlayerBar() {
             type="button"
             aria-label="下一首"
             onClick={() => void next()}
-            className="pressable text-black/65 hover:text-black"
+            className="pressable flex h-8 w-8 items-center justify-center text-black/65 hover:text-black max-md:h-10 max-md:w-10"
           >
             <SkipForward className="h-[17px] w-[17px] fill-current" />
           </button>
           <button
             type="button"
             onClick={() => toggleQueue()}
-            className="pressable text-black/35 transition-colors hover:text-black/70 max-md:hidden"
+            className="pressable flex h-8 w-8 items-center justify-center text-black/35 transition-colors hover:text-black/70 max-md:hidden"
             title="播放列表"
           >
             <ListMusic className="h-[15px] w-[15px]" />
@@ -460,7 +461,7 @@ export function PlayerBar() {
         <div className="mt-1.5 flex w-full items-center gap-2.5 max-md:absolute max-md:inset-x-0 max-md:top-0 max-md:mt-0 max-md:px-3">
           <span
             data-testid="elapsed-time"
-            className="w-9 shrink-0 text-right text-[10px] tabular-nums text-black/35 max-md:hidden"
+            className="w-9 shrink-0 text-right text-[11px] tabular-nums text-black/35 max-md:hidden"
           >
             {formatDuration(displayTime * 1000)}
           </span>
@@ -469,8 +470,9 @@ export function PlayerBar() {
             value={displayPercent}
             buffered={displayBuffered}
             onChange={handleSeek}
+            valueText={`${formatDuration(displayTime * 1000)} / ${formatDuration(duration)}`}
           />
-          <span className="w-9 shrink-0 text-[10px] tabular-nums text-black/35 max-md:hidden">
+          <span className="w-9 shrink-0 text-[11px] tabular-nums text-black/35 max-md:hidden">
             {formatDuration(duration)}
           </span>
         </div>
@@ -483,7 +485,7 @@ export function PlayerBar() {
               type="button"
               aria-label="播放音质"
               title="播放音质"
-              className="pressable flex h-7 items-center gap-1 rounded-full px-2 text-[10.5px] text-black/45 transition-colors hover:bg-black/5 hover:text-black/75"
+              className="pressable flex h-7 items-center gap-1 rounded-full px-2 text-[11px] text-black/45 transition-colors hover:bg-black/5 hover:text-black/75"
             >
               <AudioLines className="h-3.5 w-3.5" />
               {qualityLabel}
@@ -494,18 +496,18 @@ export function PlayerBar() {
             align="end"
             sideOffset={10}
             glass
-            className="w-[190px] p-1.5"
+            className="w-[min(190px,calc(100vw-24px))] max-w-[calc(100vw-24px)] p-1.5"
           >
-            <p className="px-2 py-1 text-[10px] text-black/35">播放音质</p>
+            <p className="px-2 py-1 text-[11px] text-black/35">播放音质</p>
             {PLAY_QUALITY_OPTIONS.map((option) => (
               <button
                 key={option.value}
                 type="button"
                 onClick={() => handleQualityChange(option.value)}
                 className={cn(
-                  'flex w-full items-center justify-between rounded-[7px] px-2 py-1.5 text-left text-[12px] transition-colors',
+                  'flex w-full items-center justify-between rounded-[6px] px-2 py-1.5 text-left text-[12px] transition-colors',
                   playLevel === option.value
-                    ? 'bg-[#0066cc]/10 text-[#0066cc]'
+                    ? 'bg-accent/10 text-accent'
                     : 'text-black/65 hover:bg-black/5',
                 )}
               >
@@ -513,7 +515,7 @@ export function PlayerBar() {
                 {playLevel === option.value ? <Check className="h-3.5 w-3.5" /> : null}
               </button>
             ))}
-            <p className="px-2 pb-1 pt-1 text-[10px] leading-relaxed text-black/30">
+            <p className="px-2 pb-1 pt-1 text-[11px] leading-relaxed text-black/30">
               无损 / Hi-Res 需要对应会员权益；已缓存歌曲按设置中的缓存品质播放。
             </p>
           </PopoverContent>
@@ -523,8 +525,9 @@ export function PlayerBar() {
           <PopoverTrigger asChild>
             <button
               type="button"
-              className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/45 transition-colors hover:bg-black/5 hover:text-black/75"
+              className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/45 transition-colors hover:bg-black/5 hover:text-black/75 max-md:h-10 max-md:w-10"
               aria-label="音量"
+              title="音量（Alt + ↑ / ↓）"
             >
               {volume === 0 ? (
                 <VolumeX className="h-[15px] w-[15px]" />
@@ -544,7 +547,7 @@ export function PlayerBar() {
           >
             <div className="flex flex-col items-center gap-2">
               <VolumeSlider value={volume} onChange={setVolume} />
-              <span className="text-[10px] tabular-nums text-black/35">{volume}</span>
+              <span className="text-[11px] tabular-nums text-black/35">{volume}</span>
             </div>
           </PopoverContent>
         </Popover>
@@ -552,7 +555,7 @@ export function PlayerBar() {
         <button
           type="button"
           onClick={() => toggleNowPlaying()}
-          className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/45 transition-colors hover:bg-black/5 hover:text-black/75"
+          className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/45 transition-colors hover:bg-black/5 hover:text-black/75 max-md:h-10 max-md:w-10"
           aria-label={showNowPlaying ? '收起播放页' : '展开播放页'}
         >
           {showNowPlaying ? (

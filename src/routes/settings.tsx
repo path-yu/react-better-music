@@ -4,6 +4,7 @@ import {
   Download,
   FolderOpen,
   HardDrive,
+  Keyboard,
   ListMusic,
   Loader2,
   RefreshCw,
@@ -31,6 +32,14 @@ import { toast } from '../lib/toast'
 export const Route = createFileRoute('/settings')({
   component: SettingsPage,
 })
+
+const SHORTCUTS: Array<{ keys: string[]; label: string }> = [
+  { keys: ['空格'], label: '播放 / 暂停' },
+  { keys: ['Alt', '↑ / ↓'], label: '音量 +5 / -5' },
+  { keys: ['Shift', 'Alt', '↑ / ↓'], label: '音量 +1 / -1' },
+  { keys: ['↑ / ↓', 'Enter'], label: '在搜索建议中选择并进入' },
+  { keys: ['Esc'], label: '关闭播放页、播放列表、侧栏或搜索建议' },
+]
 
 function formatBytes(bytes: number) {
   if (!bytes) return '0 MB'
@@ -202,7 +211,7 @@ function SettingsPage() {
     <div className="mx-auto max-w-[900px] px-8 pb-16 pt-7">
       <div>
         <h1 className="headline-lg flex items-center gap-2">
-          <Settings2 className="h-5 w-5 text-[#0066cc]" />
+          <Settings2 className="h-5 w-5 text-accent" />
           设置
         </h1>
         <p className="mt-1.5 text-[12px] text-black/35">管理本地音乐缓存与存储占用</p>
@@ -213,7 +222,7 @@ function SettingsPage() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
-                <HardDrive className="h-4 w-4 text-[#0066cc]" />
+                <HardDrive className="h-4 w-4 text-accent" />
                 音乐缓存
               </h2>
               <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-black/40">
@@ -226,7 +235,7 @@ function SettingsPage() {
               aria-label="刷新缓存信息"
               title="刷新"
               onClick={() => void loadCache()}
-              className="pressable flex h-7 w-7 flex-none items-center justify-center rounded-full text-black/35 transition-colors hover:bg-black/5 hover:text-black/70"
+              className="pressable flex h-7 w-7 flex-none items-center justify-center rounded-full text-black/35 transition-colors hover:bg-black/5 hover:text-black/70 max-md:h-10 max-md:w-10"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
             </button>
@@ -245,7 +254,7 @@ function SettingsPage() {
                 约 64kbps ≈ 1.9MB / 4 分钟，96kbps ≈ 2.9MB，128kbps ≈ 3.8MB。
               </p>
             </div>
-            <div className="rounded-[12px] border border-black/6 bg-[#f5f5f7] px-4 py-3">
+            <div className="rounded-[14px] border border-black/6 bg-[#f5f5f7] px-4 py-3">
               <p className="text-[11px] text-black/40">当前缓存</p>
               <p className="mt-1 text-[18px] font-semibold leading-tight text-black/80">
                 {loading ? '…' : `${items.length} 首`}
@@ -257,8 +266,8 @@ function SettingsPage() {
           </div>
 
           {desktop ? (
-            <div className="mt-4 flex items-center gap-3 rounded-[12px] border border-black/6 bg-[#f5f5f7] px-4 py-3">
-              <FolderOpen className="h-4 w-4 flex-none text-[#0066cc]" />
+            <div className="mt-4 flex items-center gap-3 rounded-[14px] border border-black/6 bg-[#f5f5f7] px-4 py-3">
+              <FolderOpen className="h-4 w-4 flex-none text-accent" />
               <div className="min-w-0 flex-1">
                 <p className="text-[11px] text-black/40">下载目录</p>
                 <p className="mt-0.5 truncate text-[12px] text-black/70" title={downloadDir}>
@@ -284,7 +293,7 @@ function SettingsPage() {
           <div className="flex items-center justify-between gap-3 border-b border-black/6 px-6 py-4">
             <div>
               <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
-                <ListMusic className="h-4 w-4 text-[#0066cc]" />
+                <ListMusic className="h-4 w-4 text-accent" />
                 缓存列表
               </h2>
               <p className="mt-1 text-[11px] text-black/35">
@@ -316,7 +325,7 @@ function SettingsPage() {
                   checked={allSelected}
                   disabled={!items.length || loading}
                   onChange={toggleAll}
-                  className="h-3.5 w-3.5 accent-[#0066cc]"
+                  className="h-3.5 w-3.5 accent-accent"
                 />
                 <span className="text-[11px] text-black/40">全选</span>
                 <span className="ml-auto text-[11px] text-black/30">
@@ -335,7 +344,7 @@ function SettingsPage() {
                       aria-label={`选择 ${item.name}`}
                       checked={selected.includes(item.id)}
                       onChange={() => toggleOne(item.id)}
-                      className="h-3.5 w-3.5 flex-none accent-[#0066cc]"
+                      className="h-3.5 w-3.5 flex-none accent-accent"
                     />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[12.5px] font-medium text-black/80">
@@ -360,7 +369,7 @@ function SettingsPage() {
                       title="下载到本地"
                       disabled={downloadingId !== null}
                       onClick={() => void handleDownloadOne(item)}
-                      className="pressable flex h-7 w-7 flex-none items-center justify-center rounded-full text-black/35 transition-colors hover:bg-black/5 hover:text-[#0066cc] disabled:cursor-not-allowed disabled:opacity-40"
+                      className="pressable flex h-7 w-7 flex-none items-center justify-center rounded-full text-black/35 transition-colors hover:bg-black/5 hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 max-md:h-10 max-md:w-10"
                     >
                       {downloadingId === item.id ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -391,6 +400,36 @@ function SettingsPage() {
               {confirmingClear ? '确认清除？' : '清除缓存'}
             </Button>
           </div>
+        </section>
+
+        <section className="apple-card p-6">
+          <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
+            <Keyboard className="h-4 w-4 text-accent" />
+            快捷键
+          </h2>
+          <p className="mt-1 text-[12px] leading-relaxed text-black/40">
+            在页面任意位置可用（输入框内保留系统默认行为）。
+          </p>
+          <dl className="mt-4 grid gap-2 sm:grid-cols-2">
+            {SHORTCUTS.map((shortcut) => (
+              <div
+                key={shortcut.label}
+                className="flex items-center justify-between gap-3 rounded-[10px] bg-black/4 px-3 py-2"
+              >
+                <dt className="text-[12px] text-black/55">{shortcut.label}</dt>
+                <dd className="flex shrink-0 items-center gap-1">
+                  {shortcut.keys.map((key) => (
+                    <kbd
+                      key={key}
+                      className="rounded-[6px] border border-black/10 bg-white px-1.5 py-0.5 text-[11px] font-medium text-black/60"
+                    >
+                      {key}
+                    </kbd>
+                  ))}
+                </dd>
+              </div>
+            ))}
+          </dl>
         </section>
       </div>
     </div>

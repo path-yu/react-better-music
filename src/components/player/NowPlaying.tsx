@@ -1,11 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useRouterState } from '@tanstack/react-router'
-import { Disc3, Loader2, MessageSquareText } from 'lucide-react'
+import {
+  ChevronDown,
+  Disc3,
+  Heart,
+  ListMusic,
+  Loader2,
+  MessageSquareText,
+} from 'lucide-react'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
 import { LyricsPanel } from './LyricsPanel'
 import { CommentSection } from '../comments/CommentSection'
 import { usePlayerStore } from '../../store/player'
+import { useUserStore } from '../../store/user'
 import { findLyricIndex } from '../../lib/lyric'
 import { seekAudio } from '../../lib/audio'
 import { extractDominantColor } from '../../lib/color'
@@ -31,6 +39,10 @@ export function NowPlaying() {
   const lyricLines = usePlayerStore((state) => state.lyricLines)
   const lyricLoading = usePlayerStore((state) => state.lyricLoading)
   const toggleNowPlaying = usePlayerStore((state) => state.toggleNowPlaying)
+  const toggleQueue = usePlayerStore((state) => state.toggleQueue)
+  const likedIds = useUserStore((state) => state.likedIds)
+  const likeSong = useUserStore((state) => state.likeSong)
+  const liked = currentSong ? likedIds.includes(currentSong.id) : false
   const [panel, setPanel] = useState<'lyrics' | 'comments'>('lyrics')
   const [dominantColor, setDominantColor] = useState<string | null>(null)
 
@@ -58,7 +70,10 @@ export function NowPlaying() {
   useEffect(() => {
     if (!show) return
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') toggleNowPlaying(false)
+      if (event.key !== 'Escape') return
+      // The queue panel is stacked above this view and handles Escape itself.
+      if (usePlayerStore.getState().showQueue) return
+      toggleNowPlaying(false)
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
@@ -112,51 +127,50 @@ export function NowPlaying() {
           immersive content clear of it. */}
       <div className="relative flex h-full flex-col pb-[76px]">
         <div className="flex h-[58px] flex-none items-center justify-between px-6">
-          {/* <p className="eyebrow">正在播放</p> */}
+          <p className="eyebrow">正在播放</p>
 
-          {/*
-            顶部操作暂时隐藏，恢复时需一并加回：
-              · lucide-react 的 ChevronDown / Heart / ListMusic
-              · usePlayerStore 的 toggleQueue
-              · useUserStore 的 likedIds、likeSong，以及
-                `const liked = likedIds.includes(currentSong.id)`
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                aria-label="收起播放页"
-                onClick={() => toggleNowPlaying(false)}
-                className="pressable flex h-8 items-center gap-1.5 rounded-full bg-white/10 px-3 text-[11px] text-white/70 transition-colors hover:bg-white/16 hover:text-white"
-              >
-                <ChevronDown className="h-3.5 w-3.5" />
-                <span className="max-md:hidden">收起</span>
-              </button>
-              <button
-                type="button"
-                aria-label={liked ? '取消喜欢' : '喜欢'}
-                onClick={() => void likeSong(currentSong.id, !liked)}
-                className="pressable flex h-8 w-8 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/16"
-              >
-                <Heart
-                  className={cn(
-                    'h-4 w-4',
-                    liked ? 'fill-[#ff2d55] text-[#ff2d55]' : 'text-white/60',
-                  )}
-                />
-              </button>
-              <button
-                type="button"
-                aria-label="播放列表"
-                onClick={() => toggleQueue(true)}
-                className="pressable flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/60 transition-colors hover:bg-white/16 hover:text-white"
-              >
-                <ListMusic className="h-4 w-4" />
-              </button>
-            </div>
-          */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label="收起播放页"
+              title="收起播放页（Esc）"
+              onClick={() => toggleNowPlaying(false)}
+              className="pressable flex h-9 items-center gap-1.5 rounded-full bg-white/10 px-3 text-[11px] text-white/70 transition-colors hover:bg-white/16 hover:text-white"
+            >
+              <ChevronDown className="h-3.5 w-3.5" />
+              <span className="max-md:hidden">收起</span>
+            </button>
+            <button
+              type="button"
+              aria-label={liked ? '取消喜欢' : '喜欢'}
+              aria-pressed={liked}
+              title={liked ? '取消喜欢' : '喜欢'}
+              onClick={() => void likeSong(currentSong.id, !liked)}
+              className="pressable flex h-9 w-9 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/16 max-md:h-10 max-md:w-10"
+            >
+              <Heart
+                className={cn(
+                  'h-4 w-4',
+                  liked ? 'fill-[#ff2d55] text-[#ff2d55]' : 'text-white/60',
+                )}
+              />
+            </button>
+            <button
+              type="button"
+              aria-label="播放列表"
+              title="播放列表"
+              onClick={() => toggleQueue(true)}
+              className="pressable flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/60 transition-colors hover:bg-white/16 hover:text-white max-md:h-10 max-md:w-10"
+            >
+              <ListMusic className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
-        <div className="grid flex-1 grid-cols-1 gap-4 overflow-y-auto px-6 pb-5 md:grid-cols-[minmax(220px,0.9fr)_minmax(250px,1.1fr)] xl:gap-6 xl:px-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {/* Desktop: the columns own their scrolling (lyrics/comments), so the
+            page itself never scrolls and the wheel target stays predictable.
+            Mobile: one single scroll container for the whole page. */}
+        <div className="grid flex-1 grid-cols-1 gap-4 px-6 pb-5 max-md:overflow-y-auto md:grid-cols-[minmax(220px,0.9fr)_minmax(250px,1.1fr)] md:overflow-hidden xl:gap-6 xl:px-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <div className="flex min-h-0 flex-col items-center justify-center">
             <div className="max-w-[360px] text-center">
               <h2 className="headline-lg truncate text-[24px]">{currentSong.name}</h2>
@@ -170,7 +184,7 @@ export function NowPlaying() {
                   type="button"
                   onClick={openAlbum}
                   disabled={!albumId}
-                  className="pressable rounded-[3px] underline-offset-2 transition-colors hover:text-white hover:underline disabled:cursor-default"
+                  className="pressable rounded-[6px] underline-offset-2 transition-colors hover:text-white hover:underline disabled:cursor-default"
                 >
                   {currentSong.al.name}
                 </button>
@@ -181,7 +195,7 @@ export function NowPlaying() {
               <div className="mt-2 flex h-5 items-center justify-center" aria-live="polite">
                 {busy ? (
                   <span
-                    className="flex items-center gap-1.5 text-[12px] text-[#0066cc]"
+                    className="flex items-center gap-1.5 text-[12px] text-accent"
                     role="status"
                   >
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -196,7 +210,7 @@ export function NowPlaying() {
                 {dominantColor ? (
                   <div
                     aria-hidden="true"
-                    className="pointer-events-none absolute -inset-5 rounded-[30px] opacity-40 blur-2xl transition-colors duration-500"
+                    className="pointer-events-none absolute -inset-5 rounded-[28px] opacity-40 blur-2xl transition-colors duration-500"
                     style={{ backgroundColor: dominantColor }}
                   />
                 ) : null}
@@ -268,7 +282,7 @@ export function NowPlaying() {
                     role="status"
                     aria-live="polite"
                   >
-                    <Loader2 className="h-4 w-4 animate-spin text-[#0066cc]" />
+                    <Loader2 className="h-4 w-4 animate-spin text-accent" />
                     正在加载歌词…
                   </div>
                 ) : (
@@ -277,11 +291,11 @@ export function NowPlaying() {
                     activeIndex={activeIndex}
                     currentTimeMs={currentTime * 1000}
                     onSeek={handleSeek}
-                    className="h-full"
+                    className="h-full max-md:h-auto"
                   />
                 )
               ) : (
-                <div className="h-full overflow-y-auto px-5 pb-8 pt-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <div className="h-full overflow-y-auto px-5 pb-8 pt-4 max-md:h-auto max-md:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   <CommentSection
                     type={0}
                     resourceId={currentSong.id}

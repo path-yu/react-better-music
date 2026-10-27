@@ -22,7 +22,7 @@ export const ImageWithFallback = memo(function ImageWithFallback({
   alt = '',
   className,
   imageClassName,
-  rounded = 'rounded-[12px]',
+  rounded = 'rounded-[14px]',
   instant = false,
   resize,
   priority = false,

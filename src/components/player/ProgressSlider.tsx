@@ -5,6 +5,8 @@ interface ProgressSliderProps {
   value: number
   buffered?: number
   onChange?: (value: number) => void
+  /** Human-readable position, e.g. "1:23 / 3:45", read by screen readers. */
+  valueText?: string
   className?: string
 }
 
@@ -14,7 +16,13 @@ interface ProgressSliderProps {
  */
 const THUMB_SIZE = 13
 
-export function ProgressSlider({ value, buffered = 0, onChange, className }: ProgressSliderProps) {
+export function ProgressSlider({
+  value,
+  buffered = 0,
+  onChange,
+  valueText,
+  className,
+}: ProgressSliderProps) {
   const [dragging, setDragging] = useState(false)
   const [preview, setPreview] = useState<number | null>(null)
   const draggingRef = useRef(false)
@@ -55,6 +63,7 @@ export function ProgressSlider({ value, buffered = 0, onChange, className }: Pro
         step={0.1}
         value={percent}
         aria-label="播放进度"
+        aria-valuetext={valueText}
         className="seek-slider__input relative z-10 h-5 w-full cursor-pointer appearance-none bg-transparent opacity-0"
         onPointerDown={(event) => {
           // Capture the pointer so releasing outside the input still commits
