@@ -138,7 +138,7 @@ export function NowPlaying() {
           immersive content clear of it. */}
       <div className="relative flex h-full flex-col pb-[76px]">
         <div className="flex h-[58px] flex-none items-center justify-between px-6">
-          <button
+          {/* <button
             type="button"
             aria-label="收起播放页"
             title="收起播放页（Esc）"
@@ -146,7 +146,7 @@ export function NowPlaying() {
             className="np-round-button  flex h-9 w-9 items-center justify-center rounded-full text-white/75 max-md:h-10 max-md:w-10"
           >
             <ChevronDown className="h-4 w-4" />
-          </button>
+          </button> */}
 
           {/* The floating player bar already exposes like/queue on desktop; on
               mobile it hides both, so this row is their only entry point. */}
