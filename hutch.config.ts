@@ -1,6 +1,7 @@
 export default {
   scripts: {
-    dev: 'hutch electrobun sync && pnpm build:electrobun && hutch electrobun dev --watch',
+    // Vite dev server (HMR) + Electrobun; see scripts/desktop-dev.mjs.
+    dev: 'node scripts/desktop-dev.mjs',
     build:
       'hutch electrobun sync && pnpm build:electrobun && hutch electrobun build --env=stable',
   },

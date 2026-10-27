@@ -170,10 +170,21 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   })
 }
 
+/**
+ * Dev runs point the window at Vite so renderer edits hot-reload; packaged
+ * builds keep loading the bundled views.
+ */
+function mainViewUrl() {
+  const query = `bridgeToken=${encodeURIComponent(BRIDGE_TOKEN)}`
+  const devUrl = process.env.QIMIAO_DEV_URL?.trim()
+  if (devUrl) return `${devUrl.replace(/\/+$/, '')}/?${query}`
+  return `views://mainview/index.html?${query}`
+}
+
 function createMainWindow() {
   const window = new BrowserWindow({
     title: '声屿',
-    url: `views://mainview/index.html?bridgeToken=${encodeURIComponent(BRIDGE_TOKEN)}`,
+    url: mainViewUrl(),
     // The renderer draws its own title bar (drag region + window buttons).
     // `hiddenInset` keeps the native traffic lights on macOS and, on Windows /
     // Linux, removes the system caption while keeping the resize border.

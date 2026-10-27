@@ -32,14 +32,8 @@ export const LYRICS_WINDOW_HTML = `<!doctype html>
     height: 100%;
     margin: 0;
     padding: 0 28px;
-    /* No card or border: a soft vignette keeps the text readable over bright
-       wallpapers without turning the overlay into a gray dialog. */
-    background: radial-gradient(
-      ellipse at center,
-      rgba(0, 0, 0, 0.4) 0%,
-      rgba(0, 0, 0, 0.22) 45%,
-      rgba(0, 0, 0, 0) 72%
-    );
+    /* Fully transparent: any painted backdrop shows up as a gray blob. */
+    background: transparent;
     -webkit-app-region: drag;
     app-region: drag;
     user-select: none;
@@ -51,16 +45,19 @@ export const LYRICS_WINDOW_HTML = `<!doctype html>
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    /* Layered shadows keep white text readable on light wallpapers without
+       painting anything behind it. */
     text-shadow:
-      0 2px 14px rgba(0, 0, 0, 0.8),
-      0 1px 3px rgba(0, 0, 0, 0.65);
+      0 0 3px rgba(0, 0, 0, 0.9),
+      0 2px 16px rgba(0, 0, 0, 0.8),
+      0 1px 2px rgba(0, 0, 0, 0.9);
   }
-  .hint { font-size: 13px; color: rgba(255, 255, 255, 0.62); display: none; }
+  .hint { font-size: 13px; color: rgba(255, 255, 255, 0.72); display: none; }
   .hint.is-visible { display: block; }
-  .prev { font-size: 14px; line-height: 22px; color: rgba(255, 255, 255, 0.55); margin-bottom: 2px; }
-  .active { font-size: 28px; line-height: 38px; font-weight: 600; color: rgba(255, 255, 255, 0.97); }
-  .trans { font-size: 13px; line-height: 20px; color: rgba(255, 255, 255, 0.72); margin-top: 4px; }
-  .next { font-size: 14px; line-height: 22px; color: rgba(255, 255, 255, 0.42); margin-top: 6px; }
+  .prev { font-size: 14px; line-height: 22px; color: rgba(255, 255, 255, 0.64); margin-bottom: 2px; }
+  .active { font-size: 28px; line-height: 38px; font-weight: 600; color: rgba(255, 255, 255, 0.98); }
+  .trans { font-size: 13px; line-height: 20px; color: rgba(255, 255, 255, 0.78); margin-top: 4px; }
+  .next { font-size: 14px; line-height: 22px; color: rgba(255, 255, 255, 0.52); margin-top: 6px; }
   .paused {
     position: absolute;
     left: 0;
