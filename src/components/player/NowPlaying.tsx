@@ -143,10 +143,9 @@ export function NowPlaying() {
             aria-label="收起播放页"
             title="收起播放页（Esc）"
             onClick={() => toggleNowPlaying(false)}
-            className="pressable flex h-9 items-center gap-1.5 rounded-full bg-white/10 px-3 text-[11px] text-white/70 transition-colors hover:bg-white/16 hover:text-white max-md:h-10"
+            className="np-round-button  flex h-9 w-9 items-center justify-center rounded-full text-white/75 max-md:h-10 max-md:w-10"
           >
-            <ChevronDown className="h-3.5 w-3.5" />
-            <span className="max-md:hidden">收起</span>
+            <ChevronDown className="h-4 w-4" />
           </button>
 
           {/* The floating player bar already exposes like/queue on desktop; on
@@ -158,7 +157,7 @@ export function NowPlaying() {
               aria-pressed={liked}
               title={liked ? '取消喜欢' : '喜欢'}
               onClick={() => void likeSong(currentSong.id, !liked)}
-              className="pressable flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/16"
+              className="np-round-button pressable flex h-10 w-10 items-center justify-center rounded-full"
             >
               <Heart
                 className={cn(
@@ -172,7 +171,7 @@ export function NowPlaying() {
               aria-label="播放列表"
               title="播放列表"
               onClick={() => toggleQueue(true)}
-              className="pressable flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/60 transition-colors hover:bg-white/16 hover:text-white"
+              className="np-round-button pressable flex h-10 w-10 items-center justify-center rounded-full text-white/70"
             >
               <ListMusic className="h-4 w-4" />
             </button>
@@ -258,28 +257,27 @@ export function NowPlaying() {
             )}
           >
             <div className="flex flex-none items-center px-3 py-2">
-              <div className="flex items-center gap-0.5 rounded-full bg-white/10 p-0.5">
+              <div className="np-segmented" role="tablist" aria-label="歌词与评论">
+                <span
+                  aria-hidden="true"
+                  className="np-segmented__pill"
+                  data-active={panel}
+                />
                 <button
                   type="button"
+                  role="tab"
+                  aria-selected={panel === 'lyrics'}
                   onClick={() => setPanel('lyrics')}
-                  className={cn(
-                    'rounded-full px-3 py-1 text-[11.5px] transition-colors',
-                    panel === 'lyrics'
-                      ? 'bg-white/22 font-medium text-white'
-                      : 'text-white/50 hover:text-white/75',
-                  )}
+                  className={cn('np-segmented__item', panel === 'lyrics' && 'is-active')}
                 >
                   歌词
                 </button>
                 <button
                   type="button"
+                  role="tab"
+                  aria-selected={panel === 'comments'}
                   onClick={() => setPanel('comments')}
-                  className={cn(
-                    'flex items-center gap-1 rounded-full px-3 py-1 text-[11.5px] transition-colors',
-                    panel === 'comments'
-                      ? 'bg-white/22 font-medium text-white'
-                      : 'text-white/50 hover:text-white/75',
-                  )}
+                  className={cn('np-segmented__item', panel === 'comments' && 'is-active')}
                 >
                   <MessageSquareText className="h-3 w-3" />
                   评论
