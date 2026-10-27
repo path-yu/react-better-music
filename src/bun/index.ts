@@ -13,6 +13,7 @@ import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { acquireInstanceLock, releaseInstanceLock } from './instanceLock'
 import { LYRICS_WINDOW_HTML } from './lyricsWindowHtml'
+import { MINI_PLAYER_HTML } from './miniPlayerHtml'
 import { applyWindowIcon } from './windowIcon'
 
 const APP_DATA_DIR = join(process.env.LOCALAPPDATA ?? homedir(), 'com.qimiao.music')
@@ -251,6 +252,8 @@ if (process.platform === 'win32') {
             String(process.pid),
             '声屿',
             icon,
+            String(BRIDGE_PORT),
+            BRIDGE_TOKEN,
           ],
           { stdout: 'ignore', stderr: 'ignore', windowsHide: true },
         )
@@ -275,8 +278,14 @@ if (process.platform === 'win32') {
   })
 
   tray.setMenu([
-    { type: 'normal', label: '显示主窗口', action: 'show' },
+    { type: 'normal', label: '播放 / 暂停', action: 'play-pause' },
+    { type: 'normal', label: '上一首', action: 'previous' },
+    { type: 'normal', label: '下一首', action: 'next' },
     { type: 'divider' },
+    { type: 'normal', label: '桌面歌词', action: 'lyrics' },
+    { type: 'normal', label: '迷你播放器', action: 'mini' },
+    { type: 'divider' },
+    { type: 'normal', label: '显示主窗口', action: 'show-main' },
     { type: 'normal', label: '退出声屿', action: 'quit' },
   ])
 
@@ -287,7 +296,11 @@ if (process.platform === 'win32') {
       Utils.quit()
       return
     }
-    if (!action || action === 'show') showMainWindow()
+    if (!action) {
+      showMainWindow()
+      return
+    }
+    applyCommand(action)
   })
 }
 
@@ -296,6 +309,7 @@ app.on('close', (payload) => {
   const id = (payload as { id?: number } | undefined)?.id
   if (id && mainWindow?.id === id) mainWindow = null
   if (id && lyricsWindow?.id === id) lyricsWindow = null
+  if (id && miniWindow?.id === id) miniWindow = null
 })
 
 /* ------------------------------ desktop lyrics ---------------------------- */
@@ -439,11 +453,129 @@ function applyLyricsAction(action: string | null) {
 if (!GlobalShortcut.register(LYRICS_SHORTCUT, () => applyLyricsAction('toggle'))) {
   console.warn(`[desktop] failed to register lyrics shortcut (${LYRICS_SHORTCUT})`)
 }
-process.on('exit', () => {
+
+/* ------------------------------- mini player ------------------------------- */
+
+const MINI_WINDOW_SIZE = { width: 380, height: 140 }
+let miniWindow: BrowserWindow | null = null
+
+function createMiniWindow() {
+  const { workArea } = Screen.getPrimaryDisplay()
+  const { width, height } = MINI_WINDOW_SIZE
+  const x = workArea.width > 0 ? Math.round(workArea.x + workArea.width - width - 24) : 120
+  const y = workArea.height > 0 ? Math.round(workArea.y + workArea.height - height - 24) : 120
+  const win = new BrowserWindow({
+    title: '迷你播放器',
+    url: `http://127.0.0.1:${BRIDGE_PORT}/mini?token=${encodeURIComponent(BRIDGE_TOKEN)}`,
+    frame: { width, height, x, y },
+    titleBarStyle: 'hiddenInset',
+    transparent: true,
+    activate: false,
+  })
+  win.setAlwaysOnTop(true)
+  win.setVisibleOnAllWorkspaces(true)
+  return win
+}
+
+function miniWindowVisible() {
+  if (!miniWindow) return false
   try {
-    GlobalShortcut.unregister(LYRICS_SHORTCUT)
+    return miniWindow.isVisible()
   } catch {
-    // The native layer may already be tearing down.
+    miniWindow = null
+    return false
+  }
+}
+
+function showMiniWindow() {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      if (!miniWindow) miniWindow = createMiniWindow()
+      miniWindow.showInactive()
+      return true
+    } catch (error) {
+      miniWindow = null
+      if (attempt === 1) console.error('[desktop] failed to show mini player:', error)
+    }
+  }
+  return false
+}
+
+function hideMiniWindow() {
+  if (!miniWindow) return false
+  try {
+    miniWindow.hide()
+  } catch {
+    miniWindow = null
+  }
+  return false
+}
+
+function applyMiniAction(action: string | null) {
+  if (action === 'hide') return hideMiniWindow()
+  if (action === 'show') return showMiniWindow()
+  return miniWindowVisible() ? hideMiniWindow() : showMiniWindow()
+}
+
+/* ---------------------------- renderer commands ---------------------------- */
+
+/**
+ * Native surfaces (tray, global shortcuts, mini player) drive playback by
+ * injecting a call into the main window; the renderer exposes
+ * `window.__qimiaoDesktopCommand` from lib/desktopCommands.ts.
+ */
+function sendRendererCommand(action: string) {
+  try {
+    mainWindow?.webview.executeJavascript(
+      `window.__qimiaoDesktopCommand&&window.__qimiaoDesktopCommand(${JSON.stringify(action)})`,
+    )
+  } catch (error) {
+    console.warn(`[desktop] failed to send command "${action}":`, error)
+  }
+}
+
+function applyCommand(action: string | null) {
+  if (!action) return false
+  if (action === 'lyrics') return applyLyricsAction('toggle')
+  if (action === 'mini') return applyMiniAction('toggle')
+  if (action === 'show-main') {
+    showMainWindow()
+    return true
+  }
+  if (
+    action === 'play-pause' ||
+    action === 'next' ||
+    action === 'previous' ||
+    action === 'like-current' ||
+    action === 'volume-up' ||
+    action === 'volume-down'
+  ) {
+    sendRendererCommand(action)
+    return true
+  }
+  return false
+}
+
+const GLOBAL_COMMANDS: Array<[accelerator: string, action: string]> = [
+  ['CommandOrControl+Alt+P', 'play-pause'],
+  ['CommandOrControl+Alt+L', 'like-current'],
+  ['CommandOrControl+Alt+Up', 'volume-up'],
+  ['CommandOrControl+Alt+Down', 'volume-down'],
+]
+
+for (const [accelerator, action] of GLOBAL_COMMANDS) {
+  if (!GlobalShortcut.register(accelerator, () => sendRendererCommand(action))) {
+    console.warn(`[desktop] failed to register global shortcut (${accelerator})`)
+  }
+}
+
+process.on('exit', () => {
+  for (const accelerator of [LYRICS_SHORTCUT, ...GLOBAL_COMMANDS.map(([key]) => key)]) {
+    try {
+      GlobalShortcut.unregister(accelerator)
+    } catch {
+      // The native layer may already be tearing down.
+    }
   }
 })
 
@@ -561,6 +693,11 @@ try {
           headers: { 'content-type': 'text/html; charset=utf-8' },
         })
       }
+      if (url.pathname === '/mini' && request.method === 'GET') {
+        return new Response(MINI_PLAYER_HTML, {
+          headers: { 'content-type': 'text/html; charset=utf-8' },
+        })
+      }
       if (!isBridgeAuthorized(request)) {
         return new Response('Unauthorized', { status: 401, headers })
       }
@@ -630,6 +767,21 @@ try {
         if (url.pathname === '/lyrics-window' && request.method === 'POST') {
           return Response.json(
             { visible: applyLyricsAction(url.searchParams.get('action')) },
+            { headers },
+          )
+        }
+        if (url.pathname === '/mini-window' && request.method === 'GET') {
+          return Response.json({ visible: miniWindowVisible() }, { headers })
+        }
+        if (url.pathname === '/mini-window' && request.method === 'POST') {
+          return Response.json(
+            { visible: applyMiniAction(url.searchParams.get('action')) },
+            { headers },
+          )
+        }
+        if (url.pathname === '/command' && request.method === 'POST') {
+          return Response.json(
+            { ok: applyCommand(url.searchParams.get('action')) },
             { headers },
           )
         }

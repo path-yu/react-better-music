@@ -1,13 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useRouterState } from '@tanstack/react-router'
-import {
-  ChevronDown,
-  Disc3,
-  Heart,
-  ListMusic,
-  Loader2,
-  MessageSquareText,
-} from 'lucide-react'
+import { Disc3, Heart, ListMusic, Loader2, MessageSquareText } from 'lucide-react'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
 import { LyricsPanel } from './LyricsPanel'

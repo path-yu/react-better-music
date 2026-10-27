@@ -16,16 +16,24 @@ export const PLAY_QUALITY_OPTIONS: Array<{ value: PlayLevel; label: string }> = 
   { value: 'hires', label: 'Hi-Res' },
 ]
 
+export type LyricDisplayMode = 'both' | 'original' | 'translation'
+
+export const LYRIC_DISPLAY_OPTIONS: Array<{ value: LyricDisplayMode; label: string }> = [
+  { value: 'both', label: '双语对照' },
+  { value: 'original', label: '仅原文' },
+  { value: 'translation', label: '仅译文' },
+]
+
 interface SettingsState {
   cacheBitrate: number
   playLevel: PlayLevel
-  /** Show the translated line under each lyric line. */
-  showLyricTranslation: boolean
+  /** How lyric lines and their translations are shown. */
+  lyricDisplayMode: LyricDisplayMode
   /** Desktop only: block right-click / F12 / DevTools shortcuts. */
   disableDevTools: boolean
   setCacheBitrate: (value: number) => void
   setPlayLevel: (value: PlayLevel) => void
-  setShowLyricTranslation: (value: boolean) => void
+  setLyricDisplayMode: (value: LyricDisplayMode) => void
   setDisableDevTools: (value: boolean) => void
 }
 
@@ -34,13 +42,30 @@ export const useSettingsStore = create<SettingsState>()(
     (set) => ({
       cacheBitrate: 96,
       playLevel: 'exhigh',
-      showLyricTranslation: true,
-      disableDevTools: true,
+      lyricDisplayMode: 'both',
+      disableDevTools: false,
       setCacheBitrate: (cacheBitrate) => set({ cacheBitrate }),
       setPlayLevel: (playLevel) => set({ playLevel }),
-      setShowLyricTranslation: (showLyricTranslation) => set({ showLyricTranslation }),
+      setLyricDisplayMode: (lyricDisplayMode) => set({ lyricDisplayMode }),
       setDisableDevTools: (disableDevTools) => set({ disableDevTools }),
     }),
-    { name: 'react-music-settings' },
+    {
+      name: 'react-music-settings',
+      version: 2,
+      // v1 stored a boolean translation switch; keep "off" users in original mode.
+      migrate: (persisted, version) => {
+        const previous = persisted as Partial<SettingsState> & {
+          showLyricTranslation?: boolean
+        }
+        if (version < 2) {
+          return {
+            ...previous,
+            lyricDisplayMode:
+              previous.showLyricTranslation === false ? 'original' : 'both',
+          }
+        }
+        return previous
+      },
+    },
   ),
 )

@@ -12,6 +12,7 @@ import { useUserStore } from '../../store/user'
 import { usePlayerStore } from '../../store/player'
 import { useSettingsStore } from '../../store/settings'
 import { isDesktopShell } from '../../lib/desktop'
+import { useDesktopCommands } from '../../lib/desktopCommands'
 import { useDesktopLyricsPublisher } from '../../lib/desktopLyrics'
 import { applyTheme } from '../../lib/theme'
 import { getLastLoginRefreshAt, getLoginCookie, refreshLogin } from '../../lib/session'
@@ -33,6 +34,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const disableDevTools = useSettingsStore((state) => state.disableDevTools)
 
   useDesktopLyricsPublisher()
+  useDesktopCommands()
 
   useEffect(() => {
     applyTheme(theme)

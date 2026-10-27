@@ -1,0 +1,217 @@
+/**
+ * Compact always-on-top player served from the local bridge.
+ *
+ * It reads the same `/lyrics-state` snapshot as the lyric HUD (title, artists,
+ * cover, progress, playing) and sends transport commands back to the main
+ * window through `/command`.
+ */
+export const MINI_PLAYER_HTML = `<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>迷你播放器</title>
+<style>
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: transparent;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+    color: #fff;
+  }
+  .card {
+    position: relative;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: calc(100% - 12px);
+    margin: 6px;
+    padding: 10px 12px 10px 10px;
+    border-radius: 16px;
+    background: rgba(18, 18, 21, 0.92);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    -webkit-app-region: drag;
+    app-region: drag;
+    user-select: none;
+  }
+  .cover {
+    width: 76px;
+    height: 76px;
+    flex: none;
+    border-radius: 11px;
+    object-fit: cover;
+    background: rgba(255, 255, 255, 0.08);
+  }
+  .meta {
+    min-width: 0;
+    flex: 1;
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+  }
+  .title {
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .artist {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    -webkit-app-region: no-drag;
+    app-region: no-drag;
+  }
+  .controls button {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .controls button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+  }
+  .controls button.primary {
+    width: 30px;
+    height: 30px;
+    background: #0a84ff;
+    color: #fff;
+    font-size: 12px;
+  }
+  .controls button.primary:hover {
+    background: #2b95ff;
+  }
+  .bar {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 5px;
+    height: 2px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+  }
+  .bar span {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: #0a84ff;
+    transition: width 0.25s linear;
+  }
+  .close {
+    position: absolute;
+    top: 5px;
+    right: 6px;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s;
+    -webkit-app-region: no-drag;
+    app-region: no-drag;
+  }
+  .card:hover .close { opacity: 1; }
+  .close:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <img class="cover" id="cover" alt="" />
+    <div class="meta">
+      <div class="title" id="title">等待播放</div>
+      <div class="artist" id="artist">声屿</div>
+      <div class="controls">
+        <button type="button" data-action="previous" title="上一首">⏮</button>
+        <button type="button" class="primary" id="play" data-action="play-pause" title="播放 / 暂停">▶</button>
+        <button type="button" data-action="next" title="下一首">⏭</button>
+      </div>
+    </div>
+    <button class="close" id="close" type="button" title="关闭迷你播放器">×</button>
+    <div class="bar"><span id="progress"></span></div>
+  </div>
+  <script>
+    (function () {
+      var token = new URLSearchParams(location.search).get('token') || '';
+      var cover = document.getElementById('cover');
+      var title = document.getElementById('title');
+      var artist = document.getElementById('artist');
+      var play = document.getElementById('play');
+      var progress = document.getElementById('progress');
+
+      function headers() {
+        return { 'x-bridge-token': token };
+      }
+
+      function render(state) {
+        if (!state) return;
+        title.textContent = state.title || '等待播放';
+        artist.textContent = state.artists || '声屿';
+        play.textContent = state.playing ? '❚❚' : '▶';
+        var src = state.cover || '';
+        if (src && cover.getAttribute('src') !== src) cover.src = src;
+        cover.style.visibility = src ? 'visible' : 'hidden';
+        var duration = state.duration || 0;
+        var time = (state.time || 0) * 1000;
+        progress.style.width =
+          duration > 0 ? Math.min(100, Math.max(0, (time / duration) * 100)) + '%' : '0%';
+      }
+
+      function poll() {
+        fetch('/lyrics-state', { headers: headers() })
+          .then(function (response) { return response.ok ? response.json() : null; })
+          .then(render)
+          .catch(function () {})
+          .then(function () { setTimeout(poll, 500); });
+      }
+
+      Array.prototype.forEach.call(
+        document.querySelectorAll('[data-action]'),
+        function (button) {
+          button.addEventListener('click', function () {
+            var action = button.getAttribute('data-action');
+            fetch('/command?action=' + encodeURIComponent(action), {
+              method: 'POST',
+              headers: headers(),
+            }).catch(function () {});
+          });
+        },
+      );
+
+      document.getElementById('close').addEventListener('click', function () {
+        fetch('/mini-window?action=hide', { method: 'POST', headers: headers() }).catch(function () {});
+      });
+
+      poll();
+    })();
+  </script>
+</body>
+</html>
+`

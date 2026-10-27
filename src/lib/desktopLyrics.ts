@@ -3,7 +3,7 @@ import type { LyricLine } from './lyric'
 import { formatArtists } from './format'
 import { bridgeFetch, isDesktopApp } from './desktopBridge'
 import { usePlayerStore } from '../store/player'
-import { useSettingsStore } from '../store/settings'
+import { useSettingsStore, type LyricDisplayMode } from '../store/settings'
 
 /**
  * The desktop lyrics HUD is a tiny standalone page served by the Bun bridge
@@ -18,8 +18,12 @@ type LyricsSnapshot = {
   songId: number | null
   title: string
   artists: string
+  album: string
+  cover: string
+  /** Track length in ms, used by the mini player progress bar. */
+  duration: number
   lines: Array<Pick<LyricLine, 'time' | 'content' | 'translate'>>
-  showTranslation: boolean
+  displayMode: LyricDisplayMode
   time: number
   playing: boolean
 }
@@ -38,12 +42,15 @@ function snapshot(): LyricsSnapshot {
     songId: song?.id ?? null,
     title: song?.name ?? '',
     artists: formatArtists(song?.ar),
+    album: song?.al.name ?? '',
+    cover: song?.al.picUrl ?? '',
+    duration: song?.dt ?? 0,
     lines: state.lyricLines.map((line) => ({
       time: line.time,
       content: line.content,
       translate: line.translate,
     })),
-    showTranslation: useSettingsStore.getState().showLyricTranslation,
+    displayMode: useSettingsStore.getState().lyricDisplayMode,
     time: state.currentTime,
     playing: state.playing,
   }
@@ -60,7 +67,7 @@ export function useDesktopLyricsPublisher() {
 
     let songId: number | null | undefined
     let lines: LyricLine[] | undefined
-    let translation: boolean | undefined
+    let displayMode: LyricDisplayMode | undefined
     let playing: boolean | undefined
     let sentAt = 0
     let fullSentAt = 0
@@ -70,7 +77,7 @@ export function useDesktopLyricsPublisher() {
       const song = state.queue[state.currentIndex]
       songId = song?.id ?? null
       lines = state.lyricLines
-      translation = useSettingsStore.getState().showLyricTranslation
+      displayMode = useSettingsStore.getState().lyricDisplayMode
       playing = state.playing
       sentAt = performance.now()
       fullSentAt = sentAt
@@ -89,9 +96,9 @@ export function useDesktopLyricsPublisher() {
     const unsubscribePlayer = usePlayerStore.subscribe((state) => {
       const song = state.queue[state.currentIndex]
       const nextId = song?.id ?? null
-      const nextTranslation = useSettingsStore.getState().showLyricTranslation
+      const nextMode = useSettingsStore.getState().lyricDisplayMode
       const structural =
-        nextId !== songId || state.lyricLines !== lines || nextTranslation !== translation
+        nextId !== songId || state.lyricLines !== lines || nextMode !== displayMode
       if (structural || performance.now() - fullSentAt >= FULL_REFRESH) {
         publishFull()
         return
@@ -101,9 +108,9 @@ export function useDesktopLyricsPublisher() {
       }
     })
 
-    // Hiding/showing the translation only touches the settings store.
+    // Switching the lyric mode only touches the settings store.
     const unsubscribeSettings = useSettingsStore.subscribe(() => {
-      if (useSettingsStore.getState().showLyricTranslation !== translation) publishFull()
+      if (useSettingsStore.getState().lyricDisplayMode !== displayMode) publishFull()
     })
 
     return () => {

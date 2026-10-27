@@ -1115,6 +1115,16 @@ html.desktop .app-window {
   line-height: 1.4;
 }
 
+/* Word-level seek: the line is a button, each word jumps to its own timestamp. */
+.lyric-word {
+  cursor: pointer;
+}
+
+.lyric-word:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .lyrics-viewport--compact .lyric-line {
   padding-block: 0.35em;
 }

@@ -74,3 +74,15 @@ export async function setDesktopLyricsVisible(action: 'show' | 'hide' | 'toggle'
     method: 'POST',
   })
 }
+
+/** Whether the compact mini player window is currently visible. */
+export async function getMiniPlayerVisible() {
+  return requestJson<{ visible: boolean }>('/mini-window')
+}
+
+/** Show, hide or toggle the compact mini player window. */
+export async function setMiniPlayerVisible(action: 'show' | 'hide' | 'toggle' = 'toggle') {
+  return requestJson<{ visible: boolean }>(`/mini-window?action=${action}`, {
+    method: 'POST',
+  })
+}

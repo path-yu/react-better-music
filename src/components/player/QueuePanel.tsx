@@ -6,6 +6,7 @@ import { ArtistLinks } from '../common/ArtistLinks'
 import { usePlayerStore } from '../../store/player'
 import { formatDuration } from '../../lib/format'
 import { cn } from '../../lib/format'
+import { copyrightHint } from '../../lib/songs'
 
 const ROW_HEIGHT = 56
 
@@ -107,6 +108,7 @@ export function QueuePanel() {
               const song = queue[virtualRow.index]
               if (!song) return null
               const active = virtualRow.index === currentIndex
+              const note = copyrightHint(song)
               return (
                 <div
                   key={`${song.id}-${virtualRow.index}`}
@@ -167,8 +169,13 @@ export function QueuePanel() {
                           </span>
                         ) : null}
                       </div>
-                      <p className="truncate text-[11px] text-black/35">
-                        <ArtistLinks artists={song.ar} />
+                      <p className="flex min-w-0 items-center gap-1.5 text-[11px] text-black/35">
+                        <ArtistLinks artists={song.ar} className="min-w-0 truncate" />
+                        {note ? (
+                          <span className="shrink-0 rounded-[6px] bg-black/6 px-1 text-[11px] text-black/35">
+                            {note}
+                          </span>
+                        ) : null}
                       </p>
                     </div>
                     <span className="shrink-0 text-[11px] tabular-nums text-black/25">

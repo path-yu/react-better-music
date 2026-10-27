@@ -9,6 +9,7 @@ import {
   ListMusic,
   Loader2,
   Pause,
+  PictureInPicture2,
   Play,
   Repeat,
   Repeat1,
@@ -28,11 +29,20 @@ import { ProgressSlider } from './ProgressSlider'
 import { VolumeSlider } from './VolumeSlider'
 import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
-import { PLAY_QUALITY_OPTIONS, useSettingsStore } from '../../store/settings'
+import {
+  LYRIC_DISPLAY_OPTIONS,
+  PLAY_QUALITY_OPTIONS,
+  useSettingsStore,
+} from '../../store/settings'
 import { cn, formatArtists, formatDuration } from '../../lib/format'
-import { registerAudio } from '../../lib/audio'
+import { getAudio, registerAudio, seekAudio } from '../../lib/audio'
 import { isDesktopShell } from '../../lib/desktop'
-import { getDesktopLyricsVisible, setDesktopLyricsVisible } from '../../lib/desktopBridge'
+import {
+  getDesktopLyricsVisible,
+  getMiniPlayerVisible,
+  setDesktopLyricsVisible,
+  setMiniPlayerVisible,
+} from '../../lib/desktopBridge'
 import { cacheSong, cacheSongFromBlob } from '../../lib/songCache'
 import { toast } from '../../lib/toast'
 import type { PlayLevel } from '../../types'
@@ -102,15 +112,17 @@ export function PlayerBar() {
 
   const playLevel = useSettingsStore((state) => state.playLevel)
   const setPlayLevel = useSettingsStore((state) => state.setPlayLevel)
-  const showLyricTranslation = useSettingsStore((state) => state.showLyricTranslation)
-  const setShowLyricTranslation = useSettingsStore((state) => state.setShowLyricTranslation)
-  // The toggle is only meaningful when the current lyric actually carries a translation.
+  const lyricDisplayMode = useSettingsStore((state) => state.lyricDisplayMode)
+  const setLyricDisplayMode = useSettingsStore((state) => state.setLyricDisplayMode)
+  // The mode menu is only meaningful when the current lyric actually carries a translation.
   const hasTranslation = useMemo(
     () => lyricLines.some((line) => Boolean(line.translate)),
     [lyricLines],
   )
   const desktopShell = isDesktopShell()
   const [lyricsWindowOpen, setLyricsWindowOpen] = useState(false)
+  const [miniWindowOpen, setMiniWindowOpen] = useState(false)
+  const [lyricsModeOpen, setLyricsModeOpen] = useState(false)
   const [qualityOpen, setQualityOpen] = useState(false)
   // Real duration reported by the media element; trial clips are shorter than
   // the catalogue duration in song.dt.
@@ -224,6 +236,11 @@ export function PlayerBar() {
       getDesktopLyricsVisible()
         .then(({ visible }) => {
           if (active) setLyricsWindowOpen(visible)
+        })
+        .catch(() => undefined)
+      getMiniPlayerVisible()
+        .then(({ visible }) => {
+          if (active) setMiniWindowOpen(visible)
         })
         .catch(() => undefined)
     }
@@ -511,6 +528,105 @@ export function PlayerBar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing, audioReady, currentSong?.id, currentSong?.url, audioFromCache, audioBlob])
 
+  /* ------------------------- Windows SMTC / media keys ------------------------ */
+
+  const mediaSessionDuration =
+    (currentSong?.trialEnd && currentSong.trialEnd > 0 ? currentSong.trialEnd * 1000 : 0) ||
+    mediaDuration ||
+    currentSong?.dt ||
+    0
+
+  useEffect(() => {
+    if (!('mediaSession' in navigator) || !currentSong) return
+    if (!('MediaMetadata' in window)) return
+    const artwork = currentSong.al.picUrl
+      ? [{ src: currentSong.al.picUrl, sizes: '512x512', type: 'image/jpeg' }]
+      : []
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: currentSong.name,
+      artist: formatArtists(currentSong.ar),
+      album: currentSong.al.name,
+      artwork,
+    })
+  }, [currentSong])
+
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return
+    const session = navigator.mediaSession
+    const set = (action: MediaSessionAction, handler: MediaSessionActionHandler | null) => {
+      try {
+        session.setActionHandler(action, handler)
+      } catch {
+        // The action is not supported by this WebView.
+      }
+    }
+
+    set('play', () => {
+      const state = usePlayerStore.getState()
+      if (!state.playing) void state.togglePlay()
+    })
+    set('pause', () => usePlayerStore.getState().setPlaying(false))
+    set('stop', () => usePlayerStore.getState().setPlaying(false))
+    set('previoustrack', () => void usePlayerStore.getState().prev())
+    set('nexttrack', () => void usePlayerStore.getState().next())
+    set('seekto', (details) => {
+      if (typeof details.seekTime === 'number') seekAudio(details.seekTime)
+    })
+    set('seekbackward', (details) => {
+      const audio = getAudio()
+      if (audio) seekAudio(audio.currentTime - (details.seekOffset ?? 10))
+    })
+    set('seekforward', (details) => {
+      const audio = getAudio()
+      if (audio) seekAudio(audio.currentTime + (details.seekOffset ?? 10))
+    })
+
+    return () => {
+      const actions: MediaSessionAction[] = [
+        'play',
+        'pause',
+        'stop',
+        'previoustrack',
+        'nexttrack',
+        'seekto',
+        'seekbackward',
+        'seekforward',
+      ]
+      for (const action of actions) set(action, null)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return
+    const next = playing ? 'playing' : 'paused'
+    if (navigator.mediaSession.playbackState !== next) {
+      navigator.mediaSession.playbackState = next
+    }
+  }, [playing])
+
+  // WebView2 can echo a position update back as a time update; update at most
+  // once per second so that echo can never become a render loop.
+  const lastPositionRef = useRef(-1)
+
+  useEffect(() => {
+    if (!('mediaSession' in navigator) || !('setPositionState' in navigator.mediaSession)) {
+      return
+    }
+    if (Math.abs(currentTime - lastPositionRef.current) < 1) return
+    const durationSeconds = mediaSessionDuration / 1000
+    if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) return
+    lastPositionRef.current = currentTime
+    try {
+      navigator.mediaSession.setPositionState({
+        duration: durationSeconds,
+        playbackRate: 1,
+        position: Math.min(durationSeconds, Math.max(0, currentTime)),
+      })
+    } catch {
+      // Ignore transient invalid states while a track is switching.
+    }
+  }, [currentTime, mediaSessionDuration])
+
   if (!queue.length || !currentSong) {
     return (
       <div className="player-glass flex h-[76px] items-center justify-center text-[12px] text-black/35">
@@ -592,6 +708,12 @@ export function PlayerBar() {
     void setDesktopLyricsVisible('toggle')
       .then(({ visible }) => setLyricsWindowOpen(visible))
       .catch(() => toast.warning('桌面歌词窗口暂不可用'))
+  }
+
+  const handleToggleMiniPlayer = () => {
+    void setMiniPlayerVisible('toggle')
+      .then(({ visible }) => setMiniWindowOpen(visible))
+      .catch(() => toast.warning('迷你播放器暂不可用'))
   }
 
   const handleQualityChange = (level: PlayLevel) => {
@@ -940,22 +1062,53 @@ export function PlayerBar() {
 
       <div className="flex items-center justify-end gap-2 max-md:hidden">
         {hasTranslation ? (
-          <button
-            type="button"
-            aria-label={showLyricTranslation ? '隐藏歌词译文' : '显示歌词译文'}
-            aria-pressed={showLyricTranslation}
-            title={showLyricTranslation ? '隐藏歌词译文' : '显示歌词译文'}
-            onClick={() => {
-              const next = !showLyricTranslation
-              setShowLyricTranslation(next)
-            }}
-            className={cn(
-              'pressable flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-black/5',
-              showLyricTranslation ? 'text-accent' : 'text-black/45 hover:text-black/75',
-            )}
-          >
-            <Languages className="h-[15px] w-[15px]" />
-          </button>
+          <Popover open={lyricsModeOpen} onOpenChange={setLyricsModeOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                aria-label="歌词显示方式"
+                title="歌词显示方式"
+                className={cn(
+                  'pressable flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-black/5',
+                  lyricDisplayMode !== 'original'
+                    ? 'text-accent'
+                    : 'text-black/45 hover:text-black/75',
+                )}
+              >
+                <Languages className="h-[15px] w-[15px]" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              side="top"
+              align="end"
+              sideOffset={10}
+              glass
+              className="w-[min(180px,calc(100vw-24px))] p-1.5"
+            >
+              <p className="px-2 py-1 text-[11px] text-black/35">歌词显示</p>
+              {LYRIC_DISPLAY_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    setLyricDisplayMode(option.value)
+                    setLyricsModeOpen(false)
+                  }}
+                  className={cn(
+                    'flex w-full items-center justify-between rounded-[6px] px-2 py-1.5 text-left text-[12px] transition-colors',
+                    lyricDisplayMode === option.value
+                      ? 'bg-accent/10 text-accent'
+                      : 'text-black/65 hover:bg-black/5',
+                  )}
+                >
+                  <span>{option.label}</span>
+                  {lyricDisplayMode === option.value ? (
+                    <Check className="h-3.5 w-3.5" />
+                  ) : null}
+                </button>
+              ))}
+            </PopoverContent>
+          </Popover>
         ) : null}
 
         {desktopShell ? (
@@ -975,6 +1128,22 @@ export function PlayerBar() {
             )}
           >
             <Subtitles className="h-[15px] w-[15px]" />
+          </button>
+        ) : null}
+
+        {desktopShell ? (
+          <button
+            type="button"
+            aria-label={miniWindowOpen ? '关闭迷你播放器' : '开启迷你播放器'}
+            aria-pressed={miniWindowOpen}
+            title={miniWindowOpen ? '关闭迷你播放器' : '开启迷你播放器'}
+            onClick={handleToggleMiniPlayer}
+            className={cn(
+              'pressable flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-black/5',
+              miniWindowOpen ? 'text-accent' : 'text-black/45 hover:text-black/75',
+            )}
+          >
+            <PictureInPicture2 className="h-[15px] w-[15px]" />
           </button>
         ) : null}
 

@@ -1,7 +1,9 @@
 ﻿param(
   [Parameter(Mandatory = $true)][int]$AppPid,
   [Parameter(Mandatory = $true)][string]$WindowTitle,
-  [Parameter(Mandatory = $true)][string]$IconPath
+  [Parameter(Mandatory = $true)][string]$IconPath,
+  [Parameter(Mandatory = $true)][int]$BridgePort,
+  [Parameter(Mandatory = $true)][string]$BridgeToken
 )
 
 Add-Type -AssemblyName System.Windows.Forms
@@ -44,7 +46,32 @@ function Show-AppWindow {
   [void][ShengYuTray]::SetForegroundWindow($hwnd)
 }
 
+# Transport/tray actions go through the app's local bridge, which forwards
+# them to the renderer or toggles the auxiliary windows.
+function Invoke-AppCommand([string]$Action) {
+  try {
+    Invoke-RestMethod -Method Post `
+      -Uri "http://127.0.0.1:$BridgePort/command?action=$Action" `
+      -Headers @{ 'x-bridge-token' = $BridgeToken } `
+      -TimeoutSec 3 | Out-Null
+  } catch {
+    # The app may be shutting down.
+  }
+}
+
 $menu = New-Object System.Windows.Forms.ContextMenuStrip
+$playItem = $menu.Items.Add('播放 / 暂停')
+$playItem.add_Click({ Invoke-AppCommand 'play-pause' })
+$prevItem = $menu.Items.Add('上一首')
+$prevItem.add_Click({ Invoke-AppCommand 'previous' })
+$nextItem = $menu.Items.Add('下一首')
+$nextItem.add_Click({ Invoke-AppCommand 'next' })
+[void]$menu.Items.Add((New-Object System.Windows.Forms.ToolStripSeparator))
+$lyricsItem = $menu.Items.Add('桌面歌词')
+$lyricsItem.add_Click({ Invoke-AppCommand 'lyrics' })
+$miniItem = $menu.Items.Add('迷你播放器')
+$miniItem.add_Click({ Invoke-AppCommand 'mini' })
+[void]$menu.Items.Add((New-Object System.Windows.Forms.ToolStripSeparator))
 $showItem = $menu.Items.Add('显示主窗口')
 $showItem.add_Click({ Show-AppWindow })
 [void]$menu.Items.Add((New-Object System.Windows.Forms.ToolStripSeparator))

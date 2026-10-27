@@ -43,9 +43,11 @@ function wordStyle(
 function ActiveWords({
   words,
   currentTimeMs,
+  onSeek,
 }: {
   words: LyricWord[]
   currentTimeMs: number
+  onSeek: (timeMs: number) => void
 }) {
   const [clockMs, setClockMs] = useState(currentTimeMs)
 
@@ -77,6 +79,36 @@ function ActiveWords({
           key={`${index}-${word.startTime}`}
           className="lyric-word"
           style={wordStyle(word, clockMs, true)}
+          onClick={(event) => {
+            event.stopPropagation()
+            onSeek(word.startTime)
+          }}
+        >
+          {word.content}
+        </span>
+      ))}
+    </>
+  )
+}
+
+/** Non-active lines keep their words clickable without the karaoke animation. */
+function StaticWords({
+  words,
+  onSeek,
+}: {
+  words: LyricWord[]
+  onSeek: (timeMs: number) => void
+}) {
+  return (
+    <>
+      {words.map((word, index) => (
+        <span
+          key={`${index}-${word.startTime}`}
+          className="lyric-word"
+          onClick={(event) => {
+            event.stopPropagation()
+            onSeek(word.startTime)
+          }}
         >
           {word.content}
         </span>
@@ -96,7 +128,7 @@ export function LyricsPanel({
   const containerRef = useRef<HTMLDivElement>(null)
   const lineRefs = useRef<Record<number, HTMLButtonElement | null>>({})
   const lastActiveRef = useRef(-1)
-  const showTranslation = useSettingsStore((state) => state.showLyricTranslation)
+  const displayMode = useSettingsStore((state) => state.lyricDisplayMode)
 
   useEffect(() => {
     const container = containerRef.current
@@ -145,6 +177,8 @@ export function LyricsPanel({
           const opacity = active ? 1 : Math.max(0.3, 0.55 - away * 0.06)
           const blur = active || activeIndex < 0 ? 0 : Math.min(2.8, 0.9 + away * 0.42)
           const hasWords = Boolean(line.words?.length)
+          const translationOnly = displayMode === 'translation' && Boolean(line.translate)
+          const text = translationOnly ? line.translate! : line.content
           return (
             <button
               key={`${line.time}-${index}`}
@@ -166,13 +200,21 @@ export function LyricsPanel({
               )}
             >
               <span className="lyric-line__text block">
-                {active && hasWords ? (
-                  <ActiveWords words={line.words!} currentTimeMs={currentTimeMs} />
+                {!translationOnly && hasWords ? (
+                  active ? (
+                    <ActiveWords
+                      words={line.words!}
+                      currentTimeMs={currentTimeMs}
+                      onSeek={onSeek}
+                    />
+                  ) : (
+                    <StaticWords words={line.words!} onSeek={onSeek} />
+                  )
                 ) : (
-                  line.content
+                  text
                 )}
               </span>
-              {showTranslation && line.translate ? (
+              {displayMode === 'both' && line.translate ? (
                 <span className="lyric-line__translate mt-1 block">{line.translate}</span>
               ) : null}
             </button>

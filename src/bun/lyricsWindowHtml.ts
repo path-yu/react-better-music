@@ -156,13 +156,17 @@ export const LYRICS_WINDOW_HTML = `<!doctype html>
           return;
         }
 
+        var mode = state.displayMode || 'both';
         var index = indexAt(lines, (state.time || 0) * 1000);
         if (index < 0) index = 0;
+        function primary(line) {
+          return mode === 'translation' && line.translate ? line.translate : line.content;
+        }
         var current = lines[index];
-        active.textContent = current.content || '';
-        prev.textContent = index > 0 ? lines[index - 1].content : '';
-        next.textContent = index + 1 < lines.length ? lines[index + 1].content : '';
-        var translation = state.showTranslation && current.translate ? current.translate : '';
+        active.textContent = primary(current) || '';
+        prev.textContent = index > 0 ? primary(lines[index - 1]) : '';
+        next.textContent = index + 1 < lines.length ? primary(lines[index + 1]) : '';
+        var translation = mode === 'both' && current.translate ? current.translate : '';
         trans.textContent = translation;
         trans.style.visibility = translation ? 'visible' : 'hidden';
       }
