@@ -8,19 +8,41 @@
 const BRIDGE_BASE = 'http://127.0.0.1:13002'
 const BRIDGE_TIMEOUT = 15_000
 
+/** Survives the URL cleanup and reloads within the same window. */
+const BRIDGE_TOKEN_STORAGE_KEY = 'qimiao:bridge-token'
+
 export function isDesktopApp() {
   return import.meta.env.VITE_DESKTOP === 'true'
 }
 
+export function rememberBridgeToken(token: string) {
+  try {
+    window.sessionStorage.setItem(BRIDGE_TOKEN_STORAGE_KEY, token)
+  } catch {
+    // Storage can be unavailable; the in-memory fallback still works.
+  }
+}
+
 /**
- * The main process appends a per-launch token to the view URL. The router may
- * rewrite the URL before the first request, so main.tsx stashes it on window
- * as soon as the app boots.
+ * The main process appends a per-launch token to the view URL. main.tsx stashes
+ * it on `window` and then removes it from the address bar, because TanStack's
+ * hash history folds `location.search` into the hash and would otherwise leak
+ * `bridgeToken` into every route search param.
  */
-function bridgeAuthHeaders(): Record<string, string> {
+function readBridgeToken() {
   const injected = (window as typeof window & { __bridgeToken?: string }).__bridgeToken
-  const token =
-    injected ?? new URLSearchParams(window.location.search).get('bridgeToken') ?? ''
+  if (injected) return injected
+  const fromQuery = new URLSearchParams(window.location.search).get('bridgeToken')
+  if (fromQuery) return fromQuery
+  try {
+    return window.sessionStorage.getItem(BRIDGE_TOKEN_STORAGE_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+function bridgeAuthHeaders(): Record<string, string> {
+  const token = readBridgeToken()
   return token ? { 'x-bridge-token': token } : {}
 }
 

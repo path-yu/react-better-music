@@ -4,7 +4,7 @@ import { routeTree } from './routeTree.gen'
 import { applyTheme } from './lib/theme'
 import { isDesktopShell } from './lib/desktop'
 import { useUiStore } from './store/ui'
-import { requestJson } from './lib/desktopBridge'
+import { rememberBridgeToken, requestJson } from './lib/desktopBridge'
 
 applyTheme(useUiStore.getState().theme)
 
@@ -13,6 +13,16 @@ applyTheme(useUiStore.getState().theme)
 const bridgeToken = new URLSearchParams(window.location.search).get('bridgeToken')
 if (bridgeToken) {
   ;(window as typeof window & { __bridgeToken?: string }).__bridgeToken = bridgeToken
+  rememberBridgeToken(bridgeToken)
+  // Hash history appends `location.search` to the hash path, which would make
+  // every route search param end with `?bridgeToken=...`. The token is already
+  // cached above, so drop it from the address bar before the router boots.
+  const { pathname, hash } = window.location
+  try {
+    window.history.replaceState(window.history.state, '', `${pathname}${hash}`)
+  } catch {
+    // A custom scheme may reject history updates; the bridge still works.
+  }
 }
 
 const desktop = isDesktopShell()
