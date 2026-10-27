@@ -2,6 +2,8 @@ import {
   app,
   BrowserWindow,
   BuildConfig,
+  GlobalShortcut,
+  Screen,
   Tray,
   Utils,
   type ElectrobunEvent,
@@ -10,6 +12,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } fr
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { acquireInstanceLock, releaseInstanceLock } from './instanceLock'
+import { LYRICS_WINDOW_HTML } from './lyricsWindowHtml'
 import { applyWindowIcon } from './windowIcon'
 
 const APP_DATA_DIR = join(process.env.LOCALAPPDATA ?? homedir(), 'com.qimiao.music')
@@ -73,6 +76,8 @@ process.on('exit', () => releaseInstanceLock(APP_DATA_DIR))
 
 const API_PORT = Number(process.env.QIMIAO_API_PORT || 13000)
 const API_READY_URL = `http://127.0.0.1:${API_PORT}/ping`
+/** Renderer <-> main-process bridge (downloads, window controls, lyrics). */
+const BRIDGE_PORT = 13002
 
 /** Packaged: copied next to this bundle. Dev: the generated file in server/. */
 function resolveApiScript() {
@@ -279,13 +284,163 @@ if (process.platform === 'win32') {
 app.on('close', (payload) => {
   const id = (payload as { id?: number } | undefined)?.id
   if (id && mainWindow?.id === id) mainWindow = null
+  if (id && lyricsWindow?.id === id) lyricsWindow = null
+})
+
+/* ------------------------------ desktop lyrics ---------------------------- */
+
+/**
+ * A second, transparent and frameless window that floats above other apps and
+ * renders nothing but the current lyric. Its page is served by the local bridge
+ * (`/lyrics`); the main renderer pushes lyric/progress snapshots to
+ * `/lyrics-state`, and the page polls them back.
+ */
+const LYRICS_SHORTCUT = 'CommandOrControl+Shift+L'
+const LYRICS_WINDOW_FILE = join(APP_DATA_DIR, 'lyrics-window.json')
+const LYRICS_WINDOW_SIZE = { width: 960, height: 200 }
+const LYRICS_WINDOW_MARGIN = 96
+
+let lyricsWindow: BrowserWindow | null = null
+let lyricsMoveTimer: ReturnType<typeof setTimeout> | null = null
+/** Latest snapshot posted by the main window; polled by the HUD page. */
+let lyricsState: Record<string, unknown> | null = null
+
+function readLyricsPosition() {
+  try {
+    const parsed = JSON.parse(readFileSync(LYRICS_WINDOW_FILE, 'utf8')) as {
+      x?: number
+      y?: number
+    }
+    if (typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+      return { x: parsed.x, y: parsed.y }
+    }
+  } catch {
+    // no saved position yet
+  }
+  return null
+}
+
+/** Persisted on drag end so the HUD returns to the same spot next launch. */
+function persistLyricsPosition() {
+  if (!lyricsWindow) return
+  try {
+    const { x, y } = lyricsWindow.getFrame()
+    mkdirSync(APP_DATA_DIR, { recursive: true })
+    writeFileSync(LYRICS_WINDOW_FILE, JSON.stringify({ x, y }), 'utf8')
+  } catch {
+    // Positioning is best effort.
+  }
+}
+
+function createLyricsWindow() {
+  // FFI-less builds report a zero-sized display; never place the HUD off-screen.
+  const { workArea } = Screen.getPrimaryDisplay()
+  const hasDisplay = workArea.width > 0 && workArea.height > 0
+  const width = hasDisplay
+    ? Math.min(LYRICS_WINDOW_SIZE.width, Math.max(420, workArea.width - 80))
+    : LYRICS_WINDOW_SIZE.width
+  const height = LYRICS_WINDOW_SIZE.height
+  const saved = readLyricsPosition()
+  const defaultX = hasDisplay ? Math.round(workArea.x + (workArea.width - width) / 2) : 120
+  const defaultY = hasDisplay
+    ? Math.round(workArea.y + workArea.height - height - LYRICS_WINDOW_MARGIN)
+    : 120
+  // A saved spot may belong to a monitor that is no longer connected; keep a
+  // sliver of the window on screen so the shortcut can always bring it back.
+  const clamp = (value: number, min: number, max: number) =>
+    Math.min(Math.max(value, min), max)
+  const x = hasDisplay
+    ? clamp(saved?.x ?? defaultX, workArea.x - width + 120, workArea.x + workArea.width - 120)
+    : defaultX
+  const y = hasDisplay
+    ? clamp(saved?.y ?? defaultY, workArea.y, workArea.y + workArea.height - 60)
+    : defaultY
+  const win = new BrowserWindow({
+    title: '桌面歌词',
+    // A plain page from the local bridge is far more reliable in a secondary
+    // window than loading the SPA through `views://`.
+    url: `http://127.0.0.1:${BRIDGE_PORT}/lyrics?token=${encodeURIComponent(BRIDGE_TOKEN)}`,
+    frame: { width, height, x, y },
+    // Transparent + frameless: the page draws a translucent glass plaque.
+    titleBarStyle: 'hiddenInset',
+    transparent: true,
+    activate: false,
+  })
+  win.setAlwaysOnTop(true)
+  win.setVisibleOnAllWorkspaces(true)
+  // `move` fires continuously while dragging; only persist the final position.
+  win.on('move', () => {
+    if (lyricsMoveTimer) clearTimeout(lyricsMoveTimer)
+    lyricsMoveTimer = setTimeout(() => {
+      lyricsMoveTimer = null
+      persistLyricsPosition()
+    }, 500)
+  })
+  return win
+}
+
+function ensureLyricsWindow() {
+  if (!lyricsWindow) lyricsWindow = createLyricsWindow()
+  return lyricsWindow
+}
+
+function lyricsWindowVisible() {
+  if (!lyricsWindow) return false
+  try {
+    return lyricsWindow.isVisible()
+  } catch {
+    lyricsWindow = null
+    return false
+  }
+}
+
+function showLyricsWindow() {
+  // A destroyed window leaves a stale handle behind; retry once with a new one.
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      ensureLyricsWindow().showInactive()
+      return true
+    } catch (error) {
+      lyricsWindow = null
+      if (attempt === 1) console.error('[desktop] failed to show lyrics window:', error)
+    }
+  }
+  return false
+}
+
+function hideLyricsWindow() {
+  if (!lyricsWindow) return false
+  try {
+    lyricsWindow.hide()
+  } catch {
+    lyricsWindow = null
+  }
+  return false
+}
+
+/** 'show' / 'hide' / 'toggle' → whether the HUD is visible afterwards. */
+function applyLyricsAction(action: string | null) {
+  if (action === 'hide') return hideLyricsWindow()
+  if (action === 'show') return showLyricsWindow()
+  return lyricsWindowVisible() ? hideLyricsWindow() : showLyricsWindow()
+}
+
+if (!GlobalShortcut.register(LYRICS_SHORTCUT, () => applyLyricsAction('toggle'))) {
+  console.warn(`[desktop] failed to register lyrics shortcut (${LYRICS_SHORTCUT})`)
+}
+process.on('exit', () => {
+  try {
+    GlobalShortcut.unregister(LYRICS_SHORTCUT)
+  } catch {
+    // The native layer may already be tearing down.
+  }
 })
 
 /* --------------------------- download directory --------------------------- */
 
 const DOWNLOAD_DIR_FILE = join(APP_DATA_DIR, 'download-dir.json')
 const DEFAULT_DOWNLOAD_DIR = join(homedir(), 'Downloads')
-const DOWNLOAD_BRIDGE_PORT = 13002
+const DOWNLOAD_BRIDGE_PORT = BRIDGE_PORT
 
 function readDownloadDir() {
   try {
@@ -388,6 +543,13 @@ try {
       if (request.method === 'OPTIONS') {
         return new Response(null, { status: 204, headers })
       }
+      // The HUD page itself is a navigation request and cannot carry the header;
+      // it holds no data and fetches state with the token from its query string.
+      if (url.pathname === '/lyrics' && request.method === 'GET') {
+        return new Response(LYRICS_WINDOW_HTML, {
+          headers: { 'content-type': 'text/html; charset=utf-8' },
+        })
+      }
       if (!isBridgeAuthorized(request)) {
         return new Response('Unauthorized', { status: 401, headers })
       }
@@ -450,6 +612,38 @@ try {
           const bytes = await request.arrayBuffer()
           await Bun.write(target, bytes)
           return Response.json({ path: target }, { headers })
+        }
+        if (url.pathname === '/lyrics-window' && request.method === 'GET') {
+          return Response.json({ visible: lyricsWindowVisible() }, { headers })
+        }
+        if (url.pathname === '/lyrics-window' && request.method === 'POST') {
+          return Response.json(
+            { visible: applyLyricsAction(url.searchParams.get('action')) },
+            { headers },
+          )
+        }
+        if (url.pathname === '/lyrics-state' && request.method === 'GET') {
+          return Response.json(lyricsState, { headers })
+        }
+        if (url.pathname === '/lyrics-state' && request.method === 'POST') {
+          const body = (await request.json().catch(() => null)) as {
+            type?: string
+            time?: number
+            playing?: boolean
+          } | null
+          if (body?.type === 'time') {
+            // Progress-only update; merge into the last full snapshot.
+            if (lyricsState) {
+              lyricsState = {
+                ...lyricsState,
+                time: typeof body.time === 'number' ? body.time : lyricsState.time,
+                playing: Boolean(body.playing),
+              }
+            }
+          } else if (body) {
+            lyricsState = body as Record<string, unknown>
+          }
+          return Response.json({ ok: true }, { headers })
         }
       } catch (error) {
         return Response.json(

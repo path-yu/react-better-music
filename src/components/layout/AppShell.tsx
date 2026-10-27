@@ -12,6 +12,7 @@ import { useUserStore } from '../../store/user'
 import { usePlayerStore } from '../../store/player'
 import { useSettingsStore } from '../../store/settings'
 import { isDesktopShell } from '../../lib/desktop'
+import { useDesktopLyricsPublisher } from '../../lib/desktopLyrics'
 import { applyTheme } from '../../lib/theme'
 import { getLastLoginRefreshAt, getLoginCookie, refreshLogin } from '../../lib/session'
 
@@ -30,6 +31,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const hasQueue = usePlayerStore((state) => state.queue.length > 0)
   const ensureLyrics = usePlayerStore((state) => state.ensureLyrics)
   const disableDevTools = useSettingsStore((state) => state.disableDevTools)
+
+  useDesktopLyricsPublisher()
 
   useEffect(() => {
     applyTheme(theme)

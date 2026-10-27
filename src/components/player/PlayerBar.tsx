@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react'
 import {
   AudioLines,
   Check,
@@ -16,6 +16,7 @@ import {
   SkipBack,
   SkipForward,
   Sparkles,
+  Subtitles,
   Volume1,
   Volume2,
   VolumeX,
@@ -29,15 +30,35 @@ import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
 import { PLAY_QUALITY_OPTIONS, useSettingsStore } from '../../store/settings'
 import { cn, formatArtists, formatDuration } from '../../lib/format'
-import { registerAudio, setAudioVolume } from '../../lib/audio'
+import { registerAudio } from '../../lib/audio'
+import { isDesktopShell } from '../../lib/desktop'
+import { getDesktopLyricsVisible, setDesktopLyricsVisible } from '../../lib/desktopBridge'
 import { cacheSong, cacheSongFromBlob } from '../../lib/songCache'
 import { toast } from '../../lib/toast'
 import type { PlayLevel } from '../../types'
 
+/** Crossfade length for track changes; inside the 200–400ms sweet spot. */
+const CROSSFADE_MS = 320
+/** Stop holding the previous track if the next source takes too long to load. */
+const CROSSFADE_MAX_WAIT = 6000
+
 export function PlayerBar() {
-  const audioRef = useRef<HTMLAudioElement>(null)
+  // Two media elements alternate so a new track can start while the previous
+  // one is still playing; `audioRef` always points at the element that owns the
+  // current source, and `registerAudio` follows it for lyrics/seek helpers.
+  const audioARef = useRef<HTMLAudioElement>(null)
+  const audioBRef = useRef<HTMLAudioElement>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const incomingRef = useRef<HTMLAudioElement | null>(null)
+  const outgoingRef = useRef<HTMLAudioElement | null>(null)
+  const crossfadePendingRef = useRef(false)
+  const crossfadeTimerRef = useRef<number | null>(null)
+  const fadeEndTimerRef = useRef<number | null>(null)
+  const fadeFrameRef = useRef(0)
+  const masterVolumeRef = useRef(0.8)
   const retriedRef = useRef<number | null>(null)
   const lastPlayTokenRef = useRef<number | null>(null)
+  const lastSongIdRef = useRef<number | null>(null)
   const switchingRef = useRef(false)
   const trialNotifiedRef = useRef(false)
   // A seek that arrives before the media is seekable (restored queue after a
@@ -88,6 +109,8 @@ export function PlayerBar() {
     () => lyricLines.some((line) => Boolean(line.translate)),
     [lyricLines],
   )
+  const desktopShell = isDesktopShell()
+  const [lyricsWindowOpen, setLyricsWindowOpen] = useState(false)
   const [qualityOpen, setQualityOpen] = useState(false)
   // Real duration reported by the media element; trial clips are shorter than
   // the catalogue duration in song.dt.
@@ -100,49 +123,236 @@ export function PlayerBar() {
   const likeSong = useUserStore((state) => state.likeSong)
   const liked = currentSong ? likedIds.includes(currentSong.id) : false
 
+  /** Apply the master volume scaled by a fade gain to one element. */
+  const applyGain = (element: HTMLAudioElement | null, gain: number) => {
+    if (!element) return
+    element.volume = Math.min(1, Math.max(0, masterVolumeRef.current * gain))
+  }
+
+  const clearFade = () => {
+    if (!fadeFrameRef.current) return
+    cancelAnimationFrame(fadeFrameRef.current)
+    fadeFrameRef.current = 0
+  }
+
+  const clearCrossfadeTimer = () => {
+    if (crossfadeTimerRef.current === null) return
+    window.clearTimeout(crossfadeTimerRef.current)
+    crossfadeTimerRef.current = null
+  }
+
+  const clearFadeEndTimer = () => {
+    if (fadeEndTimerRef.current === null) return
+    window.clearTimeout(fadeEndTimerRef.current)
+    fadeEndTimerRef.current = null
+  }
+
+  /** Detach a finished element and release the blob URL it owned. */
+  const settleElement = (element: HTMLAudioElement | null) => {
+    if (!element) return
+    element.pause()
+    element.currentTime = 0
+    const src = element.getAttribute('src')
+    element.removeAttribute('src')
+    element.load()
+    if (src?.startsWith('blob:')) URL.revokeObjectURL(src)
+  }
+
+  /** Let the incoming track take over, fading the previous one out. */
+  const startCrossfade = (incoming: HTMLAudioElement) => {
+    if (!crossfadePendingRef.current || incoming !== incomingRef.current) return
+    const outgoing = outgoingRef.current
+    crossfadePendingRef.current = false
+    incomingRef.current = null
+    clearCrossfadeTimer()
+    audioRef.current = incoming
+    registerAudio(incoming)
+    switchingRef.current = false
+    setAudioReady(true)
+
+    if (!outgoing || outgoing === incoming || outgoing.paused) {
+      incoming.volume = masterVolumeRef.current
+      if (outgoing && outgoing !== incoming) settleElement(outgoing)
+      outgoingRef.current = null
+      return
+    }
+
+    applyGain(incoming, 0)
+    applyGain(outgoing, 1)
+    const finish = () => {
+      // A newer transition took over; this fade no longer owns the gains.
+      if (outgoingRef.current !== outgoing) return
+      clearFadeEndTimer()
+      clearFade()
+      settleElement(outgoing)
+      outgoingRef.current = null
+      incoming.volume = masterVolumeRef.current
+    }
+    const started = performance.now()
+    const step = (now: number) => {
+      if (outgoingRef.current !== outgoing) {
+        fadeFrameRef.current = 0
+        return
+      }
+      const progress = Math.min(1, (now - started) / CROSSFADE_MS)
+      applyGain(incoming, progress)
+      applyGain(outgoing, 1 - progress)
+      if (progress < 1) {
+        fadeFrameRef.current = requestAnimationFrame(step)
+        return
+      }
+      finish()
+    }
+    fadeFrameRef.current = requestAnimationFrame(step)
+    // rAF stops while the window is hidden; make sure the hand-off still
+    // completes so two tracks never keep playing at once.
+    fadeEndTimerRef.current = window.setTimeout(finish, CROSSFADE_MS + 150)
+  }
+
+  const maybeStartCrossfade = (audio: HTMLAudioElement) => {
+    if (!crossfadePendingRef.current || audio !== incomingRef.current) return
+    if (audio.paused) return
+    startCrossfade(audio)
+  }
+
+  // The HUD can also be toggled by the global shortcut; refresh the button state
+  // whenever the main window regains focus.
   useEffect(() => {
-    registerAudio(audioRef.current)
-    return () => registerAudio(null)
+    if (!desktopShell) return
+    let active = true
+    const sync = () => {
+      getDesktopLyricsVisible()
+        .then(({ visible }) => {
+          if (active) setLyricsWindowOpen(visible)
+        })
+        .catch(() => undefined)
+    }
+    sync()
+    window.addEventListener('focus', sync)
+    // The global shortcut toggles the HUD without touching this window.
+    const timer = window.setInterval(sync, 2000)
+    return () => {
+      active = false
+      window.clearInterval(timer)
+      window.removeEventListener('focus', sync)
+    }
+  }, [desktopShell])
+
+  useEffect(() => {
+    masterVolumeRef.current = Math.min(1, Math.max(0, usePlayerStore.getState().volume / 100))
+    audioRef.current = audioARef.current
+    applyGain(audioARef.current, 1)
+    applyGain(audioBRef.current, 1)
+    registerAudio(audioARef.current)
+    return () => {
+      registerAudio(null)
+      clearFade()
+      clearCrossfadeTimer()
+      clearFadeEndTimer()
+    }
+    // The elements mount and unmount with the bar itself.
   }, [])
 
-  // Blob URLs created for cached tracks are owned by the audio element while
-  // it is mounted; release the last one when the player unmounts.
+  // Blob URLs created for prefetched / cached tracks are owned by the audio
+  // elements while they are mounted; release them on unmount.
   useEffect(() => {
-    const audio = audioRef.current
+    // Copy the nodes now: by cleanup time the refs are already detached.
+    const elements = [audioARef.current, audioBRef.current]
     return () => {
-      const src = audio?.getAttribute('src')
-      if (src?.startsWith('blob:')) URL.revokeObjectURL(src)
+      for (const element of elements) {
+        const src = element?.getAttribute('src')
+        if (src?.startsWith('blob:')) URL.revokeObjectURL(src)
+      }
     }
   }, [])
 
   useEffect(() => {
-    setAudioVolume(volume)
+    const gain = Math.min(1, Math.max(0, volume / 100))
+    masterVolumeRef.current = gain
+    // A running fade owns both element gains.
+    if (fadeFrameRef.current) return
+    const current = audioRef.current
+    applyGain(current, 1)
+    const other = current === audioARef.current ? audioBRef.current : audioARef.current
+    // Keep the waiting incoming track silent until its fade starts.
+    if (other && other !== incomingRef.current) applyGain(other, 1)
   }, [volume])
 
   // Every play request (previous / next / pick a song / replay) bumps
-  // playToken. Reset the old audio and progress before the next track loads.
+  // playToken. Instead of silencing the old track right away, keep it playing
+  // while the next source resolves, then crossfade once the new one is ready.
   useEffect(() => {
     if (lastPlayTokenRef.current === playToken) return
     lastPlayTokenRef.current = playToken
     trialNotifiedRef.current = false
+    const restartingSameSong = lastSongIdRef.current === currentSong?.id
+    lastSongIdRef.current = currentSong?.id ?? null
     const audio = audioRef.current
     if (!audio) return
-    switchingRef.current = true
-    audio.pause()
-    audio.currentTime = 0
+
     setCurrentTime(0)
     setBuffered(0)
     setAudioReady(false)
 
-    // Replaying the same source needs a manual restart; a different source
-    // is loaded by the url effect below.
-    if (audioUrl && audio.getAttribute('src') === audioUrl) {
+    // A fade left over from the previous transition no longer applies.
+    const staleOutgoing = outgoingRef.current
+    if (staleOutgoing && staleOutgoing !== audio) {
+      clearFade()
+      settleElement(staleOutgoing)
+      outgoingRef.current = null
+    }
+
+    // Replaying the same track restarts it in place; fading a song into itself
+    // would just smear the two copies together.
+    if (restartingSameSong || (audioUrl && audio.getAttribute('src') === audioUrl)) {
+      crossfadePendingRef.current = false
+      clearCrossfadeTimer()
+      outgoingRef.current = null
+      audio.pause()
+      audio.currentTime = 0
       switchingRef.current = false
       if (usePlayerStore.getState().playing) {
         void audio.play().catch(() => undefined)
       }
+      return
     }
-  }, [playToken, audioUrl, setAudioReady, setBuffered, setCurrentTime])
+
+    const state = usePlayerStore.getState()
+    const audible = !audio.paused && audio.readyState >= 2 && audio.currentTime > 0.25
+    if (!state.playing || !audible) {
+      crossfadePendingRef.current = false
+      clearCrossfadeTimer()
+      outgoingRef.current = null
+      switchingRef.current = true
+      audio.pause()
+      audio.currentTime = 0
+      return
+    }
+
+    // The old track keeps playing (silently for the UI) until the new source
+    // is playable, so the hand-off has no audible gap.
+    switchingRef.current = true
+    crossfadePendingRef.current = true
+    outgoingRef.current = audio
+    clearCrossfadeTimer()
+    crossfadeTimerRef.current = window.setTimeout(() => {
+      crossfadeTimerRef.current = null
+      if (!crossfadePendingRef.current) return
+      crossfadePendingRef.current = false
+      const incoming = incomingRef.current
+      incomingRef.current = null
+      outgoingRef.current = null
+      audio.pause()
+      audio.currentTime = 0
+      if (incoming && incoming.getAttribute('src')) {
+        // Promote the next element without a fade; it starts as soon as it can.
+        audioRef.current = incoming
+        incoming.volume = masterVolumeRef.current
+        registerAudio(incoming)
+      }
+      switchingRef.current = false
+    }, CROSSFADE_MAX_WAIT)
+  }, [playToken, audioUrl, currentSong?.id, setAudioReady, setBuffered, setCurrentTime])
 
   // A pending seek belongs to the track it was made on.
   useEffect(() => {
@@ -151,38 +361,84 @@ export function PlayerBar() {
   }, [currentSong?.id])
 
   useEffect(() => {
-    const audio = audioRef.current
-    if (!audio || !audioUrl) return
-    if (audio.getAttribute('src') !== audioUrl) {
-      const previousSrc = audio.getAttribute('src')
+    if (!audioUrl) return
+    const current = audioRef.current
+    if (!current) return
+    if (current.getAttribute('src') === audioUrl) {
+      if (usePlayerStore.getState().playing && current.paused) {
+        void current.play().catch(() => undefined)
+      }
+      return
+    }
+
+    let crossfade = crossfadePendingRef.current
+    let target = current
+    if (crossfade) {
+      const idle = current === audioARef.current ? audioBRef.current : audioARef.current
+      if (idle) target = idle
+      else crossfade = false
+    }
+
+    if (crossfade) {
+      incomingRef.current = target
+      target.volume = 0
+      // Lyrics and seek helpers follow the incoming track as soon as it owns
+      // the new url, even while the previous element is still audible.
+      registerAudio(target)
+    } else {
+      // A source swap replaces the active element; any fade in flight is done.
+      clearFade()
+      const fading = outgoingRef.current
+      outgoingRef.current = null
+      if (fading && fading !== target) settleElement(fading)
+      incomingRef.current = null
+      target.volume = masterVolumeRef.current
+      registerAudio(target)
       switchingRef.current = true
-      audio.pause()
-      audio.currentTime = 0
       setCurrentTime(0)
       setBuffered(0)
       setAudioReady(false)
       setMediaDuration(0)
-      audio.src = audioUrl
-      audio.load()
-      retriedRef.current = null
-      if (previousSrc?.startsWith('blob:')) URL.revokeObjectURL(previousSrc)
     }
+
+    target.pause()
+    target.currentTime = 0
+    const previousSrc = target.getAttribute('src')
+    target.src = audioUrl
+    target.load()
+    retriedRef.current = null
+    if (previousSrc?.startsWith('blob:')) URL.revokeObjectURL(previousSrc)
+
     if (usePlayerStore.getState().playing) {
-      void audio.play().catch(() => undefined)
+      void target.play().catch(() => undefined)
     }
   }, [audioUrl, setAudioReady, setBuffered, setCurrentTime])
 
   useEffect(() => {
-    const audio = audioRef.current
-    if (!audio) return
     if (playing) {
-      const currentSrc = audio.getAttribute('src')
-      if (sourceReady && audioUrl && currentSrc === audioUrl && audio.paused) {
-        void audio.play().catch(() => undefined)
+      if (!sourceReady || !audioUrl) return
+      const incoming = incomingRef.current
+      const target =
+        incoming && incoming.getAttribute('src') === audioUrl ? incoming : audioRef.current
+      if (target && target.getAttribute('src') === audioUrl && target.paused) {
+        void target.play().catch(() => undefined)
       }
-    } else if (!audio.paused) {
-      audio.pause()
+      return
     }
+
+    // Pausing must stop both elements, including a running crossfade.
+    clearFade()
+    clearFadeEndTimer()
+    const outgoing = outgoingRef.current
+    outgoingRef.current = null
+    if (outgoing) settleElement(outgoing)
+    const current = audioRef.current
+    if (current) {
+      // A fade interrupted mid-way left the gain below the master volume.
+      current.volume = masterVolumeRef.current
+      current.pause()
+    }
+    incomingRef.current?.pause()
   }, [playing, sourceReady, audioUrl])
 
   useEffect(() => {
@@ -284,17 +540,24 @@ export function PlayerBar() {
   const displayBuffered = sourceMatches ? buffered : 0
 
   const handleSeek = (value: number) => {
-    const audio = audioRef.current
+    const incoming = incomingRef.current
+    // While a crossfade is pending the new url already belongs to the incoming
+    // element, so seeking must target it instead of the audible old one.
+    const audio =
+      incoming && audioUrl && incoming.getAttribute('src') === audioUrl
+        ? incoming
+        : audioRef.current
     if (!audio || !duration) return
     const mediaReady =
       audio.readyState >= 1 && Number.isFinite(audio.duration) && audio.duration > 0
-    if (!sourceMatches || !mediaReady) {
+    const matchesSource = Boolean(audioUrl) && audio.getAttribute('src') === audioUrl
+    if (!matchesSource || !mediaReady) {
       // A restored queue has no media attached: assigning currentTime before
       // `loadedmetadata` is ignored by the element, so the thumb used to snap
       // back to 0. Remember the target and apply it once metadata arrives.
       pendingSeekRef.current = { percent: value, songId: currentSong.id }
       setPendingSeek(value)
-      if (!sourceMatches && !audioUrl && !seekLoadingRef.current) {
+      if (!matchesSource && !audioUrl && !seekLoadingRef.current) {
         seekLoadingRef.current = true
         void refreshCurrentUrl().then((ok) => {
           seekLoadingRef.current = false
@@ -325,6 +588,12 @@ export function PlayerBar() {
   const qualityLabel =
     PLAY_QUALITY_OPTIONS.find((option) => option.value === playLevel)?.label ?? playLevel
 
+  const handleToggleDesktopLyrics = () => {
+    void setDesktopLyricsVisible('toggle')
+      .then(({ visible }) => setLyricsWindowOpen(visible))
+      .catch(() => toast.warning('桌面歌词窗口暂不可用'))
+  }
+
   const handleQualityChange = (level: PlayLevel) => {
     setQualityOpen(false)
     if (level === playLevel) return
@@ -344,6 +613,140 @@ export function PlayerBar() {
     ) : (
       <Repeat className="h-[15px] w-[15px]" />
     )
+
+  // Both media elements share these handlers; events from the element that is
+  // neither current nor the incoming crossfade target are ignored.
+  const audioProps = {
+    preload: 'auto' as const,
+    onLoadedMetadata: (event: SyntheticEvent<HTMLAudioElement>) => {
+      const audio = event.currentTarget
+      if (audio !== audioRef.current && audio !== incomingRef.current) return
+      if (!audioUrl || audio.getAttribute('src') !== audioUrl) return
+      const value = audio.duration
+      setMediaDuration(Number.isFinite(value) && value > 0 ? value * 1000 : 0)
+      // Apply a seek that was requested before the media became seekable
+      // (e.g. clicking the bar right after a refresh).
+      const pending = pendingSeekRef.current
+      if (!pending) return
+      pendingSeekRef.current = null
+      if (pending.songId !== currentSong.id) {
+        setPendingSeek(null)
+        return
+      }
+      const mediaSeconds = Number.isFinite(value) && value > 0 ? value : duration / 1000
+      const seconds = (pending.percent / 100) * mediaSeconds
+      audio.currentTime = seconds
+      if (audio === audioRef.current) setCurrentTime(seconds)
+      setPendingSeek(null)
+    },
+    onLoadedData: (event: SyntheticEvent<HTMLAudioElement>) => {
+      const audio = event.currentTarget
+      if (audio !== audioRef.current && audio !== incomingRef.current) return
+      if (!audioUrl || audio.getAttribute('src') !== audioUrl) return
+      setAudioReady(true)
+      if (audio === audioRef.current) {
+        switchingRef.current = false
+        prefetchNext()
+      }
+    },
+    onCanPlay: (event: SyntheticEvent<HTMLAudioElement>) => {
+      const audio = event.currentTarget
+      if (audio !== audioRef.current && audio !== incomingRef.current) return
+      if (!audioUrl || audio.getAttribute('src') !== audioUrl) return
+      setAudioReady(true)
+      if (audio === audioRef.current) {
+        switchingRef.current = false
+        if (usePlayerStore.getState().playing && audio.paused) {
+          void audio.play().catch(() => undefined)
+        }
+        return
+      }
+      maybeStartCrossfade(audio)
+    },
+    onPlaying: (event: SyntheticEvent<HTMLAudioElement>) => {
+      const audio = event.currentTarget
+      if (audio !== audioRef.current && audio !== incomingRef.current) return
+      if (!audioUrl || audio.getAttribute('src') !== audioUrl) return
+      if (audio === incomingRef.current) {
+        maybeStartCrossfade(audio)
+        return
+      }
+      switchingRef.current = false
+      setAudioReady(true)
+    },
+    onPause: (event: SyntheticEvent<HTMLAudioElement>) => {
+      // A user-initiated pause must keep the source ready. Clearing it here
+      // made the next resume look like buffering for a few frames, which
+      // flashed the loading state and shifted the now-playing layout.
+      if (event.currentTarget !== audioRef.current) return
+      if (usePlayerStore.getState().playing) setAudioReady(false)
+    },
+    onWaiting: (event: SyntheticEvent<HTMLAudioElement>) => {
+      if (event.currentTarget !== audioRef.current) return
+      setAudioReady(false)
+    },
+    onStalled: (event: SyntheticEvent<HTMLAudioElement>) => {
+      if (event.currentTarget !== audioRef.current) return
+      setAudioReady(false)
+    },
+    onTimeUpdate: (event: SyntheticEvent<HTMLAudioElement>) => {
+      const audio = event.currentTarget
+      if (audio !== audioRef.current) return
+      if (switchingRef.current) return
+      if (audioUrl && audio.getAttribute('src') !== audioUrl) return
+      setCurrentTime(audio.currentTime)
+      updateBuffered()
+
+      const trialEnd = currentSong.trialEnd
+      if (trialEnd && trialEnd > 0 && audio.currentTime >= trialEnd) {
+        audio.pause()
+        usePlayerStore.getState().setPlaying(false)
+        if (!trialNotifiedRef.current) {
+          trialNotifiedRef.current = true
+          toast.warning('试听结束，登录或开通会员可播放完整版')
+        }
+      }
+    },
+    onProgress: (event: SyntheticEvent<HTMLAudioElement>) => {
+      if (event.currentTarget === audioRef.current) updateBuffered()
+    },
+    onEnded: (event: SyntheticEvent<HTMLAudioElement>) => {
+      if (event.currentTarget !== audioRef.current) return
+      // The old track ending while the next one is still resolving must not
+      // trigger another skip.
+      if (switchingRef.current) return
+      if (mode === 'singleLoop') {
+        const audio = event.currentTarget
+        setCurrentTime(0)
+        audio.currentTime = 0
+        void audio.play().catch(() => undefined)
+      } else {
+        void next()
+      }
+    },
+    onError: (event: SyntheticEvent<HTMLAudioElement>) => {
+      const audio = event.currentTarget
+      if (audio !== audioRef.current && audio !== incomingRef.current) return
+      setAudioReady(false)
+      if (!audioUrl) return
+      if (audio === incomingRef.current) {
+        // The transition source failed: drop the fade and let the recovery
+        // path replace the active element's source instead. The old track is
+        // still the active one and never enters the fade.
+        crossfadePendingRef.current = false
+        incomingRef.current = null
+        outgoingRef.current = null
+        clearCrossfadeTimer()
+        audio.pause()
+      }
+      if (retriedRef.current === currentSong.id) {
+        void next()
+        return
+      }
+      retriedRef.current = currentSong.id
+      void refreshCurrentUrl()
+    },
+  }
 
   return (
     <div
@@ -555,6 +958,26 @@ export function PlayerBar() {
           </button>
         ) : null}
 
+        {desktopShell ? (
+          <button
+            type="button"
+            aria-label={lyricsWindowOpen ? '关闭桌面歌词' : '开启桌面歌词'}
+            aria-pressed={lyricsWindowOpen}
+            title={
+              lyricsWindowOpen
+                ? '关闭桌面歌词（Ctrl+Shift+L）'
+                : '开启桌面歌词（Ctrl+Shift+L）'
+            }
+            onClick={handleToggleDesktopLyrics}
+            className={cn(
+              'pressable flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-black/5',
+              lyricsWindowOpen ? 'text-accent' : 'text-black/45 hover:text-black/75',
+            )}
+          >
+            <Subtitles className="h-[15px] w-[15px]" />
+          </button>
+        ) : null}
+
         <Popover open={qualityOpen} onOpenChange={setQualityOpen}>
           <PopoverTrigger asChild>
             <button
@@ -642,107 +1065,8 @@ export function PlayerBar() {
         </button>
       </div>
 
-      <audio
-        ref={audioRef}
-        preload="auto"
-        onLoadedMetadata={(event) => {
-          const audio = event.currentTarget
-          if (!audioUrl || audio.getAttribute('src') !== audioUrl) return
-          const value = audio.duration
-          setMediaDuration(Number.isFinite(value) && value > 0 ? value * 1000 : 0)
-          // Apply a seek that was requested before the media became seekable
-          // (e.g. clicking the bar right after a refresh).
-          const pending = pendingSeekRef.current
-          if (!pending) return
-          pendingSeekRef.current = null
-          if (pending.songId !== currentSong.id) {
-            setPendingSeek(null)
-            return
-          }
-          const mediaSeconds = Number.isFinite(value) && value > 0 ? value : duration / 1000
-          const seconds = (pending.percent / 100) * mediaSeconds
-          audio.currentTime = seconds
-          setCurrentTime(seconds)
-          setPendingSeek(null)
-        }}
-        onLoadedData={() => {
-          const audio = audioRef.current
-          if (audio && audioUrl && audio.getAttribute('src') === audioUrl) {
-            switchingRef.current = false
-            setAudioReady(true)
-            prefetchNext()
-          }
-        }}
-        onCanPlay={() => {
-          const audio = audioRef.current
-          if (!audio || !audioUrl) return
-          if (audio.getAttribute('src') !== audioUrl) return
-          switchingRef.current = false
-          setAudioReady(true)
-          if (usePlayerStore.getState().playing && audio.paused) {
-            void audio.play().catch(() => undefined)
-          }
-        }}
-        onPlaying={() => {
-          const audio = audioRef.current
-          if (audio && audioUrl && audio.getAttribute('src') === audioUrl) {
-            switchingRef.current = false
-            setAudioReady(true)
-          }
-        }}
-        onPause={() => {
-          // A user-initiated pause must keep the source ready. Clearing it here
-          // made the next resume look like buffering for a few frames, which
-          // flashed the loading state and shifted the now-playing layout.
-          if (usePlayerStore.getState().playing) setAudioReady(false)
-        }}
-        onWaiting={() => {
-          setAudioReady(false)
-        }}
-        onStalled={() => {
-          setAudioReady(false)
-        }}
-        onTimeUpdate={(event) => {
-          const audio = event.currentTarget
-          if (switchingRef.current) return
-          if (audioUrl && audio.getAttribute('src') !== audioUrl) return
-          setCurrentTime(audio.currentTime)
-          updateBuffered()
-
-          const trialEnd = currentSong.trialEnd
-          if (trialEnd && trialEnd > 0 && audio.currentTime >= trialEnd) {
-            audio.pause()
-            usePlayerStore.getState().setPlaying(false)
-            if (!trialNotifiedRef.current) {
-              trialNotifiedRef.current = true
-              toast.warning('试听结束，登录或开通会员可播放完整版')
-            }
-          }
-        }}
-        onProgress={updateBuffered}
-        onEnded={() => {
-          if (mode === 'singleLoop') {
-            const audio = audioRef.current
-            if (audio) {
-              setCurrentTime(0)
-              audio.currentTime = 0
-              void audio.play().catch(() => undefined)
-            }
-          } else {
-            void next()
-          }
-        }}
-        onError={() => {
-          setAudioReady(false)
-          if (!audioUrl) return
-          if (retriedRef.current === currentSong.id) {
-            void next()
-            return
-          }
-          retriedRef.current = currentSong.id
-          void refreshCurrentUrl()
-        }}
-      />
+      <audio ref={audioARef} className="hidden" {...audioProps} />
+      <audio ref={audioBRef} className="hidden" {...audioProps} />
     </div>
   )
 }

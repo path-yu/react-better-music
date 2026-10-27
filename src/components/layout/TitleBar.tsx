@@ -43,7 +43,7 @@ export function TitleBar() {
         <Music2 className="h-3.5 w-3.5 text-accent" strokeWidth={2.2} />
         声屿
         {subtitle && subtitle !== '发现音乐' ? (
-          <span className="font-normal text-black/35">— {subtitle}</span>
+          <span className="font-normal opacity-70">— {subtitle}</span>
         ) : null}
       </div>
       <div className="ml-auto flex items-center gap-1.5 text-[11px] text-black/30">
@@ -117,7 +117,7 @@ function DesktopTitleBar({ subtitle }: { subtitle?: string }) {
         <Music2 className="h-3.5 w-3.5 text-accent" strokeWidth={2.2} />
         声屿
         {subtitle && subtitle !== '发现音乐' ? (
-          <span className="font-normal text-black/35">— {subtitle}</span>
+          <span className="font-normal opacity-70">— {subtitle}</span>
         ) : null}
       </div>
 

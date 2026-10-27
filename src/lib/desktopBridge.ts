@@ -62,3 +62,15 @@ export async function setDevToolsPolicy(disabled: boolean) {
     { method: 'POST' },
   )
 }
+
+/** Whether the always-on-top desktop lyrics window is currently visible. */
+export async function getDesktopLyricsVisible() {
+  return requestJson<{ visible: boolean }>('/lyrics-window')
+}
+
+/** Show, hide or toggle the always-on-top desktop lyrics window. */
+export async function setDesktopLyricsVisible(action: 'show' | 'hide' | 'toggle' = 'toggle') {
+  return requestJson<{ visible: boolean }>(`/lyrics-window?action=${action}`, {
+    method: 'POST',
+  })
+}

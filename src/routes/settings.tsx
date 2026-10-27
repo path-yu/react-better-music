@@ -337,6 +337,9 @@ function SettingsPage() {
                 aria-label="禁用开发者工具"
               />
             </div>
+            <p className="mt-4 rounded-[10px] bg-black/4 px-3 py-2 text-[11px] leading-relaxed text-black/40">
+              桌面歌词：Ctrl / ⌘ + Shift + L 显示或隐藏，窗口始终置顶，可拖动到任意位置。
+            </p>
           </section>
         ) : null}
 

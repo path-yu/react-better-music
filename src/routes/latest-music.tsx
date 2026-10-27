@@ -53,7 +53,7 @@ function LatestMusicPage() {
         <div>
           <h1 className="headline-lg flex items-center gap-2">
             <Music2 className="h-5 w-5 text-accent" />
-            最新音乐
+            最新音乐32
           </h1>
           <p className="mt-1.5 text-[12px] text-black/35">每日更新的华语与全球新歌速递</p>
         </div>
