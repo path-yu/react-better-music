@@ -320,6 +320,36 @@ app.on('close', (payload) => {
  * (`/lyrics`); the main renderer pushes lyric/progress snapshots to
  * `/lyrics-state`, and the page polls them back.
  */
+/**
+ * Auxiliary windows must not create taskbar buttons or Alt-Tab entries.
+ * Electrobun exposes no skipTaskbar option, so flip WS_EX_TOOLWINDOW on the
+ * native HWND through a tiny PowerShell helper (same pattern as the tray).
+ */
+function hideAuxiliaryFromTaskbar(title: string) {
+  if (process.platform !== 'win32') return
+  const script = join(import.meta.dir, '..', 'hide-taskbar.ps1')
+  if (!existsSync(script)) return
+  try {
+    Bun.spawn(
+      [
+        'powershell.exe',
+        '-NoProfile',
+        '-NonInteractive',
+        '-WindowStyle',
+        'Hidden',
+        '-ExecutionPolicy',
+        'Bypass',
+        '-File',
+        script,
+        title,
+      ],
+      { stdout: 'ignore', stderr: 'ignore', windowsHide: true },
+    )
+  } catch (error) {
+    console.warn('[desktop] failed to hide window from taskbar:', error)
+  }
+}
+
 const LYRICS_SHORTCUT = 'CommandOrControl+Shift+L'
 const LYRICS_WINDOW_FILE = join(APP_DATA_DIR, 'lyrics-window.json')
 const LYRICS_WINDOW_SIZE = { width: 960, height: 200 }
@@ -391,6 +421,7 @@ function createLyricsWindow() {
     transparent: true,
     activate: false,
   })
+  hideAuxiliaryFromTaskbar('桌面歌词')
   win.setAlwaysOnTop(true)
   win.setVisibleOnAllWorkspaces(true)
   // `move` fires continuously while dragging; only persist the final position.
@@ -472,6 +503,7 @@ function createMiniWindow() {
     transparent: true,
     activate: false,
   })
+  hideAuxiliaryFromTaskbar('迷你播放器')
   win.setAlwaysOnTop(true)
   win.setVisibleOnAllWorkspaces(true)
   return win

@@ -25,6 +25,7 @@ export default {
       'assets/app-icon.ico': 'app-icon.ico',
       'assets/tray-icon.png': 'tray-icon.png',
       'assets/tray.ps1': 'tray.ps1',
+      'assets/hide-taskbar.ps1': 'hide-taskbar.ps1',
     },
     watchIgnore: ['dist-electrobun/**'],
     mac: {
