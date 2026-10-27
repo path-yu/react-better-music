@@ -101,17 +101,28 @@ export const MINI_PLAYER_HTML = `<!doctype html>
   .controls button.primary:hover {
     background: #2b95ff;
   }
-  .bar {
+  /* Tall invisible hit area: the visible track is only 2px. */
+  .seek {
     position: absolute;
-    left: 12px;
-    right: 12px;
-    bottom: 5px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    height: 14px;
+    padding: 0 12px;
+    cursor: pointer;
+    -webkit-app-region: no-drag;
+    app-region: no-drag;
+  }
+  .track {
+    flex: 1;
     height: 2px;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.12);
     overflow: hidden;
   }
-  .bar span {
+  .track span {
     display: block;
     width: 0;
     height: 100%;
@@ -155,7 +166,9 @@ export const MINI_PLAYER_HTML = `<!doctype html>
       </div>
     </div>
     <button class="close" id="close" type="button" title="关闭迷你播放器">×</button>
-    <div class="bar"><span id="progress"></span></div>
+    <div class="seek" id="seek" title="点击跳转进度">
+      <div class="track"><span id="progress"></span></div>
+    </div>
   </div>
   <script>
     (function () {
@@ -165,6 +178,9 @@ export const MINI_PLAYER_HTML = `<!doctype html>
       var artist = document.getElementById('artist');
       var play = document.getElementById('play');
       var progress = document.getElementById('progress');
+      var seek = document.getElementById('seek');
+      var track = seek.querySelector('.track');
+      var current = null;
 
       function headers() {
         return { 'x-bridge-token': token };
@@ -172,6 +188,7 @@ export const MINI_PLAYER_HTML = `<!doctype html>
 
       function render(state) {
         if (!state) return;
+        current = state;
         title.textContent = state.title || '等待播放';
         artist.textContent = state.artists || '声屿';
         play.textContent = state.playing ? '❚❚' : '▶';
@@ -183,6 +200,19 @@ export const MINI_PLAYER_HTML = `<!doctype html>
         progress.style.width =
           duration > 0 ? Math.min(100, Math.max(0, (time / duration) * 100)) + '%' : '0%';
       }
+
+      seek.addEventListener('click', function (event) {
+        if (!current || !current.duration) return;
+        var rect = track.getBoundingClientRect();
+        var ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+        var seconds = (current.duration / 1000) * ratio;
+        // Move the thumb immediately; the next poll confirms the real position.
+        progress.style.width = ratio * 100 + '%';
+        fetch('/command?action=seek&value=' + encodeURIComponent(seconds.toFixed(2)), {
+          method: 'POST',
+          headers: headers(),
+        }).catch(function () {});
+      });
 
       function poll() {
         fetch('/lyrics-state', { headers: headers() })

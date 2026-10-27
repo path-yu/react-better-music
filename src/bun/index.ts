@@ -524,22 +524,28 @@ function applyMiniAction(action: string | null) {
  * injecting a call into the main window; the renderer exposes
  * `window.__qimiaoDesktopCommand` from lib/desktopCommands.ts.
  */
-function sendRendererCommand(action: string) {
+function sendRendererCommand(action: string, value?: number) {
+  const argument =
+    typeof value === 'number' && Number.isFinite(value) ? `,${value}` : ''
   try {
     mainWindow?.webview.executeJavascript(
-      `window.__qimiaoDesktopCommand&&window.__qimiaoDesktopCommand(${JSON.stringify(action)})`,
+      `window.__qimiaoDesktopCommand&&window.__qimiaoDesktopCommand(${JSON.stringify(action)}${argument})`,
     )
   } catch (error) {
     console.warn(`[desktop] failed to send command "${action}":`, error)
   }
 }
 
-function applyCommand(action: string | null) {
+function applyCommand(action: string | null, value?: number) {
   if (!action) return false
   if (action === 'lyrics') return applyLyricsAction('toggle')
   if (action === 'mini') return applyMiniAction('toggle')
   if (action === 'show-main') {
     showMainWindow()
+    return true
+  }
+  if (action === 'seek') {
+    sendRendererCommand(action, value)
     return true
   }
   if (
@@ -780,8 +786,10 @@ try {
           )
         }
         if (url.pathname === '/command' && request.method === 'POST') {
+          const rawValue = url.searchParams.get('value')
+          const value = rawValue === null ? undefined : Number(rawValue)
           return Response.json(
-            { ok: applyCommand(url.searchParams.get('action')) },
+            { ok: applyCommand(url.searchParams.get('action'), value) },
             { headers },
           )
         }

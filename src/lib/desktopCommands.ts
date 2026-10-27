@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { isDesktopApp } from './desktopBridge'
+import { seekAudio } from './audio'
 import { usePlayerStore } from '../store/player'
 import { useUserStore } from '../store/user'
 import { toast } from './toast'
@@ -18,7 +19,7 @@ export type DesktopCommand =
   | 'volume-down'
 
 type CommandWindow = Window & {
-  __qimiaoDesktopCommand?: (command: string) => void
+  __qimiaoDesktopCommand?: (command: string, value?: number) => void
 }
 
 export function useDesktopCommands() {
@@ -26,9 +27,12 @@ export function useDesktopCommands() {
     if (!isDesktopApp()) return
     const target = window as CommandWindow
 
-    const handle = (command: string) => {
+    const handle = (command: string, value?: number) => {
       const player = usePlayerStore.getState()
       switch (command) {
+        case 'seek':
+          if (typeof value === 'number' && Number.isFinite(value)) seekAudio(value)
+          break
         case 'play-pause':
           void player.togglePlay()
           break
