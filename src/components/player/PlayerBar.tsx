@@ -39,6 +39,10 @@ export function PlayerBar() {
   const lastPlayTokenRef = useRef<number | null>(null)
   const switchingRef = useRef(false)
   const trialNotifiedRef = useRef(false)
+  // A seek that arrives before the media is seekable (restored queue after a
+  // refresh, or metadata still loading) is applied once metadata is available.
+  const pendingSeekRef = useRef<{ percent: number; songId: number } | null>(null)
+  const seekLoadingRef = useRef(false)
 
   const queue = usePlayerStore((state) => state.queue)
   const currentIndex = usePlayerStore((state) => state.currentIndex)
@@ -79,6 +83,9 @@ export function PlayerBar() {
   // Real duration reported by the media element; trial clips are shorter than
   // the catalogue duration in song.dt.
   const [mediaDuration, setMediaDuration] = useState(0)
+  // Keeps the thumb at the clicked position while a deferred seek waits for
+  // metadata, instead of snapping back to the audio element's current 0.
+  const [pendingSeek, setPendingSeek] = useState<number | null>(null)
 
   const likedIds = useUserStore((state) => state.likedIds)
   const likeSong = useUserStore((state) => state.likeSong)
@@ -127,6 +134,12 @@ export function PlayerBar() {
       }
     }
   }, [playToken, audioUrl, setAudioReady, setBuffered, setCurrentTime])
+
+  // A pending seek belongs to the track it was made on.
+  useEffect(() => {
+    pendingSeekRef.current = null
+    setPendingSeek(null)
+  }, [currentSong?.id])
 
   useEffect(() => {
     const audio = audioRef.current
@@ -253,15 +266,39 @@ export function PlayerBar() {
   const buffering = playing && sourceReady && !audioReady
   const busy = loadingSource || buffering
   const percent = duration ? Math.min(100, (currentTime * 1000 * 100) / duration) : 0
+  const pendingTime = pendingSeek !== null ? (pendingSeek / 100) * (duration / 1000) : null
   // While the audio element still points at the previous track, force the
   // progress UI to zero so stale timeupdate events can never leak through.
-  const displayTime = sourceMatches ? currentTime : 0
-  const displayPercent = sourceMatches ? percent : 0
+  // A deferred seek keeps showing its target instead of snapping back to 0.
+  const displayTime = pendingTime ?? (sourceMatches ? currentTime : 0)
+  const displayPercent = pendingSeek ?? (sourceMatches ? percent : 0)
   const displayBuffered = sourceMatches ? buffered : 0
 
   const handleSeek = (value: number) => {
     const audio = audioRef.current
-    if (!audio || !duration || !sourceMatches) return
+    if (!audio || !duration) return
+    const mediaReady =
+      audio.readyState >= 1 && Number.isFinite(audio.duration) && audio.duration > 0
+    if (!sourceMatches || !mediaReady) {
+      // A restored queue has no media attached: assigning currentTime before
+      // `loadedmetadata` is ignored by the element, so the thumb used to snap
+      // back to 0. Remember the target and apply it once metadata arrives.
+      pendingSeekRef.current = { percent: value, songId: currentSong.id }
+      setPendingSeek(value)
+      if (!sourceMatches && !audioUrl && !seekLoadingRef.current) {
+        seekLoadingRef.current = true
+        void refreshCurrentUrl().then((ok) => {
+          seekLoadingRef.current = false
+          if (!ok) {
+            pendingSeekRef.current = null
+            setPendingSeek(null)
+          }
+        })
+      }
+      return
+    }
+    pendingSeekRef.current = null
+    setPendingSeek(null)
     const seconds = (value / 100) * (duration / 1000)
     audio.currentTime = seconds
     setCurrentTime(seconds)
@@ -585,6 +622,20 @@ export function PlayerBar() {
           if (!audioUrl || audio.getAttribute('src') !== audioUrl) return
           const value = audio.duration
           setMediaDuration(Number.isFinite(value) && value > 0 ? value * 1000 : 0)
+          // Apply a seek that was requested before the media became seekable
+          // (e.g. clicking the bar right after a refresh).
+          const pending = pendingSeekRef.current
+          if (!pending) return
+          pendingSeekRef.current = null
+          if (pending.songId !== currentSong.id) {
+            setPendingSeek(null)
+            return
+          }
+          const mediaSeconds = Number.isFinite(value) && value > 0 ? value : duration / 1000
+          const seconds = (pending.percent / 100) * mediaSeconds
+          audio.currentTime = seconds
+          setCurrentTime(seconds)
+          setPendingSeek(null)
         }}
         onLoadedData={() => {
           const audio = audioRef.current
