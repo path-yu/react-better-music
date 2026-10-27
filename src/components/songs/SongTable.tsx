@@ -9,6 +9,7 @@ import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
 import { formatDuration } from '../../lib/format'
 import { cn } from '../../lib/format'
+import { hasNoSource } from '../../lib/songs'
 import type { Song } from '../../types'
 
 interface SongTableProps {
@@ -122,7 +123,7 @@ const SongRow = memo(function SongRow({
                 VIP
               </span>
             ) : null}
-            {song.fee === 0 ? (
+            {hasNoSource(song) ? (
               <span className="shrink-0 rounded-[6px] bg-black/6 px-1 text-[11px] text-black/35">
                 无音源
               </span>

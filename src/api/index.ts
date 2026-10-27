@@ -16,7 +16,13 @@ import type {
   PlayLevel,
 } from '../types'
 import { get, invalidateApiCache, uploadFile } from '../lib/http'
-import { normalizeMv, normalizePlaylist, normalizeSongs, type RawSong } from '../lib/songs'
+import {
+  hasNoSource,
+  normalizeMv,
+  normalizePlaylist,
+  normalizeSongs,
+  type RawSong,
+} from '../lib/songs'
 
 /** The CDN sometimes hands out http media URLs, which the WebView rejects. */
 function secureMediaUrl(url: string | null | undefined) {
@@ -503,7 +509,7 @@ export async function fetchIntelligenceList(params: {
     (res.data ?? [])
       .map((item) => item.songInfo)
       .filter((song): song is RawSong => Boolean(song)),
-  ).filter((song) => song.fee !== 0)
+  ).filter((song) => !hasNoSource(song))
 }
 
 export async function fetchPersonalFm(limit = 10) {
@@ -511,7 +517,7 @@ export async function fetchPersonalFm(limit = 10) {
     limit,
     timestamp: Date.now(),
   })
-  return normalizeSongs(res.data).filter((song) => song.fee !== 0)
+  return normalizeSongs(res.data).filter((song) => !hasNoSource(song))
 }
 
 /* ---------------------------------- user --------------------------------- */

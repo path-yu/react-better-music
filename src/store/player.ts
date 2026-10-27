@@ -9,6 +9,7 @@ import {
   fetchSongUrlInfo,
 } from '../api'
 import { buildLyricLines, isEmptyLyric, type LyricLine } from '../lib/lyric'
+import { hasNoSource } from '../lib/songs'
 import { apiUrl } from '../lib/http'
 import { getAudio } from '../lib/audio'
 import { getCachedAudio, hasCachedAudio } from '../lib/songCache'
@@ -80,9 +81,9 @@ type SongSource = {
 }
 
 /**
- * Resolve a playable media URL. `fee === 0` is the app's "no official source"
- * state, so those tracks fall back to the local UnblockNeteaseMusic matcher;
- * everything else keeps the normal official-source behaviour.
+ * Resolve a playable media URL. Rows the UI tags "无音源" (`hasNoSource`) fall
+ * back to the local UnblockNeteaseMusic matcher; everything else keeps the
+ * normal official-source behaviour.
  */
 async function resolveSongSource(song: Song): Promise<SongSource> {
   try {
@@ -90,9 +91,9 @@ async function resolveSongSource(song: Song): Promise<SongSource> {
     if (info.url) return { ...info, unblocked: false }
   } catch (error) {
     // The official lookup can fail outright for gray tracks; keep going.
-    if (song.fee !== 0) throw error
+    if (!hasNoSource(song)) throw error
   }
-  if (song.fee !== 0) return { url: null, trialEnd: null, unblocked: false }
+  if (!hasNoSource(song)) return { url: null, trialEnd: null, unblocked: false }
   try {
     const matched = await fetchMatchedSongUrl(song.id)
     if (matched.url) return { url: matched.url, trialEnd: null, unblocked: true }
@@ -268,7 +269,7 @@ export const usePlayerStore = create<PlayerState>()(
         const resolves = neighbors.map(async ({ index: neighborIndex, song }) => {
           // Gray tracks are matched at play time: prefetching would need a
           // third-party download and would skip the "matched source" notice.
-          if (song.fee === 0) return null
+          if (hasNoSource(song)) return null
           if (await hasCachedAudio(song.id)) return null
           let url = hasFreshUrl(song) ? (song.url ?? null) : null
           let trialEnd = song.trialEnd ?? null

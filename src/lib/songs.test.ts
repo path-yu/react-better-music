@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Mv, Playlist } from '../types'
 import {
+  hasNoSource,
   isPlayable,
   normalizeMv,
   normalizePlaylist,
@@ -118,5 +119,13 @@ describe('isPlayable', () => {
     expect(isPlayable(normalizeSong({ id: 1, name: 'a', fee: 0 }))).toBe(false)
     expect(isPlayable(normalizeSong({ id: 1, name: 'a', fee: 1 }))).toBe(true)
     expect(isPlayable(normalizeSong({ id: 1, name: 'a' }))).toBe(true)
+  })
+})
+
+describe('hasNoSource', () => {
+  it('matches the rows the UI tags as 无音源', () => {
+    expect(hasNoSource({ fee: 0 })).toBe(true)
+    expect(hasNoSource({ fee: 1 })).toBe(false)
+    expect(hasNoSource({})).toBe(false)
   })
 })

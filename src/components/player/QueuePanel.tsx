@@ -6,6 +6,7 @@ import { ArtistLinks } from '../common/ArtistLinks'
 import { usePlayerStore } from '../../store/player'
 import { formatDuration } from '../../lib/format'
 import { cn } from '../../lib/format'
+import { hasNoSource } from '../../lib/songs'
 
 const ROW_HEIGHT = 56
 
@@ -161,7 +162,7 @@ export function QueuePanel() {
                             VIP
                           </span>
                         ) : null}
-                        {song.fee === 0 ? (
+                        {hasNoSource(song) ? (
                           <span className="shrink-0 rounded bg-black/6 px-1 text-[11px] text-black/35">
                             无音源
                           </span>

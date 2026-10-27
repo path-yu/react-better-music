@@ -63,6 +63,15 @@ export function normalizeMv(raw: Mv): Mv {
   }
 }
 
+/**
+ * A track the UI labels "无音源": NetEase reports `fee === 0` and hands out no
+ * media URL. The list tag and the `/song/url/match` gate share this predicate,
+ * so the two can never disagree about which rows are eligible for unblocking.
+ */
+export function hasNoSource(song: Pick<Song, 'fee'>) {
+  return song.fee === 0
+}
+
 export function isPlayable(song: Song) {
-  return song.fee !== 0
+  return !hasNoSource(song)
 }

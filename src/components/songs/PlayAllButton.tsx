@@ -2,6 +2,7 @@ import { ListPlus, Play } from 'lucide-react'
 import { Button } from '@pikoloo/darwin-ui'
 import { usePlayerStore } from '../../store/player'
 import { toast } from '../../lib/toast'
+import { hasNoSource } from '../../lib/songs'
 import type { Song } from '../../types'
 
 interface PlayAllButtonProps {
@@ -21,7 +22,7 @@ export function PlayAllButton({ songs, playlistId, label = '播放全部' }: Pla
     }
     // Prefer a track with an official source, but keep all-gray lists usable:
     // those rows are matched to another provider when played.
-    const firstPlayable = songs.findIndex((song) => song.fee !== 0)
+    const firstPlayable = songs.findIndex((song) => !hasNoSource(song))
     void initQueue(songs, firstPlayable >= 0 ? firstPlayable : 0, playlistId)
   }
 
