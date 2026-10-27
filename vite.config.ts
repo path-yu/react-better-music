@@ -16,10 +16,6 @@ const proxy = {
 
 export default defineConfig(({ mode }) => ({
   resolve: { tsconfigPaths: true },
-  optimizeDeps: {
-    // ffmpeg.wasm ships its own worker; pre-bundling breaks the worker URL.
-    exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util'],
-  },
   build: {
     // Keep desktop bundles separate so `desktop:build` never overwrites the web build.
     outDir: mode === 'electrobun' ? 'dist-electrobun' : 'dist',

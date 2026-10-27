@@ -1,4 +1,3 @@
-import type { FFmpeg } from '@ffmpeg/ffmpeg'
 import { apiUrl } from './http'
 import { isDesktopApp, saveDownloadFile } from './desktopDownloads'
 import { toast } from './toast'
@@ -36,18 +35,14 @@ const MAX_ENTRIES = 60
 const MAX_BYTES = 80 * 1024 * 1024
 
 let dbPromise: Promise<IDBDatabase> | null = null
-let ffmpegPromise: Promise<FfmpegBundle> | null = null
 let writeQueue: Promise<void> = Promise.resolve()
 const pending = new Map<number, Promise<void>>()
 let cacheWarningShown = false
 // Bumped by clearAudioCache so jobs queued before a clear cannot write back.
 let cacheEpoch = 0
 
-interface FfmpegBundle {
-  ffmpeg: FFmpeg
-  fetchFile: (file?: string | File | Blob) => Promise<Uint8Array>
-  logs: string[]
-}
+/** Opus is defined at 48 kHz; the browser resamples during decode. */
+const OPUS_SAMPLE_RATE = 48_000
 
 function openDb() {
   if (!dbPromise) {
@@ -166,31 +161,74 @@ async function trimCache(db: IDBDatabase) {
   await transactionDone(transaction)
 }
 
-async function loadFfmpeg(): Promise<FfmpegBundle> {
-  if (!ffmpegPromise) {
-    ffmpegPromise = (async () => {
-      const [{ FFmpeg }, { fetchFile }, core, wasm] = await Promise.all([
-        import('@ffmpeg/ffmpeg'),
-        import('@ffmpeg/util'),
-        import('@ffmpeg/core?url'),
-        import('@ffmpeg/core/wasm?url'),
-      ])
-      const ffmpeg = new FFmpeg()
-      const logs: string[] = []
-      ffmpeg.on('log', ({ message }) => {
-        logs.push(message)
-        if (logs.length > 60) logs.shift()
-      })
-      // Use the bundled core instead of the default CDN download so offline
-      // desktop builds can still transcode cached audio.
-      await ffmpeg.load({ coreURL: core.default, wasmURL: wasm.default })
-      return { ffmpeg, fetchFile, logs }
-    })().catch((error) => {
-      ffmpegPromise = null
-      throw error
-    })
+/** Decode compressed audio; mediabunny normalizes rate/channels for Opus. */
+async function decodeAudio(blob: Blob): Promise<AudioBuffer> {
+  const bytes = await blob.arrayBuffer()
+  // OfflineAudioContext has no hardware resources to release; GC owns it.
+  const context = new OfflineAudioContext(1, 1, OPUS_SAMPLE_RATE)
+  return context.decodeAudioData(bytes)
+}
+
+/**
+ * Encode a decoded track to Opus inside Ogg via mediabunny, which drives the
+ * platform WebCodecs encoder. Replaces the 30 MB ffmpeg.wasm core.
+ */
+async function encodeOpusOgg(blob: Blob, bitrateKbps: number): Promise<Blob> {
+  // Keep mediabunny (~95 KB) out of the startup bundle: it is only needed once
+  // a track has played long enough to be cached.
+  const {
+    AudioBufferSource,
+    BufferTarget,
+    canEncodeAudio,
+    OggOutputFormat,
+    Output,
+    Quality,
+  } = await import('mediabunny')
+  const buffer = await decodeAudio(blob)
+  if (!buffer.length) throw new Error('音频解码失败')
+  const channels = Math.min(2, buffer.numberOfChannels)
+  const quality = new Quality({
+    bitrate: Math.max(6_000, Math.min(510_000, bitrateKbps * 1000)),
+  })
+  const supported = await canEncodeAudio('opus', {
+    numberOfChannels: channels,
+    sampleRate: OPUS_SAMPLE_RATE,
+    quality,
+  })
+  if (!supported) throw new Error('当前环境不支持 Opus 编码')
+
+  const output = new Output({
+    format: new OggOutputFormat(),
+    target: new BufferTarget(),
+  })
+  const source = new AudioBufferSource({
+    codec: 'opus',
+    quality,
+    // Opus is defined at 48 kHz; let the source resample/downmix so the
+    // encoder always receives a supported layout.
+    transform: { numberOfChannels: channels, sampleRate: OPUS_SAMPLE_RATE },
+  })
+  output.addAudioTrack(source)
+  try {
+    await output.start()
+    await source.add(buffer)
+    source.close()
+    await output.finalize()
+    const data = output.target.buffer
+    if (!data) throw new Error('音频编码结果为空')
+    // mediabunny reports Ogg as `application/ogg`; the media element needs the
+    // audio MIME type to accept the blob URL.
+    return new Blob([data], { type: 'audio/ogg' })
+  } catch (error) {
+    await output.cancel().catch(() => undefined)
+    throw error
   }
-  return ffmpegPromise
+}
+
+async function fetchAudioBlob(url: string): Promise<Blob> {
+  const response = await fetch(apiUrl('/audio/proxy', { url }))
+  if (!response.ok) throw new Error(`音频下载失败 (${response.status})`)
+  return response.blob()
 }
 
 async function transcodeAndStore(song: CacheableSong, epoch: number, source?: Blob) {
@@ -198,58 +236,28 @@ async function transcodeAndStore(song: CacheableSong, epoch: number, source?: Bl
   const existing = await getCachedAudio(song.id)
   if (existing) return
 
-  const { ffmpeg, fetchFile, logs } = await loadFfmpeg()
-  const input = `cache-${song.id}.mp3`
-  const output = `cache-${song.id}.opus`
   const bitrate = useSettingsStore.getState().cacheBitrate
-  // The NetEase CDN does not send CORS headers, so download through the
-  // local same-origin audio proxy before handing the bytes to ffmpeg.
-  const proxied = apiUrl('/audio/proxy', { url: song.url })
-
   try {
     // A neighbour prefetch already holds the bytes: reuse them instead of
     // downloading the whole track a second time.
-    const bytes = await fetchFile(source ?? proxied)
-    await ffmpeg.writeFile(input, bytes)
-    const code = await ffmpeg.exec([
-      '-i',
-      input,
-      '-vn',
-      '-strict',
-      '-2',
-      '-c:a',
-      'opus',
-      '-b:a',
-      `${bitrate}k`,
-      output,
-    ])
-    if (code !== 0) {
-      throw new Error(`ffmpeg exited with ${code}: ${logs.slice(-6).join(' | ')}`)
-    }
-    const data = await ffmpeg.readFile(output)
-    if (!(data instanceof Uint8Array) || data.length === 0) {
-      throw new Error('ffmpeg produced an empty file')
-    }
+    const input = source ?? (await fetchAudioBlob(song.url))
+    const encoded = await encodeOpusOgg(input, bitrate)
     if (epoch !== cacheEpoch) return
-    await putCachedAudio(
-      song.id,
-      song.name,
-      new Blob([new Uint8Array(data)], { type: 'audio/ogg' }),
-      { artists: song.artists, duration: song.duration, bitrate },
-    )
+    await putCachedAudio(song.id, song.name, encoded, {
+      artists: song.artists,
+      duration: song.duration,
+      bitrate,
+    })
   } catch (error) {
-    console.warn('[song cache] ffmpeg logs:', logs.slice(-12).join('\n'))
+    console.warn('[song cache] encode failed:', error)
     throw error
-  } finally {
-    await ffmpeg.deleteFile(input).catch(() => undefined)
-    await ffmpeg.deleteFile(output).catch(() => undefined)
   }
 }
 
 function enqueueCache(song: CacheableSong, source?: Blob) {
   if (typeof indexedDB === 'undefined' || pending.has(song.id)) return
   const epoch = cacheEpoch
-  // ffmpeg shares one virtual filesystem, so cache jobs must run in sequence.
+  // Encoding is memory-heavy, so cache jobs run in sequence.
   const task = writeQueue
     .then(() => transcodeAndStore(song, epoch, source))
     .catch((error) => {
@@ -308,10 +316,12 @@ export async function clearAudioCache() {
   await transactionDone(transaction)
 }
 
-function cacheFileName(meta: CacheMeta) {
+function cacheFileName(meta: CacheMeta, blob?: Blob) {
   const base = meta.artists ? `${meta.artists} - ${meta.name}` : meta.name
   const safe = base.replace(/[\\/:*?"<>|]/g, '_').trim()
-  return `${safe || 'cached-song'}.opus`
+  // Older cache entries are Ogg/Opus; new ones are WebM/Opus.
+  const extension = blob?.type.includes('ogg') ? '.opus' : '.webm'
+  return `${safe || 'cached-song'}${extension}`
 }
 
 function downloadBlob(blob: Blob, name: string) {
@@ -353,14 +363,14 @@ export async function downloadCachedAudio(ids: number[]): Promise<number> {
   if (desktop) {
     for (const { meta, blob } of entries) {
       // Write straight into the user-configured folder via the Bun process.
-      await saveDownloadFile(cacheFileName(meta), blob)
+      await saveDownloadFile(cacheFileName(meta, blob), blob)
       await new Promise((resolve) => window.setTimeout(resolve, 250))
     }
     return entries.length
   }
 
   if (entries.length === 1) {
-    downloadBlob(entries[0].blob, cacheFileName(entries[0].meta))
+    downloadBlob(entries[0].blob, cacheFileName(entries[0].meta, entries[0].blob))
     return 1
   }
 
@@ -368,11 +378,13 @@ export async function downloadCachedAudio(ids: number[]): Promise<number> {
   const files: Record<string, Uint8Array> = {}
   const used = new Set<string>()
   for (const { meta, blob } of entries) {
-    const base = cacheFileName(meta)
+    const base = cacheFileName(meta, blob)
+    const extension = base.slice(base.lastIndexOf('.'))
+    const stem = base.slice(0, -extension.length)
     let name = base
     let index = 1
     while (used.has(name)) {
-      name = base.replace(/\.opus$/i, ` (${index}).opus`)
+      name = `${stem} (${index})${extension}`
       index += 1
     }
     used.add(name)

@@ -32,7 +32,7 @@
 - **歌词**：逐字歌词（YRC）渐变高亮，无逐字数据时使用普通 LRC
 - **全屏播放页**：CD 唱片、专辑色渐变背景、沉浸式歌词
 - **登录**：手机验证码 / 扫码登录，登录 Cookie 本地持久化，过期自动调用 `/login/refresh`；未登录时使用游客 Cookie
-- **本地缓存**：ffmpeg.wasm 将播放过的歌曲转码为 Opus 存入 IndexedDB，可在设置中选择 64 / 96 / 128kbps，查看缓存列表、单曲或批量下载、一键清除
+- **本地缓存**：WebCodecs（mediabunny）将播放过的歌曲转码为 Ogg/Opus 存入 IndexedDB，可在设置中选择 64 / 96 / 128kbps，查看缓存列表、单曲或批量下载、一键清除
 - **外观**：浅色 / 深色模式切换，隐藏式滚动条，Apple 风格动效
 - **桌面端**：Electrobun 原生窗口，内置本地 API 服务，无需额外启动后端
 
@@ -42,7 +42,7 @@
 - TanStack Router（文件路由）、Zustand（状态管理）、TanStack Virtual（虚拟列表）
 - Tailwind CSS v4、[@pikoloo/darwin-ui](https://www.npmjs.com/package/@pikoloo/darwin-ui)
 - NetEaseCloudMusicApiEnhanced（`server/` 本地 API）
-- ffmpeg.wasm + IndexedDB（音频缓存）
+- WebCodecs + mediabunny + IndexedDB（音频缓存）
 - Electrobun + Hutch + Bun（Windows 桌面端）
 
 ## 本地运行（Web）

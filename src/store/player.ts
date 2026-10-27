@@ -357,7 +357,7 @@ export const usePlayerStore = create<PlayerState>()(
           audioBlob: null,
         })
         try {
-          // Prefer audio cached in IndexedDB (ffmpeg-transcoded Opus).
+          // Prefer audio cached in IndexedDB (WebCodecs-transcoded Opus).
           const cached = await getCachedAudio(song.id)
           if (get().loadRequestId !== requestId) return true
 

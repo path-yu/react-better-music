@@ -215,8 +215,8 @@ export function PlayerBar() {
   }, [])
 
   // Start caching only after the track has played steadily for a while.
-  // Downloading the whole file and loading ffmpeg.wasm immediately competes
-  // with the first audio buffer and makes the initial playback noticeably slow.
+  // Downloading and encoding the whole file immediately competes with the
+  // first audio buffer and makes the initial playback noticeably slow.
   useEffect(() => {
     if (!playing || !audioReady || audioFromCache || !currentSong) return
     if (!audioBlob && !currentSong.url) return
