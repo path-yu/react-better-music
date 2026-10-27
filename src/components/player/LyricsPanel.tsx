@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { memo, useEffect, useRef, useState, type CSSProperties } from 'react'
 import type { LyricLine, LyricWord } from '../../lib/lyric'
 import { useSettingsStore } from '../../store/settings'
 import { getAudio } from '../../lib/audio'
@@ -7,7 +7,6 @@ import { cn } from '../../lib/format'
 interface LyricsPanelProps {
   lines: LyricLine[]
   activeIndex: number
-  currentTimeMs: number
   onSeek: (timeMs: number) => void
   className?: string
   compact?: boolean
@@ -42,14 +41,12 @@ function wordStyle(
  */
 function ActiveWords({
   words,
-  currentTimeMs,
   onSeek,
 }: {
   words: LyricWord[]
-  currentTimeMs: number
   onSeek: (timeMs: number) => void
 }) {
-  const [clockMs, setClockMs] = useState(currentTimeMs)
+  const [clockMs, setClockMs] = useState(() => (getAudio()?.currentTime ?? 0) * 1000)
 
   useEffect(() => {
     let frame = 0
@@ -66,11 +63,21 @@ function ActiveWords({
     return () => cancelAnimationFrame(frame)
   }, [])
 
+  // The panel no longer re-renders with playback progress; while paused, a
+  // seek still has to repaint the karaoke word colours.
   useEffect(() => {
     const audio = getAudio()
-    if (audio && !audio.paused) return
-    setClockMs(currentTimeMs)
-  }, [currentTimeMs])
+    if (!audio) return
+    const sync = () => setClockMs(audio.currentTime * 1000)
+    audio.addEventListener('timeupdate', sync)
+    audio.addEventListener('seeked', sync)
+    audio.addEventListener('pause', sync)
+    return () => {
+      audio.removeEventListener('timeupdate', sync)
+      audio.removeEventListener('seeked', sync)
+      audio.removeEventListener('pause', sync)
+    }
+  }, [])
 
   return (
     <>
@@ -117,10 +124,9 @@ function StaticWords({
   )
 }
 
-export function LyricsPanel({
+export const LyricsPanel = memo(function LyricsPanel({
   lines,
   activeIndex,
-  currentTimeMs,
   onSeek,
   className,
   compact,
@@ -202,11 +208,7 @@ export function LyricsPanel({
               <span className="lyric-line__text block">
                 {!translationOnly && hasWords ? (
                   active ? (
-                    <ActiveWords
-                      words={line.words!}
-                      currentTimeMs={currentTimeMs}
-                      onSeek={onSeek}
-                    />
+                    <ActiveWords words={line.words!} onSeek={onSeek} />
                   ) : (
                     <StaticWords words={line.words!} onSeek={onSeek} />
                   )
@@ -223,4 +225,4 @@ export function LyricsPanel({
       </div>
     </div>
   )
-}
+})

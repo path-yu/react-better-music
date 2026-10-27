@@ -75,6 +75,15 @@ if (!acquireInstanceLock(APP_DATA_DIR)) {
 
 process.on('exit', () => releaseInstanceLock(APP_DATA_DIR))
 
+// A single stray rejection (native bridge hiccup, closed window handle) must not
+// tear down the whole desktop app and interrupt playback.
+process.on('uncaughtException', (error) => {
+  console.error('[desktop] uncaught exception:', error)
+})
+process.on('unhandledRejection', (reason) => {
+  console.error('[desktop] unhandled rejection:', reason)
+})
+
 const API_PORT = Number(process.env.QIMIAO_API_PORT || 13000)
 const API_READY_URL = `http://127.0.0.1:${API_PORT}/ping`
 /** Renderer <-> main-process bridge (downloads, window controls, lyrics). */
@@ -201,30 +210,58 @@ function createMainWindow() {
   // Closing the titlebar hides the window to the tray: music keeps playing and
   // the app can be quit explicitly from the tray menu.
   window.on('will-close', (event) => {
-    console.log('[desktop] will-close fired, hiding to tray')
     const closeEvent = event as ElectrobunEvent<{ id: number }, { allow: boolean }>
-    closeEvent.response = { allow: false }
-    window.hide()
+    try {
+      console.log('[desktop] will-close fired, hiding to tray')
+      closeEvent.response = { allow: false }
+      window.hide()
+    } catch (error) {
+      // A destroyed handle cannot be hidden; allow the close so the tray can
+      // recreate the window instead of throwing out of the event handler.
+      console.error('[desktop] failed to hide the main window:', error)
+      closeEvent.response = { allow: true }
+    }
   })
 
   applyWindowIcon()
   return window
 }
 
-let mainWindow: BrowserWindow | null = createMainWindow()
-markStartup('window-created')
+let mainWindow: BrowserWindow | null = null
+try {
+  mainWindow = createMainWindow()
+  markStartup('window-created')
+} catch (error) {
+  // Keep the process (and tray) alive; the tray can retry window creation.
+  console.error('[desktop] failed to create the main window:', error)
+}
 // The API runs in its own Bun process, so spawn it right away: it no longer
 // competes with the WebView for the main thread.
 startApiServer()
 
 function showMainWindow() {
-  if (!mainWindow) {
-    mainWindow = createMainWindow()
-    return
+  try {
+    if (!mainWindow) {
+      mainWindow = createMainWindow()
+      return
+    }
+    if (mainWindow.isMinimized()) mainWindow.unminimize()
+    mainWindow.show()
+    mainWindow.activate()
+  } catch (error) {
+    console.error('[desktop] failed to show the main window:', error)
+    try {
+      mainWindow?.close()
+    } catch {
+      // already destroyed
+    }
+    mainWindow = null
+    try {
+      mainWindow = createMainWindow()
+    } catch (recreateError) {
+      console.error('[desktop] failed to recreate the main window:', recreateError)
+    }
   }
-  if (mainWindow.isMinimized()) mainWindow.unminimize()
-  mainWindow.show()
-  mainWindow.activate()
 }
 
 if (process.platform === 'win32') {
@@ -387,27 +424,38 @@ function persistLyricsPosition() {
   }
 }
 
+/** Native display queries can fail during startup; fall back to fixed coords. */
+function primaryWorkArea() {
+  try {
+    const { workArea } = Screen.getPrimaryDisplay()
+    if (workArea && workArea.width > 0 && workArea.height > 0) return workArea
+  } catch (error) {
+    console.warn('[desktop] failed to read the primary display:', error)
+  }
+  return null
+}
+
 function createLyricsWindow() {
-  // FFI-less builds report a zero-sized display; never place the HUD off-screen.
-  const { workArea } = Screen.getPrimaryDisplay()
-  const hasDisplay = workArea.width > 0 && workArea.height > 0
-  const width = hasDisplay
+  const workArea = primaryWorkArea()
+  const width = workArea
     ? Math.min(LYRICS_WINDOW_SIZE.width, Math.max(420, workArea.width - 80))
     : LYRICS_WINDOW_SIZE.width
   const height = LYRICS_WINDOW_SIZE.height
   const saved = readLyricsPosition()
-  const defaultX = hasDisplay ? Math.round(workArea.x + (workArea.width - width) / 2) : 120
-  const defaultY = hasDisplay
+  const defaultX = workArea
+    ? Math.round(workArea.x + (workArea.width - width) / 2)
+    : 120
+  const defaultY = workArea
     ? Math.round(workArea.y + workArea.height - height - LYRICS_WINDOW_MARGIN)
     : 120
   // A saved spot may belong to a monitor that is no longer connected; keep a
   // sliver of the window on screen so the shortcut can always bring it back.
   const clamp = (value: number, min: number, max: number) =>
     Math.min(Math.max(value, min), max)
-  const x = hasDisplay
+  const x = workArea
     ? clamp(saved?.x ?? defaultX, workArea.x - width + 120, workArea.x + workArea.width - 120)
     : defaultX
-  const y = hasDisplay
+  const y = workArea
     ? clamp(saved?.y ?? defaultY, workArea.y, workArea.y + workArea.height - 60)
     : defaultY
   const win = new BrowserWindow({
@@ -481,9 +529,17 @@ function applyLyricsAction(action: string | null) {
   return lyricsWindowVisible() ? hideLyricsWindow() : showLyricsWindow()
 }
 
-if (!GlobalShortcut.register(LYRICS_SHORTCUT, () => applyLyricsAction('toggle'))) {
-  console.warn(`[desktop] failed to register lyrics shortcut (${LYRICS_SHORTCUT})`)
+function registerShortcut(accelerator: string, handler: () => void) {
+  try {
+    if (GlobalShortcut.register(accelerator, handler)) return true
+    console.warn(`[desktop] failed to register shortcut (${accelerator})`)
+  } catch (error) {
+    console.warn(`[desktop] shortcut registration threw (${accelerator}):`, error)
+  }
+  return false
 }
+
+registerShortcut(LYRICS_SHORTCUT, () => applyLyricsAction('toggle'))
 
 /* ------------------------------- mini player ------------------------------- */
 
@@ -491,10 +547,10 @@ const MINI_WINDOW_SIZE = { width: 380, height: 140 }
 let miniWindow: BrowserWindow | null = null
 
 function createMiniWindow() {
-  const { workArea } = Screen.getPrimaryDisplay()
+  const workArea = primaryWorkArea()
   const { width, height } = MINI_WINDOW_SIZE
-  const x = workArea.width > 0 ? Math.round(workArea.x + workArea.width - width - 24) : 120
-  const y = workArea.height > 0 ? Math.round(workArea.y + workArea.height - height - 24) : 120
+  const x = workArea ? Math.round(workArea.x + workArea.width - width - 24) : 120
+  const y = workArea ? Math.round(workArea.y + workArea.height - height - 24) : 120
   const win = new BrowserWindow({
     title: '迷你播放器',
     url: `http://127.0.0.1:${BRIDGE_PORT}/mini?token=${encodeURIComponent(BRIDGE_TOKEN)}`,
@@ -602,9 +658,7 @@ const GLOBAL_COMMANDS: Array<[accelerator: string, action: string]> = [
 ]
 
 for (const [accelerator, action] of GLOBAL_COMMANDS) {
-  if (!GlobalShortcut.register(accelerator, () => sendRendererCommand(action))) {
-    console.warn(`[desktop] failed to register global shortcut (${accelerator})`)
-  }
+  registerShortcut(accelerator, () => sendRendererCommand(action))
 }
 
 process.on('exit', () => {

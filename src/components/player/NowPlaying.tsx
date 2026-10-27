@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useRouterState } from '@tanstack/react-router'
 import { Disc3, Heart, ListMusic, Loader2, MessageSquareText } from 'lucide-react'
 import { ImageWithFallback } from '../common/ImageWithFallback'
@@ -89,15 +89,17 @@ export function NowPlaying() {
     [lyricLines, currentTime],
   )
 
+  // Stable identity keeps the memoised lyric list from re-rendering on every
+  // playback tick. Must stay above the early return (rules of hooks).
+  const handleSeek = useCallback((timeMs: number) => {
+    seekAudio(timeMs / 1000)
+  }, [])
+
   if (!show || !currentSong) return null
 
   const loadingSource = playing && !sourceReady
   const buffering = playing && sourceReady && !audioReady
   const busy = loadingSource || buffering
-
-  const handleSeek = (timeMs: number) => {
-    seekAudio(timeMs / 1000)
-  }
 
   const albumId = currentSong.al.id
   const openAlbum = () => {
@@ -292,7 +294,6 @@ export function NowPlaying() {
                   <LyricsPanel
                     lines={lyricLines}
                     activeIndex={activeIndex}
-                    currentTimeMs={currentTime * 1000}
                     onSeek={handleSeek}
                     className="h-full max-md:h-auto"
                   />

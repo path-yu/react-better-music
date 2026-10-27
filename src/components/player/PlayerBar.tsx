@@ -232,17 +232,21 @@ export function PlayerBar() {
   useEffect(() => {
     if (!desktopShell) return
     let active = true
+    // A hung bridge must not queue a new pair of requests every two seconds.
+    let polling = false
     const sync = () => {
-      getDesktopLyricsVisible()
-        .then(({ visible }) => {
+      if (polling) return
+      polling = true
+      void Promise.allSettled([
+        getDesktopLyricsVisible().then(({ visible }) => {
           if (active) setLyricsWindowOpen(visible)
-        })
-        .catch(() => undefined)
-      getMiniPlayerVisible()
-        .then(({ visible }) => {
+        }),
+        getMiniPlayerVisible().then(({ visible }) => {
           if (active) setMiniWindowOpen(visible)
-        })
-        .catch(() => undefined)
+        }),
+      ]).finally(() => {
+        polling = false
+      })
     }
     sync()
     window.addEventListener('focus', sync)
@@ -371,9 +375,12 @@ export function PlayerBar() {
     }, CROSSFADE_MAX_WAIT)
   }, [playToken, audioUrl, currentSong?.id, setAudioReady, setBuffered, setCurrentTime])
 
-  // A pending seek belongs to the track it was made on.
+  // A pending seek belongs to the track it was made on. Error retries are also
+  // per-track: refreshing the same song's signed URL must not re-arm the retry,
+  // otherwise a permanently broken source loops refresh -> error forever.
   useEffect(() => {
     pendingSeekRef.current = null
+    retriedRef.current = null
     setPendingSeek(null)
   }, [currentSong?.id])
 
@@ -423,7 +430,6 @@ export function PlayerBar() {
     const previousSrc = target.getAttribute('src')
     target.src = audioUrl
     target.load()
-    retriedRef.current = null
     if (previousSrc?.startsWith('blob:')) URL.revokeObjectURL(previousSrc)
 
     if (usePlayerStore.getState().playing) {
@@ -542,12 +548,17 @@ export function PlayerBar() {
     const artwork = currentSong.al.picUrl
       ? [{ src: currentSong.al.picUrl, sizes: '512x512', type: 'image/jpeg' }]
       : []
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title: currentSong.name,
-      artist: formatArtists(currentSong.ar),
-      album: currentSong.al.name,
-      artwork,
-    })
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: currentSong.name,
+        artist: formatArtists(currentSong.ar),
+        album: currentSong.al.name,
+        artwork,
+      })
+    } catch (error) {
+      // Invalid artwork metadata must not break playback or the UI.
+      console.warn('[player] failed to update media session metadata', error)
+    }
   }, [currentSong])
 
   useEffect(() => {

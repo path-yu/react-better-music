@@ -28,11 +28,36 @@ type LyricsSnapshot = {
   playing: boolean
 }
 
-function post(body: unknown) {
+/**
+ * One request in flight at a time. Without this, a bridge that stops answering
+ * accumulates one 15s fetch every 250ms and can make the renderer sluggish.
+ */
+let posting = false
+let queued: { body: unknown; full: boolean } | null = null
+
+function send(body: unknown) {
+  posting = true
   void bridgeFetch('/lyrics-state', {
     method: 'POST',
     body: JSON.stringify(body),
-  }).catch(() => undefined)
+  })
+    .catch(() => undefined)
+    .finally(() => {
+      posting = false
+      if (!queued) return
+      const next = queued
+      queued = null
+      send(next.body)
+    })
+}
+
+function post(body: unknown, full = false) {
+  if (!posting) {
+    send(body)
+    return
+  }
+  // Progress ticks must never overwrite a pending full snapshot.
+  if (full || !queued) queued = { body, full }
 }
 
 function snapshot(): LyricsSnapshot {
@@ -81,7 +106,7 @@ export function useDesktopLyricsPublisher() {
       playing = state.playing
       sentAt = performance.now()
       fullSentAt = sentAt
-      post({ type: 'full', ...snapshot() })
+      post({ type: 'full', ...snapshot() }, true)
     }
 
     const publishTime = () => {
