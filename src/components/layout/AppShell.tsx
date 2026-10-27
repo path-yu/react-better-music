@@ -10,6 +10,8 @@ import { QueuePanel } from '../player/QueuePanel'
 import { useUiStore } from '../../store/ui'
 import { useUserStore } from '../../store/user'
 import { usePlayerStore } from '../../store/player'
+import { useSettingsStore } from '../../store/settings'
+import { isDesktopShell } from '../../lib/desktop'
 import { applyTheme } from '../../lib/theme'
 import { getLastLoginRefreshAt, getLoginCookie, refreshLogin } from '../../lib/session'
 
@@ -27,6 +29,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const initSession = useUserStore((state) => state.initSession)
   const hasQueue = usePlayerStore((state) => state.queue.length > 0)
   const ensureLyrics = usePlayerStore((state) => state.ensureLyrics)
+  const disableDevTools = useSettingsStore((state) => state.disableDevTools)
 
   useEffect(() => {
     applyTheme(theme)
@@ -62,6 +65,31 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     void ensureLyrics()
   }, [ensureLyrics])
+
+  // Desktop lockdown. The main process disables WebView2 DevTools for the next
+  // launch (see src/bun/index.ts); this blocks the in-page shortcuts and the
+  // context menu immediately for the current session.
+  useEffect(() => {
+    if (!isDesktopShell() || !disableDevTools) return
+    const onContextMenu = (event: MouseEvent) => event.preventDefault()
+    const onKeyDown = (event: KeyboardEvent) => {
+      const key = event.key.toLowerCase()
+      const blocked =
+        event.key === 'F12' ||
+        (event.ctrlKey && event.shiftKey && ['i', 'j', 'c'].includes(key)) ||
+        (event.metaKey && event.altKey && ['i', 'j', 'c'].includes(key)) ||
+        (event.ctrlKey && key === 'u')
+      if (!blocked) return
+      event.preventDefault()
+      event.stopImmediatePropagation()
+    }
+    window.addEventListener('contextmenu', onContextMenu, true)
+    window.addEventListener('keydown', onKeyDown, true)
+    return () => {
+      window.removeEventListener('contextmenu', onContextMenu, true)
+      window.removeEventListener('keydown', onKeyDown, true)
+    }
+  }, [disableDevTools])
 
   useEffect(() => {
     const keepAlive = () => {

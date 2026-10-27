@@ -9,9 +9,10 @@ import {
   Loader2,
   RefreshCw,
   Settings2,
+  Shield,
   Trash2,
 } from 'lucide-react'
-import { Button, Select } from '@pikoloo/darwin-ui'
+import { Button, Select, Switch } from '@pikoloo/darwin-ui'
 import { CACHE_QUALITY_OPTIONS, useSettingsStore } from '../store/settings'
 import {
   clearAudioCache,
@@ -25,6 +26,7 @@ import {
   openDownloadDir,
   pickDownloadDir,
 } from '../lib/desktopDownloads'
+import { getDevToolsPolicy, setDevToolsPolicy } from '../lib/desktopBridge'
 import { formatDate, formatDuration } from '../lib/format'
 import { useDocumentTitle } from '../lib/title'
 import { toast } from '../lib/toast'
@@ -62,6 +64,8 @@ function SettingsPage() {
   const desktop = isDesktopApp()
   const [downloadDir, setDownloadDir] = useState('')
   const [pickingDir, setPickingDir] = useState(false)
+  const disableDevTools = useSettingsStore((state) => state.disableDevTools)
+  const setDisableDevTools = useSettingsStore((state) => state.setDisableDevTools)
 
   useEffect(() => {
     if (!desktop) return
@@ -75,6 +79,31 @@ function SettingsPage() {
       active = false
     }
   }, [desktop])
+
+  // The main-process policy is authoritative for the next launch; pull it once
+  // so the switch reflects what WebView2 will actually do.
+  useEffect(() => {
+    if (!desktop) return
+    let active = true
+    void getDevToolsPolicy()
+      .then(({ disabled }) => {
+        if (active) setDisableDevTools(disabled)
+      })
+      .catch(() => undefined)
+    return () => {
+      active = false
+    }
+  }, [desktop, setDisableDevTools])
+
+  const handleToggleDevTools = (disabled: boolean) => {
+    setDisableDevTools(disabled)
+    void setDevToolsPolicy(disabled).catch(() => undefined)
+    toast.info(
+      disabled
+        ? '已禁用开发者工具，重启应用后完全生效'
+        : '已允许开发者工具，重启应用后完全生效',
+    )
+  }
 
   const loadCache = useCallback(async () => {
     setLoading(true)
@@ -288,6 +317,28 @@ function SettingsPage() {
             </div>
           ) : null}
         </section>
+
+        {desktop ? (
+          <section className="apple-card p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
+                  <Shield className="h-4 w-4 text-accent" />
+                  桌面端
+                </h2>
+                <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-black/40">
+                  禁用后，右键菜单与 F12 / Ctrl+Shift+I 等入口不再打开开发者工具。
+                  当前窗口立即生效，WebView2 层面需要重启应用。
+                </p>
+              </div>
+              <Switch
+                checked={disableDevTools}
+                onChange={handleToggleDevTools}
+                aria-label="禁用开发者工具"
+              />
+            </div>
+          </section>
+        ) : null}
 
         <section className="apple-card overflow-hidden">
           <div className="flex items-center justify-between gap-3 border-b border-black/6 px-6 py-4">

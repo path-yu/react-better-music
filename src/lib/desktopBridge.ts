@@ -50,3 +50,15 @@ export async function requestJson<T>(path: string, init?: RequestInit): Promise<
   }
   return (await response.json()) as T
 }
+
+/** Whether the next launch should create WebView2 with DevTools disabled. */
+export async function getDevToolsPolicy() {
+  return requestJson<{ disabled: boolean }>('/devtools-policy')
+}
+
+export async function setDevToolsPolicy(disabled: boolean) {
+  return requestJson<{ disabled: boolean }>(
+    `/devtools-policy?disabled=${disabled ? '1' : '0'}`,
+    { method: 'POST' },
+  )
+}

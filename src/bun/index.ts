@@ -1,4 +1,11 @@
-import { app, BrowserWindow, Tray, Utils, type ElectrobunEvent } from 'electrobun/main'
+import {
+  app,
+  BrowserWindow,
+  BuildConfig,
+  Tray,
+  Utils,
+  type ElectrobunEvent,
+} from 'electrobun/main'
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
@@ -24,6 +31,37 @@ function markStartup(label: string) {
   } catch {
     // Diagnostics must never break startup.
   }
+}
+
+/* --------------------------- developer tooling --------------------------- */
+
+const DEVTOOLS_POLICY_FILE = join(APP_DATA_DIR, 'devtools.json')
+
+/** Missing policy: keep DevTools in dev builds, disable them when packaged. */
+function readDevToolsDisabled() {
+  try {
+    const parsed = JSON.parse(readFileSync(DEVTOOLS_POLICY_FILE, 'utf8')) as {
+      disabled?: boolean
+    }
+    return parsed.disabled !== false
+  } catch {
+    return BuildConfig.getSync().isPackaged
+  }
+}
+
+function persistDevToolsDisabled(disabled: boolean) {
+  mkdirSync(APP_DATA_DIR, { recursive: true })
+  writeFileSync(DEVTOOLS_POLICY_FILE, JSON.stringify({ disabled }), 'utf8')
+}
+
+// WebView2 reads this before creating its environment. The renderer also
+// blocks the shortcuts and context menu as a fallback (see AppShell).
+if (process.platform === 'win32' && readDevToolsDisabled()) {
+  const existing = process.env.WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS?.trim()
+  process.env.WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = existing
+    ? `${existing} --disable-dev-tools`
+    : '--disable-dev-tools'
+  console.log('[desktop] WebView2 developer tools disabled for this launch')
 }
 
 if (!acquireInstanceLock(APP_DATA_DIR)) {
@@ -300,6 +338,14 @@ try {
           // The shell is on screen: now it is safe to pay the API parse cost.
           startBundledApi()
           return Response.json({ ok: true }, { headers })
+        }
+        if (url.pathname === '/devtools-policy' && request.method === 'GET') {
+          return Response.json({ disabled: readDevToolsDisabled() }, { headers })
+        }
+        if (url.pathname === '/devtools-policy' && request.method === 'POST') {
+          const disabled = url.searchParams.get('disabled') !== '0'
+          persistDevToolsDisabled(disabled)
+          return Response.json({ disabled }, { headers })
         }
         if (url.pathname === '/window-state' && request.method === 'GET') {
           return Response.json(currentWindowState(), { headers })

@@ -19,8 +19,11 @@ export const PLAY_QUALITY_OPTIONS: Array<{ value: PlayLevel; label: string }> = 
 interface SettingsState {
   cacheBitrate: number
   playLevel: PlayLevel
+  /** Desktop only: block right-click / F12 / DevTools shortcuts. */
+  disableDevTools: boolean
   setCacheBitrate: (value: number) => void
   setPlayLevel: (value: PlayLevel) => void
+  setDisableDevTools: (value: boolean) => void
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -28,8 +31,10 @@ export const useSettingsStore = create<SettingsState>()(
     (set) => ({
       cacheBitrate: 96,
       playLevel: 'exhigh',
+      disableDevTools: true,
       setCacheBitrate: (cacheBitrate) => set({ cacheBitrate }),
       setPlayLevel: (playLevel) => set({ playLevel }),
+      setDisableDevTools: (disableDevTools) => set({ disableDevTools }),
     }),
     { name: 'react-music-settings' },
   ),
