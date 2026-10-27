@@ -293,8 +293,10 @@ function DiscoveryPage() {
           <SectionError title="MV 推荐加载失败" onRetry={retryMvs} />
         ) : mvs.length ? (
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            {mvs.map((mv, index) => (
-              <MvCard key={mv.id} mv={mv} priority={index < 4} />
+            {/* The MV section sits below the first screen; keep these lazy so
+                they don't compete with the banner (the LCP element). */}
+            {mvs.map((mv) => (
+              <MvCard key={mv.id} mv={mv} />
             ))}
           </div>
         ) : (

@@ -25,7 +25,7 @@ export function MvCard({ mv, className, priority }: MvCardProps) {
           src={mv.cover}
           alt={mv.name}
           rounded="rounded-[14px]"
-          resize="400y225"
+          resize="320y180"
           priority={priority}
           className="aspect-video w-full"
           imageClassName="transition-transform duration-500 group-hover:scale-[1.04]"

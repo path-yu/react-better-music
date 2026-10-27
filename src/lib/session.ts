@@ -1,3 +1,4 @@
+import { fetchWithBootRetry } from './apiFetch'
 import { API_BASE } from './apiBase'
 
 const LOGIN_COOKIE_KEY = 'react-music-login-cookie'
@@ -88,11 +89,14 @@ async function requestCookie(path: string, params?: Record<string, string>) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 10_000)
   try {
-    const response = await fetch(`${API_BASE}${path}${search ? `?${search}` : ''}`, {
-      method: 'GET',
-      credentials: 'include',
-      signal: controller.signal,
-    })
+    const response = await fetchWithBootRetry(
+      `${API_BASE}${path}${search ? `?${search}` : ''}`,
+      {
+        method: 'GET',
+        credentials: 'include',
+        signal: controller.signal,
+      },
+    )
     const text = await response.text()
     try {
       return (text ? JSON.parse(text) : {}) as CookieResponse

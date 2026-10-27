@@ -68,6 +68,8 @@ interface PlayerState {
   toggleQueue: (value?: boolean) => void
   clearQueue: () => void
   refreshCurrentUrl: () => Promise<boolean>
+  /** Fetch lyrics for the current track without starting playback. */
+  ensureLyrics: () => Promise<void>
   prefetchNext: () => void
   invalidateUrls: () => void
   markSongLike: (id: number, like: boolean) => void
@@ -796,6 +798,41 @@ export const usePlayerStore = create<PlayerState>()(
             set({ playing: false })
             toast.warning(error instanceof Error ? error.message : '歌曲资源已失效')
             return false
+          }
+        },
+
+        async ensureLyrics() {
+          const state = get()
+          const song = state.queue[state.currentIndex]
+          if (!song) return
+          // Already resolved (including "no lyrics") — only hydrate the view.
+          if (song.lyric || song.yrc || song.isNotLyric) {
+            if (!state.lyricLines.length) {
+              set({ lyricLines: readLyrics(song), lyricLoading: false })
+            }
+            return
+          }
+          // A full track load is already fetching the lyric for this song.
+          if (state.lyricLoading) return
+
+          const requestId = state.loadRequestId
+          set({ lyricLoading: true })
+          try {
+            const lyricData = await fetchLyric(song.id)
+            // A track switch (or a newer load) owns the state now.
+            if (get().loadRequestId !== requestId) return
+            const active = get().queue[get().currentIndex]
+            if (!active || active.id !== song.id) return
+            const patch: Partial<Song> = {
+              lyric: lyricData.lyric,
+              tlyric: lyricData.tlyric,
+              yrc: lyricData.yrc,
+              isNotLyric: isEmptyLyric(lyricData.lyric) && !lyricData.yrc,
+            }
+            patchSong(get().currentIndex, patch)
+            set({ lyricLines: readLyrics({ ...active, ...patch }), lyricLoading: false })
+          } catch {
+            if (get().loadRequestId === requestId) set({ lyricLoading: false })
           }
         },
 

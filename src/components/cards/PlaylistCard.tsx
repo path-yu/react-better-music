@@ -29,7 +29,7 @@ export function PlaylistCard({ playlist, priority }: PlaylistCardProps) {
           src={playlist.coverImgUrl}
           alt={playlist.name}
           rounded="rounded-[10px]"
-          resize="240y240"
+          resize="200y200"
           priority={priority}
           className="aspect-square w-full"
           imageClassName="transition-transform duration-500 group-hover:scale-[1.04]"

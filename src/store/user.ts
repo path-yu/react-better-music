@@ -103,8 +103,13 @@ export const useUserStore = create<UserState>()(
           const uid = account?.id
           if (uid && !isAnonymousAccount(account)) {
             set({ isLogin: true })
-            await get().refreshProfile()
-            await Promise.all([get().loadPlaylists(uid), get().refreshLiked(uid)])
+            // Profile and library only need the uid, so fetch them together
+            // instead of two sequential upstream round-trips.
+            await Promise.all([
+              get().refreshProfile(),
+              get().loadPlaylists(uid),
+              get().refreshLiked(uid),
+            ])
             // Rotate the cookie after each launch so the persisted session
             // never goes stale as long as the app is opened regularly.
             void refreshLogin()

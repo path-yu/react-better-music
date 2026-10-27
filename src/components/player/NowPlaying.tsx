@@ -40,6 +40,7 @@ export function NowPlaying() {
   const lyricLoading = usePlayerStore((state) => state.lyricLoading)
   const toggleNowPlaying = usePlayerStore((state) => state.toggleNowPlaying)
   const toggleQueue = usePlayerStore((state) => state.toggleQueue)
+  const ensureLyrics = usePlayerStore((state) => state.ensureLyrics)
   const likedIds = useUserStore((state) => state.likedIds)
   const likeSong = useUserStore((state) => state.likeSong)
   const liked = currentSong ? likedIds.includes(currentSong.id) : false
@@ -50,6 +51,12 @@ export function NowPlaying() {
     if (show) toggleNowPlaying(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname])
+
+  // Retry when the overlay opens: a startup fetch may have failed while the
+  // API was still booting, and this also covers songs restored from storage.
+  useEffect(() => {
+    if (show) void ensureLyrics()
+  }, [show, ensureLyrics])
 
   useEffect(() => {
     setPanel('lyrics')

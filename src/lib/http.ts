@@ -1,4 +1,5 @@
 import { API_BASE } from './apiBase'
+import { fetchWithBootRetry } from './apiFetch'
 import {
   fetchGuestCookie,
   getActiveCookie,
@@ -285,7 +286,7 @@ function runGet<T>(path: string, params?: Query, signal?: AbortSignal) {
   return runWithSession<T>(path, async () => {
     const timeout = withTimeout(signal, REQUEST_TIMEOUT)
     try {
-      return await fetch(buildUrl(path, withSessionCookie(path, params)), {
+      return await fetchWithBootRetry(buildUrl(path, withSessionCookie(path, params)), {
         method: 'GET',
         credentials: 'include',
         signal: timeout.signal,

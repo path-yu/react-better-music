@@ -4,6 +4,7 @@ import { routeTree } from './routeTree.gen'
 import { applyTheme } from './lib/theme'
 import { isDesktopShell } from './lib/desktop'
 import { useUiStore } from './store/ui'
+import { requestJson } from './lib/desktopBridge'
 
 applyTheme(useUiStore.getState().theme)
 
@@ -37,3 +38,15 @@ declare module '@tanstack/react-router' {
 const rootElement = document.getElementById('app')!
 
 ReactDOM.createRoot(rootElement).render(<RouterProvider router={router} />)
+
+if (desktop) {
+  // Two frames: the first runs after commit, the second after the first paint.
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      void requestJson('/startup-report', {
+        method: 'POST',
+        body: JSON.stringify({ paint: performance.now() }),
+      }).catch(() => undefined)
+    })
+  })
+}

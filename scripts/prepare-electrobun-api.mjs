@@ -47,13 +47,19 @@ ${moduleDefs}
 ]
 
 async function startApiServer() {
-  await generateConfig()
+  // Registering the anonymous token / xeapi key hits NetEase over the network.
+  // The HTTP server does not need it to listen (request.js caches the token at
+  // require time), so run it alongside the server instead of blocking startup.
+  const configTask = generateConfig().catch((error) => {
+    console.error('[desktop] API config bootstrap failed:', error)
+  })
   await serveNcmApi({
     checkVersion: false,
     moduleDefs,
     port: Number(process.env.QIMIAO_API_PORT || 13000),
     host: process.env.QIMIAO_API_HOST || '127.0.0.1',
   })
+  void configTask
 }
 
 module.exports = { startApiServer }

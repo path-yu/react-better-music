@@ -26,6 +26,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const theme = useUiStore((state) => state.theme)
   const initSession = useUserStore((state) => state.initSession)
   const hasQueue = usePlayerStore((state) => state.queue.length > 0)
+  const ensureLyrics = usePlayerStore((state) => state.ensureLyrics)
 
   useEffect(() => {
     applyTheme(theme)
@@ -54,6 +55,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     void initSession()
   }, [initSession])
+
+  // The persisted queue only keeps ids/metadata, so after a refresh the current
+  // track has no lyric text until something calls loadAt (i.e. pressing play).
+  // Fetch it up front so the immersive view is already populated.
+  useEffect(() => {
+    void ensureLyrics()
+  }, [ensureLyrics])
 
   useEffect(() => {
     const keepAlive = () => {
