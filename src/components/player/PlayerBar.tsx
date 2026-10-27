@@ -212,6 +212,9 @@ export function PlayerBar() {
       const state = usePlayerStore.getState()
       const active = state.queue[state.currentIndex]
       if (!active || active.id !== songId || !state.playing || state.audioFromCache) return
+      // Third-party matches are streamed outside the NetEase-only proxy, so
+      // there is nothing to transcode/cache through the local API.
+      if (active.unblocked) return
       const meta = {
         id: active.id,
         name: active.name,
@@ -350,6 +353,14 @@ export function PlayerBar() {
             {currentSong.trialEnd ? (
               <span className="shrink-0 rounded-[6px] bg-[#ff9500]/12 px-1 text-[11px] text-[#b36b00]">
                 试听
+              </span>
+            ) : null}
+            {currentSong.unblocked ? (
+              <span
+                className="shrink-0 rounded-[6px] bg-accent/10 px-1 text-[11px] text-accent"
+                title="该歌曲没有官方音源，当前使用匹配到的其他音源"
+              >
+                其他音源
               </span>
             ) : null}
             <button

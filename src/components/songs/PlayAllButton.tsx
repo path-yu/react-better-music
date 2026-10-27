@@ -19,14 +19,10 @@ export function PlayAllButton({ songs, playlistId, label = '播放全部' }: Pla
       toast.warning('暂无可播放歌曲')
       return
     }
-    // Start from the first playable track: initQueue rejects an unplayable
-    // target instead of silently falling back to index 0.
-    const start = songs.findIndex((song) => song.fee !== 0)
-    if (start < 0) {
-      toast.warning('该列表暂无可播放歌曲')
-      return
-    }
-    void initQueue(songs, start, playlistId)
+    // Prefer a track with an official source, but keep all-gray lists usable:
+    // those rows are matched to another provider when played.
+    const firstPlayable = songs.findIndex((song) => song.fee !== 0)
+    void initQueue(songs, firstPlayable >= 0 ? firstPlayable : 0, playlistId)
   }
 
   return (

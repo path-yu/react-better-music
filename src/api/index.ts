@@ -200,6 +200,30 @@ export async function fetchSongUrl(id: number | string, level: PlayLevel = 'exhi
   return url
 }
 
+/** Pull a URL out of the match endpoint's loose payload (string, array or object). */
+function matchedUrl(payload: unknown): string {
+  if (typeof payload === 'string') return payload
+  if (Array.isArray(payload)) return matchedUrl(payload[0])
+  if (payload && typeof payload === 'object') {
+    const url = (payload as { url?: unknown }).url
+    if (typeof url === 'string') return url
+  }
+  return ''
+}
+
+/**
+ * Gray-track rescue: the local API matches the song on another provider
+ * (UnblockNeteaseMusic). The URL may point at a NetEase CDN host or a
+ * third-party CDN; callers decide whether the media proxy accepts it.
+ */
+export async function fetchMatchedSongUrl(id: number | string, source?: string) {
+  const res = await get<{ code?: number; data?: unknown; proxyUrl?: string; msg?: string }>(
+    '/song/url/match',
+    source ? { id, source } : { id },
+  )
+  return { url: matchedUrl(res.data) || res.proxyUrl || '' }
+}
+
 export async function checkMusicAvailable(id: number | string) {
   const res = await get<{ success?: boolean; musicSuccess?: boolean; message?: string }>(
     '/check/music',
@@ -326,7 +350,16 @@ export async function fetchDefaultSearchKeyword() {
   const res = await get<{ data?: { showKeyword?: string; realkeyword?: string } }>(
     '/search/default',
   )
-  return res.data?.showKeyword ?? res.data?.realkeyword ?? ''
+  // `showKeyword` is display copy ("🔥 大家都在搜 疑心病"); `realkeyword` is the
+  // actual query ("疑心病"). Keep them apart so the placeholder can stay
+  // editorial while submitting the empty field searches the real keyword.
+  const showKeyword = res.data?.showKeyword?.trim() ?? ''
+  const realKeyword = res.data?.realkeyword?.trim() ?? ''
+  return {
+    showKeyword: showKeyword || realKeyword,
+    realKeyword:
+      realKeyword || showKeyword.replace(/^[^\p{L}\p{N}]+/u, '').trim() || showKeyword,
+  }
 }
 
 export async function fetchHotSearchList() {

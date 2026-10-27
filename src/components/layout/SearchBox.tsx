@@ -32,7 +32,9 @@ export function SearchBox() {
   const [keyword, setKeyword] = useState('')
   const [open, setOpen] = useState(false)
   // Empty until the API answers; the placeholder falls back to a static hint.
+  // `defaultKeyword` is the display copy, `defaultQuery` the actual search term.
   const [defaultKeyword, setDefaultKeyword] = useState('')
+  const [defaultQuery, setDefaultQuery] = useState('')
   const [hotList, setHotList] = useState<Array<{ searchWord: string; score: number }>>([])
   const [suggest, setSuggest] = useState<SuggestState>({ songs: [], playlists: [] })
   const [loading, setLoading] = useState(false)
@@ -52,7 +54,8 @@ export function SearchBox() {
   useEffect(() => {
     fetchDefaultSearchKeyword()
       .then((value) => {
-        if (value) setDefaultKeyword(value)
+        setDefaultKeyword(value.showKeyword)
+        setDefaultQuery(value.realKeyword)
       })
       .catch(() => undefined)
   }, [])
@@ -136,10 +139,11 @@ export function SearchBox() {
     void navigate({ to: '/songlists/$id', params: { id: String(id) } })
   }
 
-  const showSuggest = keyword.trim().length > 0
+  // Whitespace-only input counts as empty: no suggestions and no clear button.
+  const hasQuery = keyword.trim().length > 0
   const songOffset = 1
   const playlistOffset = songOffset + suggest.songs.length
-  const optionCount = showSuggest && !loading ? playlistOffset + suggest.playlists.length : 0
+  const optionCount = hasQuery && !loading ? playlistOffset + suggest.playlists.length : 0
 
   // A new query (or a fresh response) invalidates the highlighted row.
   useEffect(() => {
@@ -186,10 +190,15 @@ export function SearchBox() {
           setOpen(true)
         }}
         onFocus={() => setOpen(true)}
+        // A lone space would otherwise keep the field looking empty while the
+        // placeholder stays hidden; normalise it back to '' on blur.
+        onBlur={() => {
+          if (!keyword.trim()) setKeyword('')
+        }}
         role="combobox"
         aria-label="搜索"
         aria-autocomplete="list"
-        aria-expanded={showSuggest && open}
+        aria-expanded={hasQuery && open}
         aria-controls="search-suggest-list"
         aria-activedescendant={activeIndex >= 0 ? `search-option-${activeIndex}` : undefined}
         onKeyDown={(event) => {
@@ -210,10 +219,10 @@ export function SearchBox() {
               activateOption(activeIndex)
               return
             }
-            // Empty field: Enter takes the recommended keyword shown as the
-            // placeholder (strip its leading emoji before searching).
-            const recommended = defaultKeyword.replace(/^[^\p{L}\p{N}]+/u, '').trim()
-            goSearch(keyword.trim() || recommended || undefined)
+            // Empty field: Enter searches the real default keyword (`realkeyword`,
+            // e.g. "疑心病"), not the editorial placeholder copy
+            // (`showKeyword`, e.g. "🔥 大家都在搜 疑心病").
+            goSearch(keyword.trim() || defaultQuery || undefined)
             return
           }
           if (event.key === 'Escape') {
@@ -222,12 +231,13 @@ export function SearchBox() {
           }
         }}
         wrapperClassName="w-full"
-        className="h-9 rounded-full bg-white/80 pl-9 pr-9"
+        className="h-9 rounded-full bg-white/80 pl-9 pr-9 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
       />
 
       {/* Own clear button: the slot provided by the input was not clickable and
-          did not centre vertically, so it is positioned against the wrapper. */}
-      {keyword ? (
+          did not centre vertically, so it is positioned against the wrapper.
+          Hidden for whitespace-only input, which is empty for search purposes. */}
+      {hasQuery ? (
         <button
           type="button"
           aria-label="清空搜索"
@@ -246,7 +256,7 @@ export function SearchBox() {
       {open && (
         <div className="absolute left-0 top-full z-[80] mt-2 w-full min-w-[280px] overflow-hidden rounded-[18px] border border-black/10 bg-white/95 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.35)] backdrop-blur-xl fade-up">
           <div className="max-h-[480px] overflow-y-auto">
-            {!showSuggest && (
+            {!hasQuery && (
               <>
                 {searchHistory.length > 0 && (
                   <div className="px-4 pt-4">
@@ -321,7 +331,7 @@ export function SearchBox() {
               </>
             )}
 
-            {showSuggest && (
+            {hasQuery && (
               <div id="search-suggest-list" role="listbox" aria-label="搜索建议" className="py-2">
                 {loading ? (
                   <div className="flex h-28 items-center justify-center">

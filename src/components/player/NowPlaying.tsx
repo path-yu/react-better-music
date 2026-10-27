@@ -102,7 +102,11 @@ export function NowPlaying() {
   const albumId = currentSong.al.id
   const openAlbum = () => {
     if (!albumId) return
-    // Navigating changes `pathname`, which closes this overlay via the effect above.
+    // Close first: the router may commit the album route only after its data
+    // resolves, so relying on the pathname effect would leave this overlay on
+    // top of the page the user just asked for (and it never fires when the
+    // album is already the current path).
+    toggleNowPlaying(false)
     void navigate({ to: '/albums/$id', params: { id: String(albumId) } })
   }
 
@@ -127,26 +131,27 @@ export function NowPlaying() {
           immersive content clear of it. */}
       <div className="relative flex h-full flex-col pb-[76px]">
         <div className="flex h-[58px] flex-none items-center justify-between px-6">
-          <p className="eyebrow">正在播放</p>
+          <button
+            type="button"
+            aria-label="收起播放页"
+            title="收起播放页（Esc）"
+            onClick={() => toggleNowPlaying(false)}
+            className="pressable flex h-9 items-center gap-1.5 rounded-full bg-white/10 px-3 text-[11px] text-white/70 transition-colors hover:bg-white/16 hover:text-white max-md:h-10"
+          >
+            <ChevronDown className="h-3.5 w-3.5" />
+            <span className="max-md:hidden">收起</span>
+          </button>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              aria-label="收起播放页"
-              title="收起播放页（Esc）"
-              onClick={() => toggleNowPlaying(false)}
-              className="pressable flex h-9 items-center gap-1.5 rounded-full bg-white/10 px-3 text-[11px] text-white/70 transition-colors hover:bg-white/16 hover:text-white"
-            >
-              <ChevronDown className="h-3.5 w-3.5" />
-              <span className="max-md:hidden">收起</span>
-            </button>
+          {/* The floating player bar already exposes like/queue on desktop; on
+              mobile it hides both, so this row is their only entry point. */}
+          <div className="flex items-center gap-2 md:hidden">
             <button
               type="button"
               aria-label={liked ? '取消喜欢' : '喜欢'}
               aria-pressed={liked}
               title={liked ? '取消喜欢' : '喜欢'}
               onClick={() => void likeSong(currentSong.id, !liked)}
-              className="pressable flex h-9 w-9 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/16 max-md:h-10 max-md:w-10"
+              className="pressable flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/16"
             >
               <Heart
                 className={cn(
@@ -160,7 +165,7 @@ export function NowPlaying() {
               aria-label="播放列表"
               title="播放列表"
               onClick={() => toggleQueue(true)}
-              className="pressable flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/60 transition-colors hover:bg-white/16 hover:text-white max-md:h-10 max-md:w-10"
+              className="pressable flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/60 transition-colors hover:bg-white/16 hover:text-white"
             >
               <ListMusic className="h-4 w-4" />
             </button>
@@ -184,7 +189,7 @@ export function NowPlaying() {
                   type="button"
                   onClick={openAlbum}
                   disabled={!albumId}
-                  className="pressable rounded-[6px] underline-offset-2 transition-colors hover:text-white hover:underline disabled:cursor-default"
+                  className="pressable rounded-[6px] underline-offset-2 transition-colors hover:text-white hover:underline disabled:cursor-default cursor-pointer"
                 >
                   {currentSong.al.name}
                 </button>

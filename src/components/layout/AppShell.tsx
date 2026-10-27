@@ -117,7 +117,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     // reading scrollTop right after the assignment returns a stale value.
     const setScroll = (top: number) => {
       const previous = element.style.scrollBehavior
-      element.style.scrollBehavior = 'auto'
+      element.style.scrollBehavior = "smooth"
       element.scrollTop = top
       element.style.scrollBehavior = previous
     }

@@ -4,6 +4,7 @@ import {
   checkMusicAvailable,
   fetchIntelligenceList,
   fetchLyric,
+  fetchMatchedSongUrl,
   fetchPersonalFm,
   fetchSongUrlInfo,
 } from '../api'
@@ -71,25 +72,62 @@ interface PlayerState {
   markSongLike: (id: number, like: boolean) => void
 }
 
-async function enrichSong(song: Song): Promise<Song> {
-  const available = await checkMusicAvailable(song.id)
-  if (!available) {
-    throw new Error('亲爱的，暂无版权，已为你跳过')
+type SongSource = {
+  url: string | null
+  trialEnd: number | null
+  /** The URL came from `/song/url/match` (third-party provider). */
+  unblocked: boolean
+}
+
+/**
+ * Resolve a playable media URL. `fee === 0` is the app's "no official source"
+ * state, so those tracks fall back to the local UnblockNeteaseMusic matcher;
+ * everything else keeps the normal official-source behaviour.
+ */
+async function resolveSongSource(song: Song): Promise<SongSource> {
+  try {
+    const info = await fetchSongUrlInfo(song.id, useSettingsStore.getState().playLevel)
+    if (info.url) return { ...info, unblocked: false }
+  } catch (error) {
+    // The official lookup can fail outright for gray tracks; keep going.
+    if (song.fee !== 0) throw error
   }
-  const { url, trialEnd } = await fetchSongUrlInfo(
-    song.id,
-    useSettingsStore.getState().playLevel,
-  )
-  if (!url) {
+  if (song.fee !== 0) return { url: null, trialEnd: null, unblocked: false }
+  try {
+    const matched = await fetchMatchedSongUrl(song.id)
+    if (matched.url) return { url: matched.url, trialEnd: null, unblocked: true }
+  } catch {
+    // No provider matched; fall through to the regular unavailable error.
+  }
+  return { url: null, trialEnd: null, unblocked: false }
+}
+
+/** Songs already announced as matched to another provider (one toast each). */
+const unblockAnnounced = new Set<number>()
+
+/**
+ * `/audio/proxy` only accepts NetEase CDN hosts (enforced in server/server.js),
+ * so third-party matches are streamed directly by the audio element.
+ */
+const NETEASE_MEDIA = /^https?:\/\/[^/]*music\.126\.net\//
+
+function playbackUrl(url: string, unblocked: boolean) {
+  return unblocked && !NETEASE_MEDIA.test(url) ? url : apiUrl('/audio/proxy', { url })
+}
+
+async function enrichSong(song: Song): Promise<Song> {
+  const source = await resolveSongSource(song)
+  if (!source.url) {
     throw new Error('获取歌曲播放地址失败')
   }
   const lyricData = await fetchLyric(song.id)
   const lyrics = buildLyricLines(lyricData)
   return {
     ...song,
-    url,
+    url: source.url,
+    unblocked: source.unblocked,
     urlFetchedAt: Date.now(),
-    trialEnd,
+    trialEnd: source.trialEnd,
     lyric: lyricData.lyric,
     tlyric: lyricData.tlyric,
     yrc: lyricData.yrc,
@@ -110,8 +148,6 @@ function readLyrics(song?: Song) {
   return []
 }
 
-const playableQueue = (songs: Song[]) => songs.filter((song) => song.fee !== 0)
-
 // NetEase media URLs expire after roughly 20 minutes; treat anything older
 // than this as stale and resolve it again before playback.
 const URL_TTL = 10 * 60 * 1000
@@ -120,10 +156,7 @@ const AUDIO_PREFETCH_DELAY = 1800
 
 let prefetchTimer: number | undefined
 let prefetchToken = 0
-const urlRequests = new Map<
-  number,
-  Promise<{ url: string | null; trialEnd: number | null }>
->()
+const urlRequests = new Map<number, Promise<SongSource>>()
 
 function hasFreshUrl(song: Song) {
   return Boolean(
@@ -188,10 +221,9 @@ export const usePlayerStore = create<PlayerState>()(
       }
 
       const requestNeighborUrl = (song: Song) => {
-        const level = useSettingsStore.getState().playLevel
         const pendingRequest = urlRequests.get(song.id)
         if (pendingRequest) return pendingRequest
-        const request = fetchSongUrlInfo(song.id, level).finally(() => {
+        const request = resolveSongSource(song).finally(() => {
           urlRequests.delete(song.id)
         })
         urlRequests.set(song.id, request)
@@ -217,7 +249,7 @@ export const usePlayerStore = create<PlayerState>()(
           for (let step = 1; index + step < queue.length; step += 1) {
             const candidateIndex = index + step
             const candidate = queue[candidateIndex]
-            if (candidate && candidate.fee !== 0) {
+            if (candidate) {
               return { index: candidateIndex, song: candidate }
             }
           }
@@ -234,23 +266,28 @@ export const usePlayerStore = create<PlayerState>()(
         if (!neighbors.length) return
 
         const resolves = neighbors.map(async ({ index: neighborIndex, song }) => {
+          // Gray tracks are matched at play time: prefetching would need a
+          // third-party download and would skip the "matched source" notice.
+          if (song.fee === 0) return null
           if (await hasCachedAudio(song.id)) return null
           let url = hasFreshUrl(song) ? (song.url ?? null) : null
           let trialEnd = song.trialEnd ?? null
+          let unblocked = Boolean(song.unblocked)
           if (!url) {
             try {
               const info = await requestNeighborUrl(song)
               url = info.url
               trialEnd = info.trialEnd
+              unblocked = info.unblocked
             } catch {
               return null
             }
             if (!url) return null
             const active = get().queue[neighborIndex]
             if (!active || active.id !== song.id) return null
-            patchSong(neighborIndex, { url, urlFetchedAt: Date.now(), trialEnd })
+            patchSong(neighborIndex, { url, urlFetchedAt: Date.now(), trialEnd, unblocked })
           }
-          return { songId: song.id, url, trialEnd }
+          return { songId: song.id, url, trialEnd, unblocked }
         })
 
         // Lossless/Hi-Res files can reach dozens of megabytes; keep those as
@@ -264,7 +301,11 @@ export const usePlayerStore = create<PlayerState>()(
             if (token !== prefetchToken || get().currentIndex !== index) return
             if (!allowDownload) return
             for (const result of results) {
-              if (result) void prefetchAudio(result.songId, result.url, result.trialEnd)
+              // Third-party URLs cannot go through the NetEase-only audio
+              // proxy, so they stay streaming-only (no blob prefetch/cache).
+              if (result && !result.unblocked) {
+                void prefetchAudio(result.songId, result.url, result.trialEnd)
+              }
             }
           }
           if (delay <= 0) {
@@ -300,10 +341,6 @@ export const usePlayerStore = create<PlayerState>()(
         const state = get()
         const song = state.queue[index]
         if (!song) return false
-        if (song.fee === 0) {
-          toast.warning(`「${song.name}」暂无音源`)
-          return false
-        }
         const requestId = state.loadRequestId + 1
         // Clear stale lyrics/source so a different song never shows the
         // previous track's data while its own source is still resolving.
@@ -352,20 +389,30 @@ export const usePlayerStore = create<PlayerState>()(
           const fresh = hasFreshUrl(song)
           let url: string | null = fresh ? (song.url ?? null) : null
           let trialEnd: number | null = fresh ? (song.trialEnd ?? null) : null
+          let unblocked = fresh ? Boolean(song.unblocked) : false
           if (!url) {
-            const info = await fetchSongUrlInfo(song.id, useSettingsStore.getState().playLevel)
-            url = info.url
-            trialEnd = info.trialEnd
+            const source = await resolveSongSource(song)
             if (get().loadRequestId !== requestId) return true
-            if (url) patchSong(index, { url, urlFetchedAt: Date.now(), trialEnd })
+            url = source.url
+            trialEnd = source.trialEnd
+            unblocked = source.unblocked
+            if (url) {
+              patchSong(index, { url, urlFetchedAt: Date.now(), trialEnd, unblocked })
+            }
           }
           if (!url) {
             const available = await checkMusicAvailable(song.id)
             throw new Error(available ? '获取歌曲播放地址失败' : '亲爱的，暂无版权，已为你跳过')
           }
+          // Announce once per song, even when the URL was patched earlier by a
+          // prefetch or a retry (those paths never showed the notice).
+          if (unblocked && !unblockAnnounced.has(song.id)) {
+            unblockAnnounced.add(song.id)
+            toast.info(`「${song.name}」暂无官方音源，已为你匹配其他音源播放`)
+          }
           // Stream through the local API: the WebView cannot load the CDN
           // media URL directly (it answers 403 for cross-origin media).
-          set({ audioUrl: apiUrl('/audio/proxy', { url }), sourceReady: true })
+          set({ audioUrl: playbackUrl(url, unblocked), sourceReady: true })
           if (trialEnd && trialEnd > 0) {
             toast.warning(`当前仅可试听 ${trialEnd} 秒，登录或开通会员后可播放完整版`)
           }
@@ -447,7 +494,7 @@ export const usePlayerStore = create<PlayerState>()(
         if (!queue.length) return
         if (mode === 'random' && queue.length > 1) {
           const candidates = queue
-            .map((song, index) => (song && song.fee !== 0 ? index : -1))
+            .map((song, index) => (song ? index : -1))
             .filter((index) => index >= 0 && index !== currentIndex)
           if (!candidates.length) {
             set({ playing: false })
@@ -484,7 +531,7 @@ export const usePlayerStore = create<PlayerState>()(
         for (let attempt = 0; attempt < maxSteps; attempt += 1) {
           index = (index + direction + queue.length) % queue.length
           const song = queue[index]
-          if (!song || song.fee === 0) continue
+          if (!song) continue
           set((state) => ({
             currentIndex: index,
             playing: true,
@@ -530,21 +577,16 @@ export const usePlayerStore = create<PlayerState>()(
         lyricLoading: false,
 
         async initQueue(songs, index, playlistId) {
-          const list = playableQueue(songs)
-          if (!list.length) {
+          if (!songs.length) {
             toast.warning('该列表暂无可播放歌曲')
             return
           }
           const target = songs[index]
-          if (target && target.fee === 0) {
-            toast.warning(`「${target.name}」暂无音源`)
-            return
-          }
           const targetIndex = target
-            ? Math.max(0, list.findIndex((song) => song.id === target.id))
+            ? Math.max(0, songs.findIndex((song) => song.id === target.id))
             : 0
           set((state) => ({
-            queue: list,
+            queue: [...songs],
             currentIndex: targetIndex,
             playlistId,
             playing: true,
@@ -564,10 +606,6 @@ export const usePlayerStore = create<PlayerState>()(
           const { queue } = get()
           const song = queue[index]
           if (!song) return false
-          if (song.fee === 0) {
-            toast.warning(`「${song.name}」暂无音源`)
-            return false
-          }
           set((state) => ({
             currentIndex: index,
             playing: true,
@@ -742,7 +780,9 @@ export const usePlayerStore = create<PlayerState>()(
             const freshUrl = fresh.url
             patchSong(currentIndex, fresh)
             set({
-              audioUrl: freshUrl ? apiUrl('/audio/proxy', { url: freshUrl }) : '',
+              audioUrl: freshUrl
+                ? playbackUrl(freshUrl, Boolean(fresh.unblocked))
+                : '',
               sourceReady: true,
               audioFromCache: false,
               audioBlob: null,

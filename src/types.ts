@@ -68,6 +68,8 @@ export interface Song {
   /** enriched at runtime */
   url?: string
   urlFetchedAt?: number
+  /** URL resolved by `/song/url/match` (third-party provider, not NetEase CDN). */
+  unblocked?: boolean
   /** Trial length in seconds when NetEase only returns a preview clip. */
   trialEnd?: number | null
   lyric?: string
