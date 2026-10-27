@@ -53,6 +53,14 @@ export interface AlbumDetail extends ArtistAlbum {
 
 export type PlayLevel = 'standard' | 'higher' | 'exhigh' | 'lossless' | 'hires'
 
+/** NetEase's own copyright hint attached to songs in list payloads. */
+export interface NoCopyrightRcmd {
+  type?: number
+  /** User-facing text; empty when there is nothing to report. */
+  typeDesc?: string
+  typeDesc2?: string
+}
+
 export interface Song {
   id: number
   name: string
@@ -60,6 +68,7 @@ export interface Song {
   al: Album
   dt: number
   fee?: number
+  noCopyrightRcmd?: NoCopyrightRcmd | null
   mv?: number
   mvid?: number
   alia?: string[]

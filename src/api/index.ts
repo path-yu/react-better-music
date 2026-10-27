@@ -16,13 +16,7 @@ import type {
   PlayLevel,
 } from '../types'
 import { get, invalidateApiCache, uploadFile } from '../lib/http'
-import {
-  hasNoSource,
-  normalizeMv,
-  normalizePlaylist,
-  normalizeSongs,
-  type RawSong,
-} from '../lib/songs'
+import { normalizeMv, normalizePlaylist, normalizeSongs, type RawSong } from '../lib/songs'
 
 /** The CDN sometimes hands out http media URLs, which the WebView rejects. */
 function secureMediaUrl(url: string | null | undefined) {
@@ -230,10 +224,15 @@ export async function fetchMatchedSongUrl(id: number | string, source?: string) 
   return { url: matchedUrl(res.data) || res.proxyUrl || '' }
 }
 
-export async function checkMusicAvailable(id: number | string) {
+/**
+ * Availability verdict for an *undecided* gray track (`fee === 0` with no
+ * `noCopyrightRcmd` hint). Normal tracks never need it. `br` defaults to
+ * 999000 (highest bitrate) server-side.
+ */
+export async function checkMusicAvailable(id: number | string, br?: number) {
   const res = await get<{ success?: boolean; musicSuccess?: boolean; message?: string }>(
     '/check/music',
-    { id },
+    br ? { id, br } : { id },
   )
   return Boolean(res.success ?? res.musicSuccess)
 }
@@ -509,7 +508,7 @@ export async function fetchIntelligenceList(params: {
     (res.data ?? [])
       .map((item) => item.songInfo)
       .filter((song): song is RawSong => Boolean(song)),
-  ).filter((song) => !hasNoSource(song))
+  )
 }
 
 export async function fetchPersonalFm(limit = 10) {
@@ -517,7 +516,7 @@ export async function fetchPersonalFm(limit = 10) {
     limit,
     timestamp: Date.now(),
   })
-  return normalizeSongs(res.data).filter((song) => !hasNoSource(song))
+  return normalizeSongs(res.data)
 }
 
 /* ---------------------------------- user --------------------------------- */

@@ -189,6 +189,9 @@ const READ_CACHE_RULES: ReadCacheRule[] = [
   { prefix: '/album', ttl: 5 * 60_000 },
   { prefix: '/lyric/new', ttl: 10 * 60_000 },
   { prefix: '/song/url/v1', ttl: 60_000, swr: false },
+  // Availability is asked twice for the same track (prefetch + playback); a
+  // short-lived cache keeps that from doubling the round trips.
+  { prefix: '/check/music', ttl: 60_000, swr: false },
   // Cross-provider matching is slow; short-lived cache avoids repeating it for
   // the prefetch request and the actual playback of the same track.
   { prefix: '/song/url/match', ttl: 60_000, swr: false },

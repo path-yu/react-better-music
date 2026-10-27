@@ -9,7 +9,7 @@ import {
   fetchSongUrlInfo,
 } from '../api'
 import { buildLyricLines, isEmptyLyric, type LyricLine } from '../lib/lyric'
-import { hasNoSource } from '../lib/songs'
+import { copyrightHint } from '../lib/songs'
 import { apiUrl } from '../lib/http'
 import { getAudio } from '../lib/audio'
 import { getCachedAudio, hasCachedAudio } from '../lib/songCache'
@@ -80,29 +80,48 @@ type SongSource = {
   trialEnd: number | null
   /** The URL came from `/song/url/match` (third-party provider). */
   unblocked: boolean
+  /** `/check/music` verdict: false means NetEase reports no copyright. */
+  available: boolean
 }
 
 /**
- * Resolve a playable media URL. Rows the UI tags "无音源" (`hasNoSource`) fall
- * back to the local UnblockNeteaseMusic matcher; everything else keeps the
- * normal official-source behaviour.
+ * Resolve a playable media URL. The official lookup runs first; only an
+ * undecided gray track (`fee === 0` without a `noCopyrightRcmd` hint) asks
+ * `/check/music`, and a copyright-less verdict falls back to the local
+ * UnblockNeteaseMusic matcher.
  */
 async function resolveSongSource(song: Song): Promise<SongSource> {
+  const level = useSettingsStore.getState().playLevel
+  let urlError: unknown = null
   try {
-    const info = await fetchSongUrlInfo(song.id, useSettingsStore.getState().playLevel)
-    if (info.url) return { ...info, unblocked: false }
+    const info = await fetchSongUrlInfo(song.id, level)
+    if (info.url) return { ...info, unblocked: false, available: true }
   } catch (error) {
-    // The official lookup can fail outright for gray tracks; keep going.
-    if (!hasNoSource(song)) throw error
+    // Gray tracks often fail outright; normal tracks surface the error below.
+    urlError = error
   }
-  if (!hasNoSource(song)) return { url: null, trialEnd: null, unblocked: false }
+
+  const hint = copyrightHint(song)
+  if (!hint) {
+    // Normal tracks have no verdict to ask for.
+    if (song.fee !== 0) {
+      if (urlError) throw urlError
+      return { url: null, trialEnd: null, unblocked: false, available: true }
+    }
+    // A failed check is "unknown", not "no copyright".
+    const available = await checkMusicAvailable(song.id).catch(() => true)
+    if (available) return { url: null, trialEnd: null, unblocked: false, available: true }
+  }
+
   try {
     const matched = await fetchMatchedSongUrl(song.id)
-    if (matched.url) return { url: matched.url, trialEnd: null, unblocked: true }
+    if (matched.url) {
+      return { url: matched.url, trialEnd: null, unblocked: true, available: false }
+    }
   } catch {
-    // No provider matched; fall through to the regular unavailable error.
+    // No provider matched; fall through to the unavailable error.
   }
-  return { url: null, trialEnd: null, unblocked: false }
+  return { url: null, trialEnd: null, unblocked: false, available: false }
 }
 
 /** Songs already announced as matched to another provider (one toast each). */
@@ -121,7 +140,7 @@ function playbackUrl(url: string, unblocked: boolean) {
 async function enrichSong(song: Song): Promise<Song> {
   const source = await resolveSongSource(song)
   if (!source.url) {
-    throw new Error('获取歌曲播放地址失败')
+    throw new Error(source.available ? '获取歌曲播放地址失败' : '亲爱的，暂无版权，已为你跳过')
   }
   const lyricData = await fetchLyric(song.id)
   const lyrics = buildLyricLines(lyricData)
@@ -204,6 +223,7 @@ function persistQueue(queue: Song[], currentIndex: number) {
     al: song.al,
     dt: song.dt,
     fee: song.fee,
+    noCopyrightRcmd: song.noCopyrightRcmd,
     mv: song.mv,
     mvid: song.mvid,
     alia: song.alia,
@@ -269,9 +289,6 @@ export const usePlayerStore = create<PlayerState>()(
         if (!neighbors.length) return
 
         const resolves = neighbors.map(async ({ index: neighborIndex, song }) => {
-          // Gray tracks are matched at play time: prefetching would need a
-          // third-party download and would skip the "matched source" notice.
-          if (hasNoSource(song)) return null
           if (await hasCachedAudio(song.id)) return null
           let url = hasFreshUrl(song) ? (song.url ?? null) : null
           let trialEnd = song.trialEnd ?? null
@@ -393,18 +410,19 @@ export const usePlayerStore = create<PlayerState>()(
           let url: string | null = fresh ? (song.url ?? null) : null
           let trialEnd: number | null = fresh ? (song.trialEnd ?? null) : null
           let unblocked = fresh ? Boolean(song.unblocked) : false
+          let available = true
           if (!url) {
             const source = await resolveSongSource(song)
             if (get().loadRequestId !== requestId) return true
             url = source.url
             trialEnd = source.trialEnd
             unblocked = source.unblocked
+            available = source.available
             if (url) {
               patchSong(index, { url, urlFetchedAt: Date.now(), trialEnd, unblocked })
             }
           }
           if (!url) {
-            const available = await checkMusicAvailable(song.id)
             throw new Error(available ? '获取歌曲播放地址失败' : '亲爱的，暂无版权，已为你跳过')
           }
           // Announce once per song, even when the URL was patched earlier by a

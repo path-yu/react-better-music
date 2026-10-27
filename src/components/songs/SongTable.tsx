@@ -9,7 +9,7 @@ import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
 import { formatDuration } from '../../lib/format'
 import { cn } from '../../lib/format'
-import { hasNoSource } from '../../lib/songs'
+import { copyrightHint } from '../../lib/songs'
 import type { Song } from '../../types'
 
 interface SongTableProps {
@@ -53,6 +53,7 @@ const SongRow = memo(function SongRow({
   onPlay,
   onLike,
 }: SongRowProps) {
+  const note = copyrightHint(song)
   return (
     <div
       onClick={(event) => {
@@ -123,14 +124,14 @@ const SongRow = memo(function SongRow({
                 VIP
               </span>
             ) : null}
-            {hasNoSource(song) ? (
-              <span className="shrink-0 rounded-[6px] bg-black/6 px-1 text-[11px] text-black/35">
-                无音源
-              </span>
-            ) : null}
           </div>
           <p className="song-artist-mobile mt-0.5 truncate text-[11px] text-black/35">
             <ArtistLinks artists={song.ar} />
+            {note ? (
+              <span className="ml-1.5 rounded-[6px] bg-black/6 px-1 text-[11px] text-black/35">
+                {note}
+              </span>
+            ) : null}
           </p>
         </div>
         <button
@@ -151,9 +152,16 @@ const SongRow = memo(function SongRow({
         </button>
       </div>
 
-      <p className="song-meta truncate text-[11.5px] text-black/45">
-        <ArtistLinks artists={song.ar} />
-      </p>
+      <div className="song-meta min-w-0">
+        <div className="flex min-w-0 items-center gap-1.5 text-[11.5px] text-black/45">
+          <ArtistLinks artists={song.ar} className="min-w-0 truncate" />
+          {note ? (
+            <span className="shrink-0 rounded-[6px] bg-black/6 px-1 text-[11px] text-black/35">
+              {note}
+            </span>
+          ) : null}
+        </div>
+      </div>
       <p className="song-meta truncate text-[11.5px] text-black/40">{song.al.name}</p>
       <p className="text-right text-[11px] tabular-nums text-black/30">
         {formatDuration(song.dt)}
