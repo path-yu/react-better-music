@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   AudioLines,
   Check,
   ChevronDown,
   ChevronUp,
   Heart,
+  Languages,
   ListMusic,
   Loader2,
   Pause,
@@ -60,6 +61,7 @@ export function PlayerBar() {
   const audioBlob = usePlayerStore((state) => state.audioBlob)
   const heartMode = usePlayerStore((state) => state.heartMode)
   const heartLoading = usePlayerStore((state) => state.heartLoading)
+  const lyricLines = usePlayerStore((state) => state.lyricLines)
 
   const togglePlay = usePlayerStore((state) => state.togglePlay)
   const next = usePlayerStore((state) => state.next)
@@ -79,6 +81,13 @@ export function PlayerBar() {
 
   const playLevel = useSettingsStore((state) => state.playLevel)
   const setPlayLevel = useSettingsStore((state) => state.setPlayLevel)
+  const showLyricTranslation = useSettingsStore((state) => state.showLyricTranslation)
+  const setShowLyricTranslation = useSettingsStore((state) => state.setShowLyricTranslation)
+  // The toggle is only meaningful when the current lyric actually carries a translation.
+  const hasTranslation = useMemo(
+    () => lyricLines.some((line) => Boolean(line.translate)),
+    [lyricLines],
+  )
   const [qualityOpen, setQualityOpen] = useState(false)
   // Real duration reported by the media element; trial clips are shorter than
   // the catalogue duration in song.dt.
@@ -527,6 +536,25 @@ export function PlayerBar() {
       </div>
 
       <div className="flex items-center justify-end gap-2 max-md:hidden">
+        {hasTranslation ? (
+          <button
+            type="button"
+            aria-label={showLyricTranslation ? '隐藏歌词译文' : '显示歌词译文'}
+            aria-pressed={showLyricTranslation}
+            title={showLyricTranslation ? '隐藏歌词译文' : '显示歌词译文'}
+            onClick={() => {
+              const next = !showLyricTranslation
+              setShowLyricTranslation(next)
+            }}
+            className={cn(
+              'pressable flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-black/5',
+              showLyricTranslation ? 'text-accent' : 'text-black/45 hover:text-black/75',
+            )}
+          >
+            <Languages className="h-[15px] w-[15px]" />
+          </button>
+        ) : null}
+
         <Popover open={qualityOpen} onOpenChange={setQualityOpen}>
           <PopoverTrigger asChild>
             <button

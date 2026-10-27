@@ -1111,7 +1111,7 @@ html.desktop .app-window {
 .lyric-line__translate {
   color: var(--lyric-sub);
   /* Apple's supplementary size is 0.54 × the line size. */
-  font-size: 0.54em;
+  font-size: 0.9em;
   line-height: 1.4;
 }
 

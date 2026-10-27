@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import type { LyricLine, LyricWord } from '../../lib/lyric'
+import { useSettingsStore } from '../../store/settings'
 import { getAudio } from '../../lib/audio'
 import { cn } from '../../lib/format'
 
@@ -95,6 +96,7 @@ export function LyricsPanel({
   const containerRef = useRef<HTMLDivElement>(null)
   const lineRefs = useRef<Record<number, HTMLButtonElement | null>>({})
   const lastActiveRef = useRef(-1)
+  const showTranslation = useSettingsStore((state) => state.showLyricTranslation)
 
   useEffect(() => {
     const container = containerRef.current
@@ -170,7 +172,7 @@ export function LyricsPanel({
                   line.content
                 )}
               </span>
-              {line.translate ? (
+              {showTranslation && line.translate ? (
                 <span className="lyric-line__translate mt-1 block">{line.translate}</span>
               ) : null}
             </button>

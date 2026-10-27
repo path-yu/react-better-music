@@ -19,10 +19,13 @@ export const PLAY_QUALITY_OPTIONS: Array<{ value: PlayLevel; label: string }> = 
 interface SettingsState {
   cacheBitrate: number
   playLevel: PlayLevel
+  /** Show the translated line under each lyric line. */
+  showLyricTranslation: boolean
   /** Desktop only: block right-click / F12 / DevTools shortcuts. */
   disableDevTools: boolean
   setCacheBitrate: (value: number) => void
   setPlayLevel: (value: PlayLevel) => void
+  setShowLyricTranslation: (value: boolean) => void
   setDisableDevTools: (value: boolean) => void
 }
 
@@ -31,9 +34,11 @@ export const useSettingsStore = create<SettingsState>()(
     (set) => ({
       cacheBitrate: 96,
       playLevel: 'exhigh',
+      showLyricTranslation: true,
       disableDevTools: true,
       setCacheBitrate: (cacheBitrate) => set({ cacheBitrate }),
       setPlayLevel: (playLevel) => set({ playLevel }),
+      setShowLyricTranslation: (showLyricTranslation) => set({ showLyricTranslation }),
       setDisableDevTools: (disableDevTools) => set({ disableDevTools }),
     }),
     { name: 'react-music-settings' },
