@@ -740,6 +740,9 @@ html.desktop .app-window {
      bottom edge has no seam (content is padded by the bar height instead). */
   inset: 0;
   z-index: 60;
+  /* Keep the overlay's backdrop (artwork) independent from the transparent
+     title bar: a hover repaint above must not bleed into blurred controls. */
+  isolation: isolate;
   overflow: hidden;
   /* Fixed artwork surface: it keeps its own dark palette regardless of the app
      theme, so the page never flips when the user toggles light/dark outside. */
@@ -784,13 +787,18 @@ html.desktop .app-window {
   gap: 2px;
   padding: 2px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.07);
+  /*
+   * No backdrop-filter here: in WebView2, hovering the transparent native
+   * title bar makes the blur re-sample a light surface, which paints a grey
+   * rectangle over the segments. Layered translucency keeps the frosted look
+   * without the compositing artifact.
+   */
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.05));
   border: 1px solid rgba(255, 255, 255, 0.09);
   box-shadow:
     inset 0 1px 1px rgba(255, 255, 255, 0.05),
     0 4px 18px rgba(0, 0, 0, 0.12);
-  backdrop-filter: blur(18px) saturate(160%);
-  -webkit-backdrop-filter: blur(18px) saturate(160%);
   isolation: isolate;
 }
 
@@ -851,8 +859,6 @@ html.desktop .app-window {
   box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
   transition:
     transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
     background-color 0.22s ease,
