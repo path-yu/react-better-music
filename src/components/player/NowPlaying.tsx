@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useRouterState } from '@tanstack/react-router'
 import { Disc3, Heart, ListMusic, Loader2, MessageSquareText } from 'lucide-react'
 import { ImageWithFallback } from '../common/ImageWithFallback'
@@ -40,7 +40,12 @@ export function NowPlaying() {
   const [panel, setPanel] = useState<'lyrics' | 'comments'>('lyrics')
   const [dominantColor, setDominantColor] = useState<string | null>(null)
 
+  // The overlay is lazy-mounted only while open, so the first effect run is the
+  // mount itself — not a navigation. Only close on a real pathname change.
+  const initialPathRef = useRef(pathname)
   useEffect(() => {
+    if (pathname === initialPathRef.current) return
+    initialPathRef.current = pathname
     if (show) toggleNowPlaying(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname])

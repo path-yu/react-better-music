@@ -227,15 +227,18 @@ export function PlayerBar() {
     startCrossfade(audio)
   }
 
-  // The HUD can also be toggled by the global shortcut; refresh the button state
-  // whenever the main window regains focus.
+  // The HUD can also be toggled by the global shortcut or its own close button,
+  // so the two toolbar buttons need to stay in sync. Poll only while the window
+  // is visible (a minimized/tray window sends nothing) and at a low rate; focus
+  // and the button handlers cover the interactive cases immediately.
   useEffect(() => {
     if (!desktopShell) return
     let active = true
-    // A hung bridge must not queue a new pair of requests every two seconds.
     let polling = false
+    let timer = 0
+
     const sync = () => {
-      if (polling) return
+      if (!active || document.visibilityState !== 'visible' || polling) return
       polling = true
       void Promise.allSettled([
         getDesktopLyricsVisible().then(({ visible }) => {
@@ -248,14 +251,22 @@ export function PlayerBar() {
         polling = false
       })
     }
-    sync()
+
+    const start = () => {
+      window.clearInterval(timer)
+      if (document.visibilityState !== 'visible') return
+      sync()
+      timer = window.setInterval(sync, 10_000)
+    }
+
+    start()
     window.addEventListener('focus', sync)
-    // The global shortcut toggles the HUD without touching this window.
-    const timer = window.setInterval(sync, 2000)
+    document.addEventListener('visibilitychange', start)
     return () => {
       active = false
       window.clearInterval(timer)
       window.removeEventListener('focus', sync)
+      document.removeEventListener('visibilitychange', start)
     }
   }, [desktopShell])
 

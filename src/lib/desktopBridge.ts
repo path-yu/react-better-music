@@ -73,6 +73,15 @@ export async function requestJson<T>(path: string, init?: RequestInit): Promise<
   return (await response.json()) as T
 }
 
+/** Append a renderer diagnostic line to the desktop startup log. */
+export function reportDesktopLog(message: string) {
+  if (!isDesktopApp()) return
+  void bridgeFetch('/log', {
+    method: 'POST',
+    body: message.slice(0, 500),
+  }).catch(() => undefined)
+}
+
 /** Whether the next launch should create WebView2 with DevTools disabled. */
 export async function getDevToolsPolicy() {
   return requestJson<{ disabled: boolean }>('/devtools-policy')

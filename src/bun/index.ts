@@ -232,8 +232,7 @@ function createMainWindow() {
   revealCurrentWindow = reveal
   // The document is parsed: the inline background/skeleton is ready to paint.
   window.on('dom-ready', (event) => {
-    const url =
-      (event as ElectrobunEvent<{ detail: string }, {}>)?.data?.detail ?? ''
+    const url = (event as { data?: { detail?: string } })?.data?.detail ?? ''
     // BrowserWindow may emit dom-ready for its initial about:blank first.
     if (!url || url === 'about:blank') return
     setTimeout(reveal, 40)
@@ -829,11 +828,22 @@ try {
       }
       try {
         if (url.pathname === '/startup-report' && request.method === 'POST') {
-          const body = (await request.json().catch(() => null)) as { paint?: number } | null
-          markStartup(`renderer-first-paint webview=${Math.round(Number(body?.paint ?? 0))}ms`)
+          const body = (await request.json().catch(() => null)) as {
+            paint?: number
+            secure?: boolean
+            audioEncoder?: string
+          } | null
+          markStartup(
+            `renderer-first-paint webview=${Math.round(Number(body?.paint ?? 0))}ms secure=${body?.secure === true} audioEncoder=${body?.audioEncoder ?? 'unknown'}`,
+          )
           // Extra trigger: if the native dom-ready event was missed, the first
           // renderer report also reveals the hidden window.
           revealMainWindow()
+          return Response.json({ ok: true }, { headers })
+        }
+        if (url.pathname === '/log' && request.method === 'POST') {
+          const message = (await request.text()).slice(0, 500)
+          markStartup(`renderer: ${message}`)
           return Response.json({ ok: true }, { headers })
         }
         if (url.pathname === '/devtools-policy' && request.method === 'GET') {

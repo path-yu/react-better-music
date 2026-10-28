@@ -1,4 +1,5 @@
 import { apiUrl } from './http'
+import { reportDesktopLog } from './desktopBridge'
 import { isDesktopApp, saveDownloadFile } from './desktopDownloads'
 import { toast } from './toast'
 import { useSettingsStore } from '../store/settings'
@@ -261,10 +262,14 @@ function enqueueCache(song: CacheableSong, source?: Blob) {
   const task = writeQueue
     .then(() => transcodeAndStore(song, epoch, source))
     .catch((error) => {
+      const reason = error instanceof Error ? error.message : String(error)
       console.warn('[song cache] failed:', error)
+      reportDesktopLog(`song cache failed: ${reason}`)
       if (!cacheWarningShown) {
         cacheWarningShown = true
-        toast.warning('音频缓存暂不可用，本次播放不会写入本地缓存')
+        // Keep the reason visible: WebCodecs/decode/quota failures used to be
+        // indistinguishable behind the generic message.
+        toast.warning(`音频缓存暂不可用：${reason.slice(0, 60)}`)
       }
     })
     .finally(() => {

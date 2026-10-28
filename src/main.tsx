@@ -55,7 +55,11 @@ if (desktop) {
     requestAnimationFrame(() => {
       void requestJson('/startup-report', {
         method: 'POST',
-        body: JSON.stringify({ paint: performance.now() }),
+        body: JSON.stringify({
+          paint: performance.now(),
+          secure: window.isSecureContext,
+          audioEncoder: typeof AudioEncoder,
+        }),
       }).catch(() => undefined)
     })
   })
