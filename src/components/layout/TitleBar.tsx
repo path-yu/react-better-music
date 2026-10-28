@@ -2,6 +2,7 @@ import { useEffect, useState, type MouseEvent } from 'react'
 import { useRouterState } from '@tanstack/react-router'
 import { Copy, Minus, Music2, Square, X } from 'lucide-react'
 import { isDesktopShell } from '../../lib/desktop'
+import { usePlayerStore } from '../../store/player'
 import {
   closeWindow,
   desktopPlatform,
@@ -28,7 +29,12 @@ const NO_DRAG_CLASS = 'electrobun-webkit-app-region-no-drag'
 
 export function TitleBar() {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
-  const subtitle = TITLES.find(([path]) => pathname === path || pathname.startsWith(path))?.[1]
+  const showNowPlaying = usePlayerStore((state) => state.showNowPlaying)
+  // The immersive song view owns the whole window; the underlying route label
+  // would be misleading there, so the chrome switches to the playback context.
+  const subtitle = showNowPlaying
+    ? '正在播放'
+    : TITLES.find(([path]) => pathname === path || pathname.startsWith(path))?.[1]
 
   if (isDesktopShell()) return <DesktopTitleBar subtitle={subtitle} />
 
@@ -43,7 +49,7 @@ export function TitleBar() {
         <Music2 className="h-3.5 w-3.5 text-accent" strokeWidth={2.2} />
         声屿
         {subtitle && subtitle !== '发现音乐' ? (
-          <span className="font-normal opacity-70">— {subtitle}</span>
+          <span className="titlebar-subtitle font-normal">— {subtitle}</span>
         ) : null}
       </div>
       <div className="ml-auto flex items-center gap-1.5 text-[11px] text-black/30">
@@ -117,7 +123,7 @@ function DesktopTitleBar({ subtitle }: { subtitle?: string }) {
         <Music2 className="h-3.5 w-3.5 text-accent" strokeWidth={2.2} />
         声屿
         {subtitle && subtitle !== '发现音乐' ? (
-          <span className="font-normal opacity-70">— {subtitle}</span>
+          <span className="titlebar-subtitle font-normal">— {subtitle}</span>
         ) : null}
       </div>
 

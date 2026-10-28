@@ -280,6 +280,12 @@ html.desktop .app-window {
   white-space: nowrap;
 }
 
+/* Secondary page label; needs its own colour because it does NOT inherit the
+   now-playing glass title colour reliably with an extra opacity layer. */
+.titlebar-subtitle {
+  color: rgba(0, 0, 0, 0.42);
+}
+
 /* ---------- Electrobun custom title bar ---------- */
 
 .desktop-titlebar {
@@ -357,6 +363,10 @@ html.desktop .app-window {
 }
 
 .app-window:has(.nowplaying-overlay) .titlebar-title {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.app-window:has(.nowplaying-overlay) .titlebar-subtitle {
   color: rgba(255, 255, 255, 0.58);
 }
 
@@ -1219,6 +1229,10 @@ html.desktop .app-window {
 }
 
 .dark .titlebar-title {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.dark .titlebar-subtitle {
   color: rgba(255, 255, 255, 0.58);
 }
 

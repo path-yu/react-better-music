@@ -7,11 +7,13 @@ import { EmptyState } from '../components/common/EmptyState'
 import { Pager } from '../components/common/Pager'
 import { SongTable } from '../components/songs/SongTable'
 import { PlayAllButton } from '../components/songs/PlayAllButton'
+import { VideoCard } from '../components/video/VideoCard'
+import { useVideoStore } from '../store/video'
 import { searchAll } from '../api'
 import { formatNumber } from '../lib/format'
 import { useDocumentTitle } from '../lib/title'
 import { toast } from '../lib/toast'
-import type { ArtistSummary, Playlist, Song } from '../types'
+import type { ArtistSummary, Playlist, Song, VideoItem } from '../types'
 
 export const Route = createFileRoute('/search')({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -23,6 +25,7 @@ export const Route = createFileRoute('/search')({
 const SONG_PAGE_SIZE = 30
 const PLAYLIST_PAGE_SIZE = 20
 const ARTIST_PAGE_SIZE = 20
+const VIDEO_PAGE_SIZE = 20
 
 function SearchPage() {
   const { keyword } = Route.useSearch()
@@ -36,6 +39,11 @@ function SearchPage() {
   const [playlistTotal, setPlaylistTotal] = useState(0)
   const [artists, setArtists] = useState<ArtistSummary[]>([])
   const [artistTotal, setArtistTotal] = useState(0)
+  const [mvs, setMvs] = useState<VideoItem[]>([])
+  const [mvTotal, setMvTotal] = useState(0)
+  const [videos, setVideos] = useState<VideoItem[]>([])
+  const [videoTotal, setVideoTotal] = useState(0)
+  const openVideo = useVideoStore((state) => state.openVideo)
   const [loading, setLoading] = useState(false)
   // A failed request must not look like an empty result set.
   const [failed, setFailed] = useState(false)
@@ -46,9 +54,13 @@ function SearchPage() {
     setSongs([])
     setPlaylists([])
     setArtists([])
+    setMvs([])
+    setVideos([])
     setSongTotal(0)
     setPlaylistTotal(0)
     setArtistTotal(0)
+    setMvTotal(0)
+    setVideoTotal(0)
     setFailed(false)
   }, [keyword])
 
@@ -62,11 +74,23 @@ function SearchPage() {
         ? SONG_PAGE_SIZE
         : tab === 'artists'
           ? ARTIST_PAGE_SIZE
-          : PLAYLIST_PAGE_SIZE
+          : tab === 'mvs' || tab === 'videos'
+            ? VIDEO_PAGE_SIZE
+            : PLAYLIST_PAGE_SIZE
+    const type: '1' | '100' | '1000' | '1004' | '1014' =
+      tab === 'songs'
+        ? '1'
+        : tab === 'artists'
+          ? '100'
+          : tab === 'mvs'
+            ? '1004'
+            : tab === 'videos'
+              ? '1014'
+              : '1000'
     searchAll(
       {
         keywords: keyword,
-        type: tab === 'songs' ? '1' : tab === 'artists' ? '100' : '1000',
+        type,
         limit: pageSize,
         offset: (page - 1) * pageSize,
       },
@@ -80,6 +104,12 @@ function SearchPage() {
         } else if (tab === 'artists') {
           setArtists(result.artists ?? [])
           setArtistTotal(result.artistCount ?? 0)
+        } else if (tab === 'mvs') {
+          setMvs(result.mvs ?? [])
+          setMvTotal(result.mvCount ?? 0)
+        } else if (tab === 'videos') {
+          setVideos(result.videos ?? [])
+          setVideoTotal(result.videoCount ?? 0)
         } else {
           setPlaylists(result.playlists ?? [])
           setPlaylistTotal(result.playlistCount ?? 0)
@@ -103,9 +133,19 @@ function SearchPage() {
       ? SONG_PAGE_SIZE
       : tab === 'artists'
         ? ARTIST_PAGE_SIZE
-        : PLAYLIST_PAGE_SIZE
+        : tab === 'mvs' || tab === 'videos'
+          ? VIDEO_PAGE_SIZE
+          : PLAYLIST_PAGE_SIZE
   const total =
-    tab === 'songs' ? songTotal : tab === 'artists' ? artistTotal : playlistTotal
+    tab === 'songs'
+      ? songTotal
+      : tab === 'artists'
+        ? artistTotal
+        : tab === 'mvs'
+          ? mvTotal
+          : tab === 'videos'
+            ? videoTotal
+            : playlistTotal
   const pageCount = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [pageSize, total])
 
   if (!keyword.trim()) {
@@ -113,7 +153,7 @@ function SearchPage() {
       <div className="px-8 pt-10">
         <EmptyState
           icon={<Search className="h-6 w-6" />}
-          title="搜索音乐、歌单、歌手或 MV"
+          title="搜索音乐、歌单、歌手、MV 或视频"
           description="在顶部搜索框输入关键词后回车"
         />
       </div>
@@ -136,10 +176,12 @@ function SearchPage() {
         className="mt-5"
       >
         <div className="flex items-center justify-between gap-3 border-b border-black/8 pb-2">
-          <TabsList>
+          <TabsList className="max-w-full overflow-x-auto">
             <TabsTrigger value="songs">单曲</TabsTrigger>
             <TabsTrigger value="playlists">歌单</TabsTrigger>
             <TabsTrigger value="artists">歌手</TabsTrigger>
+            <TabsTrigger value="mvs">MV</TabsTrigger>
+            <TabsTrigger value="videos">视频</TabsTrigger>
           </TabsList>
           {tab === 'songs' && songs.length ? (
             <PlayAllButton
@@ -289,6 +331,74 @@ function SearchPage() {
             </div>
           ) : (
             <EmptyState title="没有找到相关歌手" />
+          )}
+          <Pager page={page} pageCount={pageCount} onChange={setPage} className="mt-6" />
+        </TabsContent>
+        <TabsContent value="mvs" className="mt-3">
+          <div className="mb-2 text-[11px] text-black/35">共找到 {mvTotal} 个 MV</div>
+          {failed ? (
+            <EmptyState
+              variant="error"
+              title="MV 加载失败"
+              description="请检查网络或本地 API 服务后重试"
+              onRetry={retry}
+            />
+          ) : loading ? (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, index) => (
+                <div key={index}>
+                  <Skeleton className="aspect-video w-full rounded-[14px]" />
+                  <Skeleton className="mt-2 h-3 w-3/5 rounded-full" />
+                </div>
+              ))}
+            </div>
+          ) : mvs.length ? (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+              {mvs.map((item, index) => (
+                <VideoCard
+                  key={`${item.kind}-${item.id}`}
+                  item={item}
+                  priority={index < 4}
+                  onClick={() => openVideo(item)}
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptyState title="没有找到相关 MV" />
+          )}
+          <Pager page={page} pageCount={pageCount} onChange={setPage} className="mt-6" />
+        </TabsContent>
+        <TabsContent value="videos" className="mt-3">
+          <div className="mb-2 text-[11px] text-black/35">共找到 {videoTotal} 个视频</div>
+          {failed ? (
+            <EmptyState
+              variant="error"
+              title="视频加载失败"
+              description="请检查网络或本地 API 服务后重试"
+              onRetry={retry}
+            />
+          ) : loading ? (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, index) => (
+                <div key={index}>
+                  <Skeleton className="aspect-video w-full rounded-[14px]" />
+                  <Skeleton className="mt-2 h-3 w-3/5 rounded-full" />
+                </div>
+              ))}
+            </div>
+          ) : videos.length ? (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+              {videos.map((item, index) => (
+                <VideoCard
+                  key={`${item.kind}-${item.id}`}
+                  item={item}
+                  priority={index < 4}
+                  onClick={() => openVideo(item)}
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptyState title="没有找到相关视频" />
           )}
           <Pager page={page} pageCount={pageCount} onChange={setPage} className="mt-6" />
         </TabsContent>

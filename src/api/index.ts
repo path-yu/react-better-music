@@ -14,9 +14,17 @@ import type {
   UserDetail,
   UserProfile,
   PlayLevel,
+  VideoItem,
+  VideoSearchItem,
 } from '../types'
 import { get, invalidateApiCache, uploadFile } from '../lib/http'
 import { normalizeMv, normalizePlaylist, normalizeSongs, type RawSong } from '../lib/songs'
+import {
+  relatedVideoFromFeed,
+  videoFromMv,
+  videoFromSearch,
+  type RawRelatedVideoFeed,
+} from '../lib/video'
 
 /** The CDN sometimes hands out http media URLs, which the WebView rejects. */
 function secureMediaUrl(url: string | null | undefined) {
@@ -327,9 +335,54 @@ export async function fetchMvDetail(mvid: number | string) {
   return res.data ? normalizeMv(res.data) : null
 }
 
-export async function fetchMvUrl(id: number | string) {
-  const res = await get<{ data?: { url?: string } }>('/mv/url', { id })
+export async function fetchMvUrl(id: number | string, signal?: AbortSignal) {
+  const res = await get<{ data?: { url?: string } }>('/mv/url', { id }, signal)
   return secureMediaUrl(res.data?.url) ?? ''
+}
+
+/** User-uploaded videos from `/cloudsearch?type=1014`. */
+export async function fetchVideoUrl(id: number | string, signal?: AbortSignal) {
+  const res = await get<{
+    urls?: Array<{ url?: string }>
+    data?: { url?: string }
+  }>('/video/url', { id }, signal)
+  return secureMediaUrl(res.urls?.[0]?.url ?? res.data?.url) ?? ''
+}
+
+/** Mlog clips are served by `/mlog/url`, not `/video/url`. */
+export async function fetchMlogUrl(id: number | string, signal?: AbortSignal) {
+  const res = await get<{
+    data?: {
+      resource?: {
+        content?: {
+          video?: {
+            urlInfos?: Array<{ url?: string }>
+            urlInfo?: { url?: string }
+          }
+        }
+      }
+    }
+  }>('/mlog/url', { id }, signal)
+  const video = res.data?.resource?.content?.video
+  return secureMediaUrl(video?.urlInfos?.[0]?.url ?? video?.urlInfo?.url) ?? ''
+}
+
+/** Videos attached to a song (Mlog clips, optionally its MV first). */
+export async function fetchRelatedVideos(
+  songId: number | string,
+  mvid?: number | string,
+  limit = 12,
+  signal?: AbortSignal,
+) {
+  const res = await get<{ data?: { feeds?: RawRelatedVideoFeed[] } }>(
+    '/mlog/music/rcmd',
+    // A zero `mv` means "no MV"; sending it makes the endpoint skip the list.
+    { songid: songId, mvid: mvid && Number(mvid) > 0 ? mvid : undefined, limit },
+    signal,
+  )
+  return (res.data?.feeds ?? [])
+    .map(relatedVideoFromFeed)
+    .filter((item): item is VideoItem => Boolean(item))
 }
 
 export async function fetchSimilarMv(mvid: number | string) {
@@ -387,13 +440,22 @@ export async function fetchSearchSuggest(keywords: string, signal?: AbortSignal)
   }
 }
 
+type RawSearchResult = {
+  songs?: Parameters<typeof normalizeSongs>[0]
+  playlists?: Playlist[]
+  artists?: ArtistSummary[]
+  mvs?: Mv[]
+  videos?: VideoSearchItem[]
+  [key: string]: unknown
+}
+
 export async function searchAll(params: {
   keywords: string
-  type: '1' | '100' | '1000'
+  type: '1' | '100' | '1000' | '1004' | '1014'
   limit?: number
   offset?: number
 }, signal?: AbortSignal) {
-  const res = await get<{ result?: SearchResult }>('/cloudsearch', {
+  const res = await get<{ result?: RawSearchResult }>('/cloudsearch', {
     ...params,
     limit: params.limit ?? 30,
     offset: params.offset ?? 0,
@@ -405,6 +467,10 @@ export async function searchAll(params: {
     songs: normalizeSongs(result.songs),
     playlists: (result.playlists ?? []).map(normalizePlaylist),
     artists: result.artists ?? [],
+    mvs: (result.mvs ?? []).map(normalizeMv).map(videoFromMv),
+    videos: (result.videos ?? [])
+      .map(videoFromSearch)
+      .filter((item): item is VideoItem => Boolean(item)),
   } as SearchResult
 }
 

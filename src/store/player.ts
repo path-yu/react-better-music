@@ -59,7 +59,8 @@ interface PlayerState {
   playSong: (song: Song) => Promise<void>
   addToQueue: (songs: Song[]) => void
   togglePlay: () => Promise<void>
-  next: () => Promise<void>
+  /** `auto` is true only when the current track ended on its own. */
+  next: (options?: { auto?: boolean }) => Promise<void>
   prev: () => Promise<void>
   setPlaying: (value: boolean) => void
   cycleMode: () => void
@@ -534,7 +535,7 @@ export const usePlayerStore = create<PlayerState>()(
         if (state.queue.length - 1 - state.currentIndex < 3) void appendHeartSongs()
       }
 
-      const step = async (direction: 1 | -1) => {
+      const step = async (direction: 1 | -1, auto = false) => {
         const { queue, currentIndex, mode } = get()
         if (!queue.length) return
         if (mode === 'random' && queue.length > 1) {
@@ -568,10 +569,10 @@ export const usePlayerStore = create<PlayerState>()(
           // not leave the player silently stuck on an empty source.
         }
         let index = currentIndex
-        // Sequential playback stops at the end of the queue; only previous /
-        // loop modes wrap around.
+        // A natural end in sequential mode stops; pressing next (or using a
+        // media key) always advances, wrapping to the first track at the end.
         const maxSteps =
-          direction === 1 && mode === 'order'
+          direction === 1 && mode === 'order' && auto
             ? queue.length - 1 - currentIndex
             : queue.length
         for (let attempt = 0; attempt < maxSteps; attempt += 1) {
@@ -725,7 +726,7 @@ export const usePlayerStore = create<PlayerState>()(
           set({ playing: true })
         },
 
-        next: () => step(1),
+        next: (options) => step(1, options?.auto ?? false),
         prev: () => step(-1),
 
         setPlaying(value) {

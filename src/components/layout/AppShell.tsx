@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, type ReactNode } from 'react'
 import { useRouterState } from '@tanstack/react-router'
 import { TitleBar } from './TitleBar'
+import { VideoOverlay } from '../video/VideoOverlay'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
 import { PlayerBar } from '../player/PlayerBar'
@@ -251,6 +252,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           />
         ) : null}
         <NowPlaying />
+        <VideoOverlay />
         {showQueue ? (
           <Suspense fallback={null}>
             <QueuePanel />

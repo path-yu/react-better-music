@@ -184,6 +184,33 @@ export interface UserDetail {
   pcSign?: boolean
 }
 
+/** A playable video from search, an MV, or a song-related mlog. */
+export type VideoKind = 'mv' | 'video' | 'mlog'
+
+export interface VideoItem {
+  kind: VideoKind
+  /** MVs use numeric ids; video/mlog ids are strings. */
+  id: number | string
+  title: string
+  cover?: string
+  artist?: string
+  duration?: number
+  playCount?: number
+  /** Natural dimensions when the source exposes them (mlog feeds do). */
+  width?: number
+  height?: number
+}
+
+/** Raw shape returned by `/cloudsearch?type=1014`. */
+export interface VideoSearchItem {
+  vid: string
+  title: string
+  coverUrl?: string
+  durationms?: number
+  playTime?: number
+  creator?: Array<{ userId: number; userName: string }>
+}
+
 export interface SearchResult {
   songs?: Song[]
   songCount?: number
@@ -191,6 +218,10 @@ export interface SearchResult {
   playlistCount?: number
   artists?: ArtistSummary[]
   artistCount?: number
+  mvs?: VideoItem[]
+  mvCount?: number
+  videos?: VideoItem[]
+  videoCount?: number
 }
 
 export interface ApiResponse<T = unknown> {

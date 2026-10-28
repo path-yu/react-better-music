@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useRouterState } from '@tanstack/react-router'
-import { Disc3, Heart, ListMusic, Loader2, MessageSquareText } from 'lucide-react'
+import { Disc3, Film, Heart, ListMusic, Loader2, MessageSquareText } from 'lucide-react'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
 import { LyricsPanel } from './LyricsPanel'
 import { CommentSection } from '../comments/CommentSection'
+import { fetchRelatedVideos } from '../../api'
 import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
+import { useVideoStore } from '../../store/video'
 import { findLyricIndex } from '../../lib/lyric'
 import { seekAudio } from '../../lib/audio'
 import { extractDominantColor } from '../../lib/color'
+import { toast } from '../../lib/toast'
 import { cn } from '../../lib/format'
 
 export function NowPlaying() {
@@ -39,6 +42,8 @@ export function NowPlaying() {
   const liked = currentSong ? likedIds.includes(currentSong.id) : false
   const [panel, setPanel] = useState<'lyrics' | 'comments'>('lyrics')
   const [dominantColor, setDominantColor] = useState<string | null>(null)
+  const [videoLoading, setVideoLoading] = useState(false)
+  const openVideo = useVideoStore((state) => state.openVideo)
 
   // The overlay is lazy-mounted only while open, so the first effect run is the
   // mount itself — not a navigation. Only close on a real pathname change.
@@ -117,6 +122,28 @@ export function NowPlaying() {
     void navigate({ to: '/albums/$id', params: { id: String(albumId) } })
   }
 
+  const openRelatedVideos = async () => {
+    if (videoLoading) return
+    setVideoLoading(true)
+    try {
+      const videos = await fetchRelatedVideos(
+        currentSong.id,
+        currentSong.mv ?? currentSong.mvid,
+        12,
+      )
+      if (!videos.length) {
+        toast.info('暂无相关视频')
+        return
+      }
+      toggleNowPlaying(false)
+      openVideo(videos[0], videos)
+    } catch {
+      toast.error('相关视频加载失败')
+    } finally {
+      setVideoLoading(false)
+    }
+  }
+
   return (
     <div
       className="nowplaying-overlay dark"
@@ -184,7 +211,23 @@ export function NowPlaying() {
         <div className="grid flex-1 grid-cols-1 gap-4 px-6 pb-5 max-md:overflow-y-auto md:grid-cols-[minmax(220px,0.9fr)_minmax(250px,1.1fr)] md:overflow-hidden xl:gap-6 xl:px-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <div className="flex min-h-0 flex-col items-center justify-center">
             <div className="max-w-[360px] text-center">
-              <h2 className="headline-lg truncate text-[24px]">{currentSong.name}</h2>
+              <div className="flex min-w-0 items-center justify-center gap-1.5">
+                <h2 className="headline-lg min-w-0 truncate text-[24px]">{currentSong.name}</h2>
+                <button
+                  type="button"
+                  aria-label="相关视频"
+                  title="相关视频"
+                  disabled={videoLoading}
+                  onClick={() => void openRelatedVideos()}
+                  className="np-round-button pressable flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white/60 transition-colors hover:text-white disabled:opacity-50"
+                >
+                  {videoLoading ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Film className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
               {currentSong.alia?.[0] ? (
                 <p className="mt-1 truncate text-[12px] text-black/35">{currentSong.alia[0]}</p>
               ) : null}

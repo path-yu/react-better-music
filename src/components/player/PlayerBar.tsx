@@ -883,7 +883,9 @@ export function PlayerBar() {
         audio.currentTime = 0
         void audio.play().catch(() => undefined)
       } else {
-        void next()
+        // Mark the natural end so sequential mode can stop at the last track;
+        // the next button itself always advances (wrapping at the end).
+        void next({ auto: true })
       }
     },
     onError: (event: SyntheticEvent<HTMLAudioElement>) => {
@@ -902,7 +904,9 @@ export function PlayerBar() {
         audio.pause()
       }
       if (retriedRef.current === currentSong.id) {
-        void next()
+        // Recovery skip: stop at the end in sequential mode instead of looping
+        // through a queue whose sources are all broken.
+        void next({ auto: true })
         return
       }
       retriedRef.current = currentSong.id
