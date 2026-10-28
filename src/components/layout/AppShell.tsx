@@ -1,12 +1,21 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useRef, type ReactNode } from 'react'
 import { useRouterState } from '@tanstack/react-router'
 import { TitleBar } from './TitleBar'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
-import { LoginModal } from './LoginModal'
 import { PlayerBar } from '../player/PlayerBar'
-import { NowPlaying } from '../player/NowPlaying'
-import { QueuePanel } from '../player/QueuePanel'
+
+// Overlays are only needed after a user action (or an idle prefetch), so they
+// must not be parsed before the first paint.
+const NowPlaying = lazy(() =>
+  import('../player/NowPlaying').then((module) => ({ default: module.NowPlaying })),
+)
+const QueuePanel = lazy(() =>
+  import('../player/QueuePanel').then((module) => ({ default: module.QueuePanel })),
+)
+const LoginModal = lazy(() =>
+  import('./LoginModal').then((module) => ({ default: module.LoginModal })),
+)
 import { useUiStore } from '../../store/ui'
 import { useUserStore } from '../../store/user'
 import { usePlayerStore } from '../../store/player'
@@ -30,6 +39,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const theme = useUiStore((state) => state.theme)
   const initSession = useUserStore((state) => state.initSession)
   const hasQueue = usePlayerStore((state) => state.queue.length > 0)
+  const showNowPlaying = usePlayerStore((state) => state.showNowPlaying)
+  const showQueue = usePlayerStore((state) => state.showQueue)
   const ensureLyrics = usePlayerStore((state) => state.ensureLyrics)
   const disableDevTools = useSettingsStore((state) => state.disableDevTools)
 
@@ -70,6 +81,18 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     void ensureLyrics()
   }, [ensureLyrics])
+
+  // Warm the lazy overlay chunks after the first paint, so opening the
+  // immersive page, queue or login dialog does not pay a module download.
+  useEffect(() => {
+    const preload = () => {
+      void import('../player/NowPlaying')
+      void import('../player/QueuePanel')
+      void import('./LoginModal')
+    }
+    const id = window.requestIdleCallback(preload, { timeout: 2500 })
+    return () => window.cancelIdleCallback(id)
+  }, [])
 
   // Desktop lockdown. The main process disables WebView2 DevTools for the next
   // launch (see src/bun/index.ts); this blocks the in-page shortcuts and the
@@ -230,10 +253,22 @@ export function AppShell({ children }: { children: ReactNode }) {
             onClick={closeSidebar}
           />
         ) : null}
-        <NowPlaying />
-        <QueuePanel />
+        {showNowPlaying ? (
+          <Suspense fallback={null}>
+            <NowPlaying />
+          </Suspense>
+        ) : null}
+        {showQueue ? (
+          <Suspense fallback={null}>
+            <QueuePanel />
+          </Suspense>
+        ) : null}
         {hasQueue && <PlayerBar />}
-        <LoginModal open={loginOpen} onOpenChange={(open) => !open && closeLogin()} />
+        {loginOpen ? (
+          <Suspense fallback={null}>
+            <LoginModal open onOpenChange={(open) => !open && closeLogin()} />
+          </Suspense>
+        ) : null}
       </div>
     </div>
   )

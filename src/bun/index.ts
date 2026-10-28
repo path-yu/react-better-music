@@ -191,6 +191,13 @@ function mainViewUrl() {
   return `views://mainview/index.html?${query}`
 }
 
+/** Reveals the current window; replaced whenever a window is created. */
+let revealCurrentWindow: (() => void) | null = null
+
+function revealMainWindow() {
+  revealCurrentWindow?.()
+}
+
 function createMainWindow() {
   const window = new BrowserWindow({
     title: '声屿',
@@ -199,6 +206,9 @@ function createMainWindow() {
     // `hiddenInset` keeps the native traffic lights on macOS and, on Windows /
     // Linux, removes the system caption while keeping the resize border.
     titleBarStyle: 'hiddenInset',
+    // Created hidden so the first visible frame is the inline boot shell from
+    // index.html, never the white native WebView surface.
+    hidden: true,
     frame: {
       width: 1440,
       height: 900,
@@ -206,6 +216,30 @@ function createMainWindow() {
       y: 60,
     },
   })
+
+  let revealed = false
+  const reveal = () => {
+    if (revealed) return
+    revealed = true
+    try {
+      window.show()
+      window.activate()
+      markStartup('window-shown')
+    } catch (error) {
+      console.error('[desktop] failed to reveal the main window:', error)
+    }
+  }
+  revealCurrentWindow = reveal
+  // The document is parsed: the inline background/skeleton is ready to paint.
+  window.on('dom-ready', (event) => {
+    const url =
+      (event as ElectrobunEvent<{ detail: string }, {}>)?.data?.detail ?? ''
+    // BrowserWindow may emit dom-ready for its initial about:blank first.
+    if (!url || url === 'about:blank') return
+    setTimeout(reveal, 40)
+  })
+  // Safety net: never leave a hidden window if dom-ready is missed.
+  setTimeout(reveal, 2500)
 
   // Closing the titlebar hides the window to the tray: music keeps playing and
   // the app can be quit explicitly from the tray menu.
@@ -797,6 +831,9 @@ try {
         if (url.pathname === '/startup-report' && request.method === 'POST') {
           const body = (await request.json().catch(() => null)) as { paint?: number } | null
           markStartup(`renderer-first-paint webview=${Math.round(Number(body?.paint ?? 0))}ms`)
+          // Extra trigger: if the native dom-ready event was missed, the first
+          // renderer report also reveals the hidden window.
+          revealMainWindow()
           return Response.json({ ok: true }, { headers })
         }
         if (url.pathname === '/devtools-policy' && request.method === 'GET') {
