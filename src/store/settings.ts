@@ -31,10 +31,13 @@ interface SettingsState {
   lyricDisplayMode: LyricDisplayMode
   /** Desktop only: block right-click / F12 / DevTools shortcuts. */
   disableDevTools: boolean
+  /** Prefer a matched provider for VIP tracks (manual switch is always available). */
+  autoReplaceVipSource: boolean
   setCacheBitrate: (value: number) => void
   setPlayLevel: (value: PlayLevel) => void
   setLyricDisplayMode: (value: LyricDisplayMode) => void
   setDisableDevTools: (value: boolean) => void
+  setAutoReplaceVipSource: (value: boolean) => void
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -44,10 +47,12 @@ export const useSettingsStore = create<SettingsState>()(
       playLevel: 'exhigh',
       lyricDisplayMode: 'both',
       disableDevTools: false,
+      autoReplaceVipSource: false,
       setCacheBitrate: (cacheBitrate) => set({ cacheBitrate }),
       setPlayLevel: (playLevel) => set({ playLevel }),
       setLyricDisplayMode: (lyricDisplayMode) => set({ lyricDisplayMode }),
       setDisableDevTools: (disableDevTools) => set({ disableDevTools }),
+      setAutoReplaceVipSource: (autoReplaceVipSource) => set({ autoReplaceVipSource }),
     }),
     {
       name: 'react-music-settings',

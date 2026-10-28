@@ -50,6 +50,10 @@ interface PlayerState {
   heartLoading: boolean
   lyricLines: LyricLine[]
   lyricLoading: boolean
+  /** A manual "switch source" request is in flight. */
+  switchingSource: boolean
+  /** Position to restore after swapping the current track's source. */
+  resumeAt: number | null
   initQueue: (songs: Song[], index: number, playlistId: string) => Promise<void>
   playAt: (index: number) => Promise<boolean>
   playSong: (song: Song) => Promise<void>
@@ -70,6 +74,9 @@ interface PlayerState {
   refreshCurrentUrl: () => Promise<boolean>
   /** Fetch lyrics for the current track without starting playback. */
   ensureLyrics: () => Promise<void>
+  /** Replace a VIP track with a matched provider source (manual button). */
+  switchToOtherSource: () => Promise<void>
+  consumeResumeAt: () => void
   prefetchNext: () => void
   invalidateUrls: () => void
   markSongLike: (id: number, like: boolean) => void
@@ -92,6 +99,18 @@ type SongSource = {
  */
 async function resolveSongSource(song: Song): Promise<SongSource> {
   const level = useSettingsStore.getState().playLevel
+  // VIP tracks can be replaced before the official lookup when the user opted
+  // into automatic source matching; failure simply falls back to NetEase.
+  if (song.fee !== 0 && useSettingsStore.getState().autoReplaceVipSource) {
+    try {
+      const matched = await fetchMatchedSongUrl(song.id)
+      if (matched.url) {
+        return { url: matched.url, trialEnd: null, unblocked: true, available: true }
+      }
+    } catch {
+      // No provider matched; keep the normal official flow.
+    }
+  }
   let urlError: unknown = null
   try {
     const info = await fetchSongUrlInfo(song.id, level)
@@ -372,6 +391,7 @@ export const usePlayerStore = create<PlayerState>()(
           sourceReady: false,
           audioFromCache: false,
           audioBlob: null,
+          resumeAt: null,
         })
         try {
           // Prefer audio cached in IndexedDB (WebCodecs-transcoded Opus).
@@ -429,7 +449,11 @@ export const usePlayerStore = create<PlayerState>()(
           // prefetch or a retry (those paths never showed the notice).
           if (unblocked && !unblockAnnounced.has(song.id)) {
             unblockAnnounced.add(song.id)
-            toast.info(`「${song.name}」暂无官方音源，已为你匹配其他音源播放`)
+            toast.info(
+              song.fee === 0
+                ? `「${song.name}」暂无官方音源，已为你匹配其他音源播放`
+                : `「${song.name}」VIP 歌曲已为你匹配其他音源播放`,
+            )
           }
           // Stream through the local API: the WebView cannot load the CDN
           // media URL directly (it answers 403 for cross-origin media).
@@ -530,6 +554,7 @@ export const usePlayerStore = create<PlayerState>()(
             audioReady: false,
             audioUrl: '',
             sourceReady: false,
+            resumeAt: null,
             lyricLines: [],
             lyricLoading: true,
             playToken: state.playToken + 1,
@@ -561,6 +586,7 @@ export const usePlayerStore = create<PlayerState>()(
             audioReady: false,
             audioUrl: '',
             sourceReady: false,
+            resumeAt: null,
             lyricLines: [],
             lyricLoading: true,
             playToken: state.playToken + 1,
@@ -596,6 +622,8 @@ export const usePlayerStore = create<PlayerState>()(
         heartLoading: false,
         lyricLines: [],
         lyricLoading: false,
+        switchingSource: false,
+        resumeAt: null,
 
         async initQueue(songs, index, playlistId) {
           if (!songs.length) {
@@ -616,6 +644,7 @@ export const usePlayerStore = create<PlayerState>()(
             audioReady: false,
             audioUrl: '',
             sourceReady: false,
+            resumeAt: null,
             lyricLines: [],
             lyricLoading: true,
             playToken: state.playToken + 1,
@@ -635,6 +664,7 @@ export const usePlayerStore = create<PlayerState>()(
             audioReady: false,
             audioUrl: '',
             sourceReady: false,
+            resumeAt: null,
             lyricLines: [],
             lyricLoading: true,
             playToken: state.playToken + 1,
@@ -852,6 +882,47 @@ export const usePlayerStore = create<PlayerState>()(
           } catch {
             if (get().loadRequestId === requestId) set({ lyricLoading: false })
           }
+        },
+
+        async switchToOtherSource() {
+          const state = get()
+          const index = state.currentIndex
+          const song = state.queue[index]
+          if (!song || song.unblocked || state.switchingSource) return
+          set({ switchingSource: true })
+          try {
+            const matched = await fetchMatchedSongUrl(song.id)
+            if (!matched.url) {
+              toast.info('未找到其他可用音源')
+              return
+            }
+            const active = get()
+            if (active.queue[active.currentIndex]?.id !== song.id) return
+            const resumeAt = active.currentTime
+            patchSong(active.currentIndex, {
+              url: matched.url,
+              unblocked: true,
+              trialEnd: null,
+              urlFetchedAt: Date.now(),
+            })
+            set((current) => ({
+              audioUrl: playbackUrl(matched.url, true),
+              sourceReady: true,
+              audioFromCache: false,
+              audioBlob: null,
+              playToken: current.playToken + 1,
+              resumeAt,
+            }))
+            toast.success('已切换到其他音源')
+          } catch {
+            toast.warning('切换音源失败，请稍后再试')
+          } finally {
+            set({ switchingSource: false })
+          }
+        },
+
+        consumeResumeAt() {
+          set({ resumeAt: null })
         },
 
         prefetchNext() {

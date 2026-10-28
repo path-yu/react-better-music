@@ -53,6 +53,10 @@ function SettingsPage() {
   useDocumentTitle('设置')
   const cacheBitrate = useSettingsStore((state) => state.cacheBitrate)
   const setCacheBitrate = useSettingsStore((state) => state.setCacheBitrate)
+  const autoReplaceVipSource = useSettingsStore((state) => state.autoReplaceVipSource)
+  const setAutoReplaceVipSource = useSettingsStore(
+    (state) => state.setAutoReplaceVipSource,
+  )
   const [items, setItems] = useState<CachedAudioItem[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<number[]>([])
@@ -316,6 +320,26 @@ function SettingsPage() {
               </Button>
             </div>
           ) : null}
+        </section>
+
+        <section className="apple-card p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
+                <RefreshCw className="h-4 w-4 text-accent" />
+                音源匹配
+              </h2>
+              <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-black/40">
+                VIP 歌曲无法播放或仅能试听时，自动尝试匹配其他音源；也可以在底部播放条点击
+                「切换其他音源」手动替换。
+              </p>
+            </div>
+            <Switch
+              checked={autoReplaceVipSource}
+              onChange={setAutoReplaceVipSource}
+              aria-label="VIP 歌曲自动替换音源"
+            />
+          </div>
         </section>
 
         {desktop ? (

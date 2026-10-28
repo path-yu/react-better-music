@@ -11,6 +11,7 @@ import {
   Pause,
   PictureInPicture2,
   Play,
+  RefreshCw,
   Repeat,
   Repeat1,
   Shuffle,
@@ -109,6 +110,10 @@ export function PlayerBar() {
   const prefetchNext = usePlayerStore((state) => state.prefetchNext)
   const invalidateUrls = usePlayerStore((state) => state.invalidateUrls)
   const showNowPlaying = usePlayerStore((state) => state.showNowPlaying)
+  const switchingSource = usePlayerStore((state) => state.switchingSource)
+  const switchToOtherSource = usePlayerStore((state) => state.switchToOtherSource)
+  const resumeAt = usePlayerStore((state) => state.resumeAt)
+  const consumeResumeAt = usePlayerStore((state) => state.consumeResumeAt)
 
   const playLevel = useSettingsStore((state) => state.playLevel)
   const setPlayLevel = useSettingsStore((state) => state.setPlayLevel)
@@ -768,6 +773,19 @@ export function PlayerBar() {
       if (!audioUrl || audio.getAttribute('src') !== audioUrl) return
       const value = audio.duration
       setMediaDuration(Number.isFinite(value) && value > 0 ? value * 1000 : 0)
+      // A manual source switch keeps the position the user was at.
+      if (resumeAt != null) {
+        const target = Math.min(
+          resumeAt,
+          Number.isFinite(value) && value > 0 ? value : resumeAt,
+        )
+        audio.currentTime = target
+        if (audio === audioRef.current) setCurrentTime(target)
+        pendingSeekRef.current = null
+        setPendingSeek(null)
+        consumeResumeAt()
+        return
+      }
       // Apply a seek that was requested before the media became seekable
       // (e.g. clicking the bar right after a refresh).
       const pending = pendingSeekRef.current
@@ -1131,6 +1149,23 @@ export function PlayerBar() {
               ))}
             </PopoverContent>
           </Popover>
+        ) : null}
+
+        {currentSong.fee !== 0 && !currentSong.unblocked ? (
+          <button
+            type="button"
+            aria-label="切换其他音源"
+            title="切换其他音源"
+            onClick={() => void switchToOtherSource()}
+            disabled={switchingSource}
+            className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/45 transition-colors hover:bg-black/5 hover:text-black/75 disabled:opacity-50 max-md:h-10 max-md:w-10"
+          >
+            {switchingSource ? (
+              <Loader2 className="h-[15px] w-[15px] animate-spin" />
+            ) : (
+              <RefreshCw className="h-[15px] w-[15px]" />
+            )}
+          </button>
         ) : null}
 
         {desktopShell ? (
