@@ -8,7 +8,6 @@ import { CommentSection } from '../comments/CommentSection'
 import { fetchRelatedVideos } from '../../api'
 import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
-import { useVideoStore } from '../../store/video'
 import { findLyricIndex } from '../../lib/lyric'
 import { seekAudio } from '../../lib/audio'
 import { extractDominantColor } from '../../lib/color'
@@ -43,7 +42,6 @@ export function NowPlaying() {
   const [panel, setPanel] = useState<'lyrics' | 'comments'>('lyrics')
   const [dominantColor, setDominantColor] = useState<string | null>(null)
   const [videoLoading, setVideoLoading] = useState(false)
-  const openVideo = useVideoStore((state) => state.openVideo)
 
   // The overlay is lazy-mounted only while open, so the first effect run is the
   // mount itself — not a navigation. Only close on a real pathname change.
@@ -135,8 +133,23 @@ export function NowPlaying() {
         toast.info('暂无相关视频')
         return
       }
+      const first = videos[0]
       toggleNowPlaying(false)
-      openVideo(videos[0], videos)
+      if (first.kind === 'mv') {
+        void navigate({ to: '/mv/$id', params: { id: String(first.id) } })
+        return
+      }
+      void navigate({
+        to: '/video/$id',
+        params: { id: String(first.id) },
+        search: {
+          kind: first.kind,
+          title: first.title,
+          cover: first.cover ?? '',
+          artist: first.artist ?? '',
+          duration: first.duration ?? 0,
+        },
+      })
     } catch {
       toast.error('相关视频加载失败')
     } finally {

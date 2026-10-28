@@ -8,16 +8,25 @@ import { Pager } from '../components/common/Pager'
 import { SongTable } from '../components/songs/SongTable'
 import { PlayAllButton } from '../components/songs/PlayAllButton'
 import { VideoCard } from '../components/video/VideoCard'
-import { useVideoStore } from '../store/video'
 import { searchAll } from '../api'
 import { formatNumber } from '../lib/format'
 import { useDocumentTitle } from '../lib/title'
 import { toast } from '../lib/toast'
 import type { ArtistSummary, Playlist, Song, VideoItem } from '../types'
 
+const SEARCH_TABS = ['songs', 'playlists', 'artists', 'mvs', 'videos'] as const
+type SearchTab = (typeof SEARCH_TABS)[number]
+
+function normalizeTab(value: unknown): SearchTab {
+  return SEARCH_TABS.includes(value as SearchTab) ? (value as SearchTab) : 'songs'
+}
+
 export const Route = createFileRoute('/search')({
   validateSearch: (search: Record<string, unknown>) => ({
     keyword: typeof search.keyword === 'string' ? search.keyword : '',
+    // Keeping the tab in the URL makes browser Back restore it instead of
+    // falling back to 单曲 after visiting a video/MV page.
+    tab: normalizeTab(search.tab),
   }),
   component: SearchPage,
 })
@@ -28,10 +37,9 @@ const ARTIST_PAGE_SIZE = 20
 const VIDEO_PAGE_SIZE = 20
 
 function SearchPage() {
-  const { keyword } = Route.useSearch()
+  const { keyword, tab } = Route.useSearch()
   const navigate = useNavigate()
   useDocumentTitle(keyword.trim() ? `搜索「${keyword.trim()}」` : '搜索')
-  const [tab, setTab] = useState('songs')
   const [page, setPage] = useState(1)
   const [songs, setSongs] = useState<Song[]>([])
   const [songTotal, setSongTotal] = useState(0)
@@ -43,7 +51,6 @@ function SearchPage() {
   const [mvTotal, setMvTotal] = useState(0)
   const [videos, setVideos] = useState<VideoItem[]>([])
   const [videoTotal, setVideoTotal] = useState(0)
-  const openVideo = useVideoStore((state) => state.openVideo)
   const [loading, setLoading] = useState(false)
   // A failed request must not look like an empty result set.
   const [failed, setFailed] = useState(false)
@@ -128,6 +135,33 @@ function SearchPage() {
 
   const retry = () => setAttempt((value) => value + 1)
 
+  const changeTab = (value: string) => {
+    setPage(1)
+    void navigate({
+      to: '/search',
+      search: { keyword, tab: normalizeTab(value) },
+      replace: true,
+    })
+  }
+
+  const openVideoItem = (item: VideoItem) => {
+    if (item.kind === 'mv') {
+      void navigate({ to: '/mv/$id', params: { id: String(item.id) } })
+      return
+    }
+    void navigate({
+      to: '/video/$id',
+      params: { id: String(item.id) },
+      search: {
+        kind: item.kind,
+        title: item.title,
+        cover: item.cover ?? '',
+        artist: item.artist ?? '',
+        duration: item.duration ?? 0,
+      },
+    })
+  }
+
   const pageSize =
     tab === 'songs'
       ? SONG_PAGE_SIZE
@@ -167,14 +201,7 @@ function SearchPage() {
         <h1 className="headline-lg mt-1.5 line-clamp-1">“{keyword}”</h1>
       </div>
 
-      <Tabs
-        value={tab}
-        onValueChange={(value) => {
-          setTab(value)
-          setPage(1)
-        }}
-        className="mt-5"
-      >
+      <Tabs value={tab} onValueChange={changeTab} className="mt-5">
         <div className="flex items-center justify-between gap-3 border-b border-black/8 pb-2">
           <TabsList className="max-w-full overflow-x-auto">
             <TabsTrigger value="songs">单曲</TabsTrigger>
@@ -359,7 +386,7 @@ function SearchPage() {
                   key={`${item.kind}-${item.id}`}
                   item={item}
                   priority={index < 4}
-                  onClick={() => openVideo(item)}
+                  onClick={() => openVideoItem(item)}
                 />
               ))}
             </div>
@@ -393,7 +420,7 @@ function SearchPage() {
                   key={`${item.kind}-${item.id}`}
                   item={item}
                   priority={index < 4}
-                  onClick={() => openVideo(item)}
+                  onClick={() => openVideoItem(item)}
                 />
               ))}
             </div>

@@ -113,7 +113,9 @@ export function SearchBox() {
       setKeyword(target)
       addSearchHistory(target)
       setOpen(false)
-      void navigate({ to: '/search', search: { keyword: target } })
+      // A new query starts on 单曲; returning to an existing search keeps the
+      // tab stored in that page's URL.
+      void navigate({ to: '/search', search: { keyword: target, tab: 'songs' } })
     },
     [addSearchHistory, keyword, navigate],
   )
