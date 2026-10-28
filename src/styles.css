@@ -352,8 +352,8 @@ html.desktop .app-window {
  */
 .app-window:has(.nowplaying-overlay) .desktop-titlebar,
 .app-window:has(.nowplaying-overlay) .titlebar {
-  background: rgba(20, 20, 22, 0.82);
-  border-bottom-color: rgba(255, 255, 255, 0.08);
+  background:transparent;
+  /* border-bottom-color: rgba(255, 255, 255, 0.08); */
 }
 
 .app-window:has(.nowplaying-overlay) .titlebar-title {
