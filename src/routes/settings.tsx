@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
+import type { MessageDescriptor } from '@lingui/core'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
@@ -40,12 +41,14 @@ export const Route = createFileRoute('/settings')({
   component: SettingsPage,
 })
 
-const SHORTCUTS: Array<{ keys: string[]; label: string }> = [
-  { keys: ['空格'], label: '播放 / 暂停' },
-  { keys: ['Alt', '↑ / ↓'], label: '音量 +5 / -5' },
-  { keys: ['Shift', 'Alt', '↑ / ↓'], label: '音量 +1 / -1' },
-  { keys: ['↑ / ↓', 'Enter'], label: '在搜索建议中选择并进入' },
-  { keys: ['Esc'], label: '关闭播放页、播放列表、侧栏或搜索建议' },
+type ShortcutKey = string | MessageDescriptor
+
+const SHORTCUTS: Array<{ keys: ShortcutKey[]; label: MessageDescriptor }> = [
+  { keys: [msg`空格`], label: msg`播放 / 暂停` },
+  { keys: ['Alt', '↑ / ↓'], label: msg`音量 +5 / -5` },
+  { keys: ['Shift', 'Alt', '↑ / ↓'], label: msg`音量 +1 / -1` },
+  { keys: ['↑ / ↓', 'Enter'], label: msg`在搜索建议中选择并进入` },
+  { keys: ['Esc'], label: msg`关闭播放页、播放列表、侧栏或搜索建议` },
 ]
 
 function formatBytes(bytes: number) {
@@ -269,7 +272,9 @@ function SettingsPage() {
                 语言 / Language
               </h2>
               <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-black/40">
-                切换界面语言，立即生效。当前翻译覆盖导航、播放器与设置等主要界面，其余页面会逐步补齐。
+                <Trans>
+                  切换界面语言，立即生效。当前翻译覆盖导航、播放器与设置等主要界面，其余页面会逐步补齐。
+                </Trans>
               </p>
             </div>
             <Select
@@ -292,8 +297,10 @@ function SettingsPage() {
                 <Trans>音乐缓存</Trans>
               </h2>
               <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-black/40">
-                播放过的歌曲会转码为 Opus 并缓存到本地，用于加速之后的播放。修改品质只影响之后缓存的新歌曲，
-                已缓存的歌曲保持原品质。
+                <Trans>
+                  播放过的歌曲会转码为 Opus 并缓存到本地，用于加速之后的播放。修改品质只影响之后缓存的新歌曲，
+                  已缓存的歌曲保持原品质。
+                </Trans>
               </p>
             </div>
             <button
@@ -315,11 +322,16 @@ function SettingsPage() {
               <Select
                 value={String(cacheBitrate)}
                 onChange={(event) => setCacheBitrate(Number(event.target.value))}
-                options={CACHE_QUALITY_OPTIONS}
+                options={CACHE_QUALITY_OPTIONS.map((option) => ({
+                  value: option.value,
+                  label: i18n._(option.label),
+                }))}
                 className="text-[12px]"
               />
               <p className="mt-2 text-[11px] leading-relaxed text-black/30">
-                约 64kbps ≈ 1.9MB / 4 分钟，96kbps ≈ 2.9MB，128kbps ≈ 3.8MB。
+                <Trans>
+                  约 64kbps ≈ 1.9MB / 4 分钟，96kbps ≈ 2.9MB，128kbps ≈ 3.8MB。
+                </Trans>
               </p>
             </div>
             <div className="rounded-[14px] border border-black/6 bg-[#f5f5f7] px-4 py-3">
@@ -327,10 +339,14 @@ function SettingsPage() {
                 <Trans>当前缓存</Trans>
               </p>
               <p className="mt-1 text-[18px] font-semibold leading-tight text-black/80">
-                {loading ? '…' : `${items.length} 首`}
+                {loading ? '…' : <Trans>{items.length} 首</Trans>}
               </p>
               <p className="text-[11px] text-black/35">
-                {loading ? '正在读取…' : `占用 ${formatBytes(totalBytes)}`}
+                {loading ? (
+                  <Trans>正在读取…</Trans>
+                ) : (
+                  <Trans>占用 {formatBytes(totalBytes)}</Trans>
+                )}
               </p>
             </div>
           </div>
@@ -343,7 +359,7 @@ function SettingsPage() {
                   <Trans>下载目录</Trans>
                 </p>
                 <p className="mt-0.5 truncate text-[12px] text-black/70" title={downloadDir}>
-                  {downloadDir || '正在读取…'}
+                  {downloadDir || i18n._(msg`正在读取…`)}
                 </p>
               </div>
               <Button
@@ -369,8 +385,10 @@ function SettingsPage() {
                 <Trans>音源匹配</Trans>
               </h2>
               <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-black/40">
-                VIP 歌曲无法播放或仅能试听时，自动尝试匹配其他音源；也可以在底部播放条点击
-                「切换其他音源」手动替换。
+                <Trans>
+                  VIP 歌曲无法播放或仅能试听时，自动尝试匹配其他音源；也可以在底部播放条点击
+                  「切换其他音源」手动替换。
+                </Trans>
               </p>
             </div>
             <Switch
@@ -390,8 +408,10 @@ function SettingsPage() {
                   <Trans>桌面端</Trans>
                 </h2>
                 <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-black/40">
-                  禁用后，右键菜单与 F12 / Ctrl+Shift+I 等入口不再打开开发者工具。
-                  当前窗口立即生效，WebView2 层面需要重启应用。
+                  <Trans>
+                    禁用后，右键菜单与 F12 / Ctrl+Shift+I 等入口不再打开开发者工具。
+                    当前窗口立即生效，WebView2 层面需要重启应用。
+                  </Trans>
                 </p>
               </div>
               <Switch
@@ -401,7 +421,9 @@ function SettingsPage() {
               />
             </div>
             <p className="mt-4 rounded-[10px] bg-black/4 px-3 py-2 text-[11px] leading-relaxed text-black/40">
-              桌面歌词：Ctrl / ⌘ + Shift + L 显示或隐藏，窗口始终置顶，可拖动到任意位置。
+              <Trans>
+                桌面歌词：Ctrl / ⌘ + Shift + L 显示或隐藏，窗口始终置顶，可拖动到任意位置。
+              </Trans>
             </p>
           </section>
         ) : null}
@@ -414,7 +436,13 @@ function SettingsPage() {
                 <Trans>缓存列表</Trans>
               </h2>
               <p className="mt-1 text-[11px] text-black/35">
-                {loading ? '正在读取缓存…' : `${items.length} 首 · ${formatBytes(totalBytes)}`}
+                {loading ? (
+                  <Trans>正在读取缓存…</Trans>
+                ) : (
+                  <Trans>
+                    {items.length} 首 · {formatBytes(totalBytes)}
+                  </Trans>
+                )}
               </p>
             </div>
             <Button
@@ -425,13 +453,17 @@ function SettingsPage() {
               disabled={!selected.length || loading}
               onClick={() => void handleDownloadSelected()}
             >
-              {selected.length ? `下载选中 (${selected.length})` : '下载选中'}
+              {selected.length ? (
+                <Trans>下载选中 ({selected.length})</Trans>
+              ) : (
+                <Trans>下载选中</Trans>
+              )}
             </Button>
           </div>
 
           {!loading && items.length === 0 ? (
             <div className="px-6 py-12 text-center text-[12px] text-black/30">
-              暂无缓存音乐，播放歌曲后会自动缓存
+              <Trans>暂无缓存音乐，播放歌曲后会自动缓存</Trans>
             </div>
           ) : (
             <>
@@ -444,9 +476,11 @@ function SettingsPage() {
                   onChange={toggleAll}
                   className="h-3.5 w-3.5 accent-accent"
                 />
-                <span className="text-[11px] text-black/40">全选</span>
+                <span className="text-[11px] text-black/40">
+                  <Trans>全选</Trans>
+                </span>
                 <span className="ml-auto text-[11px] text-black/30">
-                  已选 {selected.length} 首
+                  <Trans>已选 {selected.length} 首</Trans>
                 </span>
               </div>
 
@@ -468,7 +502,7 @@ function SettingsPage() {
                         {item.name}
                       </p>
                       <p className="mt-0.5 truncate text-[11px] text-black/35">
-                        {item.artists || '未知歌手'}
+                        {item.artists || i18n._(msg`未知歌手`)}
                         {item.bitrate ? ` · ${item.bitrate}kbps` : ''}
                         <span className="mx-1.5 text-black/15">·</span>
                         {formatDate(item.createdAt)}
@@ -503,8 +537,13 @@ function SettingsPage() {
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-black/6 px-6 py-3">
             <p className="text-[11px] leading-relaxed text-black/30">
               {desktop
-                ? '下载会保存为 .opus 文件到上方设置的下载目录。'
-                : '下载会导出为 .opus 文件；多选下载会打包为一个 ZIP 压缩包。'}
+                ? (
+                  <Trans>下载会保存为 .opus 文件到上方设置的下载目录。</Trans>
+                ) : (
+                  <Trans>
+                    下载会导出为 .opus 文件；多选下载会打包为一个 ZIP 压缩包。
+                  </Trans>
+                )}
             </p>
             <Button
               variant={confirmingClear ? 'destructive' : 'secondary'}
@@ -525,24 +564,29 @@ function SettingsPage() {
             <Trans>快捷键</Trans>
             </h2>
           <p className="mt-1 text-[12px] leading-relaxed text-black/40">
-            在页面任意位置可用（输入框内保留系统默认行为）。
+            <Trans>在页面任意位置可用（输入框内保留系统默认行为）。</Trans>
           </p>
           <dl className="mt-4 grid gap-2 sm:grid-cols-2">
             {SHORTCUTS.map((shortcut) => (
               <div
-                key={shortcut.label}
+                key={shortcut.label.id}
                 className="flex items-center justify-between gap-3 rounded-[10px] bg-black/4 px-3 py-2"
               >
-                <dt className="text-[12px] text-black/55">{shortcut.label}</dt>
+                <dt className="text-[12px] text-black/55">
+                  {i18n._(shortcut.label)}
+                </dt>
                 <dd className="flex shrink-0 items-center gap-1">
-                  {shortcut.keys.map((key) => (
-                    <kbd
-                      key={key}
-                      className="rounded-[6px] border border-black/10 bg-white px-1.5 py-0.5 text-[11px] font-medium text-black/60"
-                    >
-                      {key}
-                    </kbd>
-                  ))}
+                  {shortcut.keys.map((key) => {
+                    const label = typeof key === 'string' ? key : i18n._(key)
+                    return (
+                      <kbd
+                        key={label}
+                        className="rounded-[6px] border border-black/10 bg-white px-1.5 py-0.5 text-[11px] font-medium text-black/60"
+                      >
+                        {label}
+                      </kbd>
+                    )
+                  })}
                 </dd>
               </div>
             ))}

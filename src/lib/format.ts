@@ -1,9 +1,19 @@
+import { i18n } from '../i18n'
+
 export function cn(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(' ')
 }
 
 export function formatNumber(value?: number | null) {
   if (!value) return '0'
+  // Chinese keeps the compact 万/亿 scale; other locales use Intl's compact
+  // notation (5.1M / 1.4B) so play counts do not leak Chinese units.
+  if (!i18n.locale.startsWith('zh')) {
+    return new Intl.NumberFormat(i18n.locale, {
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    }).format(value)
+  }
   if (value < 99999) return String(value)
   if (value < 100000000) return `${Math.round(value / 10000)}万`
   return `${Math.round(value / 100000000)}亿`

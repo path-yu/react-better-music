@@ -1,4 +1,7 @@
 import { useEffect, useState, type MouseEvent } from 'react'
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
 import { useRouterState } from '@tanstack/react-router'
 import { Copy, Minus, Music2, Square, X } from 'lucide-react'
 import { isDesktopShell } from '../../lib/desktop'
@@ -11,16 +14,16 @@ import {
   toggleMaximizeWindow,
 } from '../../lib/desktopWindow'
 
-const TITLES: Array<[string, string]> = [
-  ['/songlists/', '歌单'],
-  ['/songlists', '推荐歌单'],
-  ['/latest-music', '最新音乐'],
-  ['/latest-mv', '最新MV'],
-  ['/mv/', 'MV'],
-  ['/search', '搜索'],
-  ['/profile', '个人信息'],
-  ['/settings', '设置'],
-  ['/', '发现音乐'],
+const TITLES: Array<[string, MessageDescriptor]> = [
+  ['/songlists/', msg`歌单`],
+  ['/songlists', msg`推荐歌单`],
+  ['/latest-music', msg`最新音乐`],
+  ['/latest-mv', msg`最新MV`],
+  ['/mv/', msg`MV`],
+  ['/search', msg`搜索`],
+  ['/profile', msg`个人信息`],
+  ['/settings', msg`设置`],
+  ['/', msg`发现音乐`],
 ]
 
 // Electrobun's preload turns these classes into native window dragging.
@@ -28,13 +31,19 @@ const DRAG_CLASS = 'electrobun-webkit-app-region-drag'
 const NO_DRAG_CLASS = 'electrobun-webkit-app-region-no-drag'
 
 export function TitleBar() {
+  const { i18n } = useLingui()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const showNowPlaying = usePlayerStore((state) => state.showNowPlaying)
   // The immersive song view owns the whole window; the underlying route label
   // would be misleading there, so the chrome switches to the playback context.
+  const matched = TITLES.find(
+    ([path]) => pathname === path || pathname.startsWith(path),
+  )?.[1]
   const subtitle = showNowPlaying
-    ? '正在播放'
-    : TITLES.find(([path]) => pathname === path || pathname.startsWith(path))?.[1]
+    ? i18n._(msg`正在播放`)
+    : pathname !== '/' && matched
+      ? i18n._(matched)
+      : undefined
 
   if (isDesktopShell()) return <DesktopTitleBar subtitle={subtitle} />
 
@@ -48,7 +57,7 @@ export function TitleBar() {
       <div className="titlebar-title flex items-center gap-1.5">
         <Music2 className="h-3.5 w-3.5 text-accent" strokeWidth={2.2} />
         声屿
-        {subtitle && subtitle !== '发现音乐' ? (
+        {subtitle ? (
           <span className="titlebar-subtitle font-normal">— {subtitle}</span>
         ) : null}
       </div>
@@ -122,7 +131,7 @@ function DesktopTitleBar({ subtitle }: { subtitle?: string }) {
       <div className="titlebar-title flex items-center gap-1.5">
         <Music2 className="h-3.5 w-3.5 text-accent" strokeWidth={2.2} />
         声屿
-        {subtitle && subtitle !== '发现音乐' ? (
+        {subtitle ? (
           <span className="titlebar-subtitle font-normal">— {subtitle}</span>
         ) : null}
       </div>

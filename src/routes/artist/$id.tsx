@@ -1,5 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
+import { Trans } from '@lingui/react/macro'
 import { ChevronDown, Disc3, Music2, Video } from 'lucide-react'
 import { Skeleton, Tabs, TabsContent, TabsList, TabsTrigger, Button } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../../components/common/ImageWithFallback'
@@ -26,6 +29,7 @@ export const Route = createFileRoute('/artist/$id')({
 const BIO_PREVIEW_HEIGHT = 75
 
 function ArtistPage() {
+  const { i18n } = useLingui()
   const { id } = Route.useParams()
   const navigate = useNavigate()
   const [profile, setProfile] = useState<ArtistProfile | null>(null)
@@ -40,7 +44,7 @@ function ArtistPage() {
   const [albumsLoadingMore, setAlbumsLoadingMore] = useState(false)
   const [albumsDone, setAlbumsDone] = useState(false)
   const bioTextRef = useRef<HTMLParagraphElement>(null)
-  useDocumentTitle(profile?.name ?? '歌手')
+  useDocumentTitle(profile?.name ?? i18n._(msg`歌手`))
 
   useEffect(() => {
     const controller = new AbortController()
@@ -77,7 +81,7 @@ function ArtistPage() {
         if (mvsResult.status === 'fulfilled') setMvs(mvsResult.value)
         if (similarResult.status === 'fulfilled') setSimilar(similarResult.value)
         if (results.some((result) => result.status === 'rejected')) {
-          toast.error('部分歌手信息加载失败')
+          toast.error(i18n._(msg`部分歌手信息加载失败`))
         }
       })
       .finally(() => {
@@ -120,7 +124,7 @@ function ArtistPage() {
   if (!profile) {
     return (
       <div className="px-8 pt-10">
-        <EmptyState title="歌手不存在或无法访问" />
+        <EmptyState title={i18n._(msg`歌手不存在或无法访问`)} />
       </div>
     )
   }
@@ -145,7 +149,7 @@ function ArtistPage() {
       })
       if (next.length < 12) setAlbumsDone(true)
     } catch {
-      toast.error('专辑加载失败')
+      toast.error(i18n._(msg`专辑加载失败`))
     } finally {
       setAlbumsLoadingMore(false)
     }
@@ -164,7 +168,9 @@ function ArtistPage() {
             priority
           />
           <div className="min-w-0 flex-1 text-center md:text-left">
-            <span className="eyebrow">歌手</span>
+            <span className="eyebrow">
+              <Trans>歌手</Trans>
+            </span>
             <h1 className="headline-lg mt-1.5 text-[32px]">{profile.name}</h1>
             {aliasLine ? (
               <p className="mt-1 text-[12px] text-black/45">{aliasLine}</p>
@@ -186,26 +192,28 @@ function ArtistPage() {
             <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] text-black/40 md:justify-start">
               <span className="flex items-center gap-1.5">
                 <Music2 className="h-3.5 w-3.5" />
-                {formatNumber(profile.musicSize)} 首单曲
+                <Trans>{formatNumber(profile.musicSize)} 首单曲</Trans>
               </span>
               <span className="flex items-center gap-1.5">
                 <Disc3 className="h-3.5 w-3.5" />
-                {formatNumber(profile.albumSize)} 张专辑
+                <Trans>{formatNumber(profile.albumSize)} 张专辑</Trans>
               </span>
               <span className="flex items-center gap-1.5">
                 <Video className="h-3.5 w-3.5" />
-                {formatNumber(profile.mvSize)} 个 MV
+                <Trans>{formatNumber(profile.mvSize)} 个 MV</Trans>
               </span>
               {profile.rank?.rank ? (
                 <span className="rounded-full bg-accent/8 px-2 py-0.5 text-[11px] text-accent">
-                  歌手榜 No.{profile.rank.rank}
+                  <Trans>歌手榜 No.{profile.rank.rank}</Trans>
                 </span>
               ) : null}
             </div>
 
             {profile.briefDesc ? (
               <div className="mt-4 max-w-[860px]">
-                <p className="eyebrow text-left">歌手简介</p>
+                <p className="eyebrow text-left">
+                  <Trans>歌手简介</Trans>
+                </p>
                 <div
                   className="mt-1.5 overflow-hidden transition-[height] duration-300 ease-in-out motion-reduce:transition-none"
                   style={{
@@ -230,7 +238,7 @@ function ArtistPage() {
                     onClick={() => setBioExpanded((value) => !value)}
                     className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-accent transition-colors hover:text-accent-hover"
                   >
-                    {bioExpanded ? '收起' : '展开全部'}
+                    {bioExpanded ? <Trans>收起</Trans> : <Trans>展开全部</Trans>}
                     <ChevronDown
                       className={cn(
                         'h-3 w-3 transition-transform duration-300',
@@ -248,21 +256,31 @@ function ArtistPage() {
       <Tabs value={tab} onValueChange={setTab} className="mt-6">
         <div className="flex items-center justify-between gap-3 border-b border-black/8 pb-2">
           <TabsList>
-            <TabsTrigger value="songs">热门作品</TabsTrigger>
-            <TabsTrigger value="albums">专辑</TabsTrigger>
+            <TabsTrigger value="songs">
+              <Trans>热门作品</Trans>
+            </TabsTrigger>
+            <TabsTrigger value="albums">
+              <Trans>专辑</Trans>
+            </TabsTrigger>
             <TabsTrigger value="mvs">MV</TabsTrigger>
           </TabsList>
           {tab === 'songs' && songs.length ? (
-            <PlayAllButton songs={songs} playlistId={playlistId} label="播放热门歌曲" />
+            <PlayAllButton
+            songs={songs}
+            playlistId={playlistId}
+            label={i18n._(msg`播放热门歌曲`)}
+          />
           ) : null}
         </div>
 
         <TabsContent value="songs" className="mt-3">
-          <div className="mb-2 text-[11px] text-black/35">共 {songs.length} 首热门单曲</div>
+          <div className="mb-2 text-[11px] text-black/35">
+            <Trans>共 {songs.length} 首热门单曲</Trans>
+          </div>
           <SongTable
             songs={songs}
             playlistId={playlistId}
-            emptyText="暂无热门单曲"
+            emptyText={i18n._(msg`暂无热门单曲`)}
           />
         </TabsContent>
 
@@ -294,7 +312,9 @@ function ArtistPage() {
                     </span>
                     <span className="mt-1 block text-[11px] text-black/30">
                       {formatDate(album.publishTime).slice(0, 4)}
-                      {album.size ? ` · ${album.size} 首` : ''}
+                      {album.size ? (
+                        <Trans> · {album.size} 首</Trans>
+                      ) : null}
                     </span>
                   </button>
                 ))}
@@ -308,13 +328,13 @@ function ArtistPage() {
                     loading={albumsLoadingMore}
                     onClick={() => void handleLoadMoreAlbums()}
                   >
-                    加载更多专辑
+                    <Trans>加载更多专辑</Trans>
                   </Button>
                 </div>
               ) : null}
             </>
           ) : (
-            <EmptyState title="暂无专辑" />
+            <EmptyState title={i18n._(msg`暂无专辑`)} />
           )}
         </TabsContent>
 
@@ -326,14 +346,16 @@ function ArtistPage() {
               ))}
             </div>
           ) : (
-            <EmptyState title="暂无相关 MV" />
+            <EmptyState title={i18n._(msg`暂无相关 MV`)} />
           )}
         </TabsContent>
       </Tabs>
 
       {similar.length ? (
         <section className="mt-10">
-          <p className="section-title text-[16px]">相似歌手</p>
+          <p className="section-title text-[16px]">
+            <Trans>相似歌手</Trans>
+          </p>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {similar.slice(0, 8).map((artist) => (
               <button
@@ -358,7 +380,11 @@ function ArtistPage() {
                   <p className="mt-0.5 truncate text-[11px] text-black/35">
                     {artist.alias?.[0] ??
                       artist.transNames?.[0] ??
-                      (artist.fansCount ? `${formatNumber(artist.fansCount)} 粉丝` : '相似歌手')}
+                      artist.fansCount ? (
+                        <Trans>{formatNumber(artist.fansCount)} 粉丝</Trans>
+                      ) : (
+                        <Trans>相似歌手</Trans>
+                      )}
                   </p>
                 </div>
               </button>

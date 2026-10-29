@@ -1,28 +1,39 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
 import type { PlayLevel } from '../types'
 import { activateLocale, defaultLocale, type Locale } from '../i18n'
 
-export const CACHE_QUALITY_OPTIONS = [
-  { value: '64', label: '标准 · 64kbps' },
-  { value: '96', label: '较高 · 96kbps' },
-  { value: '128', label: '高 · 128kbps' },
+export const CACHE_QUALITY_OPTIONS: Array<{
+  value: string
+  label: MessageDescriptor
+}> = [
+  { value: '64', label: msg`标准 · 64kbps` },
+  { value: '96', label: msg`较高 · 96kbps` },
+  { value: '128', label: msg`高 · 128kbps` },
 ]
 
-export const PLAY_QUALITY_OPTIONS: Array<{ value: PlayLevel; label: string }> = [
-  { value: 'standard', label: '标准' },
-  { value: 'higher', label: '较高' },
-  { value: 'exhigh', label: '极高' },
-  { value: 'lossless', label: '无损' },
-  { value: 'hires', label: 'Hi-Res' },
+export const PLAY_QUALITY_OPTIONS: Array<{
+  value: PlayLevel
+  label: MessageDescriptor
+}> = [
+  { value: 'standard', label: msg`标准` },
+  { value: 'higher', label: msg`较高` },
+  { value: 'exhigh', label: msg`极高` },
+  { value: 'lossless', label: msg`无损` },
+  { value: 'hires', label: msg`Hi-Res` },
 ]
 
 export type LyricDisplayMode = 'both' | 'original' | 'translation'
 
-export const LYRIC_DISPLAY_OPTIONS: Array<{ value: LyricDisplayMode; label: string }> = [
-  { value: 'both', label: '双语对照' },
-  { value: 'original', label: '仅原文' },
-  { value: 'translation', label: '仅译文' },
+export const LYRIC_DISPLAY_OPTIONS: Array<{
+  value: LyricDisplayMode
+  label: MessageDescriptor
+}> = [
+  { value: 'both', label: msg`双语对照` },
+  { value: 'original', label: msg`仅原文` },
+  { value: 'translation', label: msg`仅译文` },
 ]
 
 interface SettingsState {

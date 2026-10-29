@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
+import { Trans } from '@lingui/react/macro'
 import { Film } from 'lucide-react'
 import { Skeleton } from '@pikoloo/darwin-ui'
 import { MvCard } from '../components/cards/MvCard'
@@ -20,8 +24,26 @@ const TYPES = ['全部', '官方版', '现场版', '原生', '网易出品']
 const ORDERS = ['最热', '最新', '上升最快']
 const PAGE_SIZE = 24
 
+/** Values are sent to the API as-is; only the button labels are translated. */
+const FILTER_LABELS: Record<string, MessageDescriptor> = {
+  全部: msg`全部`,
+  内地: msg`内地`,
+  港台: msg`港台`,
+  欧美: msg`欧美`,
+  日本: msg`日本`,
+  韩国: msg`韩国`,
+  官方版: msg`官方版`,
+  现场版: msg`现场版`,
+  原生: msg`原生`,
+  网易出品: msg`网易出品`,
+  最热: msg`最热`,
+  最新: msg`最新`,
+  上升最快: msg`上升最快`,
+}
+
 function LatestMvPage() {
-  useDocumentTitle('最新 MV')
+  const { i18n } = useLingui()
+  useDocumentTitle(i18n._(msg`最新 MV`))
   const [area, setArea] = useState('全部')
   const [type, setType] = useState('全部')
   const [order, setOrder] = useState('最热')
@@ -56,7 +78,7 @@ function LatestMvPage() {
         )
       })
       .catch(() => {
-        if (!cancelled) toast.error('MV 加载失败')
+        if (!cancelled) toast.error(i18n._(msg`MV 加载失败`))
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -78,15 +100,32 @@ function LatestMvPage() {
       <div>
         <h1 className="headline-lg flex items-center gap-2">
           <Film className="h-5 w-5 text-accent" />
-          最新 MV
+          <Trans>最新 MV</Trans>
         </h1>
-        <p className="mt-1.5 text-[12px] text-black/35">按地区、类型与热度浏览音乐视频</p>
+        <p className="mt-1.5 text-[12px] text-black/35">
+          <Trans>按地区、类型与热度浏览音乐视频</Trans>
+        </p>
       </div>
 
       <div className="mt-5 space-y-2.5 rounded-[18px] border border-black/8 bg-[#fafafc] px-4 py-3.5">
-        <FilterRow label="地区" options={AREAS} value={area} onChange={(value) => changeFilter(setArea, value)} />
-        <FilterRow label="类型" options={TYPES} value={type} onChange={(value) => changeFilter(setType, value)} />
-        <FilterRow label="排序" options={ORDERS} value={order} onChange={(value) => changeFilter(setOrder, value)} />
+        <FilterRow
+          label={msg`地区`}
+          options={AREAS}
+          value={area}
+          onChange={(value) => changeFilter(setArea, value)}
+        />
+        <FilterRow
+          label={msg`类型`}
+          options={TYPES}
+          value={type}
+          onChange={(value) => changeFilter(setType, value)}
+        />
+        <FilterRow
+          label={msg`排序`}
+          options={ORDERS}
+          value={order}
+          onChange={(value) => changeFilter(setOrder, value)}
+        />
       </div>
 
       <div className="mt-5">
@@ -107,7 +146,7 @@ function LatestMvPage() {
             ))}
           </div>
         ) : (
-          <EmptyState title="暂无 MV" />
+          <EmptyState title={i18n._(msg`暂无 MV`)} />
         )}
       </div>
 
@@ -122,14 +161,17 @@ function FilterRow({
   value,
   onChange,
 }: {
-  label: string
+  label: MessageDescriptor
   options: string[]
   value: string
   onChange: (value: string) => void
 }) {
+  const { i18n } = useLingui()
   return (
     <div className="flex items-center gap-3">
-      <span className="w-8 shrink-0 text-[11px] font-medium text-black/30">{label}</span>
+      <span className="w-8 shrink-0 text-[11px] font-medium text-black/30">
+        {i18n._(label)}
+      </span>
       <div className="flex flex-wrap gap-1.5">
         {options.map((option) => (
           <button
@@ -143,7 +185,7 @@ function FilterRow({
                 : 'text-black/45 hover:bg-black/5 hover:text-black/70',
             )}
           >
-            {option}
+            {FILTER_LABELS[option] ? i18n._(FILTER_LABELS[option]) : option}
           </button>
         ))}
       </div>

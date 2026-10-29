@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
+import { Trans } from '@lingui/react/macro'
 import { Loader2, QrCode, RefreshCw, Smartphone } from 'lucide-react'
 import {
   Button,
@@ -50,6 +53,7 @@ function requestErrorMessage(error: unknown, fallback: string) {
 }
 
 export function LoginModal({ open, onOpenChange }: LoginModalProps) {
+  const { i18n } = useLingui()
   const [mode, setMode] = useState<LoginMode>('qr')
   const [phone, setPhone] = useState('')
   const [captcha, setCaptcha] = useState('')
@@ -96,7 +100,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
             }
             clearApiCache()
             onOpenChange(false)
-            toast.success('登录成功')
+            toast.success(i18n._(msg`登录成功`))
             void useUserStore
               .getState()
               .initSession()
@@ -114,7 +118,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
     } catch {
       if (!cancelledRef.current) {
         setLoading(false)
-        toast.error('获取二维码失败，请检查本地 API 服务是否启动')
+        toast.error(i18n._(msg`获取二维码失败，请检查本地 API 服务是否启动`))
       }
     }
   }, [onOpenChange, stopTimer])
@@ -158,7 +162,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
 
   const handleSendCaptcha = async () => {
     if (!phoneValid) {
-      toast.warning('请输入正确的 11 位手机号')
+      toast.warning(i18n._(msg`请输入正确的 11 位手机号`))
       return
     }
     if (countdown > 0 || sending) return
@@ -167,15 +171,18 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
     try {
       const res = await sendCaptcha(phone)
       if (res.code === 200) {
-        toast.success('验证码已发送，请查收短信')
+        toast.success(i18n._(msg`验证码已发送，请查收短信`))
         setCountdown(60)
       } else {
-        const message = responseMessage(res) ?? '验证码发送失败'
+        const message = responseMessage(res) ?? i18n._(msg`验证码发送失败`)
         setErrorMessage(message)
         toast.error(message)
       }
     } catch (error) {
-      const message = requestErrorMessage(error, '验证码发送失败，请稍后重试')
+      const message = requestErrorMessage(
+        error,
+        i18n._(msg`验证码发送失败，请稍后重试`),
+      )
       setErrorMessage(message)
       toast.error(message)
     } finally {
@@ -185,11 +192,11 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
 
   const handleCellphoneLogin = async () => {
     if (!phoneValid) {
-      toast.warning('请输入正确的 11 位手机号')
+      toast.warning(i18n._(msg`请输入正确的 11 位手机号`))
       return
     }
     if (!captcha.trim()) {
-      toast.warning('请输入验证码')
+      toast.warning(i18n._(msg`请输入验证码`))
       return
     }
     if (loggingIn) return
@@ -203,18 +210,22 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
         }
         clearApiCache()
         onOpenChange(false)
-        toast.success('登录成功')
+        toast.success(i18n._(msg`登录成功`))
         void useUserStore
           .getState()
           .initSession()
           .catch(() => {})
       } else {
-        const message = responseMessage(res) ?? '登录失败，请检查手机号或验证码'
+        const message =
+          responseMessage(res) ?? i18n._(msg`登录失败，请检查手机号或验证码`)
         setErrorMessage(message)
         toast.error(message)
       }
     } catch (error) {
-      const message = requestErrorMessage(error, '登录失败，请稍后重试')
+      const message = requestErrorMessage(
+        error,
+        i18n._(msg`登录失败，请稍后重试`),
+      )
       setErrorMessage(message)
       toast.error(message)
     } finally {
@@ -223,7 +234,13 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
   }
 
   return (
-    <Modal isOpen={open} onClose={() => onOpenChange(false)} title="登录" size="sm" glass>
+    <Modal
+      isOpen={open}
+      onClose={() => onOpenChange(false)}
+      title={i18n._(msg`登录`)}
+      size="sm"
+      glass
+    >
       <Tabs
         value={mode}
         onValueChange={(value) => {
@@ -234,10 +251,10 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
       >
         <TabsList>
           <TabsTrigger value="captcha" icon={<Smartphone className="h-3.5 w-3.5" />}>
-            验证码登录
+            <Trans>验证码登录</Trans>
           </TabsTrigger>
           <TabsTrigger value="qr" icon={<QrCode className="h-3.5 w-3.5" />}>
-            扫码登录
+            <Trans>扫码登录</Trans>
           </TabsTrigger>
         </TabsList>
 
@@ -250,14 +267,16 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
             }}
           >
             <div>
-              <p className="mb-1.5 text-[11px] text-black/40">手机号</p>
+              <p className="mb-1.5 text-[11px] text-black/40">
+                <Trans>手机号</Trans>
+              </p>
               <Input
                 value={phone}
                 onChange={(event) => {
                   setPhone(event.target.value.replace(/\D/g, '').slice(0, 11))
                   setErrorMessage('')
                 }}
-                placeholder="请输入手机号"
+                placeholder={i18n._(msg`请输入手机号`)}
                 inputMode="numeric"
                 autoComplete="tel"
                 leftIcon={<Smartphone className="h-3.5 w-3.5" />}
@@ -265,7 +284,9 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
             </div>
 
             <div>
-              <p className="mb-1.5 text-[11px] text-black/40">验证码</p>
+              <p className="mb-1.5 text-[11px] text-black/40">
+                <Trans>验证码</Trans>
+              </p>
               <div className="flex items-center gap-2">
                 <Input
                   value={captcha}
@@ -273,7 +294,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                     setCaptcha(event.target.value.replace(/\D/g, '').slice(0, 6))
                     setErrorMessage('')
                   }}
-                  placeholder="请输入验证码"
+                  placeholder={i18n._(msg`请输入验证码`)}
                   inputMode="numeric"
                   autoComplete="one-time-code"
                   wrapperClassName="min-w-0 flex-1"
@@ -287,7 +308,11 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                   loading={sending}
                   onClick={() => void handleSendCaptcha()}
                 >
-                  {countdown > 0 ? `${countdown}s 后重发` : '发送验证码'}
+                  {countdown > 0 ? (
+                    <Trans>{countdown}s 后重发</Trans>
+                  ) : (
+                    <Trans>发送验证码</Trans>
+                  )}
                 </Button>
               </div>
             </div>
@@ -298,10 +323,10 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
               fullWidth
               className="mt-1"
               loading={loggingIn}
-              loadingText="登录中…"
+              loadingText={i18n._(msg`登录中…`)}
               disabled={!phoneValid || !captcha.trim() || loggingIn}
             >
-              登录
+              <Trans>登录</Trans>
             </Button>
 
             {errorMessage ? (
@@ -314,7 +339,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
             ) : null}
 
             <p className="text-center text-[11px] leading-relaxed text-black/30">
-              未注册的手机号登录后将自动创建账号
+              <Trans>未注册的手机号登录后将自动创建账号</Trans>
             </p>
           </form>
         </TabsContent>
@@ -326,16 +351,18 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
               {!loading && qrImage && (
                 <img
                   src={qrImage}
-                  alt="登录二维码"
+                  alt={i18n._(msg`登录二维码`)}
                   className="h-[min(200px,66vw)] w-[min(200px,66vw)]"
                 />
               )}
               {!loading && status === 800 && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/80 text-white backdrop-blur-sm">
-                  <p className="text-[13px]">二维码已失效</p>
+                  <p className="text-[13px]">
+                    <Trans>二维码已失效</Trans>
+                  </p>
                   <Button size="sm" variant="primary" onClick={() => void start()}>
                     <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                    刷新
+                    <Trans>刷新</Trans>
                   </Button>
                 </div>
               )}
@@ -343,12 +370,14 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
 
             <p className="mt-5 flex items-center gap-1.5 text-[13px] text-black/45">
               <Smartphone className="h-4 w-4" />
-              <span>使用网易云音乐 App 扫码登录</span>
+              <span>
+                <Trans>使用网易云音乐 App 扫码登录</Trans>
+              </span>
             </p>
             <p className="mt-1 h-4 text-[12px] text-black/35">{STATUS_TEXT[status] ?? ''}</p>
 
             <p className="mt-3 max-w-[260px] text-center text-[11px] leading-relaxed text-black/30">
-              若二维码无法刷新，请确认本地 API 服务已在 3000 端口运行
+              <Trans>若二维码无法刷新，请确认本地 API 服务已在 3000 端口运行</Trans>
             </p>
           </div>
         </TabsContent>

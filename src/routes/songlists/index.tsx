@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
+import { Trans } from '@lingui/react/macro'
 import { ChevronDown, ChevronLeft, ChevronRight, Loader2, Sparkles } from 'lucide-react'
 import {
   Button,
@@ -14,6 +17,7 @@ import { fetchPlaylistTags, fetchTopPlaylists } from '../../api'
 import { getArrLast, cn } from '../../lib/format'
 import { useDocumentTitle } from '../../lib/title'
 import { toast } from '../../lib/toast'
+import { TAG_LABELS } from '../../lib/tagLabels'
 import type { Playlist } from '../../types'
 
 export const Route = createFileRoute('/songlists/')({
@@ -21,7 +25,8 @@ export const Route = createFileRoute('/songlists/')({
 })
 
 function SonglistsPage() {
-  useDocumentTitle('推荐歌单')
+  const { i18n } = useLingui()
+  useDocumentTitle(i18n._(msg`推荐歌单`))
   const [tags, setTags] = useState<string[]>(['全部'])
   const [activeTag, setActiveTag] = useState('全部')
   const [playlists, setPlaylists] = useState<Playlist[]>([])
@@ -85,7 +90,7 @@ function SonglistsPage() {
       .catch(() => {
         if (cancelled) return
         setFailed(true)
-        toast.error('歌单加载失败')
+        toast.error(i18n._(msg`歌单加载失败`))
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -110,7 +115,7 @@ function SonglistsPage() {
       setPlaylists((prev) => [...prev, ...result.playlists])
       setMore(result.more)
     } catch {
-      toast.error('加载更多失败')
+      toast.error(i18n._(msg`加载更多失败`))
     } finally {
       setLoadingMore(false)
     }
@@ -120,14 +125,16 @@ function SonglistsPage() {
     <div className="px-8 pb-14 pt-6">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="headline-lg">推荐歌单</h1>
+          <h1 className="headline-lg">
+            <Trans>推荐歌单</Trans>
+          </h1>
           <p className="mt-1.5 text-[12px] text-black/35">
-            编辑精选的华语、欧美与器乐歌单
+            <Trans>编辑精选的华语、欧美与器乐歌单</Trans>
           </p>
         </div>
         <span className="flex items-center gap-1.5 rounded-full border border-black/8 bg-white px-3 py-1.5 text-[11px] text-black/40">
           <Sparkles className="h-3.5 w-3.5 text-accent" />
-          精品歌单
+          <Trans>精品歌单</Trans>
         </span>
       </div>
 
@@ -165,7 +172,11 @@ function SonglistsPage() {
                     : 'border border-black/8 bg-[#f5f5f7] text-black/55 hover:bg-[#ececf0] hover:text-black/75',
                 )}
               >
-                {tag}
+                {tag === '全部'
+                  ? i18n._(msg`全部`)
+                  : TAG_LABELS[tag]
+                    ? i18n._(TAG_LABELS[tag])
+                    : tag}
               </button>
             ))}
           </div>
@@ -191,7 +202,7 @@ function SonglistsPage() {
                 type="button"
                 className="pressable flex h-7 shrink-0 items-center gap-1 rounded-full border border-black/8 bg-white px-2.5 text-[11px] text-black/55 hover:text-black/80"
               >
-                更多
+                <Trans>更多</Trans>
                 <ChevronDown className="h-3 w-3" />
               </button>
             </PopoverTrigger>
@@ -202,7 +213,9 @@ function SonglistsPage() {
               glass
               className="w-[min(380px,calc(100vw-24px))] max-w-[calc(100vw-24px)] p-3"
             >
-              <p className="text-[11px] text-black/35">全部分类</p>
+              <p className="text-[11px] text-black/35">
+                <Trans>全部分类</Trans>
+              </p>
               <div className="mt-2 flex max-h-[300px] flex-wrap gap-1.5 overflow-y-auto">
                 {tags.map((tag) => (
                   <button
@@ -216,7 +229,11 @@ function SonglistsPage() {
                         : 'bg-[#f5f5f7] text-black/55 hover:bg-[#ececf0] hover:text-black/75',
                     )}
                   >
-                    {tag}
+                    {tag === '全部'
+                      ? i18n._(msg`全部`)
+                      : TAG_LABELS[tag]
+                        ? i18n._(TAG_LABELS[tag])
+                        : tag}
                   </button>
                 ))}
               </div>
@@ -228,8 +245,8 @@ function SonglistsPage() {
       {failed ? (
         <EmptyState
           variant="error"
-          title="歌单加载失败"
-          description="请检查网络或本地 API 服务后重试"
+          title={i18n._(msg`歌单加载失败`)}
+          description={i18n._(msg`请检查网络或本地 API 服务后重试`)}
           onRetry={retry}
         />
       ) : loading ? (
@@ -263,7 +280,7 @@ function SonglistsPage() {
             onClick={() => void loadMore()}
           >
             {loadingMore ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
-            加载更多
+            <Trans>加载更多</Trans>
           </Button>
         </div>
       )}

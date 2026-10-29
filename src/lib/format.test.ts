@@ -1,4 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+
+// The real i18n module imports .po catalogs, which Vitest's SSR loader does
+// not transform; the formatter only needs the active locale.
+vi.mock('../i18n', () => ({ i18n: { locale: 'zh-CN' } }))
+
 import {
   cn,
   formatArtists,

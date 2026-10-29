@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
+import { Trans } from '@lingui/react/macro'
 import { Building2, CalendarDays } from 'lucide-react'
 import {
   Button,
@@ -22,13 +25,14 @@ export const Route = createFileRoute('/albums/$id')({
 })
 
 function AlbumDetailPage() {
+  const { i18n } = useLingui()
   const { id } = Route.useParams()
   const navigate = useNavigate()
   const [album, setAlbum] = useState<AlbumDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [keyword, setKeyword] = useState('')
   const [descExpanded, setDescExpanded] = useState(false)
-  useDocumentTitle(album?.name ?? '专辑')
+  useDocumentTitle(album?.name ?? i18n._(msg`专辑`))
 
   useEffect(() => {
     const controller = new AbortController()
@@ -43,7 +47,7 @@ function AlbumDetailPage() {
       })
       .catch(() => {
         if (!controller.signal.aborted) {
-          toast.error('专辑加载失败')
+          toast.error(i18n._(msg`专辑加载失败`))
         }
       })
       .finally(() => {
@@ -89,7 +93,7 @@ function AlbumDetailPage() {
     return (
       <div className="px-8 pt-10">
         <EmptyState
-          title="专辑不存在或无法访问"
+          title={i18n._(msg`专辑不存在或无法访问`)}
           action={
             <Button
               variant="primary"
@@ -97,7 +101,7 @@ function AlbumDetailPage() {
               className="rounded-full"
               onClick={() => window.history.back()}
             >
-              返回上一页
+              {i18n._(msg`返回上一页`)}
             </Button>
           }
         />
@@ -125,7 +129,7 @@ function AlbumDetailPage() {
         />
         <div className="min-w-0 flex-1">
           <span className="inline-flex items-center rounded-full bg-accent/8 px-2.5 py-0.5 text-[11px] font-medium text-accent">
-            专辑
+            <Trans>专辑</Trans>
           </span>
           <h1 className="headline-lg mt-2.5 line-clamp-2 text-[28px]">{album.name}</h1>
 
@@ -134,10 +138,12 @@ function AlbumDetailPage() {
             {album.publishTime ? (
               <span className="flex items-center gap-1">
                 <CalendarDays className="h-3 w-3" />
-                {formatDate(album.publishTime)} 发行
+                <Trans>{formatDate(album.publishTime)} 发行</Trans>
               </span>
             ) : null}
-            <span>{songs.length} 首歌曲</span>
+            <span>
+              <Trans>{songs.length} 首歌曲</Trans>
+            </span>
             {album.company ? (
               <span className="flex items-center gap-1">
                 <Building2 className="h-3 w-3" />
@@ -162,7 +168,7 @@ function AlbumDetailPage() {
                   className="mt-1 text-[11px] text-accent"
                   onClick={() => setDescExpanded((value) => !value)}
                 >
-                  {descExpanded ? '收起' : '展开'}
+                  {descExpanded ? <Trans>收起</Trans> : <Trans>展开</Trans>}
                 </button>
               ) : null}
             </div>
@@ -184,7 +190,7 @@ function AlbumDetailPage() {
               }
               disabled={!artists[0]?.id}
             >
-              查看歌手
+              <Trans>查看歌手</Trans>
             </Button>
           </div>
         </div>
@@ -192,13 +198,13 @@ function AlbumDetailPage() {
 
       <div className="sticky top-0 z-20 -mx-8 mt-7 flex items-center justify-between gap-4 border-b border-black/8 bg-white/90 px-8 py-2 backdrop-blur-xl">
         <p className="text-[12px] font-medium text-black/70">
-          歌曲列表
+          <Trans>歌曲列表</Trans>
           <span className="ml-1 text-[11px] text-black/30">{songs.length}</span>
         </p>
         <Input.Search
           value={keyword}
           onChange={(event) => setKeyword(event.target.value)}
-          placeholder="搜索专辑歌曲"
+          placeholder={i18n._(msg`搜索专辑歌曲`)}
           size="sm"
           className="w-[190px] rounded-full text-[12px]"
         />
@@ -208,7 +214,11 @@ function AlbumDetailPage() {
         <SongTable
           songs={filteredSongs}
           playlistId={`album-${album.id}`}
-          emptyText={keyword ? '没有匹配的歌曲' : '专辑暂时没有歌曲'}
+          emptyText={
+            keyword
+              ? i18n._(msg`没有匹配的歌曲`)
+              : i18n._(msg`专辑暂时没有歌曲`)
+          }
         />
       </div>
     </div>

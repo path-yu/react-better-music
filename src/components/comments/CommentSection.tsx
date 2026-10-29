@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
+import { Trans } from '@lingui/react/macro'
 import { CornerDownRight, Heart, Loader2, MessageCircle, Send } from 'lucide-react'
 import { Avatar, Button, Modal, Textarea } from '@pikoloo/darwin-ui'
 import {
@@ -26,9 +29,11 @@ const PAGE_SIZE = 20
 export function CommentSection({
   type,
   resourceId,
-  title = '评论',
+  title,
   showComposer = true,
 }: CommentSectionProps) {
+  const { i18n } = useLingui()
+  const sectionTitle = title ?? i18n._(msg`评论`)
   const [data, setData] = useState<CommentResponse>({ total: 0, comments: [] })
   const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -69,7 +74,7 @@ export function CommentSection({
       })
       .catch(() => {
         if (requestIdRef.current === requestId && !controller.signal.aborted) {
-          toast.error('评论加载失败')
+          toast.error(i18n._(msg`评论加载失败`))
         }
       })
       .finally(() => {
@@ -105,7 +110,8 @@ export function CommentSection({
         }
       })
     } catch {
-      if (requestIdRef.current === requestId) toast.error('加载更多评论失败')
+      if (requestIdRef.current === requestId)
+        toast.error(i18n._(msg`加载更多评论失败`))
     } finally {
       setLoadingMore(false)
     }
@@ -128,7 +134,7 @@ export function CommentSection({
     // the response to the new resource's list.
     if (requestIdRef.current !== requestId) return
     if (res.code !== 200 || !res.comment) {
-      throw new Error('评论失败')
+      throw new Error(i18n._(msg`评论失败`))
     }
     const comment = { ...res.comment, beReplied: res.comment.beReplied ?? [] }
     if (comment.beRepliedUser && !comment.beReplied.length) {
@@ -139,16 +145,16 @@ export function CommentSection({
       total: prev.total + 1,
       comments: [comment, ...prev.comments],
     }))
-    toast.success('评论成功')
+    toast.success(i18n._(msg`评论成功`))
   }
 
   const handleSubmit = async () => {
     if (!isLogin) {
-      toast.warning('请先登录')
+      toast.warning(i18n._(msg`请先登录`))
       return
     }
     if (!content.trim()) {
-      toast.warning('评论不能为空')
+      toast.warning(i18n._(msg`评论不能为空`))
       return
     }
     setSubmitting(true)
@@ -156,7 +162,7 @@ export function CommentSection({
       await submitComment({ t: 1, content: content.trim() })
       setContent('')
     } catch {
-      toast.error('评论失败')
+      toast.error(i18n._(msg`评论失败`))
     } finally {
       setSubmitting(false)
     }
@@ -165,7 +171,7 @@ export function CommentSection({
   const handleReply = async () => {
     if (!replyTarget) return
     if (!replyContent.trim()) {
-      toast.warning('回复内容不能为空')
+      toast.warning(i18n._(msg`回复内容不能为空`))
       return
     }
     setReplySubmitting(true)
@@ -178,7 +184,7 @@ export function CommentSection({
       setReplyContent('')
       setReplyTarget(null)
     } catch {
-      toast.error('回复失败')
+      toast.error(i18n._(msg`回复失败`))
     } finally {
       setReplySubmitting(false)
     }
@@ -186,7 +192,7 @@ export function CommentSection({
 
   const handleLike = async (comment: Comment, hot: boolean) => {
     if (!isLogin) {
-      toast.warning('请先登录')
+      toast.warning(i18n._(msg`请先登录`))
       return
     }
     const nextLiked = !comment.liked
@@ -200,7 +206,7 @@ export function CommentSection({
       })
       if (requestIdRef.current !== requestId) return
       if (res.code !== 200) {
-        toast.error('操作失败')
+        toast.error(i18n._(msg`操作失败`))
         return
       }
       setData((prev) => ({
@@ -229,7 +235,8 @@ export function CommentSection({
             ),
       }))
     } catch {
-      if (requestIdRef.current === requestId) toast.error('操作失败')
+      if (requestIdRef.current === requestId)
+        toast.error(i18n._(msg`操作失败`))
     }
   }
 
@@ -259,7 +266,7 @@ export function CommentSection({
                   </span>
                   {hot ? (
                     <span className="rounded bg-[#ff9500]/10 px-1 text-[8.5px] text-[#b36b00]">
-                      热门
+                      <Trans>热门</Trans>
                     </span>
                   ) : null}
                 </div>
@@ -294,14 +301,14 @@ export function CommentSection({
                     className="pressable flex items-center gap-1 hover:text-black/60"
                     onClick={() => {
                       if (!isLogin) {
-                        toast.warning('请先登录')
+                        toast.warning(i18n._(msg`请先登录`))
                         return
                       }
                       setReplyTarget(comment)
                     }}
                   >
                     <MessageCircle className="h-3 w-3" />
-                    回复
+                    <Trans>回复</Trans>
                   </button>
                 </div>
               </div>
@@ -315,9 +322,9 @@ export function CommentSection({
   return (
     <section>
       <div className="flex items-center gap-2">
-        <h3 className="headline-md text-[17px]">{title}</h3>
+        <h3 className="headline-md text-[17px]">{sectionTitle}</h3>
         <span className="text-[11.5px] text-black/35">
-          {data.total ? `${data.total} 条` : ''}
+          {data.total ? <Trans>{data.total} 条</Trans> : null}
         </span>
       </div>
 
@@ -326,7 +333,11 @@ export function CommentSection({
           <Textarea
             value={content}
             onChange={(event) => setContent(event.target.value)}
-            placeholder={isLogin ? '说点什么…' : '登录后参与评论'}
+            placeholder={
+              isLogin
+                ? i18n._(msg`说点什么…`)
+                : i18n._(msg`登录后参与评论`)
+            }
             maxLength={140}
             resize="none"
             className="min-h-[76px] border-0 bg-transparent text-[12.5px] focus:ring-0"
@@ -342,7 +353,7 @@ export function CommentSection({
               onClick={() => void handleSubmit()}
             >
               <Send className="mr-1.5 h-3 w-3" />
-              评论
+              <Trans>评论</Trans>
             </Button>
           </div>
         </div>
@@ -354,11 +365,15 @@ export function CommentSection({
         </div>
       ) : (
         <>
-          {renderList(data.hotComments ?? [], true, '精彩评论')}
-          {renderList(data.comments, false, '最新评论')}
+          {renderList(
+            data.hotComments ?? [],
+            true,
+            i18n._(msg`精彩评论`),
+          )}
+          {renderList(data.comments, false, i18n._(msg`最新评论`))}
           {!data.comments.length && !data.hotComments?.length ? (
             <p className="py-10 text-center text-[12px] text-black/35">
-              还没有评论，快来抢沙发～
+              <Trans>还没有评论，快来抢沙发～</Trans>
             </p>
           ) : null}
           {data.comments.length > 0 && data.comments.length < data.total ? (
@@ -371,7 +386,7 @@ export function CommentSection({
                 onClick={() => void handleLoadMore()}
               >
                 <CornerDownRight className="mr-1.5 h-3 w-3" />
-                加载更多
+                <Trans>加载更多</Trans>
               </Button>
             </div>
           ) : null}
@@ -381,7 +396,7 @@ export function CommentSection({
       <Modal
         isOpen={Boolean(replyTarget)}
         onClose={() => setReplyTarget(null)}
-        title={`回复 ${replyTarget?.user?.nickname ?? ''}`}
+        title={i18n._(msg`回复 ${replyTarget?.user?.nickname ?? ''}`)}
         size="sm"
         glass
       >
@@ -390,13 +405,13 @@ export function CommentSection({
             value={replyContent}
             onChange={(event) => setReplyContent(event.target.value)}
             maxLength={140}
-            placeholder="回复内容"
+            placeholder={i18n._(msg`回复内容`)}
             resize="none"
             className="min-h-[92px] text-[12.5px]"
           />
           <div className="mt-3 flex justify-end gap-2">
             <Button size="sm" variant="secondary" className="rounded-full" onClick={() => setReplyTarget(null)}>
-              取消
+              <Trans>取消</Trans>
             </Button>
             <Button
               size="sm"
@@ -405,7 +420,7 @@ export function CommentSection({
               className="rounded-full px-4"
               onClick={() => void handleReply()}
             >
-              回复
+              <Trans>回复</Trans>
             </Button>
           </div>
         </div>

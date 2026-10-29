@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
+import { Trans } from '@lingui/react/macro'
 import { useNavigate } from '@tanstack/react-router'
 import {
   CalendarCheck,
@@ -27,6 +30,7 @@ export function UserMenu() {
   const level = useUserStore((state) => state.level)
   const signIn = useUserStore((state) => state.signIn)
   const logout = useUserStore((state) => state.logout)
+  const { i18n } = useLingui()
   const [open, setOpen] = useState(false)
 
   if (!isLogin || !profile) {
@@ -37,7 +41,7 @@ export function UserMenu() {
         className="pressable flex items-center gap-1.5 rounded-full bg-accent px-4 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-accent-hover"
       >
         <UserRound className="h-3.5 w-3.5" />
-        登录
+        <Trans>登录</Trans>
       </button>
     )
   }
@@ -87,9 +91,9 @@ export function UserMenu() {
 
           <div className="mt-4 grid grid-cols-3 rounded-[14px] bg-black/4 py-2.5">
             {[
-              { label: '动态', value: profile.eventCount ?? 0 },
-              { label: '关注', value: profile.follows ?? 0 },
-              { label: '粉丝', value: profile.followeds ?? 0 },
+              { label: i18n._(msg`动态`), value: profile.eventCount ?? 0 },
+              { label: i18n._(msg`关注`), value: profile.follows ?? 0 },
+              { label: i18n._(msg`粉丝`), value: profile.followeds ?? 0 },
             ].map((item) => (
               <div key={item.label} className="text-center">
                 <p className="text-[13px] font-semibold text-black/80">{item.value}</p>
@@ -107,7 +111,7 @@ export function UserMenu() {
             onClick={() => void signIn()}
           >
             <CalendarCheck className="mr-1.5 h-3.5 w-3.5" />
-            {pcSign ? '今日已签到' : '签到'}
+            {pcSign ? <Trans>今日已签到</Trans> : <Trans>签到</Trans>}
           </Button>
         </div>
 
@@ -121,7 +125,7 @@ export function UserMenu() {
             }}
           >
             <Settings2 className="h-4 w-4 text-black/40" />
-            个人信息设置
+            <Trans>个人信息设置</Trans>
           </button>
           <button
             type="button"
@@ -132,7 +136,7 @@ export function UserMenu() {
             }}
           >
             <LogOut className="h-4 w-4" />
-            退出登录
+            <Trans>退出登录</Trans>
           </button>
         </div>
       </PopoverContent>

@@ -267,7 +267,10 @@ function DiscoveryPage() {
         <SectionTitle
           title={i18n._(msg`每日推荐`)}
           subtitle={
-            new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' })
+            new Date().toLocaleDateString(i18n.locale, {
+              month: 'long',
+              day: 'numeric',
+            })
           }
           icon={<Sparkles className="h-4 w-4 text-accent" />}
         />

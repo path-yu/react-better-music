@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import {
   AudioLines,
@@ -55,6 +57,7 @@ const CROSSFADE_MS = 320
 const CROSSFADE_MAX_WAIT = 6000
 
 export function PlayerBar() {
+  const { i18n } = useLingui()
   // Two media elements alternate so a new track can start while the previous
   // one is still playing; `audioRef` always points at the element that owns the
   // current source, and `registerAudio` follows it for lyrics/seek helpers.
@@ -729,19 +732,21 @@ export function PlayerBar() {
     setBuffered((ranges.end(ranges.length - 1) / audio.duration) * 100)
   }
 
-  const qualityLabel =
-    PLAY_QUALITY_OPTIONS.find((option) => option.value === playLevel)?.label ?? playLevel
+  const qualityOption = PLAY_QUALITY_OPTIONS.find(
+    (option) => option.value === playLevel,
+  )
+  const qualityLabel = qualityOption ? i18n._(qualityOption.label) : playLevel
 
   const handleToggleDesktopLyrics = () => {
     void setDesktopLyricsVisible('toggle')
       .then(({ visible }) => setLyricsWindowOpen(visible))
-      .catch(() => toast.warning('桌面歌词窗口暂不可用'))
+      .catch(() => toast.warning(i18n._(msg`桌面歌词窗口暂不可用`)))
   }
 
   const handleToggleMiniPlayer = () => {
     void setMiniPlayerVisible('toggle')
       .then(({ visible }) => setMiniWindowOpen(visible))
-      .catch(() => toast.warning('迷你播放器暂不可用'))
+      .catch(() => toast.warning(i18n._(msg`迷你播放器暂不可用`)))
   }
 
   const handleQualityChange = (level: PlayLevel) => {
@@ -749,9 +754,9 @@ export function PlayerBar() {
     if (level === playLevel) return
     setPlayLevel(level)
     invalidateUrls()
-    const label =
-      PLAY_QUALITY_OPTIONS.find((option) => option.value === level)?.label ?? level
-    toast.info(`播放音质已切换为${label}，正在重新加载`)
+    const option = PLAY_QUALITY_OPTIONS.find((item) => item.value === level)
+    const label = option ? i18n._(option.label) : level
+    toast.info(i18n._(msg`播放音质已切换为${label}，正在重新加载`))
     void refreshCurrentUrl()
   }
 
@@ -1148,7 +1153,7 @@ export function PlayerBar() {
                       : 'text-black/65 hover:bg-black/5',
                   )}
                 >
-                  <span>{option.label}</span>
+                  <span>{i18n._(option.label)}</span>
                   {lyricDisplayMode === option.value ? (
                     <Check className="h-3.5 w-3.5" />
                   ) : null}
@@ -1245,7 +1250,7 @@ export function PlayerBar() {
                     : 'text-black/65 hover:bg-black/5',
                 )}
               >
-                <span>{option.label}</span>
+                <span>{i18n._(option.label)}</span>
                 {playLevel === option.value ? <Check className="h-3.5 w-3.5" /> : null}
               </button>
             ))}

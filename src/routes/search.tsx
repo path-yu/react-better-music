@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
+import { Trans } from '@lingui/react/macro'
 import { ListMusic, Search } from 'lucide-react'
 import { Skeleton, Tabs, TabsContent, TabsList, TabsTrigger } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../components/common/ImageWithFallback'
@@ -37,9 +40,14 @@ const ARTIST_PAGE_SIZE = 20
 const VIDEO_PAGE_SIZE = 20
 
 function SearchPage() {
+  const { i18n } = useLingui()
   const { keyword, tab } = Route.useSearch()
   const navigate = useNavigate()
-  useDocumentTitle(keyword.trim() ? `搜索「${keyword.trim()}」` : '搜索')
+  useDocumentTitle(
+    keyword.trim()
+      ? i18n._(msg`搜索「${keyword.trim()}」`)
+      : i18n._(msg`搜索`),
+  )
   const [page, setPage] = useState(1)
   const [songs, setSongs] = useState<Song[]>([])
   const [songTotal, setSongTotal] = useState(0)
@@ -125,7 +133,7 @@ function SearchPage() {
       .catch(() => {
         if (controller.signal.aborted) return
         setFailed(true)
-        toast.error('搜索失败')
+        toast.error(i18n._(msg`搜索失败`))
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false)
@@ -187,8 +195,8 @@ function SearchPage() {
       <div className="px-8 pt-10">
         <EmptyState
           icon={<Search className="h-6 w-6" />}
-          title="搜索音乐、歌单、歌手、MV 或视频"
-          description="在顶部搜索框输入关键词后回车"
+          title={i18n._(msg`搜索音乐、歌单、歌手、MV 或视频`)}
+          description={i18n._(msg`在顶部搜索框输入关键词后回车`)}
         />
       </div>
     )
@@ -197,24 +205,34 @@ function SearchPage() {
   return (
     <div className="px-8 pb-14 pt-6">
       <div>
-        <p className="eyebrow">搜索结果</p>
+        <p className="eyebrow">
+          <Trans>搜索结果</Trans>
+        </p>
         <h1 className="headline-lg mt-1.5 line-clamp-1">“{keyword}”</h1>
       </div>
 
       <Tabs value={tab} onValueChange={changeTab} className="mt-5">
         <div className="flex items-center justify-between gap-3 border-b border-black/8 pb-2">
           <TabsList className="max-w-full overflow-x-auto">
-            <TabsTrigger value="songs">单曲</TabsTrigger>
-            <TabsTrigger value="playlists">歌单</TabsTrigger>
-            <TabsTrigger value="artists">歌手</TabsTrigger>
+            <TabsTrigger value="songs">
+              <Trans>单曲</Trans>
+            </TabsTrigger>
+            <TabsTrigger value="playlists">
+              <Trans>歌单</Trans>
+            </TabsTrigger>
+            <TabsTrigger value="artists">
+              <Trans>歌手</Trans>
+            </TabsTrigger>
             <TabsTrigger value="mvs">MV</TabsTrigger>
-            <TabsTrigger value="videos">视频</TabsTrigger>
+            <TabsTrigger value="videos">
+              <Trans>视频</Trans>
+            </TabsTrigger>
           </TabsList>
           {tab === 'songs' && songs.length ? (
             <PlayAllButton
               songs={songs}
               playlistId={`search-${keyword}-${page}`}
-              label="播放本页"
+              label={i18n._(msg`播放本页`)}
             />
           ) : null}
         </div>
@@ -223,20 +241,22 @@ function SearchPage() {
           {failed ? (
             <EmptyState
               variant="error"
-              title="搜索失败"
-              description="请检查网络或本地 API 服务后重试"
+              title={i18n._(msg`搜索失败`)}
+              description={i18n._(msg`请检查网络或本地 API 服务后重试`)}
               onRetry={retry}
             />
           ) : (
             <>
               <div className="mb-2 flex items-center justify-between text-[11px] text-black/35">
-                <span>共找到 {songTotal} 首单曲</span>
+                <span>
+                  <Trans>共找到 {songTotal} 首单曲</Trans>
+                </span>
               </div>
               <SongTable
                 songs={songs}
                 playlistId={`search-${keyword}-${page}`}
                 loading={loading}
-                emptyText="没有找到相关单曲"
+                emptyText={i18n._(msg`没有找到相关单曲`)}
               />
               <Pager page={page} pageCount={pageCount} onChange={setPage} className="mt-6" />
             </>
@@ -245,13 +265,13 @@ function SearchPage() {
 
         <TabsContent value="playlists" className="mt-3">
           <div className="mb-2 text-[11px] text-black/35">
-            共找到 {playlistTotal} 个歌单
+            <Trans>共找到 {playlistTotal} 个歌单</Trans>
           </div>
           {failed ? (
             <EmptyState
               variant="error"
-              title="歌单加载失败"
-              description="请检查网络或本地 API 服务后重试"
+              title={i18n._(msg`歌单加载失败`)}
+              description={i18n._(msg`请检查网络或本地 API 服务后重试`)}
               onRetry={retry}
             />
           ) : loading ? (
@@ -286,7 +306,9 @@ function SearchPage() {
                       {playlist.name}
                     </p>
                     <p className="mt-1 flex items-center gap-2 text-[11px] text-black/30">
-                      <span>{playlist.trackCount} 首</span>
+                      <span>
+                        <Trans>{playlist.trackCount} 首</Trans>
+                      </span>
                       <span>by {playlist.creator?.nickname}</span>
                     </p>
                   </div>
@@ -298,19 +320,19 @@ function SearchPage() {
               ))}
             </div>
           ) : (
-            <EmptyState title="没有找到相关歌单" />
+            <EmptyState title={i18n._(msg`没有找到相关歌单`)} />
           )}
           <Pager page={page} pageCount={pageCount} onChange={setPage} className="mt-6" />
         </TabsContent>
         <TabsContent value="artists" className="mt-3">
           <div className="mb-2 text-[11px] text-black/35">
-            共找到 {artistTotal} 位歌手
+            <Trans>共找到 {artistTotal} 位歌手</Trans>
           </div>
           {failed ? (
             <EmptyState
               variant="error"
-              title="歌手加载失败"
-              description="请检查网络或本地 API 服务后重试"
+              title={i18n._(msg`歌手加载失败`)}
+              description={i18n._(msg`请检查网络或本地 API 服务后重试`)}
               onRetry={retry}
             />
           ) : loading ? (
@@ -347,27 +369,31 @@ function SearchPage() {
                     <p className="mt-0.5 truncate text-[11px] text-black/35">
                       {artist.alias?.[0] ??
                         artist.transNames?.[0] ??
-                        `${artist.albumSize ?? 0} 张专辑`}
+                        i18n._(msg`${artist.albumSize ?? 0} 张专辑`)}
                     </p>
                     <p className="mt-0.5 text-[11px] text-black/25">
-                      {artist.albumSize ?? 0} 张专辑 · {artist.mvSize ?? 0} 个 MV
+                      <Trans>
+                        {artist.albumSize ?? 0} 张专辑 · {artist.mvSize ?? 0} 个 MV
+                      </Trans>
                     </p>
                   </div>
                 </button>
               ))}
             </div>
           ) : (
-            <EmptyState title="没有找到相关歌手" />
+            <EmptyState title={i18n._(msg`没有找到相关歌手`)} />
           )}
           <Pager page={page} pageCount={pageCount} onChange={setPage} className="mt-6" />
         </TabsContent>
         <TabsContent value="mvs" className="mt-3">
-          <div className="mb-2 text-[11px] text-black/35">共找到 {mvTotal} 个 MV</div>
+          <div className="mb-2 text-[11px] text-black/35">
+            <Trans>共找到 {mvTotal} 个 MV</Trans>
+          </div>
           {failed ? (
             <EmptyState
               variant="error"
-              title="MV 加载失败"
-              description="请检查网络或本地 API 服务后重试"
+              title={i18n._(msg`MV 加载失败`)}
+              description={i18n._(msg`请检查网络或本地 API 服务后重试`)}
               onRetry={retry}
             />
           ) : loading ? (
@@ -391,17 +417,19 @@ function SearchPage() {
               ))}
             </div>
           ) : (
-            <EmptyState title="没有找到相关 MV" />
+            <EmptyState title={i18n._(msg`没有找到相关 MV`)} />
           )}
           <Pager page={page} pageCount={pageCount} onChange={setPage} className="mt-6" />
         </TabsContent>
         <TabsContent value="videos" className="mt-3">
-          <div className="mb-2 text-[11px] text-black/35">共找到 {videoTotal} 个视频</div>
+          <div className="mb-2 text-[11px] text-black/35">
+            <Trans>共找到 {videoTotal} 个视频</Trans>
+          </div>
           {failed ? (
             <EmptyState
               variant="error"
-              title="视频加载失败"
-              description="请检查网络或本地 API 服务后重试"
+              title={i18n._(msg`视频加载失败`)}
+              description={i18n._(msg`请检查网络或本地 API 服务后重试`)}
               onRetry={retry}
             />
           ) : loading ? (
@@ -425,7 +453,7 @@ function SearchPage() {
               ))}
             </div>
           ) : (
-            <EmptyState title="没有找到相关视频" />
+            <EmptyState title={i18n._(msg`没有找到相关视频`)} />
           )}
           <Pager page={page} pageCount={pageCount} onChange={setPage} className="mt-6" />
         </TabsContent>

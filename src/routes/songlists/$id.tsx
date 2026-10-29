@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
+import { Trans } from '@lingui/react/macro'
 import {
   CalendarDays,
   Check,
@@ -20,6 +23,7 @@ import {
 } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../../components/common/ImageWithFallback'
 import { EmptyState } from '../../components/common/EmptyState'
+import { TAG_LABELS } from '../../lib/tagLabels'
 import { SongTable } from '../../components/songs/SongTable'
 import { PlayAllButton } from '../../components/songs/PlayAllButton'
 import { CommentSection } from '../../components/comments/CommentSection'
@@ -46,6 +50,7 @@ export const Route = createFileRoute('/songlists/$id')({
 })
 
 function PlaylistDetailPage() {
+  const { i18n } = useLingui()
   const { id } = Route.useParams()
   const navigate = useNavigate()
   const [detail, setDetail] = useState<Playlist | null>(null)
@@ -55,7 +60,7 @@ function PlaylistDetailPage() {
   const [keyword, setKeyword] = useState('')
   const [descExpanded, setDescExpanded] = useState(false)
   const [subscribing, setSubscribing] = useState(false)
-  useDocumentTitle(detail?.name ?? '歌单')
+  useDocumentTitle(detail?.name ?? i18n._(msg`歌单`))
 
   const isLogin = useUserStore((state) => state.isLogin)
   const profile = useUserStore((state) => state.profile)
@@ -91,7 +96,7 @@ function PlaylistDetailPage() {
         }
       } catch {
         if (controller.signal.aborted) return
-        toast.error('歌单加载失败')
+        toast.error(i18n._(msg`歌单加载失败`))
         setLoading(false)
       }
     }
@@ -134,7 +139,7 @@ function PlaylistDetailPage() {
     return (
       <div className="px-8 pt-10">
         <EmptyState
-          title="歌单不存在或无法访问"
+          title={i18n._(msg`歌单不存在或无法访问`)}
           action={
             <Button
               variant="primary"
@@ -142,7 +147,7 @@ function PlaylistDetailPage() {
               className="rounded-full"
               onClick={() => void navigate({ to: '/songlists' })}
             >
-              返回推荐歌单
+              {i18n._(msg`返回推荐歌单`)}
             </Button>
           }
         />
@@ -154,7 +159,7 @@ function PlaylistDetailPage() {
 
   const handleSubscribe = async () => {
     if (!isLogin) {
-      toast.warning('请先登录')
+      toast.warning(i18n._(msg`请先登录`))
       openLogin()
       return
     }
@@ -163,7 +168,9 @@ function PlaylistDetailPage() {
     try {
       const res = await updatePlaylistSubscribe({ id: detail.id, t: subscribe ? 1 : 2 })
       if (res.code !== 200) {
-        toast.error(subscribe ? '收藏失败' : '取消收藏失败')
+        toast.error(
+          subscribe ? i18n._(msg`收藏失败`) : i18n._(msg`取消收藏失败`),
+        )
         return
       }
       setDetail({
@@ -172,9 +179,11 @@ function PlaylistDetailPage() {
         subscribedCount: Math.max(0, (detail.subscribedCount ?? 0) + (subscribe ? 1 : -1)),
       })
       if (profile?.userId) await loadPlaylists(profile.userId)
-      toast.success(subscribe ? '收藏成功' : '已取消收藏')
+      toast.success(
+        subscribe ? i18n._(msg`收藏成功`) : i18n._(msg`已取消收藏`),
+      )
     } catch {
-      toast.error('操作失败')
+      toast.error(i18n._(msg`操作失败`))
     } finally {
       setSubscribing(false)
     }
@@ -183,9 +192,9 @@ function PlaylistDetailPage() {
   const handleShare = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href)
-      toast.success('链接已复制')
+      toast.success(i18n._(msg`链接已复制`))
     } catch {
-      toast.warning('复制链接失败')
+      toast.warning(i18n._(msg`复制链接失败`))
     }
   }
 
@@ -202,7 +211,7 @@ function PlaylistDetailPage() {
         />
         <div className="min-w-0 flex-1">
           <span className="inline-flex items-center rounded-full bg-accent/8 px-2.5 py-0.5 text-[11px] font-medium text-accent">
-            歌单
+            <Trans>歌单</Trans>
           </span>
           <div className="mt-2.5 flex items-center gap-2.5">
             <h1 className="headline-lg line-clamp-2 text-[28px]">{detail.name}</h1>
@@ -235,22 +244,28 @@ function PlaylistDetailPage() {
             {detail.createTime ? (
               <span className="flex items-center gap-1">
                 <CalendarDays className="h-3 w-3" />
-                {formatDate(detail.createTime)} 创建
+                <Trans>{formatDate(detail.createTime)} 创建</Trans>
               </span>
             ) : null}
-            <span>{detail.trackCount} 首歌曲</span>
-            <span>{formatNumber(detail.playCount)} 次播放</span>
+            <span>
+              <Trans>{detail.trackCount} 首歌曲</Trans>
+            </span>
+            <span>
+              <Trans>{formatNumber(detail.playCount)} 次播放</Trans>
+            </span>
           </div>
 
           {detail.tags?.length ? (
             <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-              <span className="text-[11px] text-black/35">标签</span>
+              <span className="text-[11px] text-black/35">
+                <Trans>标签</Trans>
+              </span>
               {detail.tags.map((tag) => (
                 <span
                   key={tag}
                   className="rounded-full border border-black/8 px-2 py-0.5 text-[11px] text-black/50"
                 >
-                  {tag}
+                  {TAG_LABELS[tag] ? i18n._(TAG_LABELS[tag]) : tag}
                 </span>
               ))}
             </div>
@@ -272,7 +287,7 @@ function PlaylistDetailPage() {
                   className="mt-1 text-[11px] text-accent"
                   onClick={() => setDescExpanded((value) => !value)}
                 >
-                  {descExpanded ? '收起' : '展开'}
+                  {descExpanded ? <Trans>收起</Trans> : <Trans>展开</Trans>}
                 </button>
               ) : null}
             </div>
@@ -287,7 +302,7 @@ function PlaylistDetailPage() {
                 })
               }
             >
-              添加简介
+              <Trans>添加简介</Trans>
             </button>
           ) : null}
 
@@ -306,7 +321,7 @@ function PlaylistDetailPage() {
               ) : (
                 <Star className="mr-1.5 h-3.5 w-3.5" />
               )}
-              {detail.subscribed ? '已收藏' : '收藏'}
+              {detail.subscribed ? <Trans>已收藏</Trans> : <Trans>收藏</Trans>}
               <span className="ml-1 text-black/30">
                 {formatNumber(detail.subscribedCount ?? 0)}
               </span>
@@ -318,7 +333,7 @@ function PlaylistDetailPage() {
               onClick={() => void handleShare()}
             >
               <Share2 className="mr-1.5 h-3.5 w-3.5" />
-              分享
+              <Trans>分享</Trans>
               <span className="ml-1 text-black/30">{formatNumber(detail.shareCount ?? 0)}</span>
             </Button>
           </div>
@@ -329,19 +344,21 @@ function PlaylistDetailPage() {
         <div className="sticky top-0 z-20 -mx-8 flex items-center justify-between gap-4 border-b border-black/8 bg-white/90 px-8 py-2 backdrop-blur-xl">
           <TabsList>
             <TabsTrigger value="songs">
-              歌曲列表
+              <Trans>歌曲列表</Trans>
               <span className="ml-1 text-[11px] text-black/30">{songs.length}</span>
             </TabsTrigger>
             <TabsTrigger value="comments">
-              评论
-              <span className="ml-1 text-[11px] text-black/30">热议</span>
+              <Trans>评论</Trans>
+              <span className="ml-1 text-[11px] text-black/30">
+                <Trans>热议</Trans>
+              </span>
             </TabsTrigger>
           </TabsList>
           {tab === 'songs' ? (
             <Input.Search
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
-              placeholder="搜索歌单歌曲"
+              placeholder={i18n._(msg`搜索歌单歌曲`)}
               size="sm"
               className="w-[190px] rounded-full text-[12px]"
             />
@@ -352,19 +369,27 @@ function PlaylistDetailPage() {
           <SongTable
             songs={filteredSongs}
             playlistId={String(detail.id)}
-            emptyText={keyword ? '没有匹配的歌曲' : '歌单暂时没有歌曲'}
+            emptyText={
+              keyword
+                ? i18n._(msg`没有匹配的歌曲`)
+                : i18n._(msg`歌单暂时没有歌曲`)
+            }
           />
         </TabsContent>
 
         <TabsContent value="comments" className="mt-6">
-          <CommentSection type={2} resourceId={Number(detail.id)} title="听友评论" />
+          <CommentSection
+            type={2}
+            resourceId={Number(detail.id)}
+            title={i18n._(msg`听友评论`)}
+          />
         </TabsContent>
       </Tabs>
 
       {detail.isMyLike ? (
         <p className="mt-6 flex items-center justify-center gap-1.5 text-[11px] text-black/30">
           <Heart className="h-3 w-3 text-[#ff2d55]" />
-          这是你的「我喜欢的音乐」
+          <Trans>这是你的「我喜欢的音乐」</Trans>
         </p>
       ) : null}
     </div>

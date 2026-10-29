@@ -1,3 +1,5 @@
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
 import { ListPlus, Play } from 'lucide-react'
 import { Button } from '@pikoloo/darwin-ui'
 import { usePlayerStore } from '../../store/player'
@@ -10,13 +12,15 @@ interface PlayAllButtonProps {
   label?: string
 }
 
-export function PlayAllButton({ songs, playlistId, label = '播放全部' }: PlayAllButtonProps) {
+export function PlayAllButton({ songs, playlistId, label }: PlayAllButtonProps) {
+  const { i18n } = useLingui()
+  const text = label ?? i18n._(msg`播放全部`)
   const initQueue = usePlayerStore((state) => state.initQueue)
   const addToQueue = usePlayerStore((state) => state.addToQueue)
 
   const handlePlayAll = () => {
     if (!songs.length) {
-      toast.warning('暂无可播放歌曲')
+      toast.warning(i18n._(msg`暂无可播放歌曲`))
       return
     }
     void initQueue(songs, 0, playlistId)
@@ -31,7 +35,7 @@ export function PlayAllButton({ songs, playlistId, label = '播放全部' }: Pla
         onClick={handlePlayAll}
       >
         <Play className="mr-1.5 h-3.5 w-3.5 fill-current" />
-        {label}
+        {text}
       </Button>
       <Button
         variant="secondary"
