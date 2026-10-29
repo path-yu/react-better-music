@@ -55,15 +55,22 @@ function loadImage(url: string): Promise<HTMLImageElement | null> {
     const image = new Image()
     image.crossOrigin = 'anonymous'
     image.decoding = 'async'
+    // A missing/slow CDN response must not leave the NowPlaying palette pending
+    // forever; the caller has a fallback gradient.
+    const timer = window.setTimeout(() => resolve(null), 8000)
+    const finish = (value: HTMLImageElement | null) => {
+      window.clearTimeout(timer)
+      resolve(value)
+    }
     image.onload = () => {
       // Decode before drawImage so the 32×32 sampling does not force a long
       // synchronous decode on the main thread during the overlay animation.
       void image
         .decode()
         .catch(() => undefined)
-        .finally(() => resolve(image))
+        .finally(() => finish(image))
     }
-    image.onerror = () => resolve(null)
+    image.onerror = () => finish(null)
     image.src = url
   })
 }
@@ -77,9 +84,12 @@ const failedProxySources = new Set<string>()
  */
 async function loadProxiedImage(src: string): Promise<HTMLImageElement | null> {
   if (failedProxySources.has(src)) return null
+  const controller = new AbortController()
+  const timer = window.setTimeout(() => controller.abort(), 8000)
   try {
     const response = await fetch(apiUrl('/img/proxy', { url: src }), {
       credentials: 'include',
+      signal: controller.signal,
     })
     if (!response.ok) {
       failedProxySources.add(src)
@@ -94,6 +104,8 @@ async function loadProxiedImage(src: string): Promise<HTMLImageElement | null> {
   } catch {
     failedProxySources.add(src)
     return null
+  } finally {
+    window.clearTimeout(timer)
   }
 }
 
@@ -212,16 +224,16 @@ export async function extractArtworkPalette(
 
   let palette: string[] = []
   const proxied = await loadProxiedImage(probe)
-  if (proxied) palette = samplePalette(proxied, 5)
+  if (proxied) palette = samplePalette(proxied, 6)
 
   if (!palette.length) {
     const probeImage = await loadImage(probe)
-    if (probeImage) palette = samplePalette(probeImage, 5)
+    if (probeImage) palette = samplePalette(probeImage, 6)
   }
 
   if (!palette.length) {
     const fallbackImage = await loadImage(src)
-    if (fallbackImage) palette = samplePalette(fallbackImage, 5)
+    if (fallbackImage) palette = samplePalette(fallbackImage, 6)
   }
 
   if (palette.length) paletteCache.set(src, palette)

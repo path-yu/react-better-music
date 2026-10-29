@@ -1047,6 +1047,66 @@ html.desktop .app-window {
 }
 
 /*
+ * Alternative NowPlaying backdrop: a slow mesh built from several colours
+ * sampled from the artwork (Apple Music's animated artwork wash). The layer is
+ * oversized and only animated with transforms, so the blur is rasterised once
+ * and remains compositor-friendly.
+ */
+.nowplaying-gradient {
+  position: absolute;
+  left: -14%;
+  top: -14%;
+  display: block;
+  width: 128%;
+  height: 128%;
+  background-color: #101014;
+  filter: blur(26px) saturate(205%) brightness(0.76) contrast(1.05);
+  transform: scale(1.08);
+  transform-origin: center;
+  animation: nowplaying-gradient-drift 24s ease-in-out infinite alternate;
+  will-change: transform;
+  pointer-events: none;
+}
+
+/* Let more of the artwork colour through in the animated mode; the type still
+   sits on a dark scrim, only the outer edges are lifted. */
+.nowplaying-ambient--gradient .nowplaying-ambient__scrim {
+  background-color: rgba(9, 9, 12, 0.14);
+  background-image:
+    linear-gradient(0deg, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0) 54%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.14) 0%, rgba(0, 0, 0, 0) 20%),
+    radial-gradient(
+      125% 100% at 50% 32%,
+      rgba(0, 0, 0, 0) 46%,
+      rgba(0, 0, 0, 0.2) 100%
+    ),
+    radial-gradient(
+      52% 85% at 78% 48%,
+      rgba(0, 0, 0, 0.16) 0%,
+      rgba(0, 0, 0, 0) 72%
+    );
+}
+
+/* The immersive bar normally lets dark artwork show through; the animated
+   gradient can be much brighter, so give the controls their own dark floor. */
+.app-window:has(.nowplaying-gradient) .player-glass--immersive {
+  background: linear-gradient(
+    180deg,
+    rgba(8, 8, 10, 0.58) 0%,
+    rgba(8, 8, 10, 0.8) 100%
+  );
+}
+
+@keyframes nowplaying-gradient-drift {
+  from {
+    transform: translate3d(-1.5%, -1%, 0) scale(1.06) rotate(-1.5deg);
+  }
+  to {
+    transform: translate3d(1.5%, 1.5%, 0) scale(1.13) rotate(1.5deg);
+  }
+}
+
+/*
  * Album artwork drives the base wash, but the active palette adds a soft glow
  * so switching from Ocean to Sunset/Forest is visible on this page too.
  */
@@ -1113,6 +1173,8 @@ html.desktop .app-window {
 .lyrics-viewport {
   /* Apple's lyric tokens: current line `--systemPrimary-onDark` (#ffffffeb),
      context `#ffffff40`-`#ffffff80`. */
+  /* White lyrics sit on a bright artwork wash; a soft shadow keeps them legible. */
+  text-shadow: 0 1px 16px rgba(0, 0, 0, 0.24);
   --lyric-active: #ffffffeb;
   --lyric-sub: rgba(255, 255, 255, 0.6);
   --lyric-dim: rgba(255, 255, 255, 0.4);

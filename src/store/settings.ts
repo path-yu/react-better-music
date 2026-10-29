@@ -26,6 +26,7 @@ export const PLAY_QUALITY_OPTIONS: Array<{
 ]
 
 export type LyricDisplayMode = 'both' | 'original' | 'translation'
+export type NowPlayingBackground = 'cover' | 'gradient'
 
 export const LYRIC_DISPLAY_OPTIONS: Array<{
   value: LyricDisplayMode
@@ -41,6 +42,8 @@ interface SettingsState {
   playLevel: PlayLevel
   /** How lyric lines and their translations are shown. */
   lyricDisplayMode: LyricDisplayMode
+  /** Immersive player backdrop: blurred artwork or an animated cover palette. */
+  nowPlayingBackground: NowPlayingBackground
   /** Desktop only: block right-click / F12 / DevTools shortcuts. */
   disableDevTools: boolean
   /** Prefer a matched provider for VIP tracks (manual switch is always available). */
@@ -50,6 +53,7 @@ interface SettingsState {
   setCacheBitrate: (value: number) => void
   setPlayLevel: (value: PlayLevel) => void
   setLyricDisplayMode: (value: LyricDisplayMode) => void
+  setNowPlayingBackground: (value: NowPlayingBackground) => void
   setDisableDevTools: (value: boolean) => void
   setAutoReplaceVipSource: (value: boolean) => void
   setLocale: (value: Locale) => void
@@ -61,12 +65,14 @@ export const useSettingsStore = create<SettingsState>()(
       cacheBitrate: 96,
       playLevel: 'exhigh',
       lyricDisplayMode: 'both',
+      nowPlayingBackground: 'cover',
       disableDevTools: false,
       autoReplaceVipSource: false,
       locale: defaultLocale,
       setCacheBitrate: (cacheBitrate) => set({ cacheBitrate }),
       setPlayLevel: (playLevel) => set({ playLevel }),
       setLyricDisplayMode: (lyricDisplayMode) => set({ lyricDisplayMode }),
+      setNowPlayingBackground: (nowPlayingBackground) => set({ nowPlayingBackground }),
       setDisableDevTools: (disableDevTools) => set({ disableDevTools }),
       setAutoReplaceVipSource: (autoReplaceVipSource) => set({ autoReplaceVipSource }),
       setLocale: (locale) => {

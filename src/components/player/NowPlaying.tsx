@@ -6,17 +6,29 @@ import { useNavigate, useRouterState } from '@tanstack/react-router'
 import { Disc3, Film, Heart, ListMusic, Loader2, MessageSquareText } from 'lucide-react'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
+import { ArtworkGradient } from './ArtworkGradient'
 import { LyricsPanel } from './LyricsPanel'
 import { CommentSection } from '../comments/CommentSection'
 import { fetchRelatedVideos } from '../../api'
 import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
+import { useSettingsStore } from '../../store/settings'
 import { findLyricIndex } from '../../lib/lyric'
 import { seekAudio } from '../../lib/audio'
-import { extractDominantColor } from '../../lib/color'
+import { extractArtworkPalette } from '../../lib/color'
 import { resizedImageUrl } from '../../lib/image'
 import { toast } from '../../lib/toast'
 import { cn } from '../../lib/format'
+
+/** Shown while the artwork palette is loading, or if the CDN refuses sampling. */
+const FALLBACK_GRADIENT_COLORS = [
+  '#2563eb',
+  '#7c3aed',
+  '#db2777',
+  '#0f172a',
+  '#f97316',
+  '#0ea5e9',
+]
 
 export function NowPlaying() {
   const { i18n } = useLingui()
@@ -44,8 +56,10 @@ export function NowPlaying() {
   const likedIds = useUserStore((state) => state.likedIds)
   const likeSong = useUserStore((state) => state.likeSong)
   const liked = currentSong ? likedIds.includes(currentSong.id) : false
+  const nowPlayingBackground = useSettingsStore((state) => state.nowPlayingBackground)
   const [panel, setPanel] = useState<'lyrics' | 'comments'>('lyrics')
   const [dominantColor, setDominantColor] = useState<string | null>(null)
+  const [artworkPalette, setArtworkPalette] = useState<string[]>([])
   const [videoLoading, setVideoLoading] = useState(false)
 
   // The overlay is lazy-mounted only while open, so the first effect run is the
@@ -72,6 +86,7 @@ export function NowPlaying() {
   // cached colour instead of flashing back to the un-tinted backdrop.
   useEffect(() => {
     setDominantColor(null)
+    setArtworkPalette([])
   }, [artwork])
 
   useEffect(() => {
@@ -81,8 +96,10 @@ export function NowPlaying() {
     // forced a decode + canvas read in the middle of the transition, and the
     // colour update then repainted the full-screen blurred backdrop again.
     const timer = window.setTimeout(() => {
-      void extractDominantColor(artwork).then((color) => {
-        if (active) setDominantColor(color)
+      void extractArtworkPalette(artwork, 6).then((palette) => {
+        if (!active) return
+        setArtworkPalette(palette)
+        setDominantColor(palette[0] ?? null)
       })
     }, 360)
     return () => {
@@ -127,6 +144,13 @@ export function NowPlaying() {
   // The backdrop is heavily blurred, so a 320px copy is indistinguishable from
   // the original but avoids fetching/decoding a multi-megapixel cover.
   const ambientArtwork = resizedImageUrl(artwork, '320y320')
+  // Honour the selected mode immediately. Waiting for the palette made the
+  // overlay look like the old blurred-cover mode for as long as (or forever
+  // if) the proxy could not sample the artwork.
+  const gradientBackground = nowPlayingBackground === 'gradient'
+  const gradientColors = artworkPalette.length
+    ? artworkPalette
+    : FALLBACK_GRADIENT_COLORS
 
   const albumId = currentSong.al.id
   const openAlbum = () => {
@@ -181,8 +205,16 @@ export function NowPlaying() {
       className="nowplaying-overlay dark"
       style={{ backgroundColor: 'var(--nowplaying-base, #0f0f12)' }}
     >
-      <div className="nowplaying-ambient" aria-hidden="true">
-        {ambientArtwork ? (
+      <div
+        className={cn(
+          'nowplaying-ambient',
+          gradientBackground && 'nowplaying-ambient--gradient',
+        )}
+        aria-hidden="true"
+      >
+        {gradientBackground ? (
+          <ArtworkGradient colors={gradientColors} className="nowplaying-gradient" />
+        ) : ambientArtwork ? (
           <img
             src={ambientArtwork}
             alt=""

@@ -7,6 +7,7 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  Ellipsis,
   Heart,
   Languages,
   ListMusic,
@@ -123,6 +124,8 @@ export function PlayerBar() {
   const setPlayLevel = useSettingsStore((state) => state.setPlayLevel)
   const lyricDisplayMode = useSettingsStore((state) => state.lyricDisplayMode)
   const setLyricDisplayMode = useSettingsStore((state) => state.setLyricDisplayMode)
+  const nowPlayingBackground = useSettingsStore((state) => state.nowPlayingBackground)
+  const setNowPlayingBackground = useSettingsStore((state) => state.setNowPlayingBackground)
   // The mode menu is only meaningful when the current lyric actually carries a translation.
   const hasTranslation = useMemo(
     () => lyricLines.some((line) => Boolean(line.translate)),
@@ -131,7 +134,6 @@ export function PlayerBar() {
   const desktopShell = isDesktopShell()
   const [lyricsWindowOpen, setLyricsWindowOpen] = useState(false)
   const [miniWindowOpen, setMiniWindowOpen] = useState(false)
-  const [lyricsModeOpen, setLyricsModeOpen] = useState(false)
   const [qualityOpen, setQualityOpen] = useState(false)
   // Real duration reported by the media element; trial clips are shorter than
   // the catalogue duration in song.dt.
@@ -1137,123 +1139,6 @@ export function PlayerBar() {
       </div>
 
       <div className="flex items-center justify-end gap-2 max-md:hidden">
-        {hasTranslation ? (
-          <Popover open={lyricsModeOpen} onOpenChange={setLyricsModeOpen}>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                aria-label={i18n._(msg`歌词显示方式`)}
-                title={i18n._(msg`歌词显示方式`)}
-                className={cn(
-                  'pressable flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-black/5',
-                  lyricDisplayMode !== 'original'
-                    ? 'text-accent'
-                    : 'text-black/45 hover:text-black/75',
-                )}
-              >
-                <Languages className="h-4 w-4" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent
-              side="top"
-              align="end"
-              sideOffset={10}
-              glass
-              className="w-[min(180px,calc(100vw-24px))] p-1.5"
-            >
-              <p className="px-2 py-1 text-[11px] text-black/35">
-                <Trans>歌词显示</Trans>
-              </p>
-              {LYRIC_DISPLAY_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => {
-                    setLyricDisplayMode(option.value)
-                    setLyricsModeOpen(false)
-                  }}
-                  className={cn(
-                    'flex w-full items-center justify-between rounded-[6px] px-2 py-1.5 text-left text-[12px] transition-colors',
-                    lyricDisplayMode === option.value
-                      ? 'bg-accent/10 text-accent'
-                      : 'text-black/65 hover:bg-black/5',
-                  )}
-                >
-                  <span>{i18n._(option.label)}</span>
-                  {lyricDisplayMode === option.value ? (
-                    <Check className="h-3.5 w-3.5" />
-                  ) : null}
-                </button>
-              ))}
-            </PopoverContent>
-          </Popover>
-        ) : null}
-
-        {currentSong.fee !== 0 && !currentSong.unblocked ? (
-          <button
-            type="button"
-            aria-label={i18n._(msg`切换其他音源`)}
-            title={i18n._(msg`切换其他音源`)}
-            onClick={() => void switchToOtherSource()}
-            disabled={switchingSource}
-            className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/45 transition-colors hover:bg-black/5 hover:text-black/75 disabled:opacity-50 max-md:h-10 max-md:w-10"
-          >
-            {switchingSource ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
-            )}
-          </button>
-        ) : null}
-
-        {desktopShell ? (
-          <button
-            type="button"
-            aria-label={
-              lyricsWindowOpen
-                ? i18n._(msg`关闭桌面歌词`)
-                : i18n._(msg`开启桌面歌词`)
-            }
-            aria-pressed={lyricsWindowOpen}
-            title={
-              lyricsWindowOpen
-                ? '关闭桌面歌词（Ctrl+Shift+L）'
-                : '开启桌面歌词（Ctrl+Shift+L）'
-            }
-            onClick={handleToggleDesktopLyrics}
-            className={cn(
-              'pressable flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-black/5',
-              lyricsWindowOpen ? 'text-accent' : 'text-black/45 hover:text-black/75',
-            )}
-          >
-            <Subtitles className="h-4 w-4" />
-          </button>
-        ) : null}
-
-        {desktopShell ? (
-          <button
-            type="button"
-            aria-label={
-              miniWindowOpen
-                ? i18n._(msg`关闭迷你播放器`)
-                : i18n._(msg`开启迷你播放器`)
-            }
-            aria-pressed={miniWindowOpen}
-            title={
-              miniWindowOpen
-                ? i18n._(msg`关闭迷你播放器`)
-                : i18n._(msg`开启迷你播放器`)
-            }
-            onClick={handleToggleMiniPlayer}
-            className={cn(
-              'pressable flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-black/5',
-              miniWindowOpen ? 'text-accent' : 'text-black/45 hover:text-black/75',
-            )}
-          >
-            <PictureInPicture2 className="h-4 w-4" />
-          </button>
-        ) : null}
-
         <Popover open={qualityOpen} onOpenChange={setQualityOpen}>
           <PopoverTrigger asChild>
             <button
@@ -1326,6 +1211,149 @@ export function PlayerBar() {
               <VolumeSlider value={volume} onChange={setVolume} />
               <span className="text-[11px] tabular-nums text-black/35">{volume}</span>
             </div>
+          </PopoverContent>
+        </Popover>
+
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              aria-label={i18n._(msg`更多播放选项`)}
+              title={i18n._(msg`更多播放选项`)}
+              className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/45 transition-colors hover:bg-black/5 hover:text-black/75 max-md:h-10 max-md:w-10"
+            >
+              <Ellipsis className="h-4 w-4" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            side="top"
+            align="end"
+            sideOffset={10}
+            glass
+            className="w-[min(236px,calc(100vw-24px))] p-1.5"
+          >
+            <p className="px-2 py-1 text-[11px] text-black/35">
+              <Trans>播放选项</Trans>
+            </p>
+
+            <div className="px-2 pb-1.5 pt-1">
+              <p className="mb-1 text-[11px] text-black/40">
+                <Trans>播放页背景</Trans>
+              </p>
+              <div className="grid grid-cols-2 gap-1 rounded-[8px] bg-black/4 p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setNowPlayingBackground('cover')}
+                  aria-pressed={nowPlayingBackground === 'cover'}
+                  className={cn(
+                    'rounded-[6px] px-1 py-1 text-[10.5px] transition-colors',
+                    nowPlayingBackground === 'cover'
+                      ? 'bg-white text-accent shadow-sm dark:bg-white/15 dark:text-white'
+                      : 'text-black/55 hover:text-black/75 dark:text-white/50 dark:hover:text-white/80',
+                  )}
+                >
+                  <Trans>封面模糊</Trans>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNowPlayingBackground('gradient')}
+                  aria-pressed={nowPlayingBackground === 'gradient'}
+                  className={cn(
+                    'rounded-[6px] px-1 py-1 text-[10.5px] transition-colors',
+                    nowPlayingBackground === 'gradient'
+                      ? 'bg-white text-accent shadow-sm dark:bg-white/15 dark:text-white'
+                      : 'text-black/55 hover:text-black/75 dark:text-white/50 dark:hover:text-white/80',
+                  )}
+                >
+                  <Trans>动态渐变</Trans>
+                </button>
+              </div>
+            </div>
+
+            {hasTranslation ? (
+              <div className="px-2 pb-1.5 pt-1">
+                <p className="mb-1 flex items-center gap-1.5 text-[11px] text-black/40">
+                  <Languages className="h-3.5 w-3.5" />
+                  <Trans>歌词显示</Trans>
+                </p>
+                <div className="grid grid-cols-3 gap-1 rounded-[8px] bg-black/4 p-0.5">
+                  {LYRIC_DISPLAY_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setLyricDisplayMode(option.value)}
+                      className={cn(
+                        'rounded-[6px] px-1 py-1 text-[10.5px] transition-colors',
+                        lyricDisplayMode === option.value
+                          ? 'bg-white text-accent shadow-sm dark:bg-white/15 dark:text-white'
+                          : 'text-black/55 hover:text-black/75 dark:text-white/50 dark:hover:text-white/80',
+                      )}
+                    >
+                      {i18n._(option.label)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {desktopShell ? (
+              <>
+                <button
+                  type="button"
+                  onClick={handleToggleDesktopLyrics}
+                  className="flex w-full items-center gap-2 rounded-[7px] px-2 py-1.5 text-left text-[12px] text-black/65 transition-colors hover:bg-black/5"
+                >
+                  <Subtitles className="h-4 w-4" />
+                  <span className="flex-1">
+                    <Trans>桌面歌词</Trans>
+                  </span>
+                  <span
+                    className={cn(
+                      'text-[10.5px]',
+                      lyricsWindowOpen ? 'text-accent' : 'text-black/30',
+                    )}
+                  >
+                    {lyricsWindowOpen ? i18n._(msg`已开启`) : i18n._(msg`已关闭`)}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleToggleMiniPlayer}
+                  className="flex w-full items-center gap-2 rounded-[7px] px-2 py-1.5 text-left text-[12px] text-black/65 transition-colors hover:bg-black/5"
+                >
+                  <PictureInPicture2 className="h-4 w-4" />
+                  <span className="flex-1">
+                    <Trans>迷你播放器</Trans>
+                  </span>
+                  <span
+                    className={cn(
+                      'text-[10.5px]',
+                      miniWindowOpen ? 'text-accent' : 'text-black/30',
+                    )}
+                  >
+                    {miniWindowOpen ? i18n._(msg`已开启`) : i18n._(msg`已关闭`)}
+                  </span>
+                </button>
+              </>
+            ) : null}
+
+            {currentSong.fee !== 0 && !currentSong.unblocked ? (
+              <button
+                type="button"
+                onClick={() => void switchToOtherSource()}
+                disabled={switchingSource}
+                className="flex w-full items-center gap-2 rounded-[7px] px-2 py-1.5 text-left text-[12px] text-black/65 transition-colors hover:bg-black/5 disabled:opacity-50"
+              >
+                {switchingSource ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+                <span className="flex-1">
+                  <Trans>切换其他音源</Trans>
+                </span>
+              </button>
+            ) : null}
           </PopoverContent>
         </Popover>
 

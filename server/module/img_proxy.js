@@ -14,11 +14,15 @@ module.exports = async (query) => {
     }
   }
 
+  // Some catalogue responses still contain http:// CDN URLs. Fetching those
+  // fails on networks that reject plain HTTP; normalize before proxying.
+  const secure = raw.replace(/^http:\/\//i, 'https://')
+
   // `param=64y64` is a NetEase CDN resize hint; other CDNs may 404 on it.
   const url =
-    !/music\.126\.net/.test(raw) || /([?&])param=/.test(raw)
-      ? raw
-      : `${raw}${raw.includes('?') ? '&' : '?'}param=64y64`
+    !/music\.126\.net/.test(secure) || /([?&])param=/.test(secure)
+      ? secure
+      : `${secure}${secure.includes('?') ? '&' : '?'}param=64y64`
   try {
     const response = await axios.get(url, {
       responseType: 'arraybuffer',
