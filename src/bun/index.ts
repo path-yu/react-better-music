@@ -68,9 +68,29 @@ if (process.platform === 'win32' && readDevToolsDisabled()) {
   console.log('[desktop] WebView2 developer tools disabled for this launch')
 }
 
+/** Renderer <-> main-process bridge (downloads, window controls, lyrics). */
+const BRIDGE_PORT = 13002
+
 if (!acquireInstanceLock(APP_DATA_DIR)) {
-  console.log('[desktop] another instance is already running, exiting')
-  process.exit(0)
+  // A pinned taskbar icon launches a second process when the main window is
+  // hidden to the tray (there is no taskbar button to click). Ask the running
+  // instance to reveal its window, then exit; otherwise the click does nothing.
+  console.log('[desktop] another instance is already running, activating it')
+  void (async () => {
+    // The first instance may still be bringing its bridge up; retry briefly.
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      try {
+        const response = await fetch(`http://127.0.0.1:${BRIDGE_PORT}/activate`, {
+          method: 'POST',
+          signal: AbortSignal.timeout(500),
+        })
+        if (response.ok) return
+      } catch {
+        // Bridge not ready yet; wait and retry.
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100))
+    }
+  })().finally(() => process.exit(0))
 }
 
 process.on('exit', () => releaseInstanceLock(APP_DATA_DIR))
@@ -86,8 +106,6 @@ process.on('unhandledRejection', (reason) => {
 
 const API_PORT = Number(process.env.QIMIAO_API_PORT || 13000)
 const API_READY_URL = `http://127.0.0.1:${API_PORT}/ping`
-/** Renderer <-> main-process bridge (downloads, window controls, lyrics). */
-const BRIDGE_PORT = 13002
 
 /** Packaged: copied next to this bundle. Dev: the generated file in server/. */
 function resolveApiScript() {
@@ -257,6 +275,7 @@ function createMainWindow() {
   })
 
   applyWindowIcon()
+  enableNativeWindowControls('声屿')
   return window
 }
 
@@ -398,6 +417,39 @@ app.on('close', (payload) => {
  * Electrobun exposes no skipTaskbar option, so flip WS_EX_TOOLWINDOW on the
  * native HWND through a tiny PowerShell helper (same pattern as the tray).
  */
+/**
+ * Electrobun's hiddenInset title bar drops WS_MINIMIZEBOX on Windows. Restore
+ * the native style bits so the taskbar button and window.minimize() work while
+ * keeping the custom title bar.
+ */
+function enableNativeWindowControls(title: string) {
+  if (process.platform !== 'win32') return
+  const script = [
+    join(import.meta.dir, '..', 'window-controls.ps1'),
+    join(process.cwd(), 'assets/window-controls.ps1'),
+  ].find((candidate) => existsSync(candidate))
+  if (!script) return
+  try {
+    Bun.spawn(
+      [
+        'powershell.exe',
+        '-NoProfile',
+        '-NonInteractive',
+        '-WindowStyle',
+        'Hidden',
+        '-ExecutionPolicy',
+        'Bypass',
+        '-File',
+        script,
+        title,
+      ],
+      { stdout: 'ignore', stderr: 'ignore', windowsHide: true },
+    )
+  } catch (error) {
+    console.warn('[desktop] failed to restore native window controls:', error)
+  }
+}
+
 function hideAuxiliaryFromTaskbar(title: string) {
   if (process.platform !== 'win32') return
   const script = join(import.meta.dir, '..', 'hide-taskbar.ps1')
@@ -825,6 +877,24 @@ try {
         return new Response(MINI_PLAYER_HTML, {
           headers: { 'content-type': 'text/html; charset=utf-8' },
         })
+      }
+      // Local, unauthenticated activation endpoint used by a second launch
+      // (pinned taskbar icon) to reveal the already-running window. It exposes
+      // no data and is bound to 127.0.0.1.
+      if (url.pathname === '/activate' && request.method === 'POST') {
+        // Taskbar semantics: a visible window toggles to minimized; a hidden
+        // or minimized one is restored. Windows usually handles this itself,
+        // but a pinned shortcut with no taskbar button launches this process.
+        if (
+          mainWindow &&
+          mainWindow.isVisible() &&
+          !mainWindow.isMinimized()
+        ) {
+          mainWindow.minimize()
+        } else {
+          showMainWindow()
+        }
+        return Response.json({ ok: true }, { headers })
       }
       if (!isBridgeAuthorized(request)) {
         return new Response('Unauthorized', { status: 401, headers })

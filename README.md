@@ -213,6 +213,12 @@ Resources/
 
 The installer is about **35 MB**, bundles the Bun runtime, and does not require Node.js on the target machine.
 
+### Window and taskbar behavior
+
+- Closing the window hides it to the tray instead of quitting; use **Quit** in the tray menu to exit.
+- Clicking the pinned taskbar icon while the window is hidden starts a second process, which calls the running bridge's local `/activate` endpoint and reveals the existing window.
+- If that activation arrives while the window is visible, it minimizes the window; activating a minimized window restores it, so repeated clicks toggle minimize/restore.
+
 ### macOS icon assets
 
 - `assets/tray-icon-template.png` (+ `@2x`) is a monochrome template image so AppKit can tint the menu-bar icon for light/dark appearances.
@@ -430,6 +436,10 @@ The Bun version pinned by the Electrobun devkit downloads slowly from GitHub Rel
 ```
 
 Then create a `.hutch-toolchain` file in the same directory containing the version number (for example `1.4.0`).
+
+### Desktop main-process changes require a restart
+
+`pnpm desktop:dev` hot-reloads the renderer only. Changes under `src/bun/`, `assets/*.ps1` or `electrobun.config.ts` need the dev process to be stopped and started again, otherwise the old main process keeps running.
 
 ### White screen on desktop startup
 

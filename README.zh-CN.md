@@ -213,6 +213,12 @@ Resources/
 
 安装包约 **35 MB**，自带 Bun 运行时，不要求目标机器安装 Node.js。
 
+### 窗口与任务栏行为
+
+- 关闭窗口只是隐藏到托盘，音乐继续播放；退出请使用托盘菜单的 **退出声屿**。
+- 窗口隐藏到托盘后，点击任务栏固定的应用图标会启动第二个进程，由它调用运行中实例的本地 `/activate` 接口，重新显示已有窗口。
+- 如果窗口当前可见，这次激活会将其最小化；窗口最小化时再次激活则还原，因此重复点击会在最小化 / 还原之间切换。
+
 ### macOS 图标资源
 
 - `assets/tray-icon-template.png`（含 `@2x`）是单色 template image，菜单栏图标由 AppKit 自动适配浅色 / 深色外观。
@@ -430,6 +436,10 @@ Electrobun devkit 固定的 Bun 版本下载较慢（GitHub Release）。可让 
 ```
 
 并在同目录创建 `.hutch-toolchain` 文件，内容为版本号（如 `1.4.0`）。
+
+### 主进程改动需要重启 desktop:dev
+
+`pnpm desktop:dev` 只热更新渲染层；修改 `src/bun/`、`assets/*.ps1` 或 `electrobun.config.ts` 后，需要停止并重新运行 dev 进程，否则仍在执行旧的主进程。
 
 ### 桌面端启动白屏
 

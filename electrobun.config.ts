@@ -29,6 +29,7 @@ export default {
       'assets/tray-icon-template@2x.png': 'tray-icon-template@2x.png',
       'assets/tray.ps1': 'tray.ps1',
       'assets/hide-taskbar.ps1': 'hide-taskbar.ps1',
+      'assets/window-controls.ps1': 'window-controls.ps1',
     },
     watchIgnore: ['dist-electrobun/**'],
     mac: {
