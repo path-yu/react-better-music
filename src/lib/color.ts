@@ -138,7 +138,10 @@ function sampleBuckets(image: HTMLImageElement): Bucket[] {
 
       const max = Math.max(r, g, b)
       const min = Math.min(r, g, b)
-      if (max < 26 || min > 244) continue
+      // Keep dark buckets: a black shirt/cover is often the true dominant
+      // colour, and the gradient needs it as a base. Only drop near-white
+      // specular/background pixels, which would wash the mesh out.
+      if (min > 246) continue
 
       const saturation = (max - min) / 255
       const key = ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3)

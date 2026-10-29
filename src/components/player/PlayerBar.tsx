@@ -124,8 +124,6 @@ export function PlayerBar() {
   const setPlayLevel = useSettingsStore((state) => state.setPlayLevel)
   const lyricDisplayMode = useSettingsStore((state) => state.lyricDisplayMode)
   const setLyricDisplayMode = useSettingsStore((state) => state.setLyricDisplayMode)
-  const nowPlayingBackground = useSettingsStore((state) => state.nowPlayingBackground)
-  const setNowPlayingBackground = useSettingsStore((state) => state.setNowPlayingBackground)
   // The mode menu is only meaningful when the current lyric actually carries a translation.
   const hasTranslation = useMemo(
     () => lyricLines.some((line) => Boolean(line.translate)),
@@ -1235,40 +1233,6 @@ export function PlayerBar() {
             <p className="px-2 py-1 text-[11px] text-black/35">
               <Trans>播放选项</Trans>
             </p>
-
-            <div className="px-2 pb-1.5 pt-1">
-              <p className="mb-1 text-[11px] text-black/40">
-                <Trans>播放页背景</Trans>
-              </p>
-              <div className="grid grid-cols-2 gap-1 rounded-[8px] bg-black/4 p-0.5">
-                <button
-                  type="button"
-                  onClick={() => setNowPlayingBackground('cover')}
-                  aria-pressed={nowPlayingBackground === 'cover'}
-                  className={cn(
-                    'rounded-[6px] px-1 py-1 text-[10.5px] transition-colors',
-                    nowPlayingBackground === 'cover'
-                      ? 'bg-white text-accent shadow-sm dark:bg-white/15 dark:text-white'
-                      : 'text-black/55 hover:text-black/75 dark:text-white/50 dark:hover:text-white/80',
-                  )}
-                >
-                  <Trans>封面模糊</Trans>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setNowPlayingBackground('gradient')}
-                  aria-pressed={nowPlayingBackground === 'gradient'}
-                  className={cn(
-                    'rounded-[6px] px-1 py-1 text-[10.5px] transition-colors',
-                    nowPlayingBackground === 'gradient'
-                      ? 'bg-white text-accent shadow-sm dark:bg-white/15 dark:text-white'
-                      : 'text-black/55 hover:text-black/75 dark:text-white/50 dark:hover:text-white/80',
-                  )}
-                >
-                  <Trans>动态渐变</Trans>
-                </button>
-              </div>
-            </div>
 
             {hasTranslation ? (
               <div className="px-2 pb-1.5 pt-1">

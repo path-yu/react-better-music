@@ -6,29 +6,17 @@ import { useNavigate, useRouterState } from '@tanstack/react-router'
 import { Disc3, Film, Heart, ListMusic, Loader2, MessageSquareText } from 'lucide-react'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
-import { ArtworkGradient } from './ArtworkGradient'
 import { LyricsPanel } from './LyricsPanel'
 import { CommentSection } from '../comments/CommentSection'
 import { fetchRelatedVideos } from '../../api'
 import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
-import { useSettingsStore } from '../../store/settings'
 import { findLyricIndex } from '../../lib/lyric'
 import { seekAudio } from '../../lib/audio'
-import { extractArtworkPalette } from '../../lib/color'
+import { extractDominantColor } from '../../lib/color'
 import { resizedImageUrl } from '../../lib/image'
 import { toast } from '../../lib/toast'
 import { cn } from '../../lib/format'
-
-/** Shown while the artwork palette is loading, or if the CDN refuses sampling. */
-const FALLBACK_GRADIENT_COLORS = [
-  '#2563eb',
-  '#7c3aed',
-  '#db2777',
-  '#0f172a',
-  '#f97316',
-  '#0ea5e9',
-]
 
 export function NowPlaying() {
   const { i18n } = useLingui()
@@ -56,10 +44,8 @@ export function NowPlaying() {
   const likedIds = useUserStore((state) => state.likedIds)
   const likeSong = useUserStore((state) => state.likeSong)
   const liked = currentSong ? likedIds.includes(currentSong.id) : false
-  const nowPlayingBackground = useSettingsStore((state) => state.nowPlayingBackground)
   const [panel, setPanel] = useState<'lyrics' | 'comments'>('lyrics')
   const [dominantColor, setDominantColor] = useState<string | null>(null)
-  const [artworkPalette, setArtworkPalette] = useState<string[]>([])
   const [videoLoading, setVideoLoading] = useState(false)
 
   // The overlay is lazy-mounted only while open, so the first effect run is the
@@ -86,12 +72,10 @@ export function NowPlaying() {
   // cached colour instead of flashing back to the un-tinted backdrop.
   useEffect(() => {
     setDominantColor(null)
-    setArtworkPalette([])
   }, [artwork])
 
-  // Warm the palette and the cover thumbnails as soon as the track changes —
-  // even while the overlay is closed — so switching songs doesn't sit on the
-  // previous colours while the proxy fetch finishes.
+  // Preload the cover thumbnails and sample the dominant colour so the blurred
+  // backdrop is ready as soon as the track changes.
   useEffect(() => {
     if (!artwork) return
     let active = true
@@ -105,17 +89,31 @@ export function NowPlaying() {
       }
       preload(resizedImageUrl(artwork, '320y320'))
       preload(resizedImageUrl(artwork, '640y640'))
-      void extractArtworkPalette(artwork, 6).then((palette) => {
-        if (!active) return
-        setArtworkPalette(palette)
-        setDominantColor(palette[0] ?? null)
+      void extractDominantColor(artwork).then((color) => {
+        if (active) setDominantColor(color)
       })
-    }, 60)
+    }, 0)
     return () => {
       active = false
       window.clearTimeout(timer)
     }
   }, [artwork])
+
+  // Preload the next track's cover while the current one plays.
+  const nextArtwork = queue[currentIndex + 1]?.al.picUrl
+  useEffect(() => {
+    if (!nextArtwork) return
+    const urls = [
+      resizedImageUrl(nextArtwork, '320y320'),
+      resizedImageUrl(nextArtwork, '640y640'),
+    ]
+    for (const url of urls) {
+      if (!url) continue
+      const image = new Image()
+      image.decoding = 'async'
+      image.src = url
+    }
+  }, [nextArtwork])
 
   useEffect(() => {
     if (!show) return
@@ -153,13 +151,6 @@ export function NowPlaying() {
   // The backdrop is heavily blurred, so a 320px copy is indistinguishable from
   // the original but avoids fetching/decoding a multi-megapixel cover.
   const ambientArtwork = resizedImageUrl(artwork, '320y320')
-  // Honour the selected mode immediately. Waiting for the palette made the
-  // overlay look like the old blurred-cover mode for as long as (or forever
-  // if) the proxy could not sample the artwork.
-  const gradientBackground = nowPlayingBackground === 'gradient'
-  const gradientColors = artworkPalette.length
-    ? artworkPalette
-    : FALLBACK_GRADIENT_COLORS
 
   const albumId = currentSong.al.id
   const openAlbum = () => {
@@ -214,16 +205,8 @@ export function NowPlaying() {
       className="nowplaying-overlay dark"
       style={{ backgroundColor: 'var(--nowplaying-base, #0f0f12)' }}
     >
-      <div
-        className={cn(
-          'nowplaying-ambient',
-          gradientBackground && 'nowplaying-ambient--gradient',
-        )}
-        aria-hidden="true"
-      >
-        {gradientBackground ? (
-          <ArtworkGradient colors={gradientColors} className="nowplaying-gradient" />
-        ) : ambientArtwork ? (
+      <div className="nowplaying-ambient" aria-hidden="true">
+        {ambientArtwork ? (
           <img
             src={ambientArtwork}
             alt=""
