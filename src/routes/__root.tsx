@@ -4,10 +4,13 @@ import {
   createRootRoute,
   type ErrorComponentProps,
 } from '@tanstack/react-router'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
 import { Button, OverlayProvider, ToastProvider } from '@pikoloo/darwin-ui'
 import { AppShell } from '../components/layout/AppShell'
 import { ToastBridge } from '../components/common/ToastBridge'
 import { useDocumentTitle } from '../lib/title'
+import { apiErrorMessage } from '../lib/apiErrors'
 import '../styles.css'
 
 export const Route = createRootRoute({
@@ -30,7 +33,8 @@ function RootComponent() {
 }
 
 function RootNotFound() {
-  useDocumentTitle('页面不存在')
+  const { i18n } = useLingui()
+  useDocumentTitle(i18n._(msg`页面不存在`))
   return (
     <div className="flex min-h-dvh items-center justify-center px-6">
       <div className="apple-card w-full max-w-[420px] p-8 text-center">
@@ -53,13 +57,14 @@ function RootNotFound() {
 }
 
 function RootError({ error, reset }: ErrorComponentProps) {
-  useDocumentTitle('出错了')
+  const { i18n } = useLingui()
+  useDocumentTitle(i18n._(msg`出错了`))
   const message =
     error instanceof Error
-      ? error.message
+      ? apiErrorMessage(error, i18n._(msg`发生未知错误`))
       : typeof error === 'string'
         ? error
-        : '发生未知错误'
+        : i18n._(msg`发生未知错误`)
   return (
     <div className="flex min-h-dvh items-center justify-center px-6">
       <div className="apple-card w-full max-w-[420px] p-8 text-center">

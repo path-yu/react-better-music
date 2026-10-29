@@ -1,4 +1,6 @@
+import { msg } from '@lingui/core/macro'
 import { apiUrl } from './http'
+import { i18n } from '../i18n'
 import { reportDesktopLog } from './desktopBridge'
 import { isDesktopApp, saveDownloadFile } from './desktopDownloads'
 import { toast } from './toast'
@@ -186,7 +188,7 @@ async function encodeOpusOgg(blob: Blob, bitrateKbps: number): Promise<Blob> {
     Quality,
   } = await import('mediabunny')
   const buffer = await decodeAudio(blob)
-  if (!buffer.length) throw new Error('音频解码失败')
+  if (!buffer.length) throw new Error(i18n._(msg`音频解码失败`))
   const channels = Math.min(2, buffer.numberOfChannels)
   const quality = new Quality({
     bitrate: Math.max(6_000, Math.min(510_000, bitrateKbps * 1000)),
@@ -196,7 +198,7 @@ async function encodeOpusOgg(blob: Blob, bitrateKbps: number): Promise<Blob> {
     sampleRate: OPUS_SAMPLE_RATE,
     quality,
   })
-  if (!supported) throw new Error('当前环境不支持 Opus 编码')
+  if (!supported) throw new Error(i18n._(msg`当前环境不支持 Opus 编码`))
 
   const output = new Output({
     format: new OggOutputFormat(),
@@ -216,7 +218,7 @@ async function encodeOpusOgg(blob: Blob, bitrateKbps: number): Promise<Blob> {
     source.close()
     await output.finalize()
     const data = output.target.buffer
-    if (!data) throw new Error('音频编码结果为空')
+    if (!data) throw new Error(i18n._(msg`音频编码结果为空`))
     // mediabunny reports Ogg as `application/ogg`; the media element needs the
     // audio MIME type to accept the blob URL.
     return new Blob([data], { type: 'audio/ogg' })
@@ -228,7 +230,8 @@ async function encodeOpusOgg(blob: Blob, bitrateKbps: number): Promise<Blob> {
 
 async function fetchAudioBlob(url: string): Promise<Blob> {
   const response = await fetch(apiUrl('/audio/proxy', { url }))
-  if (!response.ok) throw new Error(`音频下载失败 (${response.status})`)
+  if (!response.ok)
+    throw new Error(i18n._(msg`音频下载失败 (${response.status})`))
   return response.blob()
 }
 
@@ -269,7 +272,9 @@ function enqueueCache(song: CacheableSong, source?: Blob) {
         cacheWarningShown = true
         // Keep the reason visible: WebCodecs/decode/quota failures used to be
         // indistinguishable behind the generic message.
-        toast.warning(`音频缓存暂不可用：${reason.slice(0, 60)}`)
+        toast.warning(
+          i18n._(msg`音频缓存暂不可用：${reason.slice(0, 60)}`),
+        )
       }
     })
     .finally(() => {

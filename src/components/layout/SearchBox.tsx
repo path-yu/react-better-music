@@ -136,7 +136,7 @@ export function SearchBox() {
       await playSong(playable)
       setOpen(false)
     } catch {
-      toast.error('播放失败')
+      toast.error(i18n._(msg`播放失败`))
     }
   }
 
@@ -205,7 +205,7 @@ export function SearchBox() {
           if (!keyword.trim()) setKeyword('')
         }}
         role="combobox"
-        aria-label="搜索"
+        aria-label={i18n._(msg`搜索`)}
         aria-autocomplete="list"
         aria-expanded={hasQuery && open}
         aria-controls="search-suggest-list"
@@ -249,7 +249,7 @@ export function SearchBox() {
       {hasQuery ? (
         <button
           type="button"
-          aria-label="清空搜索"
+          aria-label={i18n._(msg`清空搜索`)}
           onClick={() => {
             setKeyword('')
             setActiveIndex(-1)
@@ -294,7 +294,7 @@ export function SearchBox() {
                           </button>
                           <button
                             type="button"
-                            aria-label="移除"
+                            aria-label={i18n._(msg`移除`)}
                             className="text-black/25 hover:text-black/60"
                             onClick={() => removeSearchHistory(index)}
                           >
@@ -343,7 +343,12 @@ export function SearchBox() {
             )}
 
             {hasQuery && (
-              <div id="search-suggest-list" role="listbox" aria-label="搜索建议" className="py-2">
+              <div
+                id="search-suggest-list"
+                role="listbox"
+                aria-label={i18n._(msg`搜索建议`)}
+                className="py-2"
+              >
                 {loading ? (
                   <div className="flex h-28 items-center justify-center">
                     <Loader2 className="h-5 w-5 animate-spin text-black/30" />

@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { msg } from '@lingui/core/macro'
 import { persist } from 'zustand/middleware'
 import {
   checkMusicAvailable,
@@ -21,6 +22,8 @@ import {
 } from '../lib/audioPrefetch'
 import { createCoalescedStorage } from '../lib/persistStorage'
 import { toast } from '../lib/toast'
+import { apiErrorMessage } from '../lib/apiErrors'
+import { i18n } from '../i18n'
 import { useSettingsStore } from './settings'
 import type { Song } from '../types'
 
@@ -160,7 +163,11 @@ function playbackUrl(url: string, unblocked: boolean) {
 async function enrichSong(song: Song): Promise<Song> {
   const source = await resolveSongSource(song)
   if (!source.url) {
-    throw new Error(source.available ? '获取歌曲播放地址失败' : '亲爱的，暂无版权，已为你跳过')
+    throw new Error(
+      source.available
+        ? i18n._(msg`获取歌曲播放地址失败`)
+        : i18n._(msg`亲爱的，暂无版权，已为你跳过`),
+    )
   }
   const lyricData = await fetchLyric(song.id)
   const lyrics = buildLyricLines(lyricData)
@@ -417,7 +424,9 @@ export const usePlayerStore = create<PlayerState>()(
             set({ audioUrl: prefetched.url, sourceReady: true, audioBlob: prefetched.blob })
             if (prefetched.trialEnd && prefetched.trialEnd > 0) {
               toast.warning(
-                `当前仅可试听 ${prefetched.trialEnd} 秒，登录或开通会员后可播放完整版`,
+                i18n._(
+                  msg`当前仅可试听 ${prefetched.trialEnd} 秒，登录或开通会员后可播放完整版`,
+                ),
               )
             }
             prefetchNeighbors(index)
@@ -444,7 +453,11 @@ export const usePlayerStore = create<PlayerState>()(
             }
           }
           if (!url) {
-            throw new Error(available ? '获取歌曲播放地址失败' : '亲爱的，暂无版权，已为你跳过')
+            throw new Error(
+              available
+                ? i18n._(msg`获取歌曲播放地址失败`)
+                : i18n._(msg`亲爱的，暂无版权，已为你跳过`),
+            )
           }
           // Announce once per song, even when the URL was patched earlier by a
           // prefetch or a retry (those paths never showed the notice).
@@ -452,15 +465,17 @@ export const usePlayerStore = create<PlayerState>()(
             unblockAnnounced.add(song.id)
             toast.info(
               song.fee === 0
-                ? `「${song.name}」暂无官方音源，已为你匹配其他音源播放`
-                : `「${song.name}」VIP 歌曲已为你匹配其他音源播放`,
+                ? i18n._(msg`「${song.name}」暂无官方音源，已为你匹配其他音源播放`)
+                : i18n._(msg`「${song.name}」VIP 歌曲已为你匹配其他音源播放`),
             )
           }
           // Stream through the local API: the WebView cannot load the CDN
           // media URL directly (it answers 403 for cross-origin media).
           set({ audioUrl: playbackUrl(url, unblocked), sourceReady: true })
           if (trialEnd && trialEnd > 0) {
-            toast.warning(`当前仅可试听 ${trialEnd} 秒，登录或开通会员后可播放完整版`)
+            toast.warning(
+              i18n._(msg`当前仅可试听 ${trialEnd} 秒，登录或开通会员后可播放完整版`),
+            )
           }
           prefetchNeighbors(index)
           await resolveLyrics(index, song, requestId)
@@ -475,7 +490,9 @@ export const usePlayerStore = create<PlayerState>()(
             audioFromCache: false,
             audioBlob: null,
           })
-          toast.warning(error instanceof Error ? error.message : '歌曲加载失败')
+          toast.warning(
+            apiErrorMessage(error, i18n._(msg`歌曲加载失败`)),
+          )
           return false
         }
       }
@@ -519,9 +536,10 @@ export const usePlayerStore = create<PlayerState>()(
           return true
         } catch (error) {
           toast.warning(
-            error instanceof Error && error.message
-              ? `${error.message}，请确认已登录后重试`
-              : '心动模式暂不可用，请先登录',
+            apiErrorMessage(
+              error,
+              i18n._(msg`心动模式暂不可用，请先登录`),
+            ),
           )
           return false
         } finally {
@@ -628,7 +646,7 @@ export const usePlayerStore = create<PlayerState>()(
 
         async initQueue(songs, index, playlistId) {
           if (!songs.length) {
-            toast.warning('该列表暂无可播放歌曲')
+            toast.warning(i18n._(msg`该列表暂无可播放歌曲`))
             return
           }
           const target = songs[index]
@@ -695,11 +713,13 @@ export const usePlayerStore = create<PlayerState>()(
           const existingIds = new Set(queue.map((song) => song.id))
           const additions = songs.filter((song) => !existingIds.has(song.id))
           if (!additions.length) {
-            toast.info('歌曲已在播放列表中')
+            toast.info(i18n._(msg`歌曲已在播放列表中`))
             return
           }
           set({ queue: [...queue, ...additions] })
-          toast.success(`已添加 ${additions.length} 首歌曲到播放列表`)
+          toast.success(
+            i18n._(msg`已添加 ${additions.length} 首歌曲到播放列表`),
+          )
         },
 
         async togglePlay() {
@@ -740,10 +760,10 @@ export const usePlayerStore = create<PlayerState>()(
           set({ mode: nextMode })
           toast.info(
             nextMode === 'order'
-              ? '顺序播放'
+              ? i18n._(msg`顺序播放`)
               : nextMode === 'random'
-                ? '随机播放'
-                : '单曲循环',
+                ? i18n._(msg`随机播放`)
+                : i18n._(msg`单曲循环`),
           )
         },
 
@@ -751,12 +771,12 @@ export const usePlayerStore = create<PlayerState>()(
           const state = get()
           if (state.heartMode) {
             set({ heartMode: false })
-            toast.info('已关闭心动模式')
+            toast.info(i18n._(msg`已关闭心动模式`))
             return
           }
           const song = state.queue[state.currentIndex]
           if (!song) {
-            toast.warning('请先播放歌曲')
+            toast.warning(i18n._(msg`请先播放歌曲`))
             return
           }
           set({ heartMode: true })
@@ -765,7 +785,7 @@ export const usePlayerStore = create<PlayerState>()(
             set({ heartMode: false })
             return
           }
-          toast.success('心动模式已开启，将为你推荐歌曲')
+          toast.success(i18n._(msg`心动模式已开启，将为你推荐歌曲`))
         },
 
         setVolume(value) {
@@ -818,7 +838,7 @@ export const usePlayerStore = create<PlayerState>()(
             showNowPlaying: false,
             showQueue: false,
           })
-          toast.info('播放列表已清空')
+          toast.info(i18n._(msg`播放列表已清空`))
         },
 
         async refreshCurrentUrl() {
@@ -845,7 +865,9 @@ export const usePlayerStore = create<PlayerState>()(
           } catch (error) {
             if (get().queue[get().currentIndex]?.id !== song.id) return false
             set({ playing: false })
-            toast.warning(error instanceof Error ? error.message : '歌曲资源已失效')
+            toast.warning(
+              apiErrorMessage(error, i18n._(msg`歌曲资源已失效`)),
+            )
             return false
           }
         },
@@ -894,7 +916,7 @@ export const usePlayerStore = create<PlayerState>()(
           try {
             const matched = await fetchMatchedSongUrl(song.id)
             if (!matched.url) {
-              toast.info('未找到其他可用音源')
+              toast.info(i18n._(msg`未找到其他可用音源`))
               return
             }
             const active = get()
@@ -914,9 +936,9 @@ export const usePlayerStore = create<PlayerState>()(
               playToken: current.playToken + 1,
               resumeAt,
             }))
-            toast.success('已切换到其他音源')
+            toast.success(i18n._(msg`已切换到其他音源`))
           } catch {
-            toast.warning('切换音源失败，请稍后再试')
+            toast.warning(i18n._(msg`切换音源失败，请稍后再试`))
           } finally {
             set({ switchingSource: false })
           }

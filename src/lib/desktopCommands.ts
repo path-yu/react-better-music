@@ -1,4 +1,6 @@
 import { useEffect } from 'react'
+import { msg } from '@lingui/core/macro'
+import { i18n } from '../i18n'
 import { isDesktopApp } from './desktopBridge'
 import { seekAudio } from './audio'
 import { usePlayerStore } from '../store/player'
@@ -53,7 +55,7 @@ export function useDesktopCommands() {
           if (!song) return
           const user = useUserStore.getState()
           if (!user.isLogin) {
-            toast.warning('请先登录后再收藏')
+            toast.warning(i18n._(msg`请先登录后再收藏`))
             return
           }
           const liked = user.likedIds.includes(song.id)

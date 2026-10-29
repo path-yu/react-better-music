@@ -218,7 +218,7 @@ function PlaylistDetailPage() {
             {isOwner ? (
               <button
                 type="button"
-                aria-label="编辑歌单"
+                aria-label={i18n._(msg`编辑歌单`)}
                 onClick={() =>
                   void navigate({
                     to: '/songlists/$id/edit',

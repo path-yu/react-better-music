@@ -1,4 +1,6 @@
 import { useEffect, useRef } from 'react'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { ListMusic, Trash2, Volume2, X } from 'lucide-react'
@@ -12,6 +14,7 @@ import { copyrightHint } from '../../lib/songs'
 const ROW_HEIGHT = 56
 
 export function QueuePanel() {
+  const { i18n } = useLingui()
   const show = usePlayerStore((state) => state.showQueue)
   const queue = usePlayerStore((state) => state.queue)
   const currentIndex = usePlayerStore((state) => state.currentIndex)
@@ -64,13 +67,13 @@ export function QueuePanel() {
     <div className="absolute inset-x-0 bottom-[76px] top-0 z-[70] flex justify-end">
       <button
         type="button"
-        aria-label="关闭播放列表"
+        aria-label={i18n._(msg`关闭播放列表`)}
         className="absolute inset-0 bg-black/20 backdrop-blur-[2px]"
         onClick={() => toggleQueue(false)}
       />
       <aside
         role="dialog"
-        aria-label="播放列表"
+        aria-label={i18n._(msg`播放列表`)}
         className="relative flex h-full w-[min(360px,100%)] flex-col border-l border-black/10 bg-[#fbfbfd]/95 shadow-[-20px_0_50px_-20px_rgba(0,0,0,0.3)] backdrop-blur-xl fade-up"
       >
         <div className="flex items-center justify-between border-b border-black/8 px-4 py-3.5">
@@ -95,7 +98,7 @@ export function QueuePanel() {
             </Button>
             <button
               type="button"
-              aria-label="关闭"
+              aria-label={i18n._(msg`关闭`)}
               onClick={() => toggleQueue(false)}
               className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/40 hover:bg-black/5 hover:text-black/70 max-md:h-10 max-md:w-10"
             >

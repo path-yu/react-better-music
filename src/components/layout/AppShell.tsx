@@ -1,4 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, type ReactNode } from 'react'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
 import { useRouterState } from '@tanstack/react-router'
 import { TitleBar } from './TitleBar'
 import { Sidebar } from './Sidebar'
@@ -29,6 +31,7 @@ const LoginModal = lazy(() =>
 const LOGIN_REFRESH_INTERVAL = 6 * 60 * 60 * 1000
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const { i18n } = useLingui()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   // Playback/user detail pages are destinations, not list positions. They must
   // start at the top and must not write a scroll entry that would be restored
@@ -266,7 +269,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {sidebarOpen ? (
           <button
             type="button"
-            aria-label="关闭导航"
+            aria-label={i18n._(msg`关闭导航`)}
             className="sidebar-backdrop"
             onClick={closeSidebar}
           />

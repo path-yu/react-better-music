@@ -95,7 +95,7 @@ export const LYRICS_WINDOW_HTML = `<!doctype html>
 </head>
 <body>
   <div class="hud" id="hud">
-    <button class="close" id="close" type="button" title="隐藏桌面歌词">×</button>
+    <button class="close" id="close" type="button" data-title-zh="隐藏桌面歌词" data-title-en="Hide desktop lyrics">×</button>
     <div class="line hint is-visible" id="hint">桌面歌词 · 等待播放</div>
     <div class="line prev" id="prev"></div>
     <div class="line active" id="active"></div>
@@ -105,7 +105,13 @@ export const LYRICS_WINDOW_HTML = `<!doctype html>
   </div>
   <script>
     (function () {
-      var token = new URLSearchParams(location.search).get('token') || '';
+      var query = new URLSearchParams(location.search);
+      var lang = (query.get('lang') || navigator.language || 'zh').toLowerCase();
+      var english = lang.indexOf('zh') !== 0;
+      document.querySelectorAll('[data-title-zh]').forEach(function (element) {
+        element.title = english ? element.dataset.titleEn : element.dataset.titleZh;
+      });
+      var token = query.get('token') || '';
       var hint = document.getElementById('hint');
       var prev = document.getElementById('prev');
       var active = document.getElementById('active');

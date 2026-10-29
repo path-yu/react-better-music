@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { useNavigate, useRouterState } from '@tanstack/react-router'
 import { Disc3, Film, Heart, ListMusic, Loader2, MessageSquareText } from 'lucide-react'
@@ -17,6 +19,7 @@ import { toast } from '../../lib/toast'
 import { cn } from '../../lib/format'
 
 export function NowPlaying() {
+  const { i18n } = useLingui()
   const navigate = useNavigate()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const show = usePlayerStore((state) => state.showNowPlaying)
@@ -146,7 +149,7 @@ export function NowPlaying() {
         12,
       )
       if (!videos.length) {
-        toast.info('暂无相关视频')
+        toast.info(i18n._(msg`暂无相关视频`))
         return
       }
       const first = videos[0]
@@ -167,7 +170,7 @@ export function NowPlaying() {
         },
       })
     } catch {
-      toast.error('相关视频加载失败')
+      toast.error(i18n._(msg`相关视频加载失败`))
     } finally {
       setVideoLoading(false)
     }
@@ -196,8 +199,8 @@ export function NowPlaying() {
         <div className="flex h-[58px] flex-none items-center justify-between px-6">
           {/* <button
             type="button"
-            aria-label="收起播放页"
-            title="收起播放页（Esc）"
+            aria-label={i18n._(msg`收起播放页`)}
+            title={i18n._(msg`收起播放页（Esc）`)}
             onClick={() => toggleNowPlaying(false)}
             className="np-round-button  flex h-9 w-9 items-center justify-center rounded-full text-white/75 max-md:h-10 max-md:w-10"
           >
@@ -209,9 +212,9 @@ export function NowPlaying() {
           <div className="flex items-center gap-2 md:hidden">
             <button
               type="button"
-              aria-label={liked ? '取消喜欢' : '喜欢'}
+              aria-label={liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)}
               aria-pressed={liked}
-              title={liked ? '取消喜欢' : '喜欢'}
+              title={liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)}
               onClick={() => void likeSong(currentSong.id, !liked)}
               className="np-round-button pressable flex h-10 w-10 items-center justify-center rounded-full"
             >
@@ -224,8 +227,8 @@ export function NowPlaying() {
             </button>
             <button
               type="button"
-              aria-label="播放列表"
-              title="播放列表"
+              aria-label={i18n._(msg`播放列表`)}
+              title={i18n._(msg`播放列表`)}
               onClick={() => toggleQueue(true)}
               className="np-round-button pressable flex h-10 w-10 items-center justify-center rounded-full text-white/70"
             >
@@ -244,8 +247,8 @@ export function NowPlaying() {
                 <h2 className="headline-lg min-w-0 truncate text-[24px]">{currentSong.name}</h2>
                 <button
                   type="button"
-                  aria-label="相关视频"
-                  title="相关视频"
+                  aria-label={i18n._(msg`相关视频`)}
+                  title={i18n._(msg`相关视频`)}
                   disabled={videoLoading}
                   onClick={() => void openRelatedVideos()}
                   className="np-round-button pressable flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white/60 transition-colors hover:text-white disabled:opacity-50"
@@ -301,7 +304,11 @@ export function NowPlaying() {
                   type="button"
                   onClick={openAlbum}
                   disabled={!albumId}
-                  aria-label={albumId ? `打开专辑 ${currentSong.al.name}` : undefined}
+                  aria-label={
+                    albumId
+                      ? i18n._(msg`打开专辑 ${currentSong.al.name}`)
+                      : undefined
+                  }
                   className="album-cover group relative block h-full w-full cursor-pointer disabled:cursor-default"
                 >
                   <ImageWithFallback
@@ -329,7 +336,11 @@ export function NowPlaying() {
             )}
           >
             <div className="flex flex-none items-center px-3 py-2">
-              <div className="np-segmented" role="tablist" aria-label="歌词与评论">
+              <div
+                className="np-segmented"
+                role="tablist"
+                aria-label={i18n._(msg`歌词与评论`)}
+              >
                 <span
                   aria-hidden="true"
                   className="np-segmented__pill"
@@ -380,7 +391,7 @@ export function NowPlaying() {
                   <CommentSection
                     type={0}
                     resourceId={currentSong.id}
-                    title="歌曲评论"
+                    title={i18n._(msg`歌曲评论`)}
                     showComposer
                   />
                 </div>

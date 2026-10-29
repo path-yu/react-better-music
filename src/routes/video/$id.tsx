@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
+import { Trans } from '@lingui/react/macro'
 import { ArrowLeft, Loader2, Play, RotateCcw } from 'lucide-react'
 import { fetchMlogUrl, fetchVideoUrl } from '../../api'
 import { CommentSection } from '../../components/comments/CommentSection'
@@ -26,6 +29,7 @@ export const Route = createFileRoute('/video/$id')({
  * so portrait uploads are not forced into a 16:9 frame.
  */
 function VideoPage() {
+  const { i18n } = useLingui()
   const { id } = Route.useParams()
   const { kind, title, cover, artist, duration } = Route.useSearch()
   const navigate = useNavigate()
@@ -34,7 +38,9 @@ function VideoPage() {
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
   const resumeMusicRef = useRef(false)
-  useDocumentTitle(title || (kind === 'mlog' ? 'Mlog' : '视频'))
+  useDocumentTitle(
+    title || (kind === 'mlog' ? 'Mlog' : i18n._(msg`视频`)),
+  )
 
   useEffect(() => {
     const controller = new AbortController()
@@ -98,7 +104,7 @@ function VideoPage() {
         className="pressable flex items-center gap-1.5 rounded-full px-2 py-1 text-[11.5px] text-black/40 transition-colors hover:bg-black/5 hover:text-black/70"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
-        返回
+        <Trans>返回</Trans>
       </button>
 
       <div className="mt-4 flex flex-col gap-6">
@@ -106,7 +112,9 @@ function VideoPage() {
           {loading ? (
             <div className="flex flex-col items-center gap-2.5 text-white/50">
               <Loader2 className="h-6 w-6 animate-spin" />
-              <span className="text-[12px]">正在获取视频…</span>
+              <span className="text-[12px]">
+                <Trans>正在获取视频…</Trans>
+              </span>
             </div>
           ) : url ? (
             <div className="w-full overflow-hidden rounded-[16px] bg-black">
@@ -122,30 +130,42 @@ function VideoPage() {
           ) : (
             <div className="flex flex-col items-center gap-3 text-white/45">
               <Play className="h-8 w-8" />
-              <p className="text-[12px]">{failed ? '暂无视频播放地址' : '视频加载失败'}</p>
+              <p className="text-[12px]">
+                {failed ? (
+                  <Trans>暂无视频播放地址</Trans>
+                ) : (
+                  <Trans>视频加载失败</Trans>
+                )}
+              </p>
               <button
                 type="button"
                 onClick={() => setAttempt((value) => value + 1)}
                 className="pressable flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[11px] text-white/75 transition-colors hover:bg-white/20 hover:text-white"
               >
                 <RotateCcw className="h-3 w-3" />
-                重试
+                <Trans>重试</Trans>
               </button>
             </div>
           )}
         </div>
 
         <div>
-          <p className="eyebrow">{kind === 'mlog' ? 'Mlog' : '视频'}</p>
-          <h1 className="headline-lg mt-1 text-[24px]">{title || '视频'}</h1>
+          <p className="eyebrow">{kind === 'mlog' ? 'Mlog' : <Trans>视频</Trans>}</p>
+          <h1 className="headline-lg mt-1 text-[24px]">
+            {title || i18n._(msg`视频`)}
+          </h1>
           <p className="mt-2 text-[12px] text-black/40">
-            {artist || '网易云音乐'}
+            {artist || i18n._(msg`网易云音乐`)}
             {duration ? ` · ${formatDuration(duration)}` : ''}
           </p>
         </div>
 
         <div>
-          <CommentSection type={1} resourceId={Number(id)} title="视频评论" />
+          <CommentSection
+            type={1}
+            resourceId={Number(id)}
+            title={i18n._(msg`视频评论`)}
+          />
         </div>
       </div>
     </div>

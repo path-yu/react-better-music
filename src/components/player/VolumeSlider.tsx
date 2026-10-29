@@ -1,4 +1,6 @@
 import { useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
 import { cn } from '../../lib/format'
 
 interface VolumeSliderProps {
@@ -14,6 +16,7 @@ interface VolumeSliderProps {
 const THUMB_SIZE = 13
 
 export function VolumeSlider({ value, onChange, className }: VolumeSliderProps) {
+  const { i18n } = useLingui()
   const trackRef = useRef<HTMLDivElement>(null)
   const [dragging, setDragging] = useState(false)
   const percent = Math.min(100, Math.max(0, value))
@@ -75,7 +78,7 @@ export function VolumeSlider({ value, onChange, className }: VolumeSliderProps) 
       ref={trackRef}
       role="slider"
       tabIndex={0}
-      aria-label="音量"
+      aria-label={i18n._(msg`音量`)}
       aria-orientation="vertical"
       aria-valuemin={0}
       aria-valuemax={100}

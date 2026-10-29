@@ -1,4 +1,6 @@
 import { useNavigate } from '@tanstack/react-router'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { ChevronLeft, ChevronRight, Disc3, Menu, Moon, Settings2, Sun } from 'lucide-react'
 import { SearchBox } from './SearchBox'
@@ -7,6 +9,7 @@ import { usePlayerStore } from '../../store/player'
 import { useUiStore } from '../../store/ui'
 
 export function TopBar() {
+  const { i18n } = useLingui()
   const navigate = useNavigate()
   const queue = usePlayerStore((state) => state.queue)
   const showNowPlaying = usePlayerStore((state) => state.showNowPlaying)
@@ -19,7 +22,7 @@ export function TopBar() {
     <header className="pushbar-glass relative z-50 flex h-[54px] flex-none items-center gap-3 px-4">
       <button
         type="button"
-        aria-label="打开导航"
+        aria-label={i18n._(msg`打开导航`)}
         onClick={toggleSidebar}
         className="pressable flex h-7 w-7 items-center justify-center rounded-[6px] text-black/45 transition-colors hover:bg-black/5 hover:text-black/75 max-md:h-10 max-md:w-10 md:hidden"
       >
@@ -28,7 +31,7 @@ export function TopBar() {
       <div className="flex items-center gap-1 max-md:hidden">
         <button
           type="button"
-          aria-label="后退"
+          aria-label={i18n._(msg`后退`)}
           onClick={() => window.history.back()}
           className="pressable flex h-7 w-7 items-center justify-center rounded-[6px] text-black/45 transition-colors hover:bg-black/5 hover:text-black/75 max-md:h-10 max-md:w-10"
         >
@@ -36,7 +39,7 @@ export function TopBar() {
         </button>
         <button
           type="button"
-          aria-label="前进"
+          aria-label={i18n._(msg`前进`)}
           onClick={() => window.history.forward()}
           className="pressable flex h-7 w-7 items-center justify-center rounded-[6px] text-black/45 transition-colors hover:bg-black/5 hover:text-black/75 max-md:h-10 max-md:w-10"
         >
@@ -51,8 +54,14 @@ export function TopBar() {
       <div className="flex items-center gap-2.5">
         <button
           type="button"
-          aria-label={theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'}
-          title={theme === 'dark' ? '浅色模式' : '深色模式'}
+          aria-label={
+            theme === 'dark'
+              ? i18n._(msg`切换到浅色模式`)
+              : i18n._(msg`切换到深色模式`)
+          }
+          title={
+            theme === 'dark' ? i18n._(msg`浅色模式`) : i18n._(msg`深色模式`)
+          }
           onClick={toggleTheme}
           className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/40 transition-colors hover:bg-black/5 hover:text-black/75 max-md:hidden"
         >
@@ -74,8 +83,8 @@ export function TopBar() {
         )}
         <button
           type="button"
-          aria-label="设置"
-          title="设置"
+          aria-label={i18n._(msg`设置`)}
+          title={i18n._(msg`设置`)}
           onClick={() => navigate({ to: '/settings' })}
           className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/40 transition-colors hover:bg-black/5 hover:text-black/75 max-md:h-10 max-md:w-10"
         >

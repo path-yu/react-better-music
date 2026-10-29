@@ -142,7 +142,7 @@ function SonglistsPage() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            aria-label="向左浏览分类"
+            aria-label={i18n._(msg`向左浏览分类`)}
             disabled={!canScrollTagsLeft}
             onClick={() =>
               tagScrollerRef.current?.scrollBy({ left: -260, behavior: 'smooth' })
@@ -183,7 +183,7 @@ function SonglistsPage() {
 
           <button
             type="button"
-            aria-label="向右浏览分类"
+            aria-label={i18n._(msg`向右浏览分类`)}
             disabled={!canScrollTagsRight}
             onClick={() =>
               tagScrollerRef.current?.scrollBy({ left: 260, behavior: 'smooth' })

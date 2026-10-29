@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { ArrowLeft, CalendarDays, Eye, Play } from 'lucide-react'
 import { Avatar, Skeleton } from '@pikoloo/darwin-ui'
@@ -33,6 +35,7 @@ interface AuthorInfo {
 }
 
 function MvDetailPage() {
+  const { i18n } = useLingui()
   const { id } = Route.useParams()
   const navigate = useNavigate()
   const [detail, setDetail] = useState<Mv | null>(null)
@@ -41,7 +44,7 @@ function MvDetailPage() {
   const [author, setAuthor] = useState<AuthorInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [videoLoading, setVideoLoading] = useState(true)
-  useDocumentTitle(detail?.name ?? 'MV')
+  useDocumentTitle(detail?.name ?? i18n._(msg`MV`))
   const resumeMusicRef = useRef(false)
 
   const resumeMusic = () => {
@@ -91,7 +94,7 @@ function MvDetailPage() {
         }
       })
       .catch(() => {
-        if (!cancelled) toast.error('MV 详情加载失败')
+        if (!cancelled) toast.error(i18n._(msg`MV 详情加载失败`))
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -136,7 +139,7 @@ function MvDetailPage() {
   if (!detail) {
     return (
       <div className="px-8 pt-10">
-        <EmptyState title="MV 不存在或无法访问" />
+        <EmptyState title={i18n._(msg`MV 不存在或无法访问`)} />
       </div>
     )
   }
@@ -217,7 +220,11 @@ function MvDetailPage() {
           ) : null}
 
           <div className="mt-8">
-            <CommentSection type={1} resourceId={Number(detail.id)} title="MV 评论" />
+            <CommentSection
+            type={1}
+            resourceId={Number(detail.id)}
+            title={i18n._(msg`MV 评论`)}
+          />
           </div>
         </div>
 

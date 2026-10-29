@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type { MessageDescriptor } from '@lingui/core'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
@@ -20,6 +21,7 @@ import {
   sendCaptcha,
 } from '../../api'
 import { toast } from '../../lib/toast'
+import { apiErrorMessage } from '../../lib/apiErrors'
 import { ApiError, clearApiCache } from '../../lib/http'
 import { saveLoginCookie } from '../../lib/session'
 import { useUserStore } from '../../store/user'
@@ -32,24 +34,28 @@ interface LoginModalProps {
 type LoginMode = 'captcha' | 'qr'
 type QrStatus = 800 | 801 | 802 | 803 | 0
 
-const STATUS_TEXT: Record<number, string> = {
-  800: '二维码已失效',
-  801: '等待扫码',
-  802: '扫码成功，请在手机上确认',
-  803: '授权登录成功',
+const STATUS_TEXT: Record<number, MessageDescriptor> = {
+  800: msg`二维码已失效`,
+  801: msg`等待扫码`,
+  802: msg`扫码成功，请在手机上确认`,
+  803: msg`授权登录成功`,
 }
 
 const PHONE_PATTERN = /^1[3-9]\d{9}$/
 
 function responseMessage(res: { code: number; [key: string]: unknown }) {
-  if (typeof res.message === 'string' && res.message) return res.message
-  if (typeof res.msg === 'string' && res.msg) return res.msg
-  return undefined
+  const message =
+    (typeof res.message === 'string' && res.message) ||
+    (typeof res.msg === 'string' && res.msg) ||
+    ''
+  if (!message) return undefined
+  return apiErrorMessage(new Error(message), '') || undefined
 }
 
 function requestErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof ApiError) return error.message
-  return fallback
+  return error instanceof ApiError
+    ? apiErrorMessage(error, fallback)
+    : fallback
 }
 
 export function LoginModal({ open, onOpenChange }: LoginModalProps) {
@@ -374,7 +380,9 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                 <Trans>使用网易云音乐 App 扫码登录</Trans>
               </span>
             </p>
-            <p className="mt-1 h-4 text-[12px] text-black/35">{STATUS_TEXT[status] ?? ''}</p>
+            <p className="mt-1 h-4 text-[12px] text-black/35">
+              {STATUS_TEXT[status] ? i18n._(STATUS_TEXT[status]) : ''}
+            </p>
 
             <p className="mt-3 max-w-[260px] text-center text-[11px] leading-relaxed text-black/30">
               <Trans>若二维码无法刷新，请确认本地 API 服务已在 3000 端口运行</Trans>

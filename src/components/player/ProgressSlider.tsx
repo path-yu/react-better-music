@@ -1,4 +1,6 @@
 import { useRef, useState } from 'react'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
 import { cn } from '../../lib/format'
 
 interface ProgressSliderProps {
@@ -23,6 +25,7 @@ export function ProgressSlider({
   valueText,
   className,
 }: ProgressSliderProps) {
+  const { i18n } = useLingui()
   const [dragging, setDragging] = useState(false)
   const [preview, setPreview] = useState<number | null>(null)
   const draggingRef = useRef(false)
@@ -62,7 +65,7 @@ export function ProgressSlider({
         max={100}
         step={0.1}
         value={percent}
-        aria-label="播放进度"
+        aria-label={i18n._(msg`播放进度`)}
         aria-valuetext={valueText}
         className="seek-slider__input relative z-10 h-5 w-full cursor-pointer appearance-none bg-transparent opacity-0"
         onPointerDown={(event) => {

@@ -1,5 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { Heart, Pause, Play, Volume2 } from 'lucide-react'
 import { ImageWithFallback } from '../common/ImageWithFallback'
@@ -57,6 +59,7 @@ const SongRow = memo(function SongRow({
   onLike,
   onContextMenu,
 }: SongRowProps) {
+  const { i18n } = useLingui()
   const note = copyrightHint(song)
   return (
     <div
@@ -91,7 +94,9 @@ const SongRow = memo(function SongRow({
         )}
         <button
           type="button"
-          aria-label={active && playing ? '暂停' : '播放'}
+          aria-label={
+            active && playing ? i18n._(msg`暂停`) : i18n._(msg`播放`)
+          }
           onClick={() => onPlay(index)}
           className="pressable absolute inset-0 flex items-center justify-center text-accent opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
         >
@@ -144,7 +149,9 @@ const SongRow = memo(function SongRow({
         </div>
         <button
           type="button"
-          aria-label={liked ? '取消喜欢' : '喜欢'}
+          aria-label={
+            liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)
+          }
           onClick={() => onLike(song.id, liked)}
           className={cn(
             'pressable shrink-0 transition-opacity focus-visible:opacity-100',

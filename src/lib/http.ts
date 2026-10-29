@@ -89,7 +89,10 @@ async function parse<T>(response: Response): Promise<T> {
     const message =
       (payload as { message?: string; msg?: string })?.message ??
       (payload as { msg?: string })?.msg ??
-      `请求失败 (${response.status})`
+      (typeof document !== 'undefined' &&
+      document.documentElement.lang.startsWith('zh')
+        ? `请求失败 (${response.status})`
+        : `Request failed (${response.status})`)
     throw new ApiError(message, response.status, payload)
   }
   return payload as T

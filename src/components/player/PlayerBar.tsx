@@ -871,7 +871,7 @@ export function PlayerBar() {
         usePlayerStore.getState().setPlaying(false)
         if (!trialNotifiedRef.current) {
           trialNotifiedRef.current = true
-          toast.warning('试听结束，登录或开通会员可播放完整版')
+          toast.warning(i18n._(msg`试听结束，登录或开通会员可播放完整版`))
         }
       }
     },
@@ -934,7 +934,11 @@ export function PlayerBar() {
           type="button"
           onClick={() => toggleNowPlaying()}
           className="group pressable relative shrink-0"
-          title={showNowPlaying ? '收起播放页' : '打开播放页'}
+          title={
+            showNowPlaying
+              ? i18n._(msg`收起播放页`)
+              : i18n._(msg`打开播放页`)
+          }
         >
           <ImageWithFallback
             src={currentSong.al.picUrl}
@@ -965,7 +969,11 @@ export function PlayerBar() {
               toggleNowPlaying()
             }
           }}
-          title={showNowPlaying ? '收起播放页' : '打开播放页'}
+          title={
+            showNowPlaying
+              ? i18n._(msg`收起播放页`)
+              : i18n._(msg`打开播放页`)
+          }
         >
           <div className="flex items-center gap-2">
             <span className="min-w-0 truncate text-[12.5px] font-medium text-black/80 hover:text-accent">
@@ -979,14 +987,14 @@ export function PlayerBar() {
             {currentSong.unblocked ? (
               <span
                 className="shrink-0 rounded-[6px] bg-accent/10 px-1 text-[11px] text-accent"
-                title="该歌曲没有官方音源，当前使用匹配到的其他音源"
+                title={i18n._(msg`该歌曲没有官方音源，当前使用匹配到的其他音源`)}
               >
                 <Trans>其他音源</Trans>
               </span>
             ) : null}
             <button
               type="button"
-              aria-label={liked ? '取消喜欢' : '喜欢'}
+              aria-label={liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)}
               onClick={(event) => {
                 event.stopPropagation()
                 void likeSong(currentSong.id, !liked)
@@ -1005,7 +1013,7 @@ export function PlayerBar() {
             {loadingSource ? (
               <>
                 <Loader2 className="h-3 w-3 flex-none animate-spin text-accent" />
-                正在加载音源…
+                <Trans>正在加载音源…</Trans>
               </>
             ) : (
               <ArtistLinks artists={currentSong.ar} />
@@ -1018,8 +1026,12 @@ export function PlayerBar() {
         <div className="flex items-center gap-5 max-md:gap-3">
           <button
             type="button"
-            title={heartMode ? '关闭心动模式' : '心动模式'}
-            aria-label="心动模式"
+            title={
+              heartMode
+                ? i18n._(msg`关闭心动模式`)
+                : i18n._(msg`心动模式`)
+            }
+            aria-label={i18n._(msg`心动模式`)}
             aria-pressed={heartMode}
             disabled={heartLoading}
             onClick={() => void toggleHeartMode()}
@@ -1037,7 +1049,11 @@ export function PlayerBar() {
           <button
             type="button"
             title={
-              mode === 'order' ? '顺序播放' : mode === 'random' ? '随机播放' : '单曲循环'
+              mode === 'order'
+                ? i18n._(msg`顺序播放`)
+                : mode === 'random'
+                  ? i18n._(msg`随机播放`)
+                  : i18n._(msg`单曲循环`)
             }
             onClick={cycleMode}
             className={cn(
@@ -1049,7 +1065,7 @@ export function PlayerBar() {
           </button>
           <button
             type="button"
-            aria-label="上一首"
+            aria-label={i18n._(msg`上一首`)}
             onClick={() => void prev()}
             className="pressable flex h-8 w-8 items-center justify-center text-black/65 hover:text-black max-md:h-10 max-md:w-10"
           >
@@ -1058,10 +1074,20 @@ export function PlayerBar() {
           <button
             type="button"
             aria-label={
-              loadingSource ? '正在加载音源' : buffering ? '正在缓冲' : playing ? '暂停' : '播放'
+              loadingSource
+                ? i18n._(msg`正在加载音源`)
+                : buffering
+                  ? i18n._(msg`正在缓冲`)
+                  : playing
+                    ? i18n._(msg`暂停`)
+                    : i18n._(msg`播放`)
             }
             onClick={() => void togglePlay()}
-            title={playing ? '暂停（空格）' : '播放（空格）'}
+            title={
+              playing
+                ? i18n._(msg`暂停（空格）`)
+                : i18n._(msg`播放（空格）`)
+            }
             className="pressable flex h-9 w-9 items-center justify-center rounded-full bg-accent text-white shadow-[0_2px_8px_rgba(0,102,204,0.35)] hover:bg-accent-hover max-md:h-10 max-md:w-10"
           >
             {busy ? (
@@ -1074,7 +1100,7 @@ export function PlayerBar() {
           </button>
           <button
             type="button"
-            aria-label="下一首"
+            aria-label={i18n._(msg`下一首`)}
             onClick={() => void next()}
             className="pressable flex h-8 w-8 items-center justify-center text-black/65 hover:text-black max-md:h-10 max-md:w-10"
           >
@@ -1084,7 +1110,7 @@ export function PlayerBar() {
             type="button"
             onClick={() => toggleQueue()}
             className="pressable flex h-8 w-8 items-center justify-center text-black/35 transition-colors hover:text-black/70 max-md:hidden"
-            title="播放列表"
+            title={i18n._(msg`播放列表`)}
           >
             <ListMusic className="h-4 w-4" />
           </button>
@@ -1116,8 +1142,8 @@ export function PlayerBar() {
             <PopoverTrigger asChild>
               <button
                 type="button"
-                aria-label="歌词显示方式"
-                title="歌词显示方式"
+                aria-label={i18n._(msg`歌词显示方式`)}
+                title={i18n._(msg`歌词显示方式`)}
                 className={cn(
                   'pressable flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-black/5',
                   lyricDisplayMode !== 'original'
@@ -1166,8 +1192,8 @@ export function PlayerBar() {
         {currentSong.fee !== 0 && !currentSong.unblocked ? (
           <button
             type="button"
-            aria-label="切换其他音源"
-            title="切换其他音源"
+            aria-label={i18n._(msg`切换其他音源`)}
+            title={i18n._(msg`切换其他音源`)}
             onClick={() => void switchToOtherSource()}
             disabled={switchingSource}
             className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/45 transition-colors hover:bg-black/5 hover:text-black/75 disabled:opacity-50 max-md:h-10 max-md:w-10"
@@ -1183,7 +1209,11 @@ export function PlayerBar() {
         {desktopShell ? (
           <button
             type="button"
-            aria-label={lyricsWindowOpen ? '关闭桌面歌词' : '开启桌面歌词'}
+            aria-label={
+              lyricsWindowOpen
+                ? i18n._(msg`关闭桌面歌词`)
+                : i18n._(msg`开启桌面歌词`)
+            }
             aria-pressed={lyricsWindowOpen}
             title={
               lyricsWindowOpen
@@ -1203,9 +1233,17 @@ export function PlayerBar() {
         {desktopShell ? (
           <button
             type="button"
-            aria-label={miniWindowOpen ? '关闭迷你播放器' : '开启迷你播放器'}
+            aria-label={
+              miniWindowOpen
+                ? i18n._(msg`关闭迷你播放器`)
+                : i18n._(msg`开启迷你播放器`)
+            }
             aria-pressed={miniWindowOpen}
-            title={miniWindowOpen ? '关闭迷你播放器' : '开启迷你播放器'}
+            title={
+              miniWindowOpen
+                ? i18n._(msg`关闭迷你播放器`)
+                : i18n._(msg`开启迷你播放器`)
+            }
             onClick={handleToggleMiniPlayer}
             className={cn(
               'pressable flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-black/5',
@@ -1220,8 +1258,8 @@ export function PlayerBar() {
           <PopoverTrigger asChild>
             <button
               type="button"
-              aria-label="播放音质"
-              title="播放音质"
+              aria-label={i18n._(msg`播放音质`)}
+              title={i18n._(msg`播放音质`)}
               className="pressable flex h-7 items-center gap-1 rounded-full px-2 text-[11px] text-black/45 transition-colors hover:bg-black/5 hover:text-black/75"
             >
               <AudioLines className="h-3.5 w-3.5" />
@@ -1265,8 +1303,8 @@ export function PlayerBar() {
             <button
               type="button"
               className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/45 transition-colors hover:bg-black/5 hover:text-black/75 max-md:h-10 max-md:w-10"
-              aria-label="音量"
-              title="音量（Alt + ↑ / ↓）"
+              aria-label={i18n._(msg`音量`)}
+              title={i18n._(msg`音量（Alt + ↑ / ↓）`)}
             >
               {volume === 0 ? (
                 <VolumeX className="h-4 w-4" />
@@ -1295,7 +1333,11 @@ export function PlayerBar() {
           type="button"
           onClick={() => toggleNowPlaying()}
           className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/45 transition-colors hover:bg-black/5 hover:text-black/75 max-md:h-10 max-md:w-10"
-          aria-label={showNowPlaying ? '收起播放页' : '展开播放页'}
+          aria-label={
+            showNowPlaying
+              ? i18n._(msg`收起播放页`)
+              : i18n._(msg`展开播放页`)
+          }
         >
           {showNowPlaying ? (
             <ChevronDown className="h-[16px] w-[16px]" />

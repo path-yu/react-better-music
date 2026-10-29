@@ -76,6 +76,7 @@ export function TitleBar() {
  * Linux get the in-app buttons.
  */
 function DesktopTitleBar({ subtitle }: { subtitle?: string }) {
+  const { i18n } = useLingui()
   const nativeControls = desktopPlatform() === 'macos'
   const [maximized, setMaximized] = useState(false)
 
@@ -141,8 +142,8 @@ function DesktopTitleBar({ subtitle }: { subtitle?: string }) {
         <div className="desktop-titlebar__controls">
           <button
             type="button"
-            aria-label="最小化"
-            title="最小化"
+            aria-label={i18n._(msg`最小化`)}
+            title={i18n._(msg`最小化`)}
             className={`desktop-titlebar__button ${NO_DRAG_CLASS}`}
             onClick={() => void minimizeWindow().catch(() => {})}
           >
@@ -150,8 +151,8 @@ function DesktopTitleBar({ subtitle }: { subtitle?: string }) {
           </button>
           <button
             type="button"
-            aria-label={maximized ? '向下还原' : '最大化'}
-            title={maximized ? '向下还原' : '最大化'}
+            aria-label={maximized ? i18n._(msg`向下还原`) : i18n._(msg`最大化`)}
+            title={maximized ? i18n._(msg`向下还原`) : i18n._(msg`最大化`)}
             className={`desktop-titlebar__button ${NO_DRAG_CLASS}`}
             onClick={handleToggleMaximize}
           >
@@ -163,8 +164,8 @@ function DesktopTitleBar({ subtitle }: { subtitle?: string }) {
           </button>
           <button
             type="button"
-            aria-label="关闭"
-            title="关闭到托盘"
+            aria-label={i18n._(msg`关闭`)}
+            title={i18n._(msg`关闭到托盘`)}
             className={`desktop-titlebar__button desktop-titlebar__button--close ${NO_DRAG_CLASS}`}
             onClick={() => void closeWindow().catch(() => {})}
           >

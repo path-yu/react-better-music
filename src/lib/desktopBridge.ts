@@ -1,3 +1,6 @@
+import { msg } from '@lingui/core/macro'
+import { i18n } from '../i18n'
+
 /**
  * Shared plumbing for the Electrobun main-process bridge.
  *
@@ -58,7 +61,8 @@ export async function bridgeFetch(path: string, init?: RequestInit) {
       signal: controller.signal,
     })
   } catch (error) {
-    if (controller.signal.aborted) throw new Error('桌面服务响应超时', { cause: error })
+    if (controller.signal.aborted)
+      throw new Error(i18n._(msg`桌面服务响应超时`), { cause: error })
     throw error
   } finally {
     window.clearTimeout(timer)
@@ -68,7 +72,9 @@ export async function bridgeFetch(path: string, init?: RequestInit) {
 export async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await bridgeFetch(path, init)
   if (!response.ok) {
-    throw new Error(`桌面服务请求失败 (${response.status})`)
+    throw new Error(
+      i18n._(msg`桌面服务请求失败 (${response.status})`),
+    )
   }
   return (await response.json()) as T
 }

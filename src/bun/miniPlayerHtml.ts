@@ -160,19 +160,25 @@ export const MINI_PLAYER_HTML = `<!doctype html>
       <div class="title" id="title">等待播放</div>
       <div class="artist" id="artist">声屿</div>
       <div class="controls">
-        <button type="button" data-action="previous" title="上一首">⏮</button>
-        <button type="button" class="primary" id="play" data-action="play-pause" title="播放 / 暂停">▶</button>
-        <button type="button" data-action="next" title="下一首">⏭</button>
+        <button type="button" data-action="previous" data-title-zh="上一首" data-title-en="Previous track">⏮</button>
+        <button type="button" class="primary" id="play" data-action="play-pause" data-title-zh="播放 / 暂停" data-title-en="Play / Pause">▶</button>
+        <button type="button" data-action="next" data-title-zh="下一首" data-title-en="Next track">⏭</button>
       </div>
     </div>
-    <button class="close" id="close" type="button" title="关闭迷你播放器">×</button>
-    <div class="seek" id="seek" title="点击跳转进度">
+    <button class="close" id="close" type="button" data-title-zh="关闭迷你播放器" data-title-en="Close mini player">×</button>
+    <div class="seek" id="seek" data-title-zh="点击跳转进度" data-title-en="Seek">
       <div class="track"><span id="progress"></span></div>
     </div>
   </div>
   <script>
     (function () {
-      var token = new URLSearchParams(location.search).get('token') || '';
+      var query = new URLSearchParams(location.search);
+      var lang = (query.get('lang') || navigator.language || 'zh').toLowerCase();
+      var english = lang.indexOf('zh') !== 0;
+      document.querySelectorAll('[data-title-zh]').forEach(function (element) {
+        element.title = english ? element.dataset.titleEn : element.dataset.titleZh;
+      });
+      var token = query.get('token') || '';
       var cover = document.getElementById('cover');
       var title = document.getElementById('title');
       var artist = document.getElementById('artist');

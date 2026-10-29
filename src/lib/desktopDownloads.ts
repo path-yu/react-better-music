@@ -2,6 +2,8 @@
  * Bridge to the Electrobun main process for native download handling.
  * Only available in the packaged desktop app (VITE_DESKTOP=true).
  */
+import { msg } from '@lingui/core/macro'
+import { i18n } from '../i18n'
 import { bridgeFetch, isDesktopApp, requestJson } from './desktopBridge'
 
 export { isDesktopApp }
@@ -28,7 +30,9 @@ export async function saveDownloadFile(name: string, blob: Blob): Promise<string
     body: blob,
   })
   if (!response.ok) {
-    throw new Error(`保存文件失败 (${response.status})`)
+    throw new Error(
+      i18n._(msg`保存文件失败 (${response.status})`),
+    )
   }
   const data = (await response.json()) as { path?: string }
   return data.path ?? ''

@@ -183,9 +183,9 @@ function SettingsPage() {
       await clearAudioCache()
       setItems([])
       setSelected([])
-      toast.success('缓存音乐已清除')
+      toast.success(i18n._(msg`缓存音乐已清除`))
     } catch {
-      toast.error('清除缓存失败')
+      toast.error(i18n._(msg`清除缓存失败`))
     } finally {
       setClearing(false)
     }
@@ -199,14 +199,14 @@ function SettingsPage() {
       toast.success(
         desktop
           ? downloadDir
-            ? `已导出 ${count} 首缓存音乐到 ${downloadDir}`
-            : `已导出 ${count} 首缓存音乐到下载目录`
+            ? i18n._(msg`已导出 ${count} 首缓存音乐到 ${downloadDir}`)
+            : i18n._(msg`已导出 ${count} 首缓存音乐到下载目录`)
           : selected.length > 1
-            ? `已导出 ${count} 首缓存音乐（ZIP 压缩包）`
-            : `已导出 ${count} 首缓存音乐，请查看下载目录`,
+            ? i18n._(msg`已导出 ${count} 首缓存音乐（ZIP 压缩包）`)
+            : i18n._(msg`已导出 ${count} 首缓存音乐，请查看下载目录`),
       )
     } catch {
-      toast.error('导出缓存失败')
+      toast.error(i18n._(msg`导出缓存失败`))
     } finally {
       setDownloading(false)
     }
@@ -218,10 +218,12 @@ function SettingsPage() {
     try {
       await downloadCachedAudio([item.id])
       toast.success(
-        desktop ? `已保存「${item.name}」到下载目录` : `已开始下载「${item.name}」`,
+        desktop
+          ? i18n._(msg`已保存「${item.name}」到下载目录`)
+          : i18n._(msg`已开始下载「${item.name}」`),
       )
     } catch {
-      toast.error('下载失败')
+      toast.error(i18n._(msg`下载失败`))
     } finally {
       setDownloadingId(null)
     }
@@ -234,10 +236,10 @@ function SettingsPage() {
       const dir = await pickDownloadDir()
       if (dir) {
         setDownloadDir(dir)
-        toast.success('下载目录已更新')
+        toast.success(i18n._(msg`下载目录已更新`))
       }
     } catch {
-      toast.error('无法选择下载目录')
+      toast.error(i18n._(msg`无法选择下载目录`))
     } finally {
       setPickingDir(false)
     }
@@ -247,7 +249,7 @@ function SettingsPage() {
     try {
       await openDownloadDir()
     } catch {
-      toast.error('无法打开下载目录')
+      toast.error(i18n._(msg`无法打开下载目录`))
     }
   }
 
@@ -305,8 +307,8 @@ function SettingsPage() {
             </div>
             <button
               type="button"
-              aria-label="刷新缓存信息"
-              title="刷新"
+              aria-label={i18n._(msg`刷新缓存信息`)}
+              title={i18n._(msg`刷新`)}
               onClick={() => void loadCache()}
               className="pressable flex h-7 w-7 flex-none items-center justify-center rounded-full text-black/35 transition-colors hover:bg-black/5 hover:text-black/70 max-md:h-10 max-md:w-10"
             >
@@ -394,7 +396,7 @@ function SettingsPage() {
             <Switch
               checked={autoReplaceVipSource}
               onChange={setAutoReplaceVipSource}
-              aria-label="VIP 歌曲自动替换音源"
+              aria-label={i18n._(msg`VIP 歌曲自动替换音源`)}
             />
           </div>
         </section>
@@ -417,7 +419,7 @@ function SettingsPage() {
               <Switch
                 checked={disableDevTools}
                 onChange={handleToggleDevTools}
-                aria-label="禁用开发者工具"
+                aria-label={i18n._(msg`禁用开发者工具`)}
               />
             </div>
             <p className="mt-4 rounded-[10px] bg-black/4 px-3 py-2 text-[11px] leading-relaxed text-black/40">
@@ -470,7 +472,7 @@ function SettingsPage() {
               <div className="flex items-center gap-3 border-b border-black/6 bg-black/[0.015] px-6 py-2">
                 <input
                   type="checkbox"
-                  aria-label="全选"
+                  aria-label={i18n._(msg`全选`)}
                   checked={allSelected}
                   disabled={!items.length || loading}
                   onChange={toggleAll}
@@ -517,7 +519,7 @@ function SettingsPage() {
                     <button
                       type="button"
                       aria-label={`下载 ${item.name}`}
-                      title="下载到本地"
+                      title={i18n._(msg`下载到本地`)}
                       disabled={downloadingId !== null}
                       onClick={() => void handleDownloadOne(item)}
                       className="pressable flex h-7 w-7 flex-none items-center justify-center rounded-full text-black/35 transition-colors hover:bg-black/5 hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 max-md:h-10 max-md:w-10"

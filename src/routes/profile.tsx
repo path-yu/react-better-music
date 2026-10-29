@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
 import { Camera, Cake, MapPin, Save, UserRound } from 'lucide-react'
 import { Avatar, Button, Input, Select, Textarea } from '@pikoloo/darwin-ui'
 import { EmptyState } from '../components/common/EmptyState'
@@ -62,6 +64,7 @@ function findRegionByProvince(province?: number) {
 }
 
 function ProfilePage() {
+  const { i18n } = useLingui()
   const isLogin = useUserStore((state) => state.isLogin)
   const profile = useUserStore((state) => state.profile)
   const setProfile = useUserStore((state) => state.setProfile)
@@ -81,7 +84,7 @@ function ProfilePage() {
   const [city, setCity] = useState('')
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
-  useDocumentTitle('个人信息')
+  useDocumentTitle(i18n._(msg`个人信息`))
 
   useEffect(() => {
     if (!isLogin) return
@@ -142,7 +145,7 @@ function ProfilePage() {
       <div className="px-8 pt-10">
         <EmptyState
           icon={<UserRound className="h-6 w-6" />}
-          title="登录后编辑个人信息"
+          title={i18n._(msg`登录后编辑个人信息`)}
           description="扫码登录网易云账号即可同步头像与资料"
           action={
             <Button variant="primary" size="sm" className="rounded-full" onClick={openLogin}>
@@ -174,11 +177,11 @@ function ProfilePage() {
     event.target.value = ''
     if (!file) return
     if (!file.type.startsWith('image/')) {
-      toast.warning('请选择图片文件')
+      toast.warning(i18n._(msg`请选择图片文件`))
       return
     }
     if (file.size > MAX_AVATAR_BYTES) {
-      toast.warning('图片不能超过 5MB')
+      toast.warning(i18n._(msg`图片不能超过 5MB`))
       return
     }
     setUploading(true)
@@ -188,12 +191,12 @@ function ProfilePage() {
       if (res.code === 200 && res.data?.url) {
         setAvatarUrl(res.data.url)
         setProfile({ ...hydratedProfile, avatarUrl: res.data.url })
-        toast.success('头像更新成功')
+        toast.success(i18n._(msg`头像更新成功`))
       } else {
-        toast.error('头像上传失败')
+        toast.error(i18n._(msg`头像上传失败`))
       }
     } catch {
-      toast.error('头像上传失败')
+      toast.error(i18n._(msg`头像上传失败`))
     } finally {
       setUploading(false)
     }
@@ -201,7 +204,7 @@ function ProfilePage() {
 
   const handleSave = async () => {
     if (!nickname.trim()) {
-      toast.warning('昵称不能为空')
+      toast.warning(i18n._(msg`昵称不能为空`))
       return
     }
     const region = regions.find((item) => String(item.value) === province)
@@ -232,14 +235,14 @@ function ProfilePage() {
           gender: Number(gender),
           birthday,
         })
-        toast.success('个人资料已更新')
+        toast.success(i18n._(msg`个人资料已更新`))
         const detail = await fetchUserDetail(hydratedProfile.userId)
         if (detail?.profile) setProfile(detail.profile, detail.level)
       } else {
-        toast.error('保存失败')
+        toast.error(i18n._(msg`保存失败`))
       }
     } catch {
-      toast.error('保存失败')
+      toast.error(i18n._(msg`保存失败`))
     } finally {
       setSaving(false)
     }
@@ -261,7 +264,7 @@ function ProfilePage() {
             <Input
               value={nickname}
               onChange={(event) => setNickname(event.target.value)}
-              placeholder="请输入昵称"
+              placeholder={i18n._(msg`请输入昵称`)}
               maxLength={24}
               className="h-9 text-[12.5px]"
             />
@@ -271,7 +274,7 @@ function ProfilePage() {
             <Textarea
               value={signature}
               onChange={(event) => setSignature(event.target.value)}
-              placeholder="介绍一下自己"
+              placeholder={i18n._(msg`介绍一下自己`)}
               maxLength={200}
               resize="none"
               className="min-h-[84px] text-[12.5px]"
@@ -367,7 +370,7 @@ function ProfilePage() {
             )}
             <button
               type="button"
-              aria-label="更换头像"
+              aria-label={i18n._(msg`更换头像`)}
               onClick={handleAvatarPick}
               className="media-chip pressable absolute bottom-1 right-1 flex h-8 w-8 items-center justify-center rounded-full bg-white text-accent shadow-md max-md:h-10 max-md:w-10"
             >

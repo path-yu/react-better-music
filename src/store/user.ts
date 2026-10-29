@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { msg } from '@lingui/core/macro'
 import { persist } from 'zustand/middleware'
 import {
   fetchAccount,
@@ -20,6 +21,7 @@ import {
   refreshLogin,
 } from '../lib/session'
 import { usePlayerStore } from './player'
+import { i18n } from '../i18n'
 import type { Playlist, UserProfile } from '../types'
 
 interface UserState {
@@ -130,7 +132,8 @@ export const useUserStore = create<UserState>()(
           })
           // A rejected cookie already surfaces a toast from refreshLogin;
           // here we only cover the "cookie vanished but profile remained" case.
-          if (wasLoggedIn && !hadLoginCookie) toast.warning('登录状态已失效，请重新登录')
+          if (wasLoggedIn && !hadLoginCookie)
+            toast.warning(i18n._(msg`登录状态已失效，请重新登录`))
         } catch {
           set({
             isLogin: false,
@@ -174,7 +177,8 @@ export const useUserStore = create<UserState>()(
           const { created, collected } = splitPlaylists(uid, playlists)
           set({ createdPlaylists: created, collectedPlaylists: collected })
         } catch {
-          if (get().isLogin) toast.warning('歌单加载失败，请稍后重试')
+          if (get().isLogin)
+            toast.warning(i18n._(msg`歌单加载失败，请稍后重试`))
         }
       },
 
@@ -196,12 +200,12 @@ export const useUserStore = create<UserState>()(
           const res = await signInApi()
           if (res.code === 200) {
             set({ pcSign: true })
-            toast.success('签到成功')
+            toast.success(i18n._(msg`签到成功`))
           } else {
-            toast.warning('今天已经签到过了')
+            toast.warning(i18n._(msg`今天已经签到过了`))
           }
         } catch {
-          toast.error('签到失败')
+          toast.error(i18n._(msg`签到失败`))
         }
       },
 
@@ -224,26 +228,30 @@ export const useUserStore = create<UserState>()(
         })
         localStorage.removeItem('react-music-player')
         localStorage.removeItem('react-music-user')
-        toast.success('已退出登录')
+        toast.success(i18n._(msg`已退出登录`))
       },
 
       async likeSong(id, like) {
         if (!get().isLogin) {
-          toast.warning('请先登录')
+          toast.warning(i18n._(msg`请先登录`))
           return false
         }
         try {
           const res = await likeMusic(id, like)
           if (res.code !== 200) {
-            toast.error('操作失败')
+            toast.error(i18n._(msg`操作失败`))
             return false
           }
           get().updateLiked(id, like)
           usePlayerStore.getState().markSongLike(id, like)
-          toast.success(like ? '已添加到我喜欢的音乐' : '已取消喜欢')
+          toast.success(
+            like
+              ? i18n._(msg`已添加到我喜欢的音乐`)
+              : i18n._(msg`已取消喜欢`),
+          )
           return true
         } catch {
-          toast.error('操作失败')
+          toast.error(i18n._(msg`操作失败`))
           return false
         }
       },
@@ -309,5 +317,5 @@ onLoginExpired(() => {
     createdPlaylists: [],
     collectedPlaylists: [],
   })
-  toast.warning('登录已过期，请重新登录')
+  toast.warning(i18n._(msg`登录已过期，请重新登录`))
 })

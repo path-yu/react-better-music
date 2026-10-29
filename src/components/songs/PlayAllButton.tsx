@@ -42,7 +42,7 @@ export function PlayAllButton({ songs, playlistId, label }: PlayAllButtonProps) 
         size="sm"
         className="pressable rounded-full px-3 text-[12px]"
         onClick={() => addToQueue(songs)}
-        title="添加全部到播放列表"
+        title={i18n._(msg`添加全部到播放列表`)}
       >
         <ListPlus className="h-3.5 w-3.5" />
       </Button>

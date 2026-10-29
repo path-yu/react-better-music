@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
 import { ArrowLeft, ImagePlus, Pencil, Save } from 'lucide-react'
 import { Button, Input, Skeleton, Textarea } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../../components/common/ImageWithFallback'
@@ -24,6 +26,7 @@ export const Route = createFileRoute('/songlists/$id/edit')({
 const MAX_COVER_BYTES = 5 * 1024 * 1024
 
 function EditPlaylistPage() {
+  const { i18n } = useLingui()
   const { id } = Route.useParams()
   const navigate = useNavigate()
   const isLogin = useUserStore((state) => state.isLogin)
@@ -40,7 +43,11 @@ function EditPlaylistPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
-  useDocumentTitle(detail ? `编辑「${detail.name}」` : '编辑歌单')
+  useDocumentTitle(
+    detail
+      ? i18n._(msg`编辑「${detail.name}」`)
+      : i18n._(msg`编辑歌单`),
+  )
 
   useEffect(() => {
     fetchPlaylistTags()
@@ -58,7 +65,7 @@ function EditPlaylistPage() {
         setCover(playlist.coverImgUrl)
       })
       .catch(() => {
-        if (!cancelled) toast.error('歌单加载失败')
+        if (!cancelled) toast.error(i18n._(msg`歌单加载失败`))
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -72,7 +79,7 @@ function EditPlaylistPage() {
     return (
       <div className="px-8 pt-10">
         <EmptyState
-          title="登录后才能编辑歌单"
+          title={i18n._(msg`登录后才能编辑歌单`)}
           action={
             <Button variant="primary" size="sm" className="rounded-full" onClick={openLogin}>
               扫码登录
@@ -98,7 +105,7 @@ function EditPlaylistPage() {
   if (!detail) {
     return (
       <div className="px-8 pt-10">
-        <EmptyState title="无法编辑该歌单" />
+        <EmptyState title={i18n._(msg`无法编辑该歌单`)} />
       </div>
     )
   }
@@ -108,7 +115,7 @@ function EditPlaylistPage() {
   if (!isOwner) {
     return (
       <div className="px-8 pt-10">
-        <EmptyState title="只能编辑自己创建的歌单" />
+        <EmptyState title={i18n._(msg`只能编辑自己创建的歌单`)} />
       </div>
     )
   }
@@ -117,7 +124,7 @@ function EditPlaylistPage() {
     setTags((prev) => {
       if (prev.includes(tag)) return prev.filter((item) => item !== tag)
       if (prev.length >= 3) {
-        toast.warning('最多可选三个标签')
+        toast.warning(i18n._(msg`最多可选三个标签`))
         return prev
       }
       return [...prev, tag]
@@ -131,11 +138,11 @@ function EditPlaylistPage() {
     event.target.value = ''
     if (!file) return
     if (!file.type.startsWith('image/')) {
-      toast.warning('请选择图片文件')
+      toast.warning(i18n._(msg`请选择图片文件`))
       return
     }
     if (file.size > MAX_COVER_BYTES) {
-      toast.warning('图片不能超过 5MB')
+      toast.warning(i18n._(msg`图片不能超过 5MB`))
       return
     }
     setUploading(true)
@@ -144,12 +151,12 @@ function EditPlaylistPage() {
       const res = await updatePlaylistCover(file, size.width, id)
       if (res.code === 200 && res.data?.url) {
         setCover(res.data.url)
-        toast.success('封面更新成功')
+        toast.success(i18n._(msg`封面更新成功`))
       } else {
-        toast.error('封面上传失败')
+        toast.error(i18n._(msg`封面上传失败`))
       }
     } catch {
-      toast.error('封面上传失败')
+      toast.error(i18n._(msg`封面上传失败`))
     } finally {
       setUploading(false)
     }
@@ -157,7 +164,7 @@ function EditPlaylistPage() {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      toast.warning('歌单名不能为空')
+      toast.warning(i18n._(msg`歌单名不能为空`))
       return
     }
     setSaving(true)
@@ -169,13 +176,13 @@ function EditPlaylistPage() {
         desc,
       })
       if (res.code === 200) {
-        toast.success('歌单信息已保存')
+        toast.success(i18n._(msg`歌单信息已保存`))
         void navigate({ to: '/songlists/$id', params: { id } })
       } else {
-        toast.error('保存失败')
+        toast.error(i18n._(msg`保存失败`))
       }
     } catch {
-      toast.error('保存失败')
+      toast.error(i18n._(msg`保存失败`))
     } finally {
       setSaving(false)
     }
@@ -207,7 +214,7 @@ function EditPlaylistPage() {
             <Input
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder="请输入歌单名"
+              placeholder={i18n._(msg`请输入歌单名`)}
               maxLength={40}
               className="h-9 text-[12.5px]"
             />
@@ -255,7 +262,7 @@ function EditPlaylistPage() {
             <Textarea
               value={desc}
               onChange={(event) => setDesc(event.target.value)}
-              placeholder="介绍一下这个歌单"
+              placeholder={i18n._(msg`介绍一下这个歌单`)}
               maxLength={1000}
               resize="none"
               className="min-h-[120px] text-[12.5px]"

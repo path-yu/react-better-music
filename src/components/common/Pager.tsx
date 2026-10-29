@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
 import {
   ChevronLeft,
   ChevronRight,
@@ -16,6 +18,7 @@ interface PagerProps {
 }
 
 export function Pager({ page, pageCount, onChange, className }: PagerProps) {
+  const { i18n } = useLingui()
   const [draft, setDraft] = useState(String(page))
 
   useEffect(() => {
@@ -45,7 +48,7 @@ export function Pager({ page, pageCount, onChange, className }: PagerProps) {
       <Button
         variant="ghost"
         size="sm"
-        aria-label="第一页"
+        aria-label={i18n._(msg`第一页`)}
         className="h-7 rounded-full px-1.5 text-[11px]"
         disabled={page <= 1}
         onClick={() => onChange(1)}
@@ -55,7 +58,7 @@ export function Pager({ page, pageCount, onChange, className }: PagerProps) {
       <Button
         variant="ghost"
         size="sm"
-        aria-label="上一页"
+        aria-label={i18n._(msg`上一页`)}
         className="h-7 rounded-full px-2 text-[11px]"
         disabled={page <= 1}
         onClick={() => onChange(page - 1)}
@@ -82,7 +85,7 @@ export function Pager({ page, pageCount, onChange, className }: PagerProps) {
       <Button
         variant="ghost"
         size="sm"
-        aria-label="下一页"
+        aria-label={i18n._(msg`下一页`)}
         className="h-7 rounded-full px-2 text-[11px]"
         disabled={page >= pageCount}
         onClick={() => onChange(page + 1)}
@@ -92,7 +95,7 @@ export function Pager({ page, pageCount, onChange, className }: PagerProps) {
       <Button
         variant="ghost"
         size="sm"
-        aria-label="最后一页"
+        aria-label={i18n._(msg`最后一页`)}
         className="h-7 rounded-full px-1.5 text-[11px]"
         disabled={page >= pageCount}
         onClick={() => onChange(pageCount)}
@@ -105,7 +108,7 @@ export function Pager({ page, pageCount, onChange, className }: PagerProps) {
           type="text"
           inputMode="numeric"
           value={draft}
-          aria-label="跳转页码"
+          aria-label={i18n._(msg`跳转页码`)}
           onChange={(event) => setDraft(event.target.value)}
           onBlur={commit}
           onKeyDown={(event) => {

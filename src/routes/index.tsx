@@ -145,12 +145,14 @@ function DiscoveryPage() {
         {bannerLoading ? (
           <Skeleton className="h-[280px] w-full rounded-[22px]" />
         ) : bannerFailed ? (
-          <SectionError title="轮播加载失败" onRetry={retryBanners} />
+          <SectionError title={i18n._(msg`轮播加载失败`)} onRetry={retryBanners} />
         ) : currentBanner ? (
           <div
             role="button"
             tabIndex={0}
-            aria-label={currentBanner.typeTitle ?? '推荐轮播'}
+            aria-label={
+              currentBanner.typeTitle ?? i18n._(msg`推荐轮播`)
+            }
             onClick={() => handleBannerClick(currentBanner)}
             onKeyDown={(event) => event.key === 'Enter' && handleBannerClick(currentBanner)}
             className="group relative block h-[clamp(190px,24vw,300px)] w-full cursor-pointer overflow-hidden rounded-[22px] bg-[#f0f0f2]"
@@ -171,14 +173,14 @@ function DiscoveryPage() {
             ) : null}
           </div>
         ) : (
-          <EmptyState title="暂无轮播内容" />
+          <EmptyState title={i18n._(msg`暂无轮播内容`)} />
         )}
 
         {banners.length > 1 && (
           <>
             <button
               type="button"
-              aria-label="上一张"
+              aria-label={i18n._(msg`上一张`)}
               onClick={() => step(-1)}
               className={cn(
                 'absolute left-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-black/60 shadow-md backdrop-blur-md transition-all hover:bg-white hover:text-black max-md:h-10 max-md:w-10',
@@ -189,7 +191,7 @@ function DiscoveryPage() {
             </button>
             <button
               type="button"
-              aria-label="下一张"
+              aria-label={i18n._(msg`下一张`)}
               onClick={() => step(1)}
               className={cn(
                 'absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-black/60 shadow-md backdrop-blur-md transition-all hover:bg-white hover:text-black max-md:h-10 max-md:w-10',
@@ -236,7 +238,7 @@ function DiscoveryPage() {
             ))}
           </div>
         ) : playlistFailed ? (
-          <SectionError title="推荐歌单加载失败" onRetry={retryPlaylists} />
+          <SectionError title={i18n._(msg`推荐歌单加载失败`)} onRetry={retryPlaylists} />
         ) : playlists.length ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {playlists.map((playlist, index) => (
@@ -248,7 +250,7 @@ function DiscoveryPage() {
             ))}
           </div>
         ) : (
-          <EmptyState title="暂无推荐歌单" />
+          <EmptyState title={i18n._(msg`暂无推荐歌单`)} />
         )}
         <div className="mt-4 flex justify-end">
           <Button
@@ -281,7 +283,7 @@ function DiscoveryPage() {
             ))}
           </div>
         ) : songFailed ? (
-          <SectionError title="每日推荐加载失败" onRetry={retrySongs} />
+          <SectionError title={i18n._(msg`每日推荐加载失败`)} onRetry={retrySongs} />
         ) : (
           <DailySongGrid songs={songs} />
         )}
@@ -302,7 +304,7 @@ function DiscoveryPage() {
             ))}
           </div>
         ) : mvFailed ? (
-          <SectionError title="MV 推荐加载失败" onRetry={retryMvs} />
+          <SectionError title={i18n._(msg`MV 推荐加载失败`)} onRetry={retryMvs} />
         ) : mvs.length ? (
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             {/* The MV section sits below the first screen; keep these lazy so
@@ -312,7 +314,7 @@ function DiscoveryPage() {
             ))}
           </div>
         ) : (
-          <EmptyState title="暂无 MV 推荐" />
+          <EmptyState title={i18n._(msg`暂无 MV 推荐`)} />
         )}
         <div className="mt-4 flex justify-end">
           <Button
@@ -353,12 +355,14 @@ function SectionTitle({
 }
 
 function DailySongGrid({ songs }: { songs: Song[] }) {
+  const { i18n } = useLingui()
   const initQueue = usePlayerStore((state) => state.initQueue)
   const currentSong = usePlayerStore((state) => state.queue[state.currentIndex])
   const playing = usePlayerStore((state) => state.playing)
   const listId = useMemo(() => `daily-${new Date().toDateString()}`, [])
 
-  if (!songs.length) return <EmptyState title="暂无推荐歌曲" />
+  if (!songs.length)
+    return <EmptyState title={i18n._(msg`暂无推荐歌曲`)} />
 
   return (
     <div className="grid gap-1.5 md:grid-cols-2">
