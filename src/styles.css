@@ -130,6 +130,36 @@ select {
   font-family: inherit;
 }
 
+/*
+ * Optical stroke scale: derive Lucide's stroke from its rendered size so a
+ * 12px glyph is not as heavy as a 24px one. The CSS property intentionally
+ * wins over Lucide's presentation attribute; explicit brand marks opt out.
+ */
+svg.lucide.h-3 {
+  stroke-width: 1.5;
+}
+svg.lucide.h-3\.5 {
+  stroke-width: 1.6;
+}
+svg.lucide.h-4 {
+  stroke-width: 1.75;
+}
+svg.lucide.h-5 {
+  stroke-width: 1.9;
+}
+svg.lucide.h-6 {
+  stroke-width: 2;
+}
+svg.lucide.brand-mark {
+  stroke-width: 1.9;
+}
+/* Search fields render the icon with w-full/h-full; size it from the token. */
+svg.lucide-search {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.6;
+}
+
 /* WebKit paints its own "clear" button for `type="search"`; it sat next to the
    app's clear button in the search box, so hide the native one. */
 input[type='search']::-webkit-search-cancel-button,

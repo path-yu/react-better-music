@@ -1,4 +1,4 @@
-import { writeFileSync } from 'node:fs'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { chromium } from 'playwright-core'
 
@@ -74,8 +74,54 @@ function makeSvg({ margin, shadow }) {
 const appSvg = makeSvg({ margin: 100, shadow: true })
 const traySvg = makeSvg({ margin: 8, shadow: false })
 
+/**
+ * macOS menu-bar template image: black glyph + alpha only. AppKit tints it
+ * automatically for light/dark menu bars, so no background or colour is baked
+ * into the asset. The mark is simplified because it renders at 16–18pt.
+ */
+const templateSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <g fill="#000">
+    <ellipse cx="10" cy="24" rx="4.2" ry="3.3" transform="rotate(-20 10 24)"/>
+    <ellipse cx="23" cy="21" rx="4.2" ry="3.3" transform="rotate(-20 23 21)"/>
+    <rect x="13" y="9" width="1.6" height="14" rx="0.8"/>
+    <rect x="26" y="6" width="1.6" height="14" rx="0.8"/>
+    <path d="M13 9 L27.6 6 L27.6 10 L13 13 Z"/>
+  </g>
+</svg>`
+
 writeFileSync(join(root, 'public/icon.svg'), appSvg, 'utf8')
 writeFileSync(join(root, 'assets/icon.svg'), appSvg, 'utf8')
+
+// Icon Composer-compatible source layers for macOS 26: the squircle background
+// and the note are kept separate so each can be extruded/glass-tinted in the
+// macOS-only Icon Composer tool.
+const noteGroup = appSvg.match(/  <g fill="url\(#note\)"[\s\S]*?  <\/g>/)?.[0]
+if (noteGroup) {
+  const layersDir = join(root, 'assets/app-icon-layers')
+  mkdirSync(layersDir, { recursive: true })
+  writeFileSync(
+    join(layersDir, 'background.svg'),
+    appSvg.replace(noteGroup, ''),
+    'utf8',
+  )
+  writeFileSync(
+    join(layersDir, 'note.svg'),
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}">
+  <defs>
+    <linearGradient id="note" x1="0" y1="0" x2="0.25" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#FFF0F6"/>
+    </linearGradient>
+    <filter id="note-shadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#3A0B2E" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+${noteGroup}
+</svg>
+`,
+    'utf8',
+  )
+}
 
 const executablePath =
   process.env.CHROME_PATH ||
@@ -106,10 +152,14 @@ const trayPng = {}
 for (const size of [16, 24, 32, 48, 256]) {
   trayPng[size] = await pngAt(traySvg, size)
 }
+const templatePng16 = await pngAt(templateSvg, 16)
+const templatePng32 = await pngAt(templateSvg, 32)
 await browser.close()
 
 writeFileSync(join(root, 'assets/app-icon.png'), appPng[1024])
 writeFileSync(join(root, 'assets/tray-icon.png'), trayPng[32])
+writeFileSync(join(root, 'assets/tray-icon-template.png'), templatePng16)
+writeFileSync(join(root, 'assets/tray-icon-template@2x.png'), templatePng32)
 
 /** PNG-compressed ICO: supported by Windows Vista and later. */
 function buildIco(png, sizes) {
@@ -170,5 +220,5 @@ writeFileSync(
 )
 
 console.log(
-  'generated app-icon.png / app-icon.ico / app-icon.icns / tray-icon.png / favicon.ico',
+  'generated app-icon.png / app-icon.ico / app-icon.icns / tray icons / template tray / favicon',
 )

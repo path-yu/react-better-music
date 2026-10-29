@@ -213,6 +213,12 @@ Resources/
 
 安装包约 **35 MB**，自带 Bun 运行时，不要求目标机器安装 Node.js。
 
+### macOS 图标资源
+
+- `assets/tray-icon-template.png`（含 `@2x`）是单色 template image，菜单栏图标由 AppKit 自动适配浅色 / 深色外观。
+- `assets/app-icon-layers/` 将 squircle 背景与音符拆成独立图层，供 macOS 26 Icon Composer 使用；最终 `.icon` 包需要在 macOS 上用 Icon Composer 组装。
+- `pnpm icons:generate` 会从同一份 1024px 源重新生成 PNG、ICO、ICNS、托盘图标和 favicon。
+
 应用数据目录：
 
 ```text

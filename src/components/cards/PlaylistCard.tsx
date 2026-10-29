@@ -35,7 +35,7 @@ export function PlaylistCard({ playlist, priority }: PlaylistCardProps) {
           imageClassName="transition-transform duration-500 group-hover:scale-[1.04]"
         />
         <div className="absolute right-1.5 top-1.5 flex items-center gap-1 rounded-full bg-black/35 px-1.5 py-0.5 text-[11px] text-white backdrop-blur-sm">
-          <Play className="h-2.5 w-2.5 fill-current" />
+          <Play className="h-3 w-3 fill-current" />
           {formatNumber(playlist.playCount)}
         </div>
         <span className="media-chip absolute bottom-2 right-2 flex h-8 w-8 translate-y-1 items-center justify-center rounded-full bg-white/90 text-accent opacity-0 shadow-md transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">

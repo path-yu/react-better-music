@@ -25,6 +25,8 @@ export default {
       'assets/app-icon.ico': 'app-icon.ico',
       'assets/app-icon.icns': 'app-icon.icns',
       'assets/tray-icon.png': 'tray-icon.png',
+      'assets/tray-icon-template.png': 'tray-icon-template.png',
+      'assets/tray-icon-template@2x.png': 'tray-icon-template@2x.png',
       'assets/tray.ps1': 'tray.ps1',
       'assets/hide-taskbar.ps1': 'hide-taskbar.ps1',
     },

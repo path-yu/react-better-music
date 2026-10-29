@@ -213,6 +213,12 @@ Resources/
 
 The installer is about **35 MB**, bundles the Bun runtime, and does not require Node.js on the target machine.
 
+### macOS icon assets
+
+- `assets/tray-icon-template.png` (+ `@2x`) is a monochrome template image so AppKit can tint the menu-bar icon for light/dark appearances.
+- `assets/app-icon-layers/` splits the squircle background and the note into separate layers for macOS 26 Icon Composer. The final `.icon` bundle must be assembled with Apple's Icon Composer on macOS.
+- `pnpm icons:generate` regenerates PNG, ICO, ICNS, tray and favicon assets from the same 1024px source.
+
 Application data directory:
 
 ```text

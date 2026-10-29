@@ -334,15 +334,18 @@ if (process.platform === 'win32') {
     }, 1200)
   }
 } else {
+  const isMac = process.platform === 'darwin'
   const trayImage = [
-    join(import.meta.dir, '..', 'tray-icon.png'),
+    join(import.meta.dir, '..', isMac ? 'tray-icon-template.png' : 'tray-icon.png'),
     join(import.meta.dir, '..', 'app-icon.ico'),
   ].find((candidate) => existsSync(candidate))
 
   const tray = new Tray({
     title: '声屿',
     image: trayImage ?? '',
-    template: false,
+    // macOS menu-bar symbols are template images: AppKit supplies the light /
+    // dark tint. Windows and Linux keep the coloured icon.
+    template: isMac,
     width: 16,
     height: 16,
   })

@@ -55,7 +55,7 @@ export function TitleBar() {
         <span className="traffic-dot green" />
       </div>
       <div className="titlebar-title flex items-center gap-1.5">
-        <Music2 className="h-3.5 w-3.5 text-accent" strokeWidth={1.9} />
+        <Music2 className="brand-mark h-3.5 w-3.5 text-accent" strokeWidth={1.9} />
         声屿
         {subtitle ? (
           <span className="titlebar-subtitle font-normal">— {subtitle}</span>
@@ -129,7 +129,7 @@ function DesktopTitleBar({ subtitle }: { subtitle?: string }) {
       onDoubleClick={nativeControls ? undefined : handleBarDoubleClick}
     >
       <div className="titlebar-title flex items-center gap-1.5">
-        <Music2 className="h-3.5 w-3.5 text-accent" strokeWidth={1.9} />
+        <Music2 className="brand-mark h-3.5 w-3.5 text-accent" strokeWidth={1.9} />
         声屿
         {subtitle ? (
           <span className="titlebar-subtitle font-normal">— {subtitle}</span>

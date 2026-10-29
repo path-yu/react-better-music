@@ -32,7 +32,7 @@ export function MvCard({ mv, className, priority }: MvCardProps) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent opacity-70" />
         <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-black/30 px-1.5 py-0.5 text-[11px] text-white backdrop-blur-sm">
-          <Play className="h-2.5 w-2.5 fill-current" />
+          <Play className="h-3 w-3 fill-current" />
           {formatNumber(mv.playCount)}
         </div>
         {mv.duration ? (
