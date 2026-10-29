@@ -6,6 +6,7 @@ import '@videojs/react/video/skin.css'
 interface MvVideoPlayerProps {
   src: string
   poster?: string
+  autoPlay?: boolean
   onPlay?: () => void
   onEnded?: () => void
 }
@@ -32,7 +33,13 @@ const skinStyle = {
   '--media-object-fit': 'contain',
 } as CSSProperties
 
-export function MvVideoPlayer({ src, poster, onPlay, onEnded }: MvVideoPlayerProps) {
+export function MvVideoPlayer({
+  src,
+  poster,
+  autoPlay = false,
+  onPlay,
+  onEnded,
+}: MvVideoPlayerProps) {
   return (
     <VideoPlayer>
       <I18nProvider locale="zh-CN">
@@ -40,6 +47,7 @@ export function MvVideoPlayer({ src, poster, onPlay, onEnded }: MvVideoPlayerPro
           <Video
             src={src}
             poster={poster}
+            autoPlay={autoPlay}
             playsInline
             preload="metadata"
             onPlay={onPlay}

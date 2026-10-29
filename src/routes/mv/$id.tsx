@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { Trans } from '@lingui/react/macro'
 import { ArrowLeft, CalendarDays, Eye, Play } from 'lucide-react'
 import { Avatar, Skeleton } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../../components/common/ImageWithFallback'
@@ -144,11 +145,21 @@ function MvDetailPage() {
     <div className="px-8 pb-16 pt-5">
       <button
         type="button"
-        onClick={() => void navigate({ to: '/latest-mv' })}
+        onClick={() => {
+          // Return to wherever the user came from (search MV tab, latest MV,
+          // artist page, etc.), not always the latest-MV listing.
+          if (window.history.length > 1) {
+            window.history.back()
+          } else {
+            // Direct link / no in-app history: fall back to Discover rather
+            // than implying the MV always came from the latest-MV listing.
+            void navigate({ to: '/' })
+          }
+        }}
         className="pressable flex items-center gap-1.5 rounded-full px-2 py-1 text-[11.5px] text-black/40 transition-colors hover:bg-black/5 hover:text-black/70"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
-        返回最新 MV
+        <Trans>返回</Trans>
       </button>
 
       <div className="mt-4 flex flex-col gap-7 lg:flex-row">

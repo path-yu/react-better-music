@@ -677,7 +677,7 @@ msgstr "Local API · NetEase Cloud Music"
 msgid "极高"
 msgstr "Ultra"
 
-#: src/components/player/NowPlaying.tsx:303
+#: src/components/player/NowPlaying.tsx:318
 msgid "查看专辑"
 msgstr "View album"
 
@@ -783,7 +783,7 @@ msgstr "Artist bio"
 msgid "歌曲列表"
 msgstr "Tracks"
 
-#: src/components/player/NowPlaying.tsx:330
+#: src/components/player/NowPlaying.tsx:345
 msgid "歌词"
 msgstr "Lyrics"
 
@@ -791,11 +791,11 @@ msgstr "Lyrics"
 msgid "歌词显示"
 msgstr "Lyrics display"
 
-#: src/components/player/NowPlaying.tsx:353
+#: src/components/player/NowPlaying.tsx:368
 msgid "正在加载歌词…"
 msgstr "Loading lyrics…"
 
-#: src/components/player/NowPlaying.tsx:270
+#: src/components/player/NowPlaying.tsx:285
 msgid "正在加载音源…"
 msgstr "Loading source…"
 
@@ -805,7 +805,7 @@ msgstr "Loading source…"
 msgid "正在播放"
 msgstr "Now playing"
 
-#: src/components/player/NowPlaying.tsx:270
+#: src/components/player/NowPlaying.tsx:285
 msgid "正在缓冲…"
 msgstr "Buffering…"
 
@@ -1039,7 +1039,7 @@ msgstr "Settings"
 
 #: src/components/comments/CommentSection.tsx:36
 #: src/components/comments/CommentSection.tsx:356
-#: src/components/player/NowPlaying.tsx:340
+#: src/components/player/NowPlaying.tsx:355
 #: src/routes/songlists/$id.tsx:351
 msgid "评论"
 msgstr "Comments"
@@ -1110,6 +1110,10 @@ msgstr "Higher · 96kbps"
 #: src/lib/tagLabels.ts:20
 msgid "运动"
 msgstr "Workout"
+
+#: src/routes/mv/$id.tsx:162
+msgid "返回"
+msgstr "Back"
 
 #: src/routes/albums/$id.tsx:104
 msgid "返回上一页"

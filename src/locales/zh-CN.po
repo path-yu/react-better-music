@@ -677,7 +677,7 @@ msgstr "本地接口 · 网易云音乐"
 msgid "极高"
 msgstr "极高"
 
-#: src/components/player/NowPlaying.tsx:303
+#: src/components/player/NowPlaying.tsx:318
 msgid "查看专辑"
 msgstr "查看专辑"
 
@@ -783,7 +783,7 @@ msgstr "歌手简介"
 msgid "歌曲列表"
 msgstr "歌曲列表"
 
-#: src/components/player/NowPlaying.tsx:330
+#: src/components/player/NowPlaying.tsx:345
 msgid "歌词"
 msgstr "歌词"
 
@@ -791,11 +791,11 @@ msgstr "歌词"
 msgid "歌词显示"
 msgstr "歌词显示"
 
-#: src/components/player/NowPlaying.tsx:353
+#: src/components/player/NowPlaying.tsx:368
 msgid "正在加载歌词…"
 msgstr "正在加载歌词…"
 
-#: src/components/player/NowPlaying.tsx:270
+#: src/components/player/NowPlaying.tsx:285
 msgid "正在加载音源…"
 msgstr "正在加载音源…"
 
@@ -805,7 +805,7 @@ msgstr "正在加载音源…"
 msgid "正在播放"
 msgstr "正在播放"
 
-#: src/components/player/NowPlaying.tsx:270
+#: src/components/player/NowPlaying.tsx:285
 msgid "正在缓冲…"
 msgstr "正在缓冲…"
 
@@ -1039,7 +1039,7 @@ msgstr "设置"
 
 #: src/components/comments/CommentSection.tsx:36
 #: src/components/comments/CommentSection.tsx:356
-#: src/components/player/NowPlaying.tsx:340
+#: src/components/player/NowPlaying.tsx:355
 #: src/routes/songlists/$id.tsx:351
 msgid "评论"
 msgstr "评论"
@@ -1110,6 +1110,10 @@ msgstr "较高 · 96kbps"
 #: src/lib/tagLabels.ts:20
 msgid "运动"
 msgstr "运动"
+
+#: src/routes/mv/$id.tsx:162
+msgid "返回"
+msgstr "返回"
 
 #: src/routes/albums/$id.tsx:104
 msgid "返回上一页"

@@ -346,7 +346,18 @@ export async function fetchVideoUrl(id: number | string, signal?: AbortSignal) {
     urls?: Array<{ url?: string }>
     data?: { url?: string }
   }>('/video/url', { id }, signal)
-  return secureMediaUrl(res.urls?.[0]?.url ?? res.data?.url) ?? ''
+  const direct = secureMediaUrl(res.urls?.[0]?.url ?? res.data?.url)
+  if (direct) return direct
+
+  // The cloud-search video list also contains MV ids (type 0). For those,
+  // `/video/url` returns `{ urls: [] }`; the same id resolves through
+  // `/mv/url`. Without this fallback the detail page shows “暂无视频播放地址”.
+  try {
+    const mv = await get<{ data?: { url?: string } }>('/mv/url', { id }, signal)
+    return secureMediaUrl(mv.data?.url) ?? ''
+  } catch {
+    return ''
+  }
 }
 
 /** Mlog clips are served by `/mlog/url`, not `/video/url`. */

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, Loader2, Play, RotateCcw } from 'lucide-react'
 import { fetchMlogUrl, fetchVideoUrl } from '../../api'
+import { CommentSection } from '../../components/comments/CommentSection'
+import { MvVideoPlayer } from '../../components/mv/MvVideoPlayer'
 import { formatDuration } from '../../lib/format'
 import { resizedImageUrl } from '../../lib/image'
 import { useDocumentTitle } from '../../lib/title'
@@ -31,7 +33,6 @@ function VideoPage() {
   const [loading, setLoading] = useState(true)
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
-  const [size, setSize] = useState<{ width: number; height: number } | null>(null)
   const resumeMusicRef = useRef(false)
   useDocumentTitle(title || (kind === 'mlog' ? 'Mlog' : '视频'))
 
@@ -40,7 +41,6 @@ function VideoPage() {
     setLoading(true)
     setFailed(false)
     setUrl('')
-    setSize(null)
     const request =
       kind === 'mlog' ? fetchMlogUrl(id, controller.signal) : fetchVideoUrl(id, controller.signal)
     request
@@ -88,20 +88,7 @@ function VideoPage() {
     void navigate({ to: '/' })
   }
 
-  const portrait = Boolean(size && size.height > size.width)
-  const frameStyle = !size
-    ? { width: '100%', aspectRatio: '16 / 9' }
-    : portrait
-      ? {
-          height: 'min(70vh, 760px)',
-          maxWidth: '100%',
-          aspectRatio: `${size.width} / ${size.height}`,
-        }
-      : {
-          width: '100%',
-          maxHeight: '70vh',
-          aspectRatio: `${size.width} / ${size.height}`,
-        }
+
 
   return (
     <div className="px-8 pb-16 pt-5">
@@ -122,26 +109,14 @@ function VideoPage() {
               <span className="text-[12px]">正在获取视频…</span>
             </div>
           ) : url ? (
-            <div
-              style={frameStyle}
-              className="relative overflow-hidden rounded-[14px] bg-black"
-            >
-              <video
+            <div className="w-full overflow-hidden rounded-[16px] bg-black">
+              <MvVideoPlayer
                 key={url}
                 src={url}
                 poster={resizedImageUrl(cover, '640y360') ?? undefined}
-                controls
                 autoPlay
-                playsInline
-                onLoadedMetadata={(event) => {
-                  const video = event.currentTarget
-                  if (video.videoWidth > 0 && video.videoHeight > 0) {
-                    setSize({ width: video.videoWidth, height: video.videoHeight })
-                  }
-                }}
                 onPlay={handlePlay}
                 onEnded={handleEnded}
-                className="h-full w-full bg-black object-contain"
               />
             </div>
           ) : (
@@ -167,6 +142,10 @@ function VideoPage() {
             {artist || '网易云音乐'}
             {duration ? ` · ${formatDuration(duration)}` : ''}
           </p>
+        </div>
+
+        <div>
+          <CommentSection type={1} resourceId={Number(id)} title="视频评论" />
         </div>
       </div>
     </div>
