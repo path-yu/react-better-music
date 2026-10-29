@@ -30,6 +30,13 @@ const LOGIN_REFRESH_INTERVAL = 6 * 60 * 60 * 1000
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
+  // Playback/user detail pages are destinations, not list positions. They must
+  // start at the top and must not write a scroll entry that would be restored
+  // when the same page is opened again.
+  const resetScrollOnEnter =
+    pathname.startsWith('/mv/') ||
+    pathname.startsWith('/video/') ||
+    pathname.startsWith('/users/')
   const contentRef = useRef<HTMLElement>(null)
   const loginOpen = useUiStore((state) => state.loginOpen)
   const closeLogin = useUiStore((state) => state.closeLogin)
@@ -172,13 +179,24 @@ export function AppShell({ children }: { children: ReactNode }) {
     const element = contentRef.current
     if (!element) return
     const key = `scroll:${pathname}`
+
+    if (resetScrollOnEnter) {
+      sessionStorage.removeItem(key)
+      const previous = element.style.scrollBehavior
+      element.style.scrollBehavior = 'auto'
+      element.scrollTop = 0
+      element.style.scrollBehavior = previous
+      return
+    }
+
     const saved = Number(sessionStorage.getItem(key) ?? 0)
 
-    // `.apple-content` uses smooth scrolling; restoring must be instant or
-    // reading scrollTop right after the assignment returns a stale value.
+    // `.apple-content` has smooth scrolling in CSS. Restoring must be instant:
+    // a smooth assignment can keep animating after a new playback page has
+    // already reset the container, leaving the old offset in place.
     const setScroll = (top: number) => {
       const previous = element.style.scrollBehavior
-      element.style.scrollBehavior = "smooth"
+      element.style.scrollBehavior = 'auto'
       element.scrollTop = top
       element.style.scrollBehavior = previous
     }
@@ -213,18 +231,21 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
 
     return stop
-  }, [pathname])
+  }, [pathname, resetScrollOnEnter])
 
   useEffect(() => {
     const element = contentRef.current
     if (!element) return
+    // Do not persist a playback page's scroll; the route above always resets
+    // to the top when it is entered.
+    if (resetScrollOnEnter) return
     const key = `scroll:${pathname}`
     const handleScroll = () => {
       sessionStorage.setItem(key, String(element.scrollTop))
     }
     element.addEventListener('scroll', handleScroll, { passive: true })
     return () => element.removeEventListener('scroll', handleScroll)
-  }, [pathname])
+  }, [pathname, resetScrollOnEnter])
 
   return (
     <div className="app-shell">

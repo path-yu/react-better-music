@@ -42,7 +42,11 @@ const router = createRouter({
   // 404 on reload; hash history keeps deep links working.
   history: desktop ? createHashHistory() : undefined,
   defaultPreload: 'intent',
-  scrollRestoration: true,
+  // AppShell owns the `.apple-content` scroll container (it persists list
+  // positions and force-resets playback pages). Router-wide restoration would
+  // write a cached offset back after AppShell resets, producing the "MV opens
+  // at the previous list position" bug.
+  scrollRestoration: false,
 })
 
 declare module '@tanstack/react-router' {
