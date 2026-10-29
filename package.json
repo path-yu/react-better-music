@@ -22,9 +22,12 @@
     "desktop:installer": "node scripts/installer/build.mjs",
     "desktop:release": "pnpm desktop:build && pnpm desktop:installer",
     "generate-routes": "tsr generate",
+    "icons:generate": "node scripts/generate-app-icons.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource-variable/inter": "^5.3.0",
+    "@fontsource-variable/noto-sans-sc": "^5.3.1",
     "@lingui/core": "6.10.1",
     "@lingui/react": "6.10.1",
     "@pikoloo/darwin-ui": "^2.1.0",

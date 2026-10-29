@@ -762,11 +762,11 @@ export function PlayerBar() {
 
   const modeIcon =
     mode === 'random' ? (
-      <Shuffle className="h-[15px] w-[15px]" />
+      <Shuffle className="h-[18px] w-[18px]" />
     ) : mode === 'singleLoop' ? (
-      <Repeat1 className="h-[15px] w-[15px]" />
+      <Repeat1 className="h-[18px] w-[18px]" />
     ) : (
-      <Repeat className="h-[15px] w-[15px]" />
+      <Repeat className="h-[18px] w-[18px]" />
     )
 
   // Both media elements share these handlers; events from the element that is
@@ -1029,9 +1029,9 @@ export function PlayerBar() {
             )}
           >
             {heartLoading ? (
-              <Loader2 className="h-[15px] w-[15px] animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Sparkles className="h-[15px] w-[15px]" />
+              <Sparkles className="h-4 w-4" />
             )}
           </button>
           <button
@@ -1053,7 +1053,7 @@ export function PlayerBar() {
             onClick={() => void prev()}
             className="pressable flex h-8 w-8 items-center justify-center text-black/65 hover:text-black max-md:h-10 max-md:w-10"
           >
-            <SkipBack className="h-[17px] w-[17px] fill-current" />
+            <SkipBack className="h-5 w-5 fill-current" />
           </button>
           <button
             type="button"
@@ -1062,14 +1062,14 @@ export function PlayerBar() {
             }
             onClick={() => void togglePlay()}
             title={playing ? '暂停（空格）' : '播放（空格）'}
-            className="pressable flex h-[32px] w-[32px] items-center justify-center rounded-full bg-accent text-white shadow-[0_2px_8px_rgba(0,102,204,0.35)] hover:bg-accent-hover max-md:h-10 max-md:w-10"
+            className="pressable flex h-9 w-9 items-center justify-center rounded-full bg-accent text-white shadow-[0_2px_8px_rgba(0,102,204,0.35)] hover:bg-accent-hover max-md:h-10 max-md:w-10"
           >
             {busy ? (
-              <Loader2 className="h-[15px] w-[15px] animate-spin" />
+              <Loader2 className="h-5 w-5 animate-spin" />
             ) : playing ? (
-              <Pause className="h-[15px] w-[15px] fill-current" />
+              <Pause className="h-5 w-5 fill-current" />
             ) : (
-              <Play className="ml-[1px] h-[15px] w-[15px] fill-current" />
+              <Play className="ml-[1px] h-5 w-5 fill-current" />
             )}
           </button>
           <button
@@ -1078,7 +1078,7 @@ export function PlayerBar() {
             onClick={() => void next()}
             className="pressable flex h-8 w-8 items-center justify-center text-black/65 hover:text-black max-md:h-10 max-md:w-10"
           >
-            <SkipForward className="h-[17px] w-[17px] fill-current" />
+            <SkipForward className="h-5 w-5 fill-current" />
           </button>
           <button
             type="button"
@@ -1086,7 +1086,7 @@ export function PlayerBar() {
             className="pressable flex h-8 w-8 items-center justify-center text-black/35 transition-colors hover:text-black/70 max-md:hidden"
             title="播放列表"
           >
-            <ListMusic className="h-[15px] w-[15px]" />
+            <ListMusic className="h-4 w-4" />
           </button>
         </div>
 
@@ -1125,7 +1125,7 @@ export function PlayerBar() {
                     : 'text-black/45 hover:text-black/75',
                 )}
               >
-                <Languages className="h-[15px] w-[15px]" />
+                <Languages className="h-4 w-4" />
               </button>
             </PopoverTrigger>
             <PopoverContent
@@ -1173,9 +1173,9 @@ export function PlayerBar() {
             className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/45 transition-colors hover:bg-black/5 hover:text-black/75 disabled:opacity-50 max-md:h-10 max-md:w-10"
           >
             {switchingSource ? (
-              <Loader2 className="h-[15px] w-[15px] animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <RefreshCw className="h-[15px] w-[15px]" />
+              <RefreshCw className="h-4 w-4" />
             )}
           </button>
         ) : null}
@@ -1196,7 +1196,7 @@ export function PlayerBar() {
               lyricsWindowOpen ? 'text-accent' : 'text-black/45 hover:text-black/75',
             )}
           >
-            <Subtitles className="h-[15px] w-[15px]" />
+            <Subtitles className="h-4 w-4" />
           </button>
         ) : null}
 
@@ -1212,7 +1212,7 @@ export function PlayerBar() {
               miniWindowOpen ? 'text-accent' : 'text-black/45 hover:text-black/75',
             )}
           >
-            <PictureInPicture2 className="h-[15px] w-[15px]" />
+            <PictureInPicture2 className="h-4 w-4" />
           </button>
         ) : null}
 
@@ -1269,11 +1269,11 @@ export function PlayerBar() {
               title="音量（Alt + ↑ / ↓）"
             >
               {volume === 0 ? (
-                <VolumeX className="h-[15px] w-[15px]" />
+                <VolumeX className="h-4 w-4" />
               ) : volume < 45 ? (
-                <Volume1 className="h-[15px] w-[15px]" />
+                <Volume1 className="h-4 w-4" />
               ) : (
-                <Volume2 className="h-[15px] w-[15px]" />
+                <Volume2 className="h-4 w-4" />
               )}
             </button>
           </PopoverTrigger>

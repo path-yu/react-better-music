@@ -78,10 +78,10 @@ export function Sidebar() {
               >
                 <Icon
                   className={cn(
-                    'h-[15px] w-[15px] shrink-0',
+                    'h-4 w-4 shrink-0',
                     isActive(item.to) ? 'text-accent' : 'text-black/40',
                   )}
-                  strokeWidth={1.9}
+                  strokeWidth={1.75}
                 />
                 {i18n._(item.label)}
               </button>
@@ -104,10 +104,10 @@ export function Sidebar() {
           >
             <Disc3
               className={cn(
-                'h-[15px] w-[15px] shrink-0',
+                'h-4 w-4 shrink-0',
                 showNowPlaying ? 'text-accent' : 'text-black/40',
               )}
-              strokeWidth={1.9}
+              strokeWidth={1.75}
             />
             <Trans>正在播放</Trans>
           </button>
@@ -146,7 +146,7 @@ export function Sidebar() {
                     : 'text-black/65 hover:bg-black/4 hover:text-black',
                 )}
               >
-                <Heart className="h-[15px] w-[15px] shrink-0 text-[#ff2d55]" strokeWidth={2} />
+                <Heart className="h-4 w-4 shrink-0 text-[#ff2d55]" strokeWidth={1.75} />
                 <span className="truncate">
                   <Trans>我喜欢的音乐</Trans>
                 </span>

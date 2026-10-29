@@ -1,6 +1,8 @@
 import ReactDOM from 'react-dom/client'
 import { RouterProvider, createHashHistory, createRouter } from '@tanstack/react-router'
+import { LucideProvider } from 'lucide-react'
 import { I18nProvider } from '@lingui/react'
+import { ICON_TOKENS } from './lib/iconTokens'
 import { routeTree } from './routeTree.gen'
 import { applyTheme } from './lib/theme'
 import { isDesktopShell } from './lib/desktop'
@@ -52,9 +54,14 @@ declare module '@tanstack/react-router' {
 const rootElement = document.getElementById('app')!
 
 ReactDOM.createRoot(rootElement).render(
-  <I18nProvider i18n={i18n}>
-    <RouterProvider router={router} />
-  </I18nProvider>,
+  <LucideProvider
+    size={ICON_TOKENS.md.size}
+    strokeWidth={ICON_TOKENS.md.strokeWidth}
+  >
+    <I18nProvider i18n={i18n}>
+      <RouterProvider router={router} />
+    </I18nProvider>
+  </LucideProvider>,
 )
 
 if (desktop) {

@@ -91,6 +91,7 @@ A macOS-style third-party NetEase Cloud Music client rewritten with React 19 + T
 | State | Zustand (player / user / ui / settings) |
 | Lists | TanStack Virtual |
 | i18n | Lingui 6 (`@lingui/core`, `@lingui/react`, `@lingui/vite-plugin`, `@lingui/cli`) |
+| Fonts | SF Pro / PingFang SC on macOS; bundled Inter + Noto Sans SC on Windows |
 | Audio cache | WebCodecs + mediabunny + IndexedDB |
 | Backend | NetEaseCloudMusicApiEnhanced (`server/`) |
 | Desktop | Electrobun + Hutch + Bun |
@@ -361,6 +362,7 @@ electrobun.config.ts / hutch.config.ts  Desktop build configuration
 | `pnpm desktop:installer` | Build the custom-directory installer with Inno Setup |
 | `pnpm desktop:release` | Build plus the custom-directory installer |
 | `pnpm generate-routes` | Regenerate the TanStack route tree |
+| `pnpm icons:generate` | Regenerate App Icon PNG/ICO/ICNS from the 1024px SVG |
 
 ## First-paint measurement
 
@@ -446,5 +448,6 @@ Make sure `Resources/app/bun/api.cjs` and `Resources/bin/bun.exe` exist, and tha
 - Desktop framework: [Electrobun](https://github.com/blackboardsh/electrobun)
 - UI components: [darwin-ui](https://www.npmjs.com/package/@pikoloo/darwin-ui)
 - Audio muxing: [mediabunny](https://mediabunny.dev)
+- Fonts: [Inter](https://rsms.me/inter/) and [Noto Sans SC](https://fonts.google.com/noto/specimen/Noto+Sans+SC), both under the SIL Open Font License. macOS uses the system SF Pro / PingFang SC when available.
 
 This project is for learning and personal use only. All music copyrights belong to NetEase Cloud Music and the respective rights holders.

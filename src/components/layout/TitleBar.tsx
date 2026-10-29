@@ -55,7 +55,7 @@ export function TitleBar() {
         <span className="traffic-dot green" />
       </div>
       <div className="titlebar-title flex items-center gap-1.5">
-        <Music2 className="h-3.5 w-3.5 text-accent" strokeWidth={2.2} />
+        <Music2 className="h-3.5 w-3.5 text-accent" strokeWidth={1.9} />
         声屿
         {subtitle ? (
           <span className="titlebar-subtitle font-normal">— {subtitle}</span>
@@ -129,7 +129,7 @@ function DesktopTitleBar({ subtitle }: { subtitle?: string }) {
       onDoubleClick={nativeControls ? undefined : handleBarDoubleClick}
     >
       <div className="titlebar-title flex items-center gap-1.5">
-        <Music2 className="h-3.5 w-3.5 text-accent" strokeWidth={2.2} />
+        <Music2 className="h-3.5 w-3.5 text-accent" strokeWidth={1.9} />
         声屿
         {subtitle ? (
           <span className="titlebar-subtitle font-normal">— {subtitle}</span>
@@ -145,7 +145,7 @@ function DesktopTitleBar({ subtitle }: { subtitle?: string }) {
             className={`desktop-titlebar__button ${NO_DRAG_CLASS}`}
             onClick={() => void minimizeWindow().catch(() => {})}
           >
-            <Minus className="h-3.5 w-3.5" strokeWidth={1.7} />
+            <Minus className="h-3.5 w-3.5" strokeWidth={1.6} />
           </button>
           <button
             type="button"
@@ -155,9 +155,9 @@ function DesktopTitleBar({ subtitle }: { subtitle?: string }) {
             onClick={handleToggleMaximize}
           >
             {maximized ? (
-              <Copy className="h-3 w-3 -scale-x-100" strokeWidth={1.6} />
+              <Copy className="h-3 w-3 -scale-x-100" strokeWidth={1.5} />
             ) : (
-              <Square className="h-[11px] w-[11px]" strokeWidth={1.6} />
+              <Square className="h-[11px] w-[11px]" strokeWidth={1.5} />
             )}
           </button>
           <button
@@ -167,7 +167,7 @@ function DesktopTitleBar({ subtitle }: { subtitle?: string }) {
             className={`desktop-titlebar__button desktop-titlebar__button--close ${NO_DRAG_CLASS}`}
             onClick={() => void closeWindow().catch(() => {})}
           >
-            <X className="h-3.5 w-3.5" strokeWidth={1.7} />
+            <X className="h-3.5 w-3.5" strokeWidth={1.6} />
           </button>
         </div>
       )}

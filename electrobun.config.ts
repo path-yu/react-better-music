@@ -23,6 +23,7 @@ export default {
       // off the UI thread; it must sit next to bun/index.js at runtime.
       'server/desktop-api.bundle.cjs': 'bun/api.cjs',
       'assets/app-icon.ico': 'app-icon.ico',
+      'assets/app-icon.icns': 'app-icon.icns',
       'assets/tray-icon.png': 'tray-icon.png',
       'assets/tray.ps1': 'tray.ps1',
       'assets/hide-taskbar.ps1': 'hide-taskbar.ps1',

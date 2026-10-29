@@ -32,9 +32,9 @@ export function EmptyState({
       >
         {icon ??
           (isError ? (
-            <TriangleAlert className="h-6 w-6" strokeWidth={1.5} />
+            <TriangleAlert className="h-6 w-6" strokeWidth={2} />
           ) : (
-            <Disc3 className="h-6 w-6" strokeWidth={1.5} />
+            <Disc3 className="h-6 w-6" strokeWidth={2} />
           ))}
       </div>
       <p className="mt-4 text-[13px] font-medium text-black/55">{title}</p>

@@ -56,7 +56,7 @@ export function TopBar() {
           onClick={toggleTheme}
           className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/40 transition-colors hover:bg-black/5 hover:text-black/75 max-md:hidden"
         >
-          {theme === 'dark' ? <Sun className="h-[15px] w-[15px]" /> : <Moon className="h-[15px] w-[15px]" />}
+          {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </button>
         {queue.length > 0 && (
           <button
@@ -68,7 +68,7 @@ export function TopBar() {
                 : 'text-black/40 hover:bg-black/5 hover:text-black/70'
             }`}
           >
-            <Disc3 className={`h-3.5 w-3.5 ${showNowPlaying ? 'animate-spin [animation-duration:6s]' : ''}`} />
+            <Disc3 className={`h-4 w-4 ${showNowPlaying ? 'animate-spin [animation-duration:6s]' : ''}`} />
             <Trans>正在播放</Trans>
           </button>
         )}
@@ -79,7 +79,7 @@ export function TopBar() {
           onClick={() => navigate({ to: '/settings' })}
           className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/40 transition-colors hover:bg-black/5 hover:text-black/75 max-md:h-10 max-md:w-10"
         >
-          <Settings2 className="h-[15px] w-[15px]" />
+          <Settings2 className="h-4 w-4" />
         </button>
         <UserMenu />
       </div>

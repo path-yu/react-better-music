@@ -55,7 +55,7 @@ export const ImageWithFallback = memo(function ImageWithFallback({
     >
       {failed || !resolvedSrc ? (
         <div className="image-fallback flex h-full w-full items-center justify-center bg-gradient-to-br from-[#ececf0] to-[#dedee4] text-black/20">
-          <Music2 className="h-8 w-8" strokeWidth={1.5} />
+          <Music2 className="h-8 w-8" strokeWidth={1.75} />
         </div>
       ) : (
         <img

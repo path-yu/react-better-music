@@ -91,6 +91,7 @@
 | 状态 | Zustand（player / user / ui / settings） |
 | 列表 | TanStack Virtual |
 | 国际化 | Lingui 6（`@lingui/core`、`@lingui/react`、`@lingui/vite-plugin`、`@lingui/cli`） |
+| 字体 | macOS 使用系统 SF Pro / PingFang SC；Windows 捆绑 Inter + Noto Sans SC |
 | 音频缓存 | WebCodecs + mediabunny + IndexedDB |
 | 后端 | NetEaseCloudMusicApiEnhanced（`server/`） |
 | 桌面端 | Electrobun + Hutch + Bun |
@@ -361,6 +362,7 @@ electrobun.config.ts / hutch.config.ts  桌面构建配置
 | `pnpm desktop:installer` | 用 Inno Setup 生成支持自选目录的安装包 |
 | `pnpm desktop:release` | 构建 + 生成自定义目录安装包 |
 | `pnpm generate-routes` | 重新生成 TanStack 路由树 |
+| `pnpm icons:generate` | 从 1024px SVG 重新生成 App Icon 的 PNG / ICO / ICNS |
 
 ## 首屏性能测量
 
@@ -446,5 +448,6 @@ Get-Content "$env:LOCALAPPDATA\com.qimiao.music\startup.log" -Tail 20
 - 桌面框架：[Electrobun](https://github.com/blackboardsh/electrobun)
 - UI 组件：[darwin-ui](https://www.npmjs.com/package/@pikoloo/darwin-ui)
 - 音频封装：[mediabunny](https://mediabunny.dev)
+- 字体：[Inter](https://rsms.me/inter/) 与 [Noto Sans SC](https://fonts.google.com/noto/specimen/Noto+Sans+SC)，均使用 SIL Open Font License；macOS 会优先使用系统 SF Pro / PingFang SC。
 
 本项目仅用于学习与个人使用，所有音乐版权归网易云音乐及版权方所有。
