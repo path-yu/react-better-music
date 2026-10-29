@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
+import { Trans } from '@lingui/react/macro'
 import {
   Clock3,
   Loader2,
@@ -28,6 +31,7 @@ interface SuggestState {
 }
 
 export function SearchBox() {
+  const { i18n } = useLingui()
   const navigate = useNavigate()
   const [keyword, setKeyword] = useState('')
   const [open, setOpen] = useState(false)
@@ -186,7 +190,10 @@ export function SearchBox() {
       <Input.Search
         value={keyword}
         size="sm"
-        placeholder={defaultKeyword || '搜索音乐、歌单'}
+        placeholder={
+          (i18n.locale.startsWith('zh') ? defaultKeyword : '') ||
+          i18n._(msg`搜索音乐、歌单`)
+        }
         onChange={(event) => {
           setKeyword(event.target.value)
           setOpen(true)
@@ -265,7 +272,7 @@ export function SearchBox() {
                     <div className="flex items-center justify-between">
                       <p className="flex items-center gap-1.5 text-[12px] font-medium text-black/45">
                         <Clock3 className="h-3.5 w-3.5" />
-                        搜索历史
+                        <Trans>搜索历史</Trans>
                       </p>
                       <button
                         type="button"
@@ -273,7 +280,7 @@ export function SearchBox() {
                         onClick={() => clearSearchHistory()}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
-                        清除
+                        <Trans>清除</Trans>
                       </button>
                     </div>
                     <div className="mt-2.5 flex flex-wrap gap-1.5">
@@ -300,7 +307,9 @@ export function SearchBox() {
                 )}
 
                 <div className="mt-3 px-4 pb-4">
-                  <p className="text-[12px] font-medium text-black/45">热搜榜</p>
+                  <p className="text-[12px] font-medium text-black/45">
+                    <Trans>热搜榜</Trans>
+                  </p>
                   {hotLoading ? (
                     <div className="flex h-24 items-center justify-center">
                       <Loader2 className="h-4 w-4 animate-spin text-black/30" />
@@ -351,7 +360,7 @@ export function SearchBox() {
                       )}
                     >
                       <Search className="h-3.5 w-3.5" />
-                      搜索 “{keyword}”
+                      <Trans>搜索 “{keyword}”</Trans>
                     </button>
 
                     {suggest.songs.length > 0 && (
@@ -360,7 +369,7 @@ export function SearchBox() {
                         className="flex items-center gap-1.5 px-4 pb-1 pt-2 text-[11px] text-black/35"
                       >
                         <Music2 className="h-3 w-3" />
-                        单曲
+                        <Trans>单曲</Trans>
                       </p>
                     )}
                     {suggest.songs.map((song, songIndex) => {
@@ -396,7 +405,7 @@ export function SearchBox() {
                         className="flex items-center gap-1.5 px-4 pb-1 pt-2 text-[11px] text-black/35"
                       >
                         <Music2 className="h-3 w-3" />
-                        歌单
+                        <Trans>歌单</Trans>
                       </p>
                     )}
                     {suggest.playlists.map((playlist, playlistIndex) => {
@@ -416,7 +425,7 @@ export function SearchBox() {
                             {playlist.name}
                           </span>
                           <span className="shrink-0 text-[11px] text-black/30">
-                            {playlist.trackCount} 首
+                            <Trans>{playlist.trackCount} 首</Trans>
                           </span>
                         </button>
                       )
@@ -424,7 +433,7 @@ export function SearchBox() {
 
                     {!suggest.songs.length && !suggest.playlists.length && (
                       <p className="px-4 py-8 text-center text-[12px] text-black/35">
-                        没有找到相关建议
+                        <Trans>没有找到相关建议</Trans>
                       </p>
                     )}
                   </>

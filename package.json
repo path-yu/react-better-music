@@ -10,6 +10,8 @@
     "dev:api": "node server/app.js",
     "typecheck": "tsc --noEmit",
     "typecheck:desktop": "tsc --noEmit -p tsconfig.bun.json",
+    "i18n:extract": "lingui extract",
+    "i18n:compile": "lingui compile",
     "lint": "eslint src",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -23,6 +25,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@lingui/core": "6.10.1",
+    "@lingui/react": "6.10.1",
     "@pikoloo/darwin-ui": "^2.1.0",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-devtools": "0.10.13",
@@ -39,7 +43,12 @@
     "zustand": "^5.0.16"
   },
   "devDependencies": {
+    "@babel/core": "^8.0.9",
     "@eslint/js": "^10.0.1",
+    "@lingui/babel-plugin-lingui-macro": "6.10.1",
+    "@lingui/cli": "6.10.1",
+    "@lingui/vite-plugin": "6.10.1",
+    "@rolldown/plugin-babel": "^0.2.4",
     "@tanstack/devtools-vite": "0.8.5",
     "@tanstack/router-cli": "^1.132.0",
     "@tanstack/router-plugin": "1.168.48",

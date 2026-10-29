@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
+import { Trans } from '@lingui/react/macro'
 import { Heart, Pause, Play, Volume2 } from 'lucide-react'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
@@ -267,10 +268,18 @@ export function SongTable({
       )}
     >
       <span className="text-center">#</span>
-      <span>标题</span>
-      <span className="song-meta">歌手</span>
-      <span className="song-meta">专辑</span>
-      <span className="text-right">时长</span>
+      <span>
+        <Trans>标题</Trans>
+      </span>
+      <span className="song-meta">
+        <Trans>歌手</Trans>
+      </span>
+      <span className="song-meta">
+        <Trans>专辑</Trans>
+      </span>
+      <span className="text-right">
+        <Trans>时长</Trans>
+      </span>
     </div>
   ) : null
 

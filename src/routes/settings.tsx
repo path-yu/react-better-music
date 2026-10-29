@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
+import { Trans } from '@lingui/react/macro'
 import {
   Download,
   FolderOpen,
   HardDrive,
   Keyboard,
   ListMusic,
+  Languages,
   Loader2,
   RefreshCw,
   Settings2,
@@ -27,6 +31,7 @@ import {
   pickDownloadDir,
 } from '../lib/desktopDownloads'
 import { getDevToolsPolicy, setDevToolsPolicy } from '../lib/desktopBridge'
+import { locales, type Locale } from '../i18n'
 import { formatDate, formatDuration } from '../lib/format'
 import { useDocumentTitle } from '../lib/title'
 import { toast } from '../lib/toast'
@@ -50,13 +55,16 @@ function formatBytes(bytes: number) {
 }
 
 function SettingsPage() {
-  useDocumentTitle('设置')
+  const { i18n } = useLingui()
+  useDocumentTitle(i18n._(msg`设置`))
   const cacheBitrate = useSettingsStore((state) => state.cacheBitrate)
   const setCacheBitrate = useSettingsStore((state) => state.setCacheBitrate)
   const autoReplaceVipSource = useSettingsStore((state) => state.autoReplaceVipSource)
   const setAutoReplaceVipSource = useSettingsStore(
     (state) => state.setAutoReplaceVipSource,
   )
+  const locale = useSettingsStore((state) => state.locale)
+  const setLocale = useSettingsStore((state) => state.setLocale)
   const [items, setItems] = useState<CachedAudioItem[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<number[]>([])
@@ -245,9 +253,11 @@ function SettingsPage() {
       <div>
         <h1 className="headline-lg flex items-center gap-2">
           <Settings2 className="h-5 w-5 text-accent" />
-          设置
+          <Trans>设置</Trans>
         </h1>
-        <p className="mt-1.5 text-[12px] text-black/35">管理本地音乐缓存与存储占用</p>
+        <p className="mt-1.5 text-[12px] text-black/35">
+          <Trans>管理本地音乐缓存与存储占用</Trans>
+        </p>
       </div>
 
       <div className="mt-6 grid gap-5">
@@ -255,8 +265,31 @@ function SettingsPage() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
+                <Languages className="h-4 w-4 text-accent" />
+                语言 / Language
+              </h2>
+              <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-black/40">
+                切换界面语言，立即生效。当前翻译覆盖导航、播放器与设置等主要界面，其余页面会逐步补齐。
+              </p>
+            </div>
+            <Select
+              value={locale}
+              onChange={(event) => setLocale(event.target.value as Locale)}
+              options={locales.map((item) => ({
+                value: item.value,
+                label: item.label,
+              }))}
+              className="w-[150px] text-[12px]"
+            />
+          </div>
+        </section>
+
+        <section className="apple-card p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
                 <HardDrive className="h-4 w-4 text-accent" />
-                音乐缓存
+                <Trans>音乐缓存</Trans>
               </h2>
               <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-black/40">
                 播放过的歌曲会转码为 Opus 并缓存到本地，用于加速之后的播放。修改品质只影响之后缓存的新歌曲，
@@ -276,7 +309,9 @@ function SettingsPage() {
 
           <div className="mt-5 grid gap-4 sm:grid-cols-[1fr_180px]">
             <div>
-              <p className="mb-1.5 text-[11px] text-black/40">缓存品质</p>
+              <p className="mb-1.5 text-[11px] text-black/40">
+                <Trans>缓存品质</Trans>
+              </p>
               <Select
                 value={String(cacheBitrate)}
                 onChange={(event) => setCacheBitrate(Number(event.target.value))}
@@ -288,7 +323,9 @@ function SettingsPage() {
               </p>
             </div>
             <div className="rounded-[14px] border border-black/6 bg-[#f5f5f7] px-4 py-3">
-              <p className="text-[11px] text-black/40">当前缓存</p>
+              <p className="text-[11px] text-black/40">
+                <Trans>当前缓存</Trans>
+              </p>
               <p className="mt-1 text-[18px] font-semibold leading-tight text-black/80">
                 {loading ? '…' : `${items.length} 首`}
               </p>
@@ -302,7 +339,9 @@ function SettingsPage() {
             <div className="mt-4 flex items-center gap-3 rounded-[14px] border border-black/6 bg-[#f5f5f7] px-4 py-3">
               <FolderOpen className="h-4 w-4 flex-none text-accent" />
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] text-black/40">下载目录</p>
+                <p className="text-[11px] text-black/40">
+                  <Trans>下载目录</Trans>
+                </p>
                 <p className="mt-0.5 truncate text-[12px] text-black/70" title={downloadDir}>
                   {downloadDir || '正在读取…'}
                 </p>
@@ -313,10 +352,10 @@ function SettingsPage() {
                 loading={pickingDir}
                 onClick={() => void handlePickDir()}
               >
-                选择文件夹
+                <Trans>选择文件夹</Trans>
               </Button>
               <Button variant="secondary" size="sm" onClick={() => void handleOpenDir()}>
-                打开
+                <Trans>打开</Trans>
               </Button>
             </div>
           ) : null}
@@ -327,7 +366,7 @@ function SettingsPage() {
             <div>
               <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
                 <RefreshCw className="h-4 w-4 text-accent" />
-                音源匹配
+                <Trans>音源匹配</Trans>
               </h2>
               <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-black/40">
                 VIP 歌曲无法播放或仅能试听时，自动尝试匹配其他音源；也可以在底部播放条点击
@@ -348,7 +387,7 @@ function SettingsPage() {
               <div>
                 <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
                   <Shield className="h-4 w-4 text-accent" />
-                  桌面端
+                  <Trans>桌面端</Trans>
                 </h2>
                 <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-black/40">
                   禁用后，右键菜单与 F12 / Ctrl+Shift+I 等入口不再打开开发者工具。
@@ -372,7 +411,7 @@ function SettingsPage() {
             <div>
               <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
                 <ListMusic className="h-4 w-4 text-accent" />
-                缓存列表
+                <Trans>缓存列表</Trans>
               </h2>
               <p className="mt-1 text-[11px] text-black/35">
                 {loading ? '正在读取缓存…' : `${items.length} 首 · ${formatBytes(totalBytes)}`}
@@ -475,7 +514,7 @@ function SettingsPage() {
               disabled={!items.length || loading || downloading}
               onClick={() => void handleClear()}
             >
-              {confirmingClear ? '确认清除？' : '清除缓存'}
+              {confirmingClear ? <Trans>确认清除？</Trans> : <Trans>清除缓存</Trans>}
             </Button>
           </div>
         </section>
@@ -483,8 +522,8 @@ function SettingsPage() {
         <section className="apple-card p-6">
           <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
             <Keyboard className="h-4 w-4 text-accent" />
-            快捷键
-          </h2>
+            <Trans>快捷键</Trans>
+            </h2>
           <p className="mt-1 text-[12px] leading-relaxed text-black/40">
             在页面任意位置可用（输入框内保留系统默认行为）。
           </p>

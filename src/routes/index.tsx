@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
 import {
   ChevronLeft,
   ChevronRight,
@@ -79,8 +81,9 @@ function SectionError({ title, onRetry }: { title: string; onRetry: () => void }
 }
 
 function DiscoveryPage() {
+  const { i18n } = useLingui()
   const navigate = useNavigate()
-  useDocumentTitle('发现音乐')
+  useDocumentTitle(i18n._(msg`发现音乐`))
   const [index, setIndex] = useState(0)
   const [hovered, setHovered] = useState(false)
 
@@ -219,7 +222,10 @@ function DiscoveryPage() {
       </section>
 
       <section className="mt-9">
-        <SectionTitle title="推荐歌单" subtitle="根据你的口味精选" />
+        <SectionTitle
+          title={i18n._(msg`推荐歌单`)}
+          subtitle={i18n._(msg`根据你的口味精选`)}
+        />
         {playlistLoading ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {Array.from({ length: 10 }).map((_, item) => (
@@ -251,7 +257,7 @@ function DiscoveryPage() {
             className="text-[11.5px] text-accent"
             onClick={() => void navigate({ to: '/songlists' })}
           >
-            查看全部歌单
+            {i18n._(msg`查看全部歌单`)}
             <ChevronRight className="ml-0.5 h-3 w-3" />
           </Button>
         </div>
@@ -259,7 +265,7 @@ function DiscoveryPage() {
 
       <section className="mt-7">
         <SectionTitle
-          title="每日推荐"
+          title={i18n._(msg`每日推荐`)}
           subtitle={
             new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' })
           }
@@ -279,7 +285,10 @@ function DiscoveryPage() {
       </section>
 
       <section className="mt-9">
-        <SectionTitle title="最新 MV" subtitle="精选音乐视频" />
+        <SectionTitle
+          title={i18n._(msg`最新 MV`)}
+          subtitle={i18n._(msg`精选音乐视频`)}
+        />
         {mvLoading ? (
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             {Array.from({ length: 4 }).map((_, item) => (
@@ -309,7 +318,7 @@ function DiscoveryPage() {
             className="text-[11.5px] text-accent"
             onClick={() => void navigate({ to: '/latest-mv' })}
           >
-            查看全部 MV
+            {i18n._(msg`查看全部 MV`)}
             <ChevronRight className="ml-0.5 h-3 w-3" />
           </Button>
         </div>

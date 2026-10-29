@@ -1,0 +1,267 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-10-29 12:03+0800\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: en\n"
+
+#. placeholder {0}: playlist.trackCount
+#. placeholder {0}: queue.length
+#: src/components/layout/SearchBox.tsx:428
+#: src/components/player/QueuePanel.tsx:83
+msgid "{0} 首"
+msgstr "{0} tracks"
+
+#: src/routes/settings.tsx:343
+msgid "下载目录"
+msgstr "Download folder"
+
+#: src/components/songs/SongTable.tsx:278
+msgid "专辑"
+msgstr "Album"
+
+#: src/components/player/PlayerBar.tsx:979
+msgid "其他音源"
+msgstr "Other source"
+
+#: src/routes/index.tsx:289
+msgid "最新 MV"
+msgstr "Latest MVs"
+
+#: src/components/layout/Sidebar.tsx:27
+msgid "最新MV"
+msgstr "New MVs"
+
+#: src/components/layout/Sidebar.tsx:26
+msgid "最新音乐"
+msgstr "New Music"
+
+#: src/components/layout/Sidebar.tsx:158
+msgid "创建的歌单"
+msgstr "Created playlists"
+
+#: src/components/layout/SearchBox.tsx:372
+msgid "单曲"
+msgstr "Songs"
+
+#: src/components/layout/Sidebar.tsx:24
+#: src/routes/index.tsx:86
+msgid "发现音乐"
+msgstr "Discover"
+
+#: src/routes/settings.tsx:327
+msgid "当前缓存"
+msgstr "Current cache"
+
+#: src/routes/settings.tsx:525
+msgid "快捷键"
+msgstr "Shortcuts"
+
+#: src/components/layout/Sidebar.tsx:151
+msgid "我喜欢的音乐"
+msgstr "Liked Songs"
+
+#: src/components/layout/Sidebar.tsx:117
+msgid "我的音乐"
+msgstr "My Music"
+
+#: src/routes/settings.tsx:358
+msgid "打开"
+msgstr "Open"
+
+#: src/components/layout/Sidebar.tsx:25
+#: src/routes/index.tsx:226
+msgid "推荐歌单"
+msgstr "Playlists"
+
+#: src/components/layout/SearchBox.tsx:363
+msgid "搜索 “{keyword}”"
+msgstr "Search “{keyword}”"
+
+#: src/components/layout/SearchBox.tsx:275
+msgid "搜索历史"
+msgstr "Recent searches"
+
+#: src/components/layout/SearchBox.tsx:195
+msgid "搜索音乐、歌单"
+msgstr "Search songs or playlists"
+
+#: src/components/player/QueuePanel.tsx:80
+msgid "播放列表"
+msgstr "Queue"
+
+#: src/components/player/PlayerBar.tsx:1234
+msgid "播放音质"
+msgstr "Playback quality"
+
+#: src/components/layout/Sidebar.tsx:172
+msgid "收藏的歌单"
+msgstr "Saved playlists"
+
+#: src/components/player/PlayerBar.tsx:1253
+msgid "无损 / Hi-Res 需要对应会员权益；已缓存歌曲按设置中的缓存品质播放。"
+msgstr "Lossless / Hi-Res requires the matching membership tier; cached songs play at the cache quality chosen in Settings."
+
+#: src/components/songs/SongTable.tsx:281
+msgid "时长"
+msgstr "Duration"
+
+#: src/components/layout/Sidebar.tsx:187
+msgid "暂无歌单"
+msgstr "No playlists yet"
+
+#: src/components/player/LyricsPanel.tsx:162
+msgid "暂无歌词，请欣赏"
+msgstr "No lyrics. Enjoy the music."
+
+#: src/components/layout/Sidebar.tsx:197
+msgid "本地接口 · 网易云音乐"
+msgstr "Local API · NetEase Cloud Music"
+
+#: src/components/player/NowPlaying.tsx:303
+msgid "查看专辑"
+msgstr "View album"
+
+#: src/routes/index.tsx:321
+msgid "查看全部 MV"
+msgstr "View all MVs"
+
+#: src/routes/index.tsx:260
+msgid "查看全部歌单"
+msgstr "View all playlists"
+
+#: src/components/songs/SongTable.tsx:272
+msgid "标题"
+msgstr "Title"
+
+#: src/routes/index.tsx:227
+msgid "根据你的口味精选"
+msgstr "Picked for your taste"
+
+#: src/routes/settings.tsx:390
+msgid "桌面端"
+msgstr "Desktop"
+
+#: src/components/layout/SearchBox.tsx:408
+msgid "歌单"
+msgstr "Playlists"
+
+#: src/components/songs/SongTable.tsx:275
+msgid "歌手"
+msgstr "Artist"
+
+#: src/components/player/NowPlaying.tsx:330
+msgid "歌词"
+msgstr "Lyrics"
+
+#: src/components/player/PlayerBar.tsx:1134
+msgid "歌词显示"
+msgstr "Lyrics display"
+
+#: src/components/player/NowPlaying.tsx:353
+msgid "正在加载歌词…"
+msgstr "Loading lyrics…"
+
+#: src/components/player/NowPlaying.tsx:270
+msgid "正在加载音源…"
+msgstr "Loading source…"
+
+#: src/components/layout/Sidebar.tsx:112
+#: src/components/layout/TopBar.tsx:72
+msgid "正在播放"
+msgstr "Now playing"
+
+#: src/components/player/NowPlaying.tsx:270
+msgid "正在缓冲…"
+msgstr "Buffering…"
+
+#: src/routes/index.tsx:268
+msgid "每日推荐"
+msgstr "Daily Mix"
+
+#: src/components/layout/SearchBox.tsx:436
+msgid "没有找到相关建议"
+msgstr "No suggestions found"
+
+#: src/components/layout/Sidebar.tsx:62
+msgid "浏览"
+msgstr "Browse"
+
+#: src/components/player/QueuePanel.tsx:94
+msgid "清空"
+msgstr "Clear"
+
+#: src/components/layout/SearchBox.tsx:283
+msgid "清除"
+msgstr "Clear"
+
+#: src/routes/settings.tsx:517
+msgid "清除缓存"
+msgstr "Clear cache"
+
+#: src/components/player/QueuePanel.tsx:197
+msgid "点击歌曲开始播放"
+msgstr "Select a song to start playing"
+
+#: src/components/layout/SearchBox.tsx:311
+msgid "热搜榜"
+msgstr "Trending"
+
+#: src/components/layout/Sidebar.tsx:133
+msgid "登录"
+msgstr "Sign in"
+
+#: src/components/layout/Sidebar.tsx:124
+msgid "登录后查看我的歌单"
+msgstr "Sign in to view your playlists"
+
+#: src/routes/settings.tsx:517
+msgid "确认清除？"
+msgstr "Clear everything?"
+
+#: src/routes/settings.tsx:259
+msgid "管理本地音乐缓存与存储占用"
+msgstr "Manage local audio cache and storage usage"
+
+#: src/routes/index.tsx:290
+msgid "精选音乐视频"
+msgstr "Featured music videos"
+
+#: src/routes/settings.tsx:414
+msgid "缓存列表"
+msgstr "Cached tracks"
+
+#: src/routes/settings.tsx:313
+msgid "缓存品质"
+msgstr "Cache quality"
+
+#: src/routes/settings.tsx:59
+#: src/routes/settings.tsx:256
+msgid "设置"
+msgstr "Settings"
+
+#: src/components/player/NowPlaying.tsx:340
+msgid "评论"
+msgstr "Comments"
+
+#: src/components/player/PlayerBar.tsx:971
+msgid "试听"
+msgstr "Preview"
+
+#: src/components/player/PlayerBar.tsx:661
+msgid "选择一首歌曲开始播放"
+msgstr "Select a song to start playing"
+
+#: src/routes/settings.tsx:355
+msgid "选择文件夹"
+msgstr "Choose folder"
+
+#: src/routes/settings.tsx:292
+msgid "音乐缓存"
+msgstr "Audio cache"
+
+#: src/routes/settings.tsx:369
+msgid "音源匹配"
+msgstr "Source matching"

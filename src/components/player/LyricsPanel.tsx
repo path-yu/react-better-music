@@ -1,4 +1,5 @@
 import { memo, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { Trans } from '@lingui/react/macro'
 import type { LyricLine, LyricWord } from '../../lib/lyric'
 import { useSettingsStore } from '../../store/settings'
 import { getAudio } from '../../lib/audio'
@@ -158,7 +159,7 @@ export const LyricsPanel = memo(function LyricsPanel({
   if (!lines.length) {
     return (
       <div className={cn('flex h-full items-center justify-center text-[12px] text-black/35', className)}>
-        暂无歌词，请欣赏
+        <Trans>暂无歌词，请欣赏</Trans>
       </div>
     )
   }

@@ -1,4 +1,5 @@
 import { useNavigate } from '@tanstack/react-router'
+import { Trans } from '@lingui/react/macro'
 import { ChevronLeft, ChevronRight, Disc3, Menu, Moon, Settings2, Sun } from 'lucide-react'
 import { SearchBox } from './SearchBox'
 import { UserMenu } from './UserMenu'
@@ -68,7 +69,7 @@ export function TopBar() {
             }`}
           >
             <Disc3 className={`h-3.5 w-3.5 ${showNowPlaying ? 'animate-spin [animation-duration:6s]' : ''}`} />
-            正在播放
+            <Trans>正在播放</Trans>
           </button>
         )}
         <button

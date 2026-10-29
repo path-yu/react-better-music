@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { PlayLevel } from '../types'
+import { activateLocale, defaultLocale, type Locale } from '../i18n'
 
 export const CACHE_QUALITY_OPTIONS = [
   { value: '64', label: '标准 · 64kbps' },
@@ -33,11 +34,14 @@ interface SettingsState {
   disableDevTools: boolean
   /** Prefer a matched provider for VIP tracks (manual switch is always available). */
   autoReplaceVipSource: boolean
+  /** UI language; the source catalog is Simplified Chinese. */
+  locale: Locale
   setCacheBitrate: (value: number) => void
   setPlayLevel: (value: PlayLevel) => void
   setLyricDisplayMode: (value: LyricDisplayMode) => void
   setDisableDevTools: (value: boolean) => void
   setAutoReplaceVipSource: (value: boolean) => void
+  setLocale: (value: Locale) => void
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -48,11 +52,16 @@ export const useSettingsStore = create<SettingsState>()(
       lyricDisplayMode: 'both',
       disableDevTools: false,
       autoReplaceVipSource: false,
+      locale: defaultLocale,
       setCacheBitrate: (cacheBitrate) => set({ cacheBitrate }),
       setPlayLevel: (playLevel) => set({ playLevel }),
       setLyricDisplayMode: (lyricDisplayMode) => set({ lyricDisplayMode }),
       setDisableDevTools: (disableDevTools) => set({ disableDevTools }),
       setAutoReplaceVipSource: (autoReplaceVipSource) => set({ autoReplaceVipSource }),
+      setLocale: (locale) => {
+        activateLocale(locale)
+        set({ locale })
+      },
     }),
     {
       name: 'react-music-settings',

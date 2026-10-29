@@ -1,12 +1,16 @@
 import ReactDOM from 'react-dom/client'
 import { RouterProvider, createHashHistory, createRouter } from '@tanstack/react-router'
+import { I18nProvider } from '@lingui/react'
 import { routeTree } from './routeTree.gen'
 import { applyTheme } from './lib/theme'
 import { isDesktopShell } from './lib/desktop'
 import { useUiStore } from './store/ui'
+import { useSettingsStore } from './store/settings'
 import { rememberBridgeToken, requestJson } from './lib/desktopBridge'
+import { activateLocale, defaultLocale, i18n } from './i18n'
 
 applyTheme(useUiStore.getState().theme)
+activateLocale(useSettingsStore.getState().locale ?? defaultLocale)
 
 // Desktop builds append the local bridge token to the view URL. Capture it
 // before the router rewrites the location, so download requests can use it.
@@ -47,7 +51,11 @@ declare module '@tanstack/react-router' {
 
 const rootElement = document.getElementById('app')!
 
-ReactDOM.createRoot(rootElement).render(<RouterProvider router={router} />)
+ReactDOM.createRoot(rootElement).render(
+  <I18nProvider i18n={i18n}>
+    <RouterProvider router={router} />
+  </I18nProvider>,
+)
 
 if (desktop) {
   // Two frames: the first runs after commit, the second after the first paint.

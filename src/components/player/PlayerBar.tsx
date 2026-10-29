@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react'
+import { Trans } from '@lingui/react/macro'
 import {
   AudioLines,
   Check,
@@ -657,7 +658,7 @@ export function PlayerBar() {
   if (!queue.length || !currentSong) {
     return (
       <div className="player-glass flex h-[76px] items-center justify-center text-[12px] text-black/35">
-        选择一首歌曲开始播放
+        <Trans>选择一首歌曲开始播放</Trans>
       </div>
     )
   }
@@ -967,7 +968,7 @@ export function PlayerBar() {
             </span>
             {currentSong.trialEnd ? (
               <span className="shrink-0 rounded-[6px] bg-[#ff9500]/12 px-1 text-[11px] text-[#b36b00]">
-                试听
+                <Trans>试听</Trans>
               </span>
             ) : null}
             {currentSong.unblocked ? (
@@ -975,7 +976,7 @@ export function PlayerBar() {
                 className="shrink-0 rounded-[6px] bg-accent/10 px-1 text-[11px] text-accent"
                 title="该歌曲没有官方音源，当前使用匹配到的其他音源"
               >
-                其他音源
+                <Trans>其他音源</Trans>
               </span>
             ) : null}
             <button
@@ -1129,7 +1130,9 @@ export function PlayerBar() {
               glass
               className="w-[min(180px,calc(100vw-24px))] p-1.5"
             >
-              <p className="px-2 py-1 text-[11px] text-black/35">歌词显示</p>
+              <p className="px-2 py-1 text-[11px] text-black/35">
+                <Trans>歌词显示</Trans>
+              </p>
               {LYRIC_DISPLAY_OPTIONS.map((option) => (
                 <button
                   key={option.value}
@@ -1227,7 +1230,9 @@ export function PlayerBar() {
             glass
             className="w-[min(190px,calc(100vw-24px))] max-w-[calc(100vw-24px)] p-1.5"
           >
-            <p className="px-2 py-1 text-[11px] text-black/35">播放音质</p>
+            <p className="px-2 py-1 text-[11px] text-black/35">
+              <Trans>播放音质</Trans>
+            </p>
             {PLAY_QUALITY_OPTIONS.map((option) => (
               <button
                 key={option.value}
@@ -1245,7 +1250,7 @@ export function PlayerBar() {
               </button>
             ))}
             <p className="px-2 pb-1 pt-1 text-[11px] leading-relaxed text-black/30">
-              无损 / Hi-Res 需要对应会员权益；已缓存歌曲按设置中的缓存品质播放。
+              <Trans>无损 / Hi-Res 需要对应会员权益；已缓存歌曲按设置中的缓存品质播放。</Trans>
             </p>
           </PopoverContent>
         </Popover>

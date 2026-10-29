@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { Trans } from '@lingui/react/macro'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { ListMusic, Trash2, Volume2, X } from 'lucide-react'
 import { Button } from '@pikoloo/darwin-ui'
@@ -75,8 +76,12 @@ export function QueuePanel() {
         <div className="flex items-center justify-between border-b border-black/8 px-4 py-3.5">
           <div className="flex items-center gap-2">
             <ListMusic className="h-4 w-4 text-accent" />
-            <p className="text-[13px] font-semibold text-black/80">播放列表</p>
-            <span className="text-[11px] text-black/35">{queue.length} 首</span>
+            <p className="text-[13px] font-semibold text-black/80">
+              <Trans>播放列表</Trans>
+            </p>
+            <span className="text-[11px] text-black/35">
+              <Trans>{queue.length} 首</Trans>
+            </span>
           </div>
           <div className="flex items-center gap-1">
             <Button
@@ -86,7 +91,7 @@ export function QueuePanel() {
               onClick={clearQueue}
             >
               <Trash2 className="mr-1 h-3 w-3" />
-              清空
+              <Trans>清空</Trans>
             </Button>
             <button
               type="button"
@@ -189,7 +194,7 @@ export function QueuePanel() {
         </div>
 
         <div className="border-t border-black/8 px-4 py-3 text-center text-[11px] text-black/30">
-          点击歌曲开始播放
+          <Trans>点击歌曲开始播放</Trans>
         </div>
       </aside>
     </div>

@@ -1,0 +1,267 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-10-29 12:03+0800\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: zh-CN\n"
+
+#. placeholder {0}: playlist.trackCount
+#. placeholder {0}: queue.length
+#: src/components/layout/SearchBox.tsx:428
+#: src/components/player/QueuePanel.tsx:83
+msgid "{0} 首"
+msgstr "{0} 首"
+
+#: src/routes/settings.tsx:343
+msgid "下载目录"
+msgstr "下载目录"
+
+#: src/components/songs/SongTable.tsx:278
+msgid "专辑"
+msgstr "专辑"
+
+#: src/components/player/PlayerBar.tsx:979
+msgid "其他音源"
+msgstr "其他音源"
+
+#: src/routes/index.tsx:289
+msgid "最新 MV"
+msgstr "最新 MV"
+
+#: src/components/layout/Sidebar.tsx:27
+msgid "最新MV"
+msgstr "最新MV"
+
+#: src/components/layout/Sidebar.tsx:26
+msgid "最新音乐"
+msgstr "最新音乐"
+
+#: src/components/layout/Sidebar.tsx:158
+msgid "创建的歌单"
+msgstr "创建的歌单"
+
+#: src/components/layout/SearchBox.tsx:372
+msgid "单曲"
+msgstr "单曲"
+
+#: src/components/layout/Sidebar.tsx:24
+#: src/routes/index.tsx:86
+msgid "发现音乐"
+msgstr "发现音乐"
+
+#: src/routes/settings.tsx:327
+msgid "当前缓存"
+msgstr "当前缓存"
+
+#: src/routes/settings.tsx:525
+msgid "快捷键"
+msgstr "快捷键"
+
+#: src/components/layout/Sidebar.tsx:151
+msgid "我喜欢的音乐"
+msgstr "我喜欢的音乐"
+
+#: src/components/layout/Sidebar.tsx:117
+msgid "我的音乐"
+msgstr "我的音乐"
+
+#: src/routes/settings.tsx:358
+msgid "打开"
+msgstr "打开"
+
+#: src/components/layout/Sidebar.tsx:25
+#: src/routes/index.tsx:226
+msgid "推荐歌单"
+msgstr "推荐歌单"
+
+#: src/components/layout/SearchBox.tsx:363
+msgid "搜索 “{keyword}”"
+msgstr "搜索 “{keyword}”"
+
+#: src/components/layout/SearchBox.tsx:275
+msgid "搜索历史"
+msgstr "搜索历史"
+
+#: src/components/layout/SearchBox.tsx:195
+msgid "搜索音乐、歌单"
+msgstr "搜索音乐、歌单"
+
+#: src/components/player/QueuePanel.tsx:80
+msgid "播放列表"
+msgstr "播放列表"
+
+#: src/components/player/PlayerBar.tsx:1234
+msgid "播放音质"
+msgstr "播放音质"
+
+#: src/components/layout/Sidebar.tsx:172
+msgid "收藏的歌单"
+msgstr "收藏的歌单"
+
+#: src/components/player/PlayerBar.tsx:1253
+msgid "无损 / Hi-Res 需要对应会员权益；已缓存歌曲按设置中的缓存品质播放。"
+msgstr "无损 / Hi-Res 需要对应会员权益；已缓存歌曲按设置中的缓存品质播放。"
+
+#: src/components/songs/SongTable.tsx:281
+msgid "时长"
+msgstr "时长"
+
+#: src/components/layout/Sidebar.tsx:187
+msgid "暂无歌单"
+msgstr "暂无歌单"
+
+#: src/components/player/LyricsPanel.tsx:162
+msgid "暂无歌词，请欣赏"
+msgstr "暂无歌词，请欣赏"
+
+#: src/components/layout/Sidebar.tsx:197
+msgid "本地接口 · 网易云音乐"
+msgstr "本地接口 · 网易云音乐"
+
+#: src/components/player/NowPlaying.tsx:303
+msgid "查看专辑"
+msgstr "查看专辑"
+
+#: src/routes/index.tsx:321
+msgid "查看全部 MV"
+msgstr "查看全部 MV"
+
+#: src/routes/index.tsx:260
+msgid "查看全部歌单"
+msgstr "查看全部歌单"
+
+#: src/components/songs/SongTable.tsx:272
+msgid "标题"
+msgstr "标题"
+
+#: src/routes/index.tsx:227
+msgid "根据你的口味精选"
+msgstr "根据你的口味精选"
+
+#: src/routes/settings.tsx:390
+msgid "桌面端"
+msgstr "桌面端"
+
+#: src/components/layout/SearchBox.tsx:408
+msgid "歌单"
+msgstr "歌单"
+
+#: src/components/songs/SongTable.tsx:275
+msgid "歌手"
+msgstr "歌手"
+
+#: src/components/player/NowPlaying.tsx:330
+msgid "歌词"
+msgstr "歌词"
+
+#: src/components/player/PlayerBar.tsx:1134
+msgid "歌词显示"
+msgstr "歌词显示"
+
+#: src/components/player/NowPlaying.tsx:353
+msgid "正在加载歌词…"
+msgstr "正在加载歌词…"
+
+#: src/components/player/NowPlaying.tsx:270
+msgid "正在加载音源…"
+msgstr "正在加载音源…"
+
+#: src/components/layout/Sidebar.tsx:112
+#: src/components/layout/TopBar.tsx:72
+msgid "正在播放"
+msgstr "正在播放"
+
+#: src/components/player/NowPlaying.tsx:270
+msgid "正在缓冲…"
+msgstr "正在缓冲…"
+
+#: src/routes/index.tsx:268
+msgid "每日推荐"
+msgstr "每日推荐"
+
+#: src/components/layout/SearchBox.tsx:436
+msgid "没有找到相关建议"
+msgstr "没有找到相关建议"
+
+#: src/components/layout/Sidebar.tsx:62
+msgid "浏览"
+msgstr "浏览"
+
+#: src/components/player/QueuePanel.tsx:94
+msgid "清空"
+msgstr "清空"
+
+#: src/components/layout/SearchBox.tsx:283
+msgid "清除"
+msgstr "清除"
+
+#: src/routes/settings.tsx:517
+msgid "清除缓存"
+msgstr "清除缓存"
+
+#: src/components/player/QueuePanel.tsx:197
+msgid "点击歌曲开始播放"
+msgstr "点击歌曲开始播放"
+
+#: src/components/layout/SearchBox.tsx:311
+msgid "热搜榜"
+msgstr "热搜榜"
+
+#: src/components/layout/Sidebar.tsx:133
+msgid "登录"
+msgstr "登录"
+
+#: src/components/layout/Sidebar.tsx:124
+msgid "登录后查看我的歌单"
+msgstr "登录后查看我的歌单"
+
+#: src/routes/settings.tsx:517
+msgid "确认清除？"
+msgstr "确认清除？"
+
+#: src/routes/settings.tsx:259
+msgid "管理本地音乐缓存与存储占用"
+msgstr "管理本地音乐缓存与存储占用"
+
+#: src/routes/index.tsx:290
+msgid "精选音乐视频"
+msgstr "精选音乐视频"
+
+#: src/routes/settings.tsx:414
+msgid "缓存列表"
+msgstr "缓存列表"
+
+#: src/routes/settings.tsx:313
+msgid "缓存品质"
+msgstr "缓存品质"
+
+#: src/routes/settings.tsx:59
+#: src/routes/settings.tsx:256
+msgid "设置"
+msgstr "设置"
+
+#: src/components/player/NowPlaying.tsx:340
+msgid "评论"
+msgstr "评论"
+
+#: src/components/player/PlayerBar.tsx:971
+msgid "试听"
+msgstr "试听"
+
+#: src/components/player/PlayerBar.tsx:661
+msgid "选择一首歌曲开始播放"
+msgstr "选择一首歌曲开始播放"
+
+#: src/routes/settings.tsx:355
+msgid "选择文件夹"
+msgstr "选择文件夹"
+
+#: src/routes/settings.tsx:292
+msgid "音乐缓存"
+msgstr "音乐缓存"
+
+#: src/routes/settings.tsx:369
+msgid "音源匹配"
+msgstr "音源匹配"
