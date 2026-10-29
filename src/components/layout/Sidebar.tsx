@@ -6,6 +6,7 @@ import {
   Disc3,
   Film,
   Heart,
+  History,
   ListMusic,
   Music2,
   Plus,
@@ -135,6 +136,26 @@ export function Sidebar() {
           </div>
         ) : (
           <div className="flex flex-col gap-0.5">
+            <button
+              type="button"
+              onClick={() => void navigate({ to: '/recent' })}
+              className={cn(
+                'flex h-[30px] items-center gap-2.5 rounded-[10px] px-2.5 max-md:h-10 text-left text-[12.5px] transition-colors',
+                isActive('/recent')
+                  ? 'bg-black/8 font-medium text-black'
+                  : 'text-black/65 hover:bg-black/4 hover:text-black',
+              )}
+            >
+              <History
+                className={cn(
+                  'h-4 w-4 shrink-0',
+                  isActive('/recent') ? 'text-accent' : 'text-black/40',
+                )}
+                strokeWidth={1.75}
+              />
+              <Trans>最近播放</Trans>
+            </button>
+
             {likedPlaylist && (
               <button
                 type="button"

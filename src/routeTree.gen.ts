@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as LatestMusicRouteImport } from './routes/latest-music'
 import { Route as LatestMvRouteImport } from './routes/latest-mv'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as RecentRouteImport } from './routes/recent'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as AlbumsIdRouteImport } from './routes/albums/$id'
@@ -42,6 +43,11 @@ const LatestMvRoute = LatestMvRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecentRoute = RecentRouteImport.update({
+  id: '/recent',
+  path: '/recent',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SearchRoute = SearchRouteImport.update({
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/latest-music': typeof LatestMusicRoute
   '/latest-mv': typeof LatestMvRoute
   '/profile': typeof ProfileRoute
+  '/recent': typeof RecentRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/albums/$id': typeof AlbumsIdRoute
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/latest-music': typeof LatestMusicRoute
   '/latest-mv': typeof LatestMvRoute
   '/profile': typeof ProfileRoute
+  '/recent': typeof RecentRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/albums/$id': typeof AlbumsIdRoute
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/latest-music': typeof LatestMusicRoute
   '/latest-mv': typeof LatestMvRoute
   '/profile': typeof ProfileRoute
+  '/recent': typeof RecentRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/albums/$id': typeof AlbumsIdRoute
@@ -151,6 +160,7 @@ export interface FileRouteTypes {
     | '/latest-music'
     | '/latest-mv'
     | '/profile'
+    | '/recent'
     | '/search'
     | '/settings'
     | '/albums/$id'
@@ -167,6 +177,7 @@ export interface FileRouteTypes {
     | '/latest-music'
     | '/latest-mv'
     | '/profile'
+    | '/recent'
     | '/search'
     | '/settings'
     | '/albums/$id'
@@ -183,6 +194,7 @@ export interface FileRouteTypes {
     | '/latest-music'
     | '/latest-mv'
     | '/profile'
+    | '/recent'
     | '/search'
     | '/settings'
     | '/albums/$id'
@@ -200,6 +212,7 @@ export interface RootRouteChildren {
   LatestMusicRoute: typeof LatestMusicRoute
   LatestMvRoute: typeof LatestMvRoute
   ProfileRoute: typeof ProfileRoute
+  RecentRoute: typeof RecentRoute
   SearchRoute: typeof SearchRoute
   SettingsRoute: typeof SettingsRoute
   AlbumsIdRoute: typeof AlbumsIdRoute
@@ -239,6 +252,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recent': {
+      id: '/recent'
+      path: '/recent'
+      fullPath: '/recent'
+      preLoaderRoute: typeof RecentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/search': {
@@ -331,6 +351,7 @@ const rootRouteChildren: RootRouteChildren = {
   LatestMusicRoute: LatestMusicRoute,
   LatestMvRoute: LatestMvRoute,
   ProfileRoute: ProfileRoute,
+  RecentRoute: RecentRoute,
   SearchRoute: SearchRoute,
   SettingsRoute: SettingsRoute,
   AlbumsIdRoute: AlbumsIdRoute,

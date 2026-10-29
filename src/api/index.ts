@@ -63,6 +63,35 @@ export async function fetchNewSongs(type: 0 | 7 | 96 | 8 | 16 = 0) {
   return normalizeSongs(res.data)
 }
 
+/* ------------------------------ listening -------------------------------- */
+
+interface RawRecentSongEntry {
+  song?: RawSong
+  songInfo?: RawSong
+  data?: RawSong
+  id?: number
+}
+
+/**
+ * `/record/recent/song` nests the playable song under `song` (the weapi
+ * response also uses `songInfo`/`data` on some storefronts). Normalise all
+ * shapes so the table always gets complete Song objects.
+ */
+export async function fetchRecentSongs(limit = 100) {
+  const res = await get<{ data?: { list?: RawRecentSongEntry[] } }>(
+    '/record/recent/song',
+    { limit },
+  )
+  const raw = (res.data?.list ?? [])
+    .map((entry) => {
+      const nested = entry.song ?? entry.songInfo ?? entry.data
+      if (nested) return nested
+      return entry.id ? (entry as unknown as RawSong) : null
+    })
+    .filter((song): song is RawSong => Boolean(song))
+  return normalizeSongs(raw).slice(0, limit)
+}
+
 /* -------------------------------- playlist ------------------------------- */
 
 export async function fetchTopPlaylists(options: {
