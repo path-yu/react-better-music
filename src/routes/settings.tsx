@@ -12,13 +12,18 @@ import {
   ListMusic,
   Languages,
   Loader2,
+  Moon,
+  Palette as PaletteIcon,
   RefreshCw,
   Settings2,
   Shield,
+  Sun,
   Trash2,
 } from 'lucide-react'
-import { Button, Select, Switch } from '@pikoloo/darwin-ui'
+import { Button, Checkbox, Select, Switch } from '@pikoloo/darwin-ui'
 import { CACHE_QUALITY_OPTIONS, useSettingsStore } from '../store/settings'
+import { useUiStore } from '../store/ui'
+import { PALETTE_OPTIONS } from '../lib/theme'
 import {
   clearAudioCache,
   downloadCachedAudio,
@@ -81,6 +86,10 @@ function SettingsPage() {
   const [pickingDir, setPickingDir] = useState(false)
   const disableDevTools = useSettingsStore((state) => state.disableDevTools)
   const setDisableDevTools = useSettingsStore((state) => state.setDisableDevTools)
+  const theme = useUiStore((state) => state.theme)
+  const setTheme = useUiStore((state) => state.setTheme)
+  const palette = useUiStore((state) => state.palette)
+  const setPalette = useUiStore((state) => state.setPalette)
 
   useEffect(() => {
     if (!desktop) return
@@ -261,11 +270,92 @@ function SettingsPage() {
           <Trans>设置</Trans>
         </h1>
         <p className="mt-1.5 text-[12px] text-black/35">
-          <Trans>管理本地音乐缓存与存储占用</Trans>
+          <Trans>管理外观、语言与本地音乐缓存</Trans>
         </p>
       </div>
 
       <div className="mt-6 grid gap-5">
+        <section className="apple-card p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
+                <PaletteIcon className="h-4 w-4 text-accent" />
+                <Trans>外观</Trans>
+              </h2>
+              <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-black/40">
+                <Trans>选择界面明暗与主题配色，立即生效，并会记住你的选择。</Trans>
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center rounded-full border border-black/8 bg-black/4 p-0.5">
+              <button
+                type="button"
+                onClick={() => setTheme('light')}
+                aria-pressed={theme === 'light'}
+                className={`pressable flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] transition-colors ${
+                  theme === 'light'
+                    ? 'bg-white text-black/75 shadow-sm dark:bg-white/15 dark:text-white'
+                    : 'text-black/40 hover:text-black/65 dark:text-white/45 dark:hover:text-white/80'
+                }`}
+              >
+                <Sun className="h-3 w-3" />
+                <Trans>浅色</Trans>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme('dark')}
+                aria-pressed={theme === 'dark'}
+                className={`pressable flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] transition-colors ${
+                  theme === 'dark'
+                    ? 'bg-white text-black/75 shadow-sm dark:bg-white/15 dark:text-white'
+                    : 'text-black/40 hover:text-black/65 dark:text-white/45 dark:hover:text-white/80'
+                }`}
+              >
+                <Moon className="h-3 w-3" />
+                <Trans>深色</Trans>
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-1.5 sm:grid-cols-2">
+            {PALETTE_OPTIONS.map((option) => {
+              const selected = palette === option.id
+              const preview = theme === 'dark' ? option.dark : option.light
+              return (
+                <div
+                  key={option.id}
+                  title={option.description}
+                  onClick={() => setPalette(option.id)}
+                  className={`group flex cursor-pointer items-center gap-3 rounded-[11px] px-3 py-2.5 transition-colors ${
+                    selected
+                      ? 'bg-accent/8 ring-1 ring-inset ring-accent/20'
+                      : 'hover:bg-black/4 dark:hover:bg-white/5'
+                  }`}
+                >
+                  <span
+                    aria-hidden="true"
+                    className="h-5 w-5 shrink-0 rounded-full border border-black/10 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.18)] dark:border-white/15"
+                    style={{ backgroundColor: preview.accent }}
+                  />
+                  <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-black/75">
+                    {option.label}
+                  </span>
+                  <Checkbox
+                    checked={selected}
+                    onChange={() => setPalette(option.id)}
+                    aria-label={option.label}
+                    className={`palette-checkbox shrink-0 transition-opacity ${
+                      selected
+                        ? 'opacity-100'
+                        : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
+                    }`}
+                    boxClassName="h-4 w-4 rounded-[5px]"
+                  />
+                </div>
+              )
+            })}
+          </div>
+        </section>
+
         <section className="apple-card p-6">
           <div className="flex items-start justify-between gap-4">
             <div>

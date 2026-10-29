@@ -46,6 +46,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const sidebarOpen = useUiStore((state) => state.sidebarOpen)
   const closeSidebar = useUiStore((state) => state.closeSidebar)
   const theme = useUiStore((state) => state.theme)
+  const palette = useUiStore((state) => state.palette)
   const initSession = useUserStore((state) => state.initSession)
   const hasQueue = usePlayerStore((state) => state.queue.length > 0)
   const showQueue = usePlayerStore((state) => state.showQueue)
@@ -56,8 +57,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   useDesktopCommands()
 
   useEffect(() => {
-    applyTheme(theme)
-  }, [theme])
+    applyTheme(theme, palette)
+  }, [theme, palette])
 
   useEffect(() => {
     closeSidebar()

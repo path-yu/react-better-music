@@ -1088,7 +1088,7 @@ export function PlayerBar() {
                 ? i18n._(msg`暂停（空格）`)
                 : i18n._(msg`播放（空格）`)
             }
-            className="pressable flex h-9 w-9 items-center justify-center rounded-full bg-accent text-white shadow-[0_2px_8px_rgba(0,102,204,0.35)] hover:bg-accent-hover max-md:h-10 max-md:w-10"
+            className="accent-play-shadow pressable flex h-9 w-9 items-center justify-center rounded-full bg-accent text-white hover:bg-accent-hover max-md:h-10 max-md:w-10"
           >
             {busy ? (
               <Loader2 className="h-5 w-5 animate-spin" />

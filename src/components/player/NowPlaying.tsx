@@ -179,7 +179,7 @@ export function NowPlaying() {
   return (
     <div
       className="nowplaying-overlay dark"
-      style={{ backgroundColor: '#0f0f12' }}
+      style={{ backgroundColor: 'var(--nowplaying-base, #0f0f12)' }}
     >
       <div className="nowplaying-ambient" aria-hidden="true">
         {ambientArtwork ? (

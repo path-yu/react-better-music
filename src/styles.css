@@ -50,6 +50,17 @@
   --apple-pearl: #fafafc;
   --apple-hairline: #e5e5ea;
   --apple-divider: #f0f0f0;
+  /* Palette surfaces. Palettes below override these per theme; components use
+     the variables so the whole chrome follows the picked colour scheme. */
+  --app-bg: radial-gradient(circle at 20% 0%, #e8e8ee 0%, #f5f5f7 45%, #e9e9ee 100%);
+  --app-surface: rgba(255, 255, 255, 0.92);
+  --app-content: #ffffff;
+  --app-glass: rgba(246, 246, 248, 0.78);
+  --app-sidebar: rgba(244, 244, 247, 0.72);
+  --app-player: rgba(250, 250, 252, 0.86);
+  --app-card: #ffffff;
+  --app-border: var(--apple-hairline);
+  --app-border-strong: rgba(0, 0, 0, 0.12);
   --apple-green: #28c840;
   --apple-yellow: #febc2e;
   --apple-red: #ff5f57;
@@ -107,7 +118,7 @@ body {
   margin: 0;
   font-family: var(--font-apple);
   color: var(--apple-ink);
-  background: radial-gradient(circle at 20% 0%, #e8e8ee 0%, #f5f5f7 45%, #e9e9ee 100%);
+  background: var(--app-bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -287,9 +298,9 @@ html.desktop .app-window {
   height: 44px;
   flex: none;
   padding: 0 16px;
-  background: rgba(246, 246, 248, 0.78);
+  background: var(--app-glass);
   backdrop-filter: saturate(180%) blur(24px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid var(--app-border);
   user-select: none;
 }
 
@@ -347,9 +358,9 @@ html.desktop .app-window {
   height: 38px;
   flex: none;
   padding: 0 0 0 16px;
-  background: rgba(246, 246, 248, 0.78);
+  background: var(--app-glass);
   backdrop-filter: saturate(180%) blur(24px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid var(--app-border);
   user-select: none;
   -webkit-app-region: drag;
   app-region: drag;
@@ -407,8 +418,11 @@ html.desktop .app-window {
  */
 .app-window:has(.nowplaying-overlay) .desktop-titlebar,
 .app-window:has(.nowplaying-overlay) .titlebar {
-  background:transparent;
-  /* border-bottom-color: rgba(255, 255, 255, 0.08); */
+  background: transparent;
+  /* The glass bar border is a light hairline in the default palette; over the
+     immersive artwork it reads as a stray white line. Let the artwork run under
+     the transparent bar instead. */
+  border-bottom-color: transparent;
 }
 
 .app-window:has(.nowplaying-overlay) .titlebar-title {
@@ -439,9 +453,9 @@ html.desktop .app-window {
   flex: none;
   display: flex;
   flex-direction: column;
-  background: rgba(244, 244, 247, 0.72);
+  background: var(--app-sidebar);
   backdrop-filter: saturate(180%) blur(30px);
-  border-right: 1px solid rgba(0, 0, 0, 0.07);
+  border-right: 1px solid var(--app-border);
 }
 
 .sidebar-backdrop {
@@ -494,7 +508,7 @@ html.desktop .app-window {
   flex-direction: column;
   flex: 1;
   min-width: 0;
-  background: #ffffff;
+  background: var(--app-content);
 }
 
 .apple-content {
@@ -507,15 +521,15 @@ html.desktop .app-window {
 
 .player-glass {
   flex: none;
-  background: rgba(250, 250, 252, 0.86);
+  background: var(--app-player);
   backdrop-filter: saturate(180%) blur(26px);
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  border-top: 1px solid var(--app-border);
 }
 
 .pushbar-glass {
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--app-glass);
   backdrop-filter: saturate(180%) blur(20px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid var(--app-border);
 }
 
 /* ---------- Apple typography ---------- */
@@ -574,8 +588,8 @@ html.desktop .app-window {
 /* ---------- Apple cards / tiles ---------- */
 
 .apple-card {
-  background: #ffffff;
-  border: 1px solid var(--apple-hairline);
+  background: var(--app-card);
+  border: 1px solid var(--app-border);
   border-radius: 18px;
   transition:
     transform 0.25s ease,
@@ -586,7 +600,7 @@ html.desktop .app-window {
 .apple-card-hover:hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 28px -16px rgba(0, 0, 0, 0.28);
-  border-color: rgba(0, 0, 0, 0.12);
+  border-color: var(--app-border-strong);
 }
 
 .artwork-shadow {
@@ -1032,6 +1046,28 @@ html.desktop .app-window {
   isolation: isolate;
 }
 
+/*
+ * Album artwork drives the base wash, but the active palette adds a soft glow
+ * so switching from Ocean to Sunset/Forest is visible on this page too.
+ */
+.nowplaying-ambient::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      120% 90% at 72% 0%,
+      rgb(var(--nowplaying-accent-rgb, 41 151 255) / 0.2),
+      transparent 58%
+    ),
+    radial-gradient(
+      90% 70% at 12% 100%,
+      rgb(var(--nowplaying-accent-rgb, 41 151 255) / 0.1),
+      transparent 60%
+    );
+}
+
 /* Apple Music uses the cover itself (`background-size: cover`), blurred, at
    full strength — no white veil and no extra colour tint. */
 .nowplaying-ambient__art {
@@ -1241,6 +1277,15 @@ html.desktop .app-window {
   --ink-1: rgba(255, 255, 255, 0.92);
   --ink-2: rgba(255, 255, 255, 0.62);
   --ink-3: rgba(255, 255, 255, 0.46);
+  --app-bg: radial-gradient(circle at 20% 0%, #26262c 0%, #111113 48%, #1a1a1e 100%);
+  --app-surface: rgba(28, 28, 30, 0.94);
+  --app-content: #1c1c1e;
+  --app-glass: rgba(30, 30, 32, 0.82);
+  --app-sidebar: rgba(28, 28, 30, 0.72);
+  --app-player: rgba(24, 24, 26, 0.9);
+  --app-card: #232325;
+  --app-border: rgba(255, 255, 255, 0.12);
+  --app-border-strong: rgba(255, 255, 255, 0.22);
   --product-shadow: rgba(0, 0, 0, 0.55) 3px 5px 30px 0;
   /* Darwin theme variables for hover / secondary surfaces */
   --accent: 240 3.7% 16%;
@@ -1250,24 +1295,24 @@ html.desktop .app-window {
 }
 
 .dark body {
-  background: radial-gradient(circle at 20% 0%, #26262c 0%, #111113 48%, #1a1a1e 100%);
+  background: var(--app-bg);
 }
 
 .dark .app-window {
-  background: rgba(28, 28, 30, 0.94);
+  background: var(--app-surface);
   box-shadow:
     0 0 0 0.5px rgba(255, 255, 255, 0.14),
     0 24px 70px -12px rgba(0, 0, 0, 0.7);
 }
 
 .dark .titlebar {
-  background: rgba(30, 30, 32, 0.82);
-  border-bottom-color: rgba(255, 255, 255, 0.08);
+  background: var(--app-glass);
+  border-bottom-color: var(--app-border);
 }
 
 .dark .desktop-titlebar {
-  background: rgba(30, 30, 32, 0.82);
-  border-bottom-color: rgba(255, 255, 255, 0.08);
+  background: var(--app-glass);
+  border-bottom-color: var(--app-border);
 }
 
 .dark .desktop-titlebar__button {
@@ -1293,31 +1338,31 @@ html.desktop .app-window {
 }
 
 .dark .sidebar-glass {
-  background: rgba(28, 28, 30, 0.72);
-  border-right-color: rgba(255, 255, 255, 0.08);
+  background: var(--app-sidebar);
+  border-right-color: var(--app-border);
 }
 
 .dark .main-column {
-  background: #1c1c1e;
+  background: var(--app-content);
 }
 
 .dark .pushbar-glass {
-  background: rgba(30, 30, 32, 0.84);
-  border-bottom-color: rgba(255, 255, 255, 0.08);
+  background: var(--app-glass);
+  border-bottom-color: var(--app-border);
 }
 
 .dark .player-glass {
-  background: rgba(24, 24, 26, 0.9);
-  border-top-color: rgba(255, 255, 255, 0.1);
+  background: var(--app-player);
+  border-top-color: var(--app-border);
 }
 
 .dark .apple-card {
-  background: #232325;
-  border-color: rgba(255, 255, 255, 0.12);
+  background: var(--app-card);
+  border-color: var(--app-border);
 }
 
 .dark .apple-card-hover:hover {
-  border-color: rgba(255, 255, 255, 0.22);
+  border-color: var(--app-border-strong);
   box-shadow: 0 12px 28px -16px rgba(0, 0, 0, 0.75);
 }
 
@@ -1342,7 +1387,7 @@ html.desktop .app-window {
 }
 
 .dark ::selection {
-  background: rgba(41, 151, 255, 0.35);
+  background: rgb(var(--apple-blue-rgb) / 0.35);
 }
 
 /* Text tokens: invert the black-based hierarchy to white-based */
@@ -1930,6 +1975,435 @@ html.desktop .app-window {
     --media-controls: #ffffff;
     --media-controls-gradient: none;
   }
+}
+
+/* ---------- appearance palettes ---------- */
+/*
+ * Ocean is the default defined in :root/.dark. Sunset and Forest retint the
+ * accent, app background, chrome glass and content surfaces; text stays the
+ * neutral ink scale, so every palette works in both light and dark mode.
+ */
+[data-theme='light'][data-palette='sunset'] {
+  --primary: 28 88% 38%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 32 95% 44%;
+  --accent: 32 100% 95%;
+  --accent-foreground: 30 90% 25%;
+  --apple-blue: #b45309;
+  --apple-blue-focus: #d97706;
+  --apple-blue-rgb: 180 83 9;
+  --apple-blue-on-light: #b45309;
+  --apple-blue-dark: #fb923c;
+  --app-bg: radial-gradient(circle at 20% 0%, #f6e7d4 0%, #fbf3e8 46%, #f3e3cf 100%);
+  --app-surface: rgba(255, 253, 249, 0.92);
+  --app-content: #fffdf9;
+  --app-glass: rgba(250, 242, 231, 0.82);
+  --app-sidebar: rgba(248, 239, 226, 0.78);
+  --app-player: rgba(253, 247, 239, 0.9);
+  --app-card: #fffdf9;
+  --app-border: rgba(120, 72, 20, 0.14);
+  --app-border-strong: rgba(120, 72, 20, 0.24);
+}
+
+[data-theme='light'][data-palette='forest'] {
+  --primary: 175 75% 26%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 172 66% 32%;
+  --accent: 170 45% 94%;
+  --accent-foreground: 175 70% 20%;
+  --apple-blue: #0f766e;
+  --apple-blue-focus: #0d9488;
+  --apple-blue-rgb: 15 118 110;
+  --apple-blue-on-light: #0f766e;
+  --apple-blue-dark: #2dd4bf;
+  --app-bg: radial-gradient(circle at 20% 0%, #e2eee8 0%, #eef5f1 46%, #e4efe9 100%);
+  --app-surface: rgba(251, 253, 252, 0.92);
+  --app-content: #fbfdfc;
+  --app-glass: rgba(238, 246, 241, 0.82);
+  --app-sidebar: rgba(235, 244, 239, 0.78);
+  --app-player: rgba(243, 249, 245, 0.9);
+  --app-card: #fbfdfc;
+  --app-border: rgba(15, 118, 110, 0.16);
+  --app-border-strong: rgba(15, 118, 110, 0.28);
+}
+
+[data-theme='dark'][data-palette='sunset'] {
+  --primary: 27 96% 61%;
+  --primary-foreground: 24 30% 10%;
+  --ring: 27 96% 61%;
+  --accent: 24 40% 16%;
+  --accent-foreground: 30 100% 85%;
+  --apple-blue: #fb923c;
+  --apple-blue-focus: #fdba74;
+  --apple-blue-rgb: 251 146 60;
+  --apple-blue-on-light: #b45309;
+  --apple-blue-dark: #fb923c;
+  --app-bg: radial-gradient(circle at 20% 0%, #2b2119 0%, #120e0a 50%, #1e1711 100%);
+  --app-surface: rgba(30, 23, 17, 0.94);
+  --app-content: #1e1711;
+  --app-glass: rgba(32, 24, 18, 0.84);
+  --app-sidebar: rgba(30, 23, 17, 0.76);
+  --app-player: rgba(26, 20, 15, 0.92);
+  --app-card: #241b13;
+  --app-border: rgba(255, 255, 255, 0.12);
+  --app-border-strong: rgba(255, 255, 255, 0.22);
+}
+
+[data-theme='dark'][data-palette='forest'] {
+  --primary: 172 66% 50%;
+  --primary-foreground: 170 40% 8%;
+  --ring: 172 66% 50%;
+  --accent: 170 30% 14%;
+  --accent-foreground: 170 80% 82%;
+  --apple-blue: #2dd4bf;
+  --apple-blue-focus: #5eead4;
+  --apple-blue-rgb: 45 212 191;
+  --apple-blue-on-light: #0f766e;
+  --apple-blue-dark: #2dd4bf;
+  --app-bg: radial-gradient(circle at 20% 0%, #16241d 0%, #0d1512 50%, #122019 100%);
+  --app-surface: rgba(20, 36, 28, 0.94);
+  --app-content: #122019;
+  --app-glass: rgba(18, 32, 25, 0.84);
+  --app-sidebar: rgba(16, 29, 23, 0.78);
+  --app-player: rgba(14, 26, 20, 0.92);
+  --app-card: #14241c;
+  --app-border: rgba(255, 255, 255, 0.12);
+  --app-border-strong: rgba(255, 255, 255, 0.22);
+}
+
+/*
+ * Darwin's preflight paints html/body with fixed light/dark solids; the palette
+ * gradient must win in both themes.
+ */
+html[data-theme='light'],
+html[data-theme='light'] body,
+html.dark[data-theme='dark'],
+html.dark[data-theme='dark'] body {
+  background: var(--app-bg);
+}
+
+/*
+ * The NowPlaying overlay carries a local `.dark` class, whose variables reset
+ * the accent to ocean blue. These higher-specificity aliases keep its controls
+ * on the active palette. The page stays dark, so use the palette's dark accent.
+ */
+[data-palette='ocean'] {
+  --nowplaying-accent: #2997ff;
+  --nowplaying-accent-focus: #0a84ff;
+  --nowplaying-accent-rgb: 41 151 255;
+  --nowplaying-accent-on-light: #0066cc;
+  --nowplaying-base: #0f0f12;
+}
+
+[data-palette='sunset'] {
+  --nowplaying-accent: #fb923c;
+  --nowplaying-accent-focus: #fdba74;
+  --nowplaying-accent-rgb: 251 146 60;
+  --nowplaying-accent-on-light: #b45309;
+  --nowplaying-base: #140f0b;
+}
+
+[data-palette='forest'] {
+  --nowplaying-accent: #2dd4bf;
+  --nowplaying-accent-focus: #5eead4;
+  --nowplaying-accent-rgb: 45 212 191;
+  --nowplaying-accent-on-light: #0f766e;
+  --nowplaying-base: #0a120e;
+}
+
+.nowplaying-overlay.dark {
+  --apple-blue: var(--nowplaying-accent);
+  --apple-blue-focus: var(--nowplaying-accent-focus);
+  --apple-blue-rgb: var(--nowplaying-accent-rgb);
+  --apple-blue-on-light: var(--nowplaying-accent-on-light);
+  --apple-blue-dark: var(--nowplaying-accent);
+}
+
+/* The immersive player bar also opts into `.dark`; keep its accent on the
+   palette while it sits over the dark now-playing backdrop. */
+.player-glass.dark {
+  --apple-blue: var(--nowplaying-accent);
+  --apple-blue-focus: var(--nowplaying-accent-focus);
+  --apple-blue-rgb: var(--nowplaying-accent-rgb);
+  --apple-blue-on-light: var(--nowplaying-accent-on-light);
+  --apple-blue-dark: var(--nowplaying-accent);
+}
+
+.accent-play-shadow {
+  box-shadow: 0 2px 8px rgb(var(--apple-blue-rgb) / 0.35);
+}
+
+/* Darwin's Checkbox hard-codes a blue checked state; use the palette accent. */
+.palette-checkbox input:checked + span {
+  background-color: var(--apple-blue);
+  border-color: var(--apple-blue);
+}
+
+/*
+ * darwin-ui's primary Button and link Button hard-code Tailwind blues instead
+ * of a theme token. Rebind those utilities to the active palette so "播放全部"
+ * and other primary actions follow the appearance setting.
+ */
+.bg-blue-500 {
+  background-color: var(--apple-blue);
+}
+
+.hover\:bg-blue-600:hover {
+  background-color: var(--apple-blue-focus);
+}
+
+.text-blue-600 {
+  color: var(--apple-blue);
+}
+
+.dark .text-blue-400 {
+  color: var(--apple-blue);
+}
+
+.focus-visible\:ring-blue-500\/50:focus-visible {
+  --tw-ring-color: rgb(var(--apple-blue-rgb) / 0.5);
+}
+
+/* Dark palettes use bright accents; a dark tick reads better than white. */
+[data-theme='dark'] .palette-checkbox input:checked + span svg {
+  color: #0b0b0d;
+}
+
+/* ---------- additional appearance palettes ---------- */
+/*
+ * These seven palettes share one mapping block: the palette sets the light and
+ * dark accent/surfaces, and the theme mapping below turns them into the same
+ * semantic tokens used by the first three palettes. Keeping the mapping shared
+ * means a new palette only needs one small variable block.
+ */
+[data-palette='sakura'] {
+  --palette-accent-light: #be185d;
+  --palette-focus-light: #db2777;
+  --palette-rgb-light: 190 24 93;
+  --palette-primary-light: 333 80% 42%;
+  --palette-ring-light: 333 80% 48%;
+  --palette-tint-light: 333 100% 96%;
+  --palette-tint-ink-light: 333 80% 28%;
+  --palette-accent-dark: #f472b6;
+  --palette-focus-dark: #f9a8d4;
+  --palette-rgb-dark: 244 114 182;
+  --palette-primary-dark: 333 80% 72%;
+  --palette-ring-dark: 333 80% 72%;
+  --palette-tint-dark: 333 35% 17%;
+  --palette-tint-ink-dark: 333 90% 88%;
+  --palette-bg-light: radial-gradient(circle at 20% 0%, #fbe7f1 0%, #fdf2f8 46%, #f7e3ec 100%);
+  --palette-bg-dark: radial-gradient(circle at 20% 0%, #2a1721 0%, #120c10 50%, #1f1118 100%);
+  --palette-surface-light: #fffafc;
+  --palette-surface-dark: #24161d;
+  --palette-nowplaying-base: #120c10;
+}
+
+[data-palette='violet'] {
+  --palette-accent-light: #6d28d9;
+  --palette-focus-light: #7c3aed;
+  --palette-rgb-light: 109 40 217;
+  --palette-primary-light: 262 72% 50%;
+  --palette-ring-light: 263 70% 58%;
+  --palette-tint-light: 262 100% 96%;
+  --palette-tint-ink-light: 262 60% 30%;
+  --palette-accent-dark: #a78bfa;
+  --palette-focus-dark: #c4b5fd;
+  --palette-rgb-dark: 167 139 250;
+  --palette-primary-dark: 255 85% 75%;
+  --palette-ring-dark: 255 85% 75%;
+  --palette-tint-dark: 260 25% 18%;
+  --palette-tint-ink-dark: 260 90% 88%;
+  --palette-bg-light: radial-gradient(circle at 20% 0%, #efe7fc 0%, #f5f3ff 46%, #ece3f9 100%);
+  --palette-bg-dark: radial-gradient(circle at 20% 0%, #241a35 0%, #100c17 50%, #1b1626 100%);
+  --palette-surface-light: #fbf9ff;
+  --palette-surface-dark: #201a2c;
+  --palette-nowplaying-base: #100c17;
+}
+
+[data-palette='teal'] {
+  --palette-accent-light: #0e7490;
+  --palette-focus-light: #0891b2;
+  --palette-rgb-light: 14 116 144;
+  --palette-primary-light: 192 80% 31%;
+  --palette-ring-light: 192 80% 38%;
+  --palette-tint-light: 192 80% 94%;
+  --palette-tint-ink-light: 192 80% 18%;
+  --palette-accent-dark: #22d3ee;
+  --palette-focus-dark: #67e8f9;
+  --palette-rgb-dark: 34 211 238;
+  --palette-primary-dark: 188 80% 60%;
+  --palette-ring-dark: 188 80% 60%;
+  --palette-tint-dark: 190 35% 14%;
+  --palette-tint-ink-dark: 190 90% 85%;
+  --palette-bg-light: radial-gradient(circle at 20% 0%, #e3f4f8 0%, #ecfeff 46%, #e0f2f7 100%);
+  --palette-bg-dark: radial-gradient(circle at 20% 0%, #0f2a31 0%, #08161a 50%, #0f1d22 100%);
+  --palette-surface-light: #f8fdff;
+  --palette-surface-dark: #10242a;
+  --palette-nowplaying-base: #08161a;
+}
+
+[data-palette='rose'] {
+  --palette-accent-light: #be123c;
+  --palette-focus-light: #e11d48;
+  --palette-rgb-light: 190 18 60;
+  --palette-primary-light: 347 77% 42%;
+  --palette-ring-light: 347 77% 48%;
+  --palette-tint-light: 347 100% 96%;
+  --palette-tint-ink-light: 347 75% 28%;
+  --palette-accent-dark: #fb7185;
+  --palette-focus-dark: #fda4af;
+  --palette-rgb-dark: 251 113 133;
+  --palette-primary-dark: 351 90% 72%;
+  --palette-ring-dark: 351 90% 72%;
+  --palette-tint-dark: 350 35% 17%;
+  --palette-tint-ink-dark: 350 100% 88%;
+  --palette-bg-light: radial-gradient(circle at 20% 0%, #fbe5ea 0%, #fff1f2 46%, #f7e0e5 100%);
+  --palette-bg-dark: radial-gradient(circle at 20% 0%, #2a151a 0%, #130c0e 50%, #211316 100%);
+  --palette-surface-light: #fffafb;
+  --palette-surface-dark: #25171a;
+  --palette-nowplaying-base: #130c0e;
+}
+
+[data-palette='amber'] {
+  --palette-accent-light: #a16207;
+  --palette-focus-light: #ca8a04;
+  --palette-rgb-light: 161 98 7;
+  --palette-primary-light: 38 92% 33%;
+  --palette-ring-light: 38 92% 40%;
+  --palette-tint-light: 38 100% 94%;
+  --palette-tint-ink-light: 38 90% 20%;
+  --palette-accent-dark: #facc15;
+  --palette-focus-dark: #fde047;
+  --palette-rgb-dark: 250 204 21;
+  --palette-primary-dark: 48 96% 56%;
+  --palette-ring-dark: 48 96% 56%;
+  --palette-tint-dark: 45 35% 16%;
+  --palette-tint-ink-dark: 48 100% 80%;
+  --palette-bg-light: radial-gradient(circle at 20% 0%, #fbf3d8 0%, #fefce8 46%, #f8efd2 100%);
+  --palette-bg-dark: radial-gradient(circle at 20% 0%, #2a2412 0%, #12100a 50%, #1f1a10 100%);
+  --palette-surface-light: #fffdf4;
+  --palette-surface-dark: #221d12;
+  --palette-nowplaying-base: #12100a;
+}
+
+[data-palette='graphite'] {
+  --palette-accent-light: #475569;
+  --palette-focus-light: #64748b;
+  --palette-rgb-light: 71 85 105;
+  --palette-primary-light: 215 19% 35%;
+  --palette-ring-light: 215 20% 42%;
+  --palette-tint-light: 215 20% 94%;
+  --palette-tint-ink-light: 215 25% 24%;
+  --palette-accent-dark: #cbd5e1;
+  --palette-focus-dark: #e2e8f0;
+  --palette-rgb-dark: 203 213 225;
+  --palette-primary-dark: 213 27% 78%;
+  --palette-ring-dark: 213 27% 78%;
+  --palette-tint-dark: 215 15% 18%;
+  --palette-tint-ink-dark: 210 30% 90%;
+  --palette-bg-light: radial-gradient(circle at 20% 0%, #e9edf2 0%, #f8fafc 46%, #eceff4 100%);
+  --palette-bg-dark: radial-gradient(circle at 20% 0%, #20242b 0%, #0d0f12 50%, #16181d 100%);
+  --palette-surface-light: #fbfcfd;
+  --palette-surface-dark: #1c1f25;
+  --palette-nowplaying-base: #0d0f12;
+}
+
+[data-palette='mocha'] {
+  --palette-accent-light: #78350f;
+  --palette-focus-light: #92400e;
+  --palette-rgb-light: 120 53 15;
+  --palette-primary-light: 25 78% 28%;
+  --palette-ring-light: 25 78% 36%;
+  --palette-tint-light: 30 60% 94%;
+  --palette-tint-ink-light: 25 70% 22%;
+  --palette-accent-dark: #d4a373;
+  --palette-focus-dark: #e5c5a1;
+  --palette-rgb-dark: 212 163 115;
+  --palette-primary-dark: 28 55% 70%;
+  --palette-ring-dark: 28 55% 70%;
+  --palette-tint-dark: 26 30% 16%;
+  --palette-tint-ink-dark: 30 80% 85%;
+  --palette-bg-light: radial-gradient(circle at 20% 0%, #f2e6d9 0%, #f7ede3 46%, #efe1d2 100%);
+  --palette-bg-dark: radial-gradient(circle at 20% 0%, #2a2019 0%, #120d0a 50%, #1d1512 100%);
+  --palette-surface-light: #fdf9f4;
+  --palette-surface-dark: #241a15;
+  --palette-nowplaying-base: #120d0a;
+}
+
+[data-theme='light'][data-palette='sakura'],
+[data-theme='light'][data-palette='violet'],
+[data-theme='light'][data-palette='teal'],
+[data-theme='light'][data-palette='rose'],
+[data-theme='light'][data-palette='amber'],
+[data-theme='light'][data-palette='graphite'],
+[data-theme='light'][data-palette='mocha'] {
+  --apple-blue: var(--palette-accent-light);
+  --apple-blue-focus: var(--palette-focus-light);
+  --apple-blue-rgb: var(--palette-rgb-light);
+  --apple-blue-on-light: var(--palette-accent-light);
+  --apple-blue-dark: var(--palette-accent-dark);
+  --app-bg: var(--palette-bg-light);
+  --app-surface: var(--palette-surface-light);
+  --app-surface: color-mix(in srgb, var(--palette-surface-light) 92%, transparent);
+  --app-content: var(--palette-surface-light);
+  --app-glass: var(--palette-surface-light);
+  --app-glass: color-mix(in srgb, var(--palette-surface-light) 82%, transparent);
+  --app-sidebar: var(--palette-surface-light);
+  --app-sidebar: color-mix(in srgb, var(--palette-surface-light) 76%, transparent);
+  --app-player: var(--palette-surface-light);
+  --app-player: color-mix(in srgb, var(--palette-surface-light) 90%, transparent);
+  --app-card: var(--palette-surface-light);
+  --app-border: rgba(0, 0, 0, 0.12);
+  --app-border: color-mix(in srgb, var(--palette-accent-light) 14%, transparent);
+  --app-border-strong: rgba(0, 0, 0, 0.2);
+  --app-border-strong: color-mix(in srgb, var(--palette-accent-light) 26%, transparent);
+  --primary: var(--palette-primary-light);
+  --ring: var(--palette-ring-light);
+  --accent: var(--palette-tint-light);
+  --accent-foreground: var(--palette-tint-ink-light);
+  --nowplaying-accent: var(--palette-accent-dark);
+  --nowplaying-accent-focus: var(--palette-focus-dark);
+  --nowplaying-accent-rgb: var(--palette-rgb-dark);
+  --nowplaying-accent-on-light: var(--palette-accent-light);
+  --nowplaying-base: var(--palette-nowplaying-base);
+}
+
+[data-theme='dark'][data-palette='sakura'],
+[data-theme='dark'][data-palette='violet'],
+[data-theme='dark'][data-palette='teal'],
+[data-theme='dark'][data-palette='rose'],
+[data-theme='dark'][data-palette='amber'],
+[data-theme='dark'][data-palette='graphite'],
+[data-theme='dark'][data-palette='mocha'] {
+  --apple-blue: var(--palette-accent-dark);
+  --apple-blue-focus: var(--palette-focus-dark);
+  --apple-blue-rgb: var(--palette-rgb-dark);
+  --apple-blue-on-light: var(--palette-accent-light);
+  --apple-blue-dark: var(--palette-accent-dark);
+  --app-bg: var(--palette-bg-dark);
+  --app-surface: var(--palette-surface-dark);
+  --app-surface: color-mix(in srgb, var(--palette-surface-dark) 94%, transparent);
+  --app-content: var(--palette-surface-dark);
+  --app-glass: var(--palette-surface-dark);
+  --app-glass: color-mix(in srgb, var(--palette-surface-dark) 82%, transparent);
+  --app-sidebar: var(--palette-surface-dark);
+  --app-sidebar: color-mix(in srgb, var(--palette-surface-dark) 76%, transparent);
+  --app-player: var(--palette-surface-dark);
+  --app-player: color-mix(in srgb, var(--palette-surface-dark) 90%, transparent);
+  --app-card: var(--palette-surface-dark);
+  --app-border: rgba(255, 255, 255, 0.12);
+  --app-border: color-mix(in srgb, var(--palette-accent-dark) 20%, transparent);
+  --app-border-strong: rgba(255, 255, 255, 0.22);
+  --app-border-strong: color-mix(in srgb, var(--palette-accent-dark) 30%, transparent);
+  --primary: var(--palette-primary-dark);
+  --ring: var(--palette-ring-dark);
+  --accent: var(--palette-tint-dark);
+  --accent-foreground: var(--palette-tint-ink-dark);
+  --nowplaying-accent: var(--palette-accent-dark);
+  --nowplaying-accent-focus: var(--palette-focus-dark);
+  --nowplaying-accent-rgb: var(--palette-rgb-dark);
+  --nowplaying-accent-on-light: var(--palette-accent-light);
+  --nowplaying-base: var(--palette-nowplaying-base);
 }
 
 

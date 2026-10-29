@@ -11,7 +11,7 @@ import { useSettingsStore } from './store/settings'
 import { rememberBridgeToken, requestJson } from './lib/desktopBridge'
 import { activateLocale, defaultLocale, i18n } from './i18n'
 
-applyTheme(useUiStore.getState().theme)
+applyTheme(useUiStore.getState().theme, useUiStore.getState().palette)
 activateLocale(useSettingsStore.getState().locale ?? defaultLocale)
 
 // Desktop builds append the local bridge token to the view URL. Capture it
