@@ -89,24 +89,33 @@ export function NowPlaying() {
     setArtworkPalette([])
   }, [artwork])
 
+  // Warm the palette and the cover thumbnails as soon as the track changes —
+  // even while the overlay is closed — so switching songs doesn't sit on the
+  // previous colours while the proxy fetch finishes.
   useEffect(() => {
-    if (!show) return
+    if (!artwork) return
     let active = true
-    // Read 32×32 pixels after the 400 ms enter animation. Sampling on open
-    // forced a decode + canvas read in the middle of the transition, and the
-    // colour update then repainted the full-screen blurred backdrop again.
     const timer = window.setTimeout(() => {
+      if (!active) return
+      const preload = (url?: string | null) => {
+        if (!url) return
+        const image = new Image()
+        image.decoding = 'async'
+        image.src = url
+      }
+      preload(resizedImageUrl(artwork, '320y320'))
+      preload(resizedImageUrl(artwork, '640y640'))
       void extractArtworkPalette(artwork, 6).then((palette) => {
         if (!active) return
         setArtworkPalette(palette)
         setDominantColor(palette[0] ?? null)
       })
-    }, 360)
+    }, 60)
     return () => {
       active = false
       window.clearTimeout(timer)
     }
-  }, [show, artwork])
+  }, [artwork])
 
   useEffect(() => {
     if (!show) return

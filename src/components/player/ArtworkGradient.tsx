@@ -216,29 +216,21 @@ void main() {
   // Apple's backdrop is not a simple left/right split: a dark navy field,
   // purple toward the top, and red accents at the left edge and bottom-right.
   // fBm warps these masks so the regions breathe instead of forming hard bands.
-  vec2 warped = uv + q * 0.045 + r * 0.025;
-  vec3 base = mix(u_colors[1], vec3(0.015, 0.02, 0.05), 0.45);
-  vec3 color = base;
-
-  // WebGL's fragment origin is bottom-left; screen y runs the other way.
-  float screenY = 1.0 - warped.y;
-  float topMask = smoothstep(0.7, 0.0, screenY + (n - 0.5) * 0.1);
-  color = mix(color, u_colors[2], topMask * 0.55);
-
-  float leftMask = smoothstep(0.65, 0.0, warped.x + (n - 0.5) * 0.08);
-  color = mix(color, u_colors[0], leftMask * 0.85 * (1.0 - topMask * 0.65));
-
-  vec2 redSpot = vec2(0.84, 0.12);
-  float spot = 1.0 - smoothstep(
+  vec2 warped = uv + q * 0.035 + r * 0.02;
+  float axisAngle = u_time * 0.018;
+  vec2 axis = vec2(cos(axisAngle), sin(axisAngle));
+  float horizontal = clamp(
+    dot(warped - 0.5, axis) + 0.5 + (n - 0.5) * 0.1,
     0.0,
-    0.7,
-    length((warped - redSpot) * vec2(1.0, 1.2))
+    1.0
   );
-  color = mix(color, u_colors[0], spot * 0.8);
-  color = mix(color, u_colors[2], topMask * 0.22);
+  float bottom = clamp(warped.y + q.x * 0.04, 0.0, 1.0);
 
-  // A little highlight from the brighter sampled stops keeps it from going flat.
-  color = mix(color, u_colors[4], smoothstep(0.2, 0.65, warped.x) * 0.1);
+  vec3 color = u_colors[1];
+  color = mix(color, u_colors[0], smoothstep(0.18, 0.82, horizontal));
+  color = mix(color, u_colors[2], smoothstep(0.5, 1.0, bottom) * 0.6);
+  color = mix(color, u_colors[3], smoothstep(0.62, 0.95, horizontal) * 0.28);
+  color = mix(color, u_colors[4], smoothstep(0.02, 0.28, horizontal) * 0.2);
 
   // Keep a dark floor for white type, then add a soft vignette for depth.
   color = mix(vec3(0.025, 0.025, 0.035), color, 0.97);
@@ -285,14 +277,32 @@ function createProgram(gl: WebGLRenderingContext): WebGLProgram | null {
   return null
 }
 
+const COLOR_LERP_STEP = 0.08
+
 export function ArtworkGradient({ colors, className }: ArtworkGradientProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  // The currently displayed colours. Song changes lerp towards the new palette
+  // instead of snapping, so the backdrop crossfades like Apple's ambient video.
+  const currentRef = useRef<RGB[] | null>(null)
 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    const palette = preparePalette(colors)
+    const target = preparePalette(colors)
+    const current: RGB[] = (currentRef.current ?? target).map(
+      (color) => [...color] as RGB,
+    )
+    currentRef.current = current
+    const approachTarget = (step: number) => {
+      for (let index = 0; index < current.length; index += 1) {
+        const from = current[index]
+        const to = target[index] ?? target[target.length - 1]
+        for (let channel = 0; channel < 3; channel += 1) {
+          from[channel] += (to[channel] - from[channel]) * step
+        }
+      }
+    }
 
     const webgl = canvas.getContext('webgl', {
       alpha: false,
@@ -327,13 +337,16 @@ export function ArtworkGradient({ colors, className }: ArtworkGradientProps) {
         const resolutionLocation = webgl.getUniformLocation(program, 'u_resolution')
         const colorsLocation = webgl.getUniformLocation(program, 'u_colors')
         const colorValues = new Float32Array(18)
-        palette.slice(0, 6).forEach(([r, g, b], index) => {
-          colorValues[index * 3] = r / 255
-          colorValues[index * 3 + 1] = g / 255
-          colorValues[index * 3 + 2] = b / 255
-        })
         webgl.uniform2f(resolutionLocation, width, height)
-        webgl.uniform3fv(colorsLocation, colorValues)
+
+        const uploadColors = () => {
+          current.forEach((color, index) => {
+            colorValues[index * 3] = color[0] / 255
+            colorValues[index * 3 + 1] = color[1] / 255
+            colorValues[index * 3 + 2] = color[2] / 255
+          })
+          webgl.uniform3fv(colorsLocation, colorValues)
+        }
 
         const reducedMotion = window.matchMedia(
           '(prefers-reduced-motion: reduce)',
@@ -349,10 +362,16 @@ export function ArtworkGradient({ colors, className }: ArtworkGradientProps) {
           if (timeLocation) {
             webgl.uniform1f(timeLocation, (timestamp - startedAt) / 1000)
           }
+          approachTarget(COLOR_LERP_STEP)
+          uploadColors()
           webgl.drawArrays(webgl.TRIANGLE_STRIP, 0, 4)
         }
 
         const drawStatic = () => {
+          target.forEach((color, index) => {
+            current[index] = [...color] as RGB
+          })
+          uploadColors()
           if (timeLocation) webgl.uniform1f(timeLocation, 0)
           webgl.drawArrays(webgl.TRIANGLE_STRIP, 0, 4)
         }
@@ -381,13 +400,14 @@ export function ArtworkGradient({ colors, className }: ArtworkGradientProps) {
     let last = 0
 
     const draw = (seconds: number) => {
+      approachTarget(COLOR_LERP_STEP)
       context.globalCompositeOperation = 'source-over'
       context.fillStyle = '#101014'
       context.fillRect(0, 0, width, height)
       context.globalCompositeOperation = 'lighter'
-      for (let index = 0; index < palette.length; index += 1) {
-        const [r, g, b] = palette[index]
-        const phase = (index / Math.max(1, palette.length)) * Math.PI * 2
+      for (let index = 0; index < current.length; index += 1) {
+        const [r, g, b] = current[index]
+        const phase = (index / Math.max(1, current.length)) * Math.PI * 2
         const x = width * (0.5 + Math.sin(seconds * 0.18 + phase) * 0.38)
         const y = height * (0.5 + Math.cos(seconds * 0.14 + phase * 1.3) * 0.34)
         const radius = Math.hypot(width, height) * (0.5 + Math.sin(seconds * 0.11 + index) * 0.08)
