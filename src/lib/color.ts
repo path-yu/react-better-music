@@ -1,4 +1,5 @@
 import { apiUrl } from './http'
+import { resizedImageUrl } from './image'
 
 const paletteCache = new Map<string, string[]>()
 
@@ -54,7 +55,14 @@ function loadImage(url: string): Promise<HTMLImageElement | null> {
     const image = new Image()
     image.crossOrigin = 'anonymous'
     image.decoding = 'async'
-    image.onload = () => resolve(image)
+    image.onload = () => {
+      // Decode before drawImage so the 32×32 sampling does not force a long
+      // synchronous decode on the main thread during the overlay animation.
+      void image
+        .decode()
+        .catch(() => undefined)
+        .finally(() => resolve(image))
+    }
     image.onerror = () => resolve(null)
     image.src = url
   })
@@ -197,11 +205,13 @@ export async function extractArtworkPalette(
   const cached = paletteCache.get(src)
   if (cached) return cached.slice(0, count)
 
-  const separator = src.includes('?') ? '&' : '?'
-  const probe = `${src}${separator}param=64y64`
+  // Sample a 64px thumbnail, not the original artwork: the proxy otherwise
+  // downloads and base64-encodes a multi-megapixel JPEG just to read 32×32
+  // pixels, which is the main source of first-open jank.
+  const probe = resizedImageUrl(src, '64y64') ?? src
 
   let palette: string[] = []
-  const proxied = await loadProxiedImage(src)
+  const proxied = await loadProxiedImage(probe)
   if (proxied) palette = samplePalette(proxied, 5)
 
   if (!palette.length) {

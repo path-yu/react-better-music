@@ -813,7 +813,12 @@ html.desktop .app-window {
   --apple-hairline: rgba(255, 255, 255, 0.12);
   --apple-divider: rgba(255, 255, 255, 0.08);
   color: var(--apple-ink);
-  animation: nowplaying-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Animate the content only: fading the full-screen blurred backdrop forced a
+   composite/raster pass for every frame of the old 400 ms transition. */
+.np-content-enter {
+  animation: nowplaying-fade 0.26s ease-out both;
 }
 
 /* The overlay carries its own `.dark` class (it stays dark even when the app is
@@ -841,8 +846,11 @@ html.desktop .app-window {
 .np-segmented {
   position: relative;
   display: inline-grid;
-  width: 132px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* Size to the labels: a fixed 132px track clips “Lyrics / Comments” and
+     leaves the active pill with no room around the text. */
+  width: max-content;
+  min-width: 132px;
+  grid-template-columns: repeat(2, minmax(64px, 1fr));
   gap: 2px;
   padding: 2px;
   border-radius: 999px;
@@ -888,7 +896,7 @@ html.desktop .app-window {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 0 8px;
+  padding: 0 12px;
   border-radius: 999px;
   font-size: 11.5px;
   line-height: 1;
@@ -1028,14 +1036,14 @@ html.desktop .app-window {
    full strength — no white veil and no extra colour tint. */
 .nowplaying-ambient__art {
   position: absolute;
-  inset: -14%;
-  width: 128%;
-  height: 128%;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   /* Pushed down hard: pale covers would otherwise leave a glaring, washed-out
      page with unreadable white text. */
-  filter: blur(64px) saturate(160%) brightness(0.46);
-  transform: scale(1.02);
+  filter: blur(32px) saturate(150%) brightness(0.46);
+  transform: scale(1.03);
 }
 
 /* A flat floor plus gradients keeps the surface dark for *any* cover, so the
@@ -1060,8 +1068,9 @@ html.desktop .app-window {
 .nowplaying-ambient__grain {
   position: absolute;
   inset: 0;
-  opacity: 0.04;
-  mix-blend-mode: overlay;
+  opacity: 0.035;
+  /* No mix-blend-mode: a full-screen blend layer forces an extra composite
+     pass on every repaint, for a barely visible 3.5% grain. */
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
@@ -1204,14 +1213,12 @@ html.desktop .app-window {
   font-size: 0.85em;
 }
 
-@keyframes nowplaying-enter {
+@keyframes nowplaying-fade {
   from {
     opacity: 0;
-    transform: translateY(28px) scale(0.99);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
   }
 }
 

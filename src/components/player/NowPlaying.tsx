@@ -12,6 +12,7 @@ import { useUserStore } from '../../store/user'
 import { findLyricIndex } from '../../lib/lyric'
 import { seekAudio } from '../../lib/audio'
 import { extractDominantColor } from '../../lib/color'
+import { resizedImageUrl } from '../../lib/image'
 import { toast } from '../../lib/toast'
 import { cn } from '../../lib/format'
 
@@ -64,15 +65,26 @@ export function NowPlaying() {
     setPanel('lyrics')
   }, [currentSong?.id])
 
+  // Only reset when the artwork changes; reopening the same song keeps the
+  // cached colour instead of flashing back to the un-tinted backdrop.
+  useEffect(() => {
+    setDominantColor(null)
+  }, [artwork])
+
   useEffect(() => {
     if (!show) return
     let active = true
-    setDominantColor(null)
-    void extractDominantColor(artwork).then((color) => {
-      if (active) setDominantColor(color)
-    })
+    // Read 32×32 pixels after the 400 ms enter animation. Sampling on open
+    // forced a decode + canvas read in the middle of the transition, and the
+    // colour update then repainted the full-screen blurred backdrop again.
+    const timer = window.setTimeout(() => {
+      void extractDominantColor(artwork).then((color) => {
+        if (active) setDominantColor(color)
+      })
+    }, 360)
     return () => {
       active = false
+      window.clearTimeout(timer)
     }
   }, [show, artwork])
 
@@ -109,6 +121,9 @@ export function NowPlaying() {
   const loadingSource = playing && !sourceReady
   const buffering = playing && sourceReady && !audioReady
   const busy = loadingSource || buffering
+  // The backdrop is heavily blurred, so a 320px copy is indistinguishable from
+  // the original but avoids fetching/decoding a multi-megapixel cover.
+  const ambientArtwork = resizedImageUrl(artwork, '320y320')
 
   const albumId = currentSong.al.id
   const openAlbum = () => {
@@ -163,21 +178,21 @@ export function NowPlaying() {
       className="nowplaying-overlay dark"
       style={{ backgroundColor: '#0f0f12' }}
     >
-      <div
-        className="nowplaying-ambient"
-        aria-hidden="true"
-        style={dominantColor ? { backgroundColor: dominantColor } : undefined}
-      >
-        {artwork ? (
-          <img src={artwork} alt="" className="nowplaying-ambient__art" />
+      <div className="nowplaying-ambient" aria-hidden="true">
+        {ambientArtwork ? (
+          <img
+            src={ambientArtwork}
+            alt=""
+            decoding="async"
+            className="nowplaying-ambient__art"
+          />
         ) : null}
         <div className="nowplaying-ambient__scrim" />
-        <div className="nowplaying-ambient__grain" />
       </div>
 
       {/* The player bar floats over the bottom of the backdrop, so keep the
           immersive content clear of it. */}
-      <div className="relative flex h-full flex-col pb-[76px]">
+      <div className="np-content-enter relative flex h-full flex-col pb-[76px]">
         <div className="flex h-[58px] flex-none items-center justify-between px-6">
           {/* <button
             type="button"
@@ -294,7 +309,7 @@ export function NowPlaying() {
                     alt={currentSong.name}
                     rounded="rounded-[14px]"
                     className="h-full w-full"
-                    resize="800y800"
+                    resize="640y640"
                   />
                   {/* Hover hint so the cover reads as a link into the album. */}
                   <span className="pointer-events-none absolute inset-0 flex items-end justify-center bg-black/25 p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100">
