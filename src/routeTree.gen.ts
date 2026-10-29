@@ -20,6 +20,7 @@ import { Route as ArtistIdRouteImport } from './routes/artist/$id'
 import { Route as MvIdRouteImport } from './routes/mv/$id'
 import { Route as SonglistsIndexRouteImport } from './routes/songlists/index'
 import { Route as SonglistsIdRouteImport } from './routes/songlists/$id'
+import { Route as UsersIdRouteImport } from './routes/users/$id'
 import { Route as VideoIdRouteImport } from './routes/video/$id'
 import { Route as SonglistsIdEditRouteImport } from './routes/songlists/$id.edit'
 
@@ -78,6 +79,11 @@ const SonglistsIdRoute = SonglistsIdRouteImport.update({
   path: '/songlists/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UsersIdRoute = UsersIdRouteImport.update({
+  id: '/users/$id',
+  path: '/users/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VideoIdRoute = VideoIdRouteImport.update({
   id: '/video/$id',
   path: '/video/$id',
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/artist/$id': typeof ArtistIdRoute
   '/mv/$id': typeof MvIdRoute
   '/songlists/$id': typeof SonglistsIdRouteWithChildren
+  '/users/$id': typeof UsersIdRoute
   '/video/$id': typeof VideoIdRoute
   '/songlists/': typeof SonglistsIndexRoute
   '/songlists/$id/edit': typeof SonglistsIdEditRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   '/artist/$id': typeof ArtistIdRoute
   '/mv/$id': typeof MvIdRoute
   '/songlists/$id': typeof SonglistsIdRouteWithChildren
+  '/users/$id': typeof UsersIdRoute
   '/video/$id': typeof VideoIdRoute
   '/songlists': typeof SonglistsIndexRoute
   '/songlists/$id/edit': typeof SonglistsIdEditRoute
@@ -131,6 +139,7 @@ export interface FileRoutesById {
   '/artist/$id': typeof ArtistIdRoute
   '/mv/$id': typeof MvIdRoute
   '/songlists/$id': typeof SonglistsIdRouteWithChildren
+  '/users/$id': typeof UsersIdRoute
   '/video/$id': typeof VideoIdRoute
   '/songlists/': typeof SonglistsIndexRoute
   '/songlists/$id/edit': typeof SonglistsIdEditRoute
@@ -148,6 +157,7 @@ export interface FileRouteTypes {
     | '/artist/$id'
     | '/mv/$id'
     | '/songlists/$id'
+    | '/users/$id'
     | '/video/$id'
     | '/songlists/'
     | '/songlists/$id/edit'
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
     | '/artist/$id'
     | '/mv/$id'
     | '/songlists/$id'
+    | '/users/$id'
     | '/video/$id'
     | '/songlists'
     | '/songlists/$id/edit'
@@ -178,6 +189,7 @@ export interface FileRouteTypes {
     | '/artist/$id'
     | '/mv/$id'
     | '/songlists/$id'
+    | '/users/$id'
     | '/video/$id'
     | '/songlists/'
     | '/songlists/$id/edit'
@@ -194,6 +206,7 @@ export interface RootRouteChildren {
   ArtistIdRoute: typeof ArtistIdRoute
   MvIdRoute: typeof MvIdRoute
   SonglistsIdRoute: typeof SonglistsIdRouteWithChildren
+  UsersIdRoute: typeof UsersIdRoute
   VideoIdRoute: typeof VideoIdRoute
   SonglistsIndexRoute: typeof SonglistsIndexRoute
 }
@@ -277,6 +290,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SonglistsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/users/$id': {
+      id: '/users/$id'
+      path: '/users/$id'
+      fullPath: '/users/$id'
+      preLoaderRoute: typeof UsersIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/video/$id': {
       id: '/video/$id'
       path: '/video/$id'
@@ -317,6 +337,7 @@ const rootRouteChildren: RootRouteChildren = {
   ArtistIdRoute: ArtistIdRoute,
   MvIdRoute: MvIdRoute,
   SonglistsIdRoute: SonglistsIdRouteWithChildren,
+  UsersIdRoute: UsersIdRoute,
   VideoIdRoute: VideoIdRoute,
   SonglistsIndexRoute: SonglistsIndexRoute,
 }

@@ -13,6 +13,7 @@ import type {
   Song,
   UserDetail,
   UserProfile,
+  UserSummary,
   PlayLevel,
   VideoItem,
   VideoSearchItem,
@@ -457,12 +458,14 @@ type RawSearchResult = {
   artists?: ArtistSummary[]
   mvs?: Mv[]
   videos?: VideoSearchItem[]
+  userprofiles?: UserSummary[]
+  userprofileCount?: number
   [key: string]: unknown
 }
 
 export async function searchAll(params: {
   keywords: string
-  type: '1' | '100' | '1000' | '1004' | '1014'
+  type: '1' | '100' | '1000' | '1002' | '1004' | '1014'
   limit?: number
   offset?: number
 }, signal?: AbortSignal) {
@@ -482,6 +485,8 @@ export async function searchAll(params: {
     videos: (result.videos ?? [])
       .map(videoFromSearch)
       .filter((item): item is VideoItem => Boolean(item)),
+    users: result.userprofiles ?? [],
+    userCount: result.userprofileCount ?? 0,
   } as SearchResult
 }
 
@@ -646,12 +651,19 @@ export async function fetchAccount() {
   }>('/user/account')
 }
 
-export async function fetchUserDetail(uid: number | string) {
-  return get<UserDetail>('/user/detail', { uid })
+export async function fetchUserDetail(uid: number | string, signal?: AbortSignal) {
+  return get<UserDetail>('/user/detail', { uid }, signal)
 }
 
-export async function fetchUserPlaylists(uid: number | string) {
-  const res = await get<{ playlist?: Playlist[] }>('/user/playlist', { uid })
+export async function fetchUserPlaylists(
+  uid: number | string,
+  signal?: AbortSignal,
+) {
+  const res = await get<{ playlist?: Playlist[] }>(
+    '/user/playlist',
+    { uid, limit: 1000 },
+    signal,
+  )
   return (res.playlist ?? []).map(normalizePlaylist)
 }
 

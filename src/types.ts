@@ -167,6 +167,9 @@ export interface UserProfile {
   nickname: string
   avatarUrl: string
   signature?: string
+  description?: string
+  detailDescription?: string
+  backgroundUrl?: string
   gender?: number
   birthday?: number
   province?: number
@@ -175,11 +178,26 @@ export interface UserProfile {
   follows?: number
   followeds?: number
   eventCount?: number
+  playlistCount?: number
+  createTime?: number
+}
+
+export interface UserSummary {
+  userId: number
+  nickname: string
+  avatarUrl?: string
+  signature?: string
+  gender?: number
+  vipType?: number
+  follows?: number
+  followeds?: number
+  playlistCount?: number
 }
 
 export interface UserDetail {
   code: number
   level: number
+  listenSongs?: number
   profile: UserProfile
   pcSign?: boolean
 }
@@ -222,6 +240,8 @@ export interface SearchResult {
   mvCount?: number
   videos?: VideoItem[]
   videoCount?: number
+  users?: UserSummary[]
+  userCount?: number
 }
 
 export interface ApiResponse<T = unknown> {

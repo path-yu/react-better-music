@@ -3,21 +3,22 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { ListMusic, Search } from 'lucide-react'
+import { ListMusic, Search, Users } from 'lucide-react'
 import { Skeleton, Tabs, TabsContent, TabsList, TabsTrigger } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../components/common/ImageWithFallback'
 import { EmptyState } from '../components/common/EmptyState'
 import { Pager } from '../components/common/Pager'
 import { SongTable } from '../components/songs/SongTable'
 import { PlayAllButton } from '../components/songs/PlayAllButton'
+import { UserCard } from '../components/user/UserCard'
 import { VideoCard } from '../components/video/VideoCard'
 import { searchAll } from '../api'
 import { formatNumber } from '../lib/format'
 import { useDocumentTitle } from '../lib/title'
 import { toast } from '../lib/toast'
-import type { ArtistSummary, Playlist, Song, VideoItem } from '../types'
+import type { ArtistSummary, Playlist, Song, UserSummary, VideoItem } from '../types'
 
-const SEARCH_TABS = ['songs', 'playlists', 'artists', 'mvs', 'videos'] as const
+const SEARCH_TABS = ['songs', 'playlists', 'artists', 'users', 'mvs', 'videos'] as const
 type SearchTab = (typeof SEARCH_TABS)[number]
 
 function normalizeTab(value: unknown): SearchTab {
@@ -37,6 +38,7 @@ export const Route = createFileRoute('/search')({
 const SONG_PAGE_SIZE = 30
 const PLAYLIST_PAGE_SIZE = 20
 const ARTIST_PAGE_SIZE = 20
+const USER_PAGE_SIZE = 20
 const VIDEO_PAGE_SIZE = 20
 
 function SearchPage() {
@@ -55,6 +57,8 @@ function SearchPage() {
   const [playlistTotal, setPlaylistTotal] = useState(0)
   const [artists, setArtists] = useState<ArtistSummary[]>([])
   const [artistTotal, setArtistTotal] = useState(0)
+  const [users, setUsers] = useState<UserSummary[]>([])
+  const [userTotal, setUserTotal] = useState(0)
   const [mvs, setMvs] = useState<VideoItem[]>([])
   const [mvTotal, setMvTotal] = useState(0)
   const [videos, setVideos] = useState<VideoItem[]>([])
@@ -69,11 +73,13 @@ function SearchPage() {
     setSongs([])
     setPlaylists([])
     setArtists([])
+    setUsers([])
     setMvs([])
     setVideos([])
     setSongTotal(0)
     setPlaylistTotal(0)
     setArtistTotal(0)
+    setUserTotal(0)
     setMvTotal(0)
     setVideoTotal(0)
     setFailed(false)
@@ -89,19 +95,23 @@ function SearchPage() {
         ? SONG_PAGE_SIZE
         : tab === 'artists'
           ? ARTIST_PAGE_SIZE
-          : tab === 'mvs' || tab === 'videos'
-            ? VIDEO_PAGE_SIZE
-            : PLAYLIST_PAGE_SIZE
-    const type: '1' | '100' | '1000' | '1004' | '1014' =
+          : tab === 'users'
+            ? USER_PAGE_SIZE
+            : tab === 'mvs' || tab === 'videos'
+              ? VIDEO_PAGE_SIZE
+              : PLAYLIST_PAGE_SIZE
+    const type: '1' | '100' | '1000' | '1002' | '1004' | '1014' =
       tab === 'songs'
         ? '1'
         : tab === 'artists'
           ? '100'
-          : tab === 'mvs'
-            ? '1004'
-            : tab === 'videos'
-              ? '1014'
-              : '1000'
+          : tab === 'users'
+            ? '1002'
+            : tab === 'mvs'
+              ? '1004'
+              : tab === 'videos'
+                ? '1014'
+                : '1000'
     searchAll(
       {
         keywords: keyword,
@@ -119,6 +129,9 @@ function SearchPage() {
         } else if (tab === 'artists') {
           setArtists(result.artists ?? [])
           setArtistTotal(result.artistCount ?? 0)
+        } else if (tab === 'users') {
+          setUsers(result.users ?? [])
+          setUserTotal(result.userCount ?? 0)
         } else if (tab === 'mvs') {
           setMvs(result.mvs ?? [])
           setMvTotal(result.mvCount ?? 0)
@@ -175,19 +188,23 @@ function SearchPage() {
       ? SONG_PAGE_SIZE
       : tab === 'artists'
         ? ARTIST_PAGE_SIZE
-        : tab === 'mvs' || tab === 'videos'
-          ? VIDEO_PAGE_SIZE
-          : PLAYLIST_PAGE_SIZE
+        : tab === 'users'
+          ? USER_PAGE_SIZE
+          : tab === 'mvs' || tab === 'videos'
+            ? VIDEO_PAGE_SIZE
+            : PLAYLIST_PAGE_SIZE
   const total =
     tab === 'songs'
       ? songTotal
       : tab === 'artists'
         ? artistTotal
-        : tab === 'mvs'
-          ? mvTotal
-          : tab === 'videos'
-            ? videoTotal
-            : playlistTotal
+        : tab === 'users'
+          ? userTotal
+          : tab === 'mvs'
+            ? mvTotal
+            : tab === 'videos'
+              ? videoTotal
+              : playlistTotal
   const pageCount = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [pageSize, total])
 
   if (!keyword.trim()) {
@@ -195,7 +212,7 @@ function SearchPage() {
       <div className="px-8 pt-10">
         <EmptyState
           icon={<Search className="h-6 w-6" />}
-          title={i18n._(msg`搜索音乐、歌单、歌手、MV 或视频`)}
+          title={i18n._(msg`搜索音乐、歌单、歌手、用户、MV 或视频`)}
           description={i18n._(msg`在顶部搜索框输入关键词后回车`)}
         />
       </div>
@@ -222,6 +239,9 @@ function SearchPage() {
             </TabsTrigger>
             <TabsTrigger value="artists">
               <Trans>歌手</Trans>
+            </TabsTrigger>
+            <TabsTrigger value="users">
+              <Trans>用户</Trans>
             </TabsTrigger>
             <TabsTrigger value="mvs">MV</TabsTrigger>
             <TabsTrigger value="videos">
@@ -385,6 +405,38 @@ function SearchPage() {
           )}
           <Pager page={page} pageCount={pageCount} onChange={setPage} className="mt-6" />
         </TabsContent>
+        <TabsContent value="users" className="mt-3">
+          <div className="mb-2 text-[11px] text-black/35">
+            <Trans>共找到 {userTotal} 位用户</Trans>
+          </div>
+          {failed ? (
+            <EmptyState
+              variant="error"
+              title={i18n._(msg`用户加载失败`)}
+              description={i18n._(msg`请检查网络或本地 API 服务后重试`)}
+              onRetry={retry}
+            />
+          ) : loading ? (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 8 }).map((_, index) => (
+                <Skeleton key={index} className="h-[86px] w-full rounded-[14px]" />
+              ))}
+            </div>
+          ) : users.length ? (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {users.map((user) => (
+                <UserCard key={user.userId} user={user} />
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              icon={<Users className="h-6 w-6" />}
+              title={i18n._(msg`没有找到相关用户`)}
+            />
+          )}
+          <Pager page={page} pageCount={pageCount} onChange={setPage} className="mt-6" />
+        </TabsContent>
+
         <TabsContent value="mvs" className="mt-3">
           <div className="mb-2 text-[11px] text-black/35">
             <Trans>共找到 {mvTotal} 个 MV</Trans>

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
@@ -15,6 +16,7 @@ import { useUserStore } from '../../store/user'
 import { toast } from '../../lib/toast'
 import { formatDate, getArrLast } from '../../lib/format'
 import { cn } from '../../lib/format'
+import { resizedImageUrl } from '../../lib/image'
 import type { Comment, CommentResponse } from '../../types'
 
 interface CommentSectionProps {
@@ -33,6 +35,7 @@ export function CommentSection({
   showComposer = true,
 }: CommentSectionProps) {
   const { i18n } = useLingui()
+  const navigate = useNavigate()
   const sectionTitle = title ?? i18n._(msg`评论`)
   const [data, setData] = useState<CommentResponse>({ total: 0, comments: [] })
   const [loading, setLoading] = useState(false)
@@ -240,6 +243,11 @@ export function CommentSection({
     }
   }
 
+  const openUser = (userId?: number) => {
+    if (!userId) return
+    void navigate({ to: '/users/$id', params: { id: String(userId) } })
+  }
+
   const renderList = (list: Comment[], hot: boolean, heading?: string) => {
     if (!list.length) return null
     return (
@@ -253,17 +261,33 @@ export function CommentSection({
         <div className="comment-list">
           {list.map((comment) => (
             <div key={comment.commentId} className="flex gap-3 py-4">
-              <Avatar
-                src={comment.user?.avatarUrl}
-                alt={comment.user?.nickname}
-                fallback={comment.user?.nickname?.slice(0, 1)}
-                size="sm"
-              />
+              <button
+                type="button"
+                onClick={() => openUser(comment.user?.userId)}
+                disabled={!comment.user?.userId}
+                aria-label={i18n._(msg`查看 ${comment.user?.nickname ?? ''} 的主页`)}
+                className="pressable h-fit shrink-0 rounded-full disabled:cursor-default"
+              >
+                <Avatar
+                  src={
+                    resizedImageUrl(comment.user?.avatarUrl, '100y100') ??
+                    comment.user?.avatarUrl
+                  }
+                  alt={comment.user?.nickname}
+                  fallback={comment.user?.nickname?.slice(0, 1)}
+                  size="sm"
+                />
+              </button>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-[12px] font-medium text-accent">
+                  <button
+                    type="button"
+                    onClick={() => openUser(comment.user?.userId)}
+                    disabled={!comment.user?.userId}
+                    className="text-left text-[12px] font-medium text-accent hover:underline disabled:cursor-default disabled:no-underline"
+                  >
                     {comment.user?.nickname}
-                  </span>
+                  </button>
                   {hot ? (
                     <span className="rounded bg-[#ff9500]/10 px-1 text-[8.5px] text-[#b36b00]">
                       <Trans>热门</Trans>
