@@ -147,7 +147,7 @@ msgstr "Download selected"
 msgid "下载选中 ({0})"
 msgstr "Download selected ({0})"
 
-#: src/components/songs/SongTable.tsx:278
+#: src/components/songs/SongTable.tsx:308
 #: src/routes/albums/$id.tsx:35
 #: src/routes/albums/$id.tsx:132
 #: src/routes/artist/$id.tsx:263
@@ -368,6 +368,10 @@ msgstr "Send code"
 msgid "取消"
 msgstr "Cancel"
 
+#: src/components/songs/SongContextMenu.tsx:207
+msgid "取消喜欢"
+msgstr "Unlike"
+
 #: src/routes/songlists/$id.tsx:172
 msgid "取消收藏失败"
 msgstr "Failed to remove from library"
@@ -379,6 +383,10 @@ msgstr "Alternative / Indie"
 #: src/routes/songlists/$id.tsx:384
 msgid "听友评论"
 msgstr "Listener comments"
+
+#: src/components/songs/SongContextMenu.tsx:207
+msgid "喜欢"
+msgstr "Like"
 
 #: src/components/comments/CommentSection.tsx:335
 #: src/components/comments/CommentSection.tsx:447
@@ -455,6 +463,11 @@ msgstr "Removed from library"
 #: src/routes/songlists/$id.tsx:324
 msgid "已收藏"
 msgstr "Saved"
+
+#. placeholder {0}: playlist.name
+#: src/components/songs/SongContextMenu.tsx:136
+msgid "已收藏到「{0}」"
+msgstr "Saved to \"{0}\""
 
 #. placeholder {0}: selected.length
 #: src/routes/settings.tsx:483
@@ -602,6 +615,13 @@ msgstr "Action failed"
 msgid "收藏"
 msgstr "Save"
 
+#: src/components/songs/SongContextMenu.tsx:193
+#: src/components/songs/SongContextMenu.tsx:222
+msgid "收藏到歌单"
+msgstr "Add to playlist"
+
+#: src/components/songs/SongContextMenu.tsx:132
+#: src/components/songs/SongContextMenu.tsx:140
 #: src/routes/songlists/$id.tsx:172
 msgid "收藏失败"
 msgstr "Failed to save"
@@ -643,7 +663,7 @@ msgstr "Japan"
 msgid "日语"
 msgstr "Japanese"
 
-#: src/components/songs/SongTable.tsx:281
+#: src/components/songs/SongTable.tsx:311
 msgid "时长"
 msgstr "Duration"
 
@@ -658,6 +678,10 @@ msgstr "No albums yet"
 #: src/components/songs/PlayAllButton.tsx:23
 msgid "暂无可播放歌曲"
 msgstr "No playable songs"
+
+#: src/components/songs/SongContextMenu.tsx:251
+msgid "暂无可用歌单"
+msgstr "No playlists available"
 
 #: src/routes/latest-music.tsx:92
 msgid "暂无新歌"
@@ -692,6 +716,10 @@ msgstr "No cached music yet. Songs are cached automatically after playback."
 #: src/routes/songlists/index.tsx:205
 msgid "更多"
 msgstr "More"
+
+#: src/components/songs/SongContextMenu.tsx:72
+msgid "未找到相关视频"
+msgstr "No related videos found"
 
 #: src/components/layout/LoginModal.tsx:342
 msgid "未注册的手机号登录后将自动创建账号"
@@ -742,7 +770,7 @@ msgstr "Standard · 64kbps"
 msgid "标签"
 msgstr "Tags"
 
-#: src/components/songs/SongTable.tsx:272
+#: src/components/songs/SongTable.tsx:302
 msgid "标题"
 msgstr "Title"
 
@@ -781,6 +809,7 @@ msgstr "Playlists"
 msgid "歌单不存在或无法访问"
 msgstr "Playlist unavailable"
 
+#: src/components/songs/SongContextMenu.tsx:119
 #: src/routes/search.tsx:293
 #: src/routes/songlists/$id.tsx:99
 #: src/routes/songlists/index.tsx:93
@@ -792,7 +821,7 @@ msgstr "Failed to load the playlist"
 msgid "歌单暂时没有歌曲"
 msgstr "This playlist has no tracks yet"
 
-#: src/components/songs/SongTable.tsx:275
+#: src/components/songs/SongTable.tsx:305
 #: src/routes/artist/$id.tsx:47
 #: src/routes/artist/$id.tsx:172
 #: src/routes/search.tsx:241
@@ -820,6 +849,10 @@ msgstr "Artist bio"
 #: src/routes/songlists/$id.tsx:347
 msgid "歌曲列表"
 msgstr "Tracks"
+
+#: src/components/songs/SongContextMenu.tsx:165
+msgid "歌曲操作"
+msgstr "Song actions"
 
 #: src/components/player/NowPlaying.tsx:345
 msgid "歌词"
@@ -1011,6 +1044,14 @@ msgstr "Signed in"
 msgid "相似歌手"
 msgstr "Similar artists"
 
+#: src/components/songs/SongContextMenu.tsx:184
+msgid "相关视频"
+msgstr "Related videos"
+
+#: src/components/songs/SongContextMenu.tsx:92
+msgid "相关视频加载失败"
+msgstr "Failed to load related videos"
+
 #: src/routes/settings.tsx:556
 msgid "确认清除？"
 msgstr "Clear everything?"
@@ -1146,6 +1187,8 @@ msgstr "Say something…"
 #: src/components/comments/CommentSection.tsx:156
 #: src/components/comments/CommentSection.tsx:198
 #: src/components/comments/CommentSection.tsx:328
+#: src/components/songs/SongContextMenu.tsx:101
+#: src/components/songs/SongContextMenu.tsx:149
 #: src/routes/songlists/$id.tsx:162
 msgid "请先登录"
 msgstr "Please sign in first"
@@ -1190,6 +1233,7 @@ msgstr "Higher · 96kbps"
 msgid "运动"
 msgstr "Workout"
 
+#: src/components/songs/SongContextMenu.tsx:216
 #: src/routes/mv/$id.tsx:162
 #: src/routes/users/$id.tsx:142
 msgid "返回"

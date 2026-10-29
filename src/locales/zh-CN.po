@@ -147,7 +147,7 @@ msgstr "下载选中"
 msgid "下载选中 ({0})"
 msgstr "下载选中 ({0})"
 
-#: src/components/songs/SongTable.tsx:278
+#: src/components/songs/SongTable.tsx:308
 #: src/routes/albums/$id.tsx:35
 #: src/routes/albums/$id.tsx:132
 #: src/routes/artist/$id.tsx:263
@@ -368,6 +368,10 @@ msgstr "发送验证码"
 msgid "取消"
 msgstr "取消"
 
+#: src/components/songs/SongContextMenu.tsx:207
+msgid "取消喜欢"
+msgstr "取消喜欢"
+
 #: src/routes/songlists/$id.tsx:172
 msgid "取消收藏失败"
 msgstr "取消收藏失败"
@@ -379,6 +383,10 @@ msgstr "另类/独立"
 #: src/routes/songlists/$id.tsx:384
 msgid "听友评论"
 msgstr "听友评论"
+
+#: src/components/songs/SongContextMenu.tsx:207
+msgid "喜欢"
+msgstr "喜欢"
 
 #: src/components/comments/CommentSection.tsx:335
 #: src/components/comments/CommentSection.tsx:447
@@ -455,6 +463,11 @@ msgstr "已取消收藏"
 #: src/routes/songlists/$id.tsx:324
 msgid "已收藏"
 msgstr "已收藏"
+
+#. placeholder {0}: playlist.name
+#: src/components/songs/SongContextMenu.tsx:136
+msgid "已收藏到「{0}」"
+msgstr "已收藏到「{0}」"
 
 #. placeholder {0}: selected.length
 #: src/routes/settings.tsx:483
@@ -602,6 +615,13 @@ msgstr "操作失败"
 msgid "收藏"
 msgstr "收藏"
 
+#: src/components/songs/SongContextMenu.tsx:193
+#: src/components/songs/SongContextMenu.tsx:222
+msgid "收藏到歌单"
+msgstr "收藏到歌单"
+
+#: src/components/songs/SongContextMenu.tsx:132
+#: src/components/songs/SongContextMenu.tsx:140
 #: src/routes/songlists/$id.tsx:172
 msgid "收藏失败"
 msgstr "收藏失败"
@@ -643,7 +663,7 @@ msgstr "日本"
 msgid "日语"
 msgstr "日语"
 
-#: src/components/songs/SongTable.tsx:281
+#: src/components/songs/SongTable.tsx:311
 msgid "时长"
 msgstr "时长"
 
@@ -658,6 +678,10 @@ msgstr "暂无专辑"
 #: src/components/songs/PlayAllButton.tsx:23
 msgid "暂无可播放歌曲"
 msgstr "暂无可播放歌曲"
+
+#: src/components/songs/SongContextMenu.tsx:251
+msgid "暂无可用歌单"
+msgstr "暂无可用歌单"
 
 #: src/routes/latest-music.tsx:92
 msgid "暂无新歌"
@@ -692,6 +716,10 @@ msgstr "暂无缓存音乐，播放歌曲后会自动缓存"
 #: src/routes/songlists/index.tsx:205
 msgid "更多"
 msgstr "更多"
+
+#: src/components/songs/SongContextMenu.tsx:72
+msgid "未找到相关视频"
+msgstr "未找到相关视频"
 
 #: src/components/layout/LoginModal.tsx:342
 msgid "未注册的手机号登录后将自动创建账号"
@@ -742,7 +770,7 @@ msgstr "标准 · 64kbps"
 msgid "标签"
 msgstr "标签"
 
-#: src/components/songs/SongTable.tsx:272
+#: src/components/songs/SongTable.tsx:302
 msgid "标题"
 msgstr "标题"
 
@@ -781,6 +809,7 @@ msgstr "歌单"
 msgid "歌单不存在或无法访问"
 msgstr "歌单不存在或无法访问"
 
+#: src/components/songs/SongContextMenu.tsx:119
 #: src/routes/search.tsx:293
 #: src/routes/songlists/$id.tsx:99
 #: src/routes/songlists/index.tsx:93
@@ -792,7 +821,7 @@ msgstr "歌单加载失败"
 msgid "歌单暂时没有歌曲"
 msgstr "歌单暂时没有歌曲"
 
-#: src/components/songs/SongTable.tsx:275
+#: src/components/songs/SongTable.tsx:305
 #: src/routes/artist/$id.tsx:47
 #: src/routes/artist/$id.tsx:172
 #: src/routes/search.tsx:241
@@ -820,6 +849,10 @@ msgstr "歌手简介"
 #: src/routes/songlists/$id.tsx:347
 msgid "歌曲列表"
 msgstr "歌曲列表"
+
+#: src/components/songs/SongContextMenu.tsx:165
+msgid "歌曲操作"
+msgstr "歌曲操作"
 
 #: src/components/player/NowPlaying.tsx:345
 msgid "歌词"
@@ -1011,6 +1044,14 @@ msgstr "登录成功"
 msgid "相似歌手"
 msgstr "相似歌手"
 
+#: src/components/songs/SongContextMenu.tsx:184
+msgid "相关视频"
+msgstr "相关视频"
+
+#: src/components/songs/SongContextMenu.tsx:92
+msgid "相关视频加载失败"
+msgstr "相关视频加载失败"
+
 #: src/routes/settings.tsx:556
 msgid "确认清除？"
 msgstr "确认清除？"
@@ -1146,6 +1187,8 @@ msgstr "说点什么…"
 #: src/components/comments/CommentSection.tsx:156
 #: src/components/comments/CommentSection.tsx:198
 #: src/components/comments/CommentSection.tsx:328
+#: src/components/songs/SongContextMenu.tsx:101
+#: src/components/songs/SongContextMenu.tsx:149
 #: src/routes/songlists/$id.tsx:162
 msgid "请先登录"
 msgstr "请先登录"
@@ -1190,6 +1233,7 @@ msgstr "较高 · 96kbps"
 msgid "运动"
 msgstr "运动"
 
+#: src/components/songs/SongContextMenu.tsx:216
 #: src/routes/mv/$id.tsx:162
 #: src/routes/users/$id.tsx:142
 msgid "返回"

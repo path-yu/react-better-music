@@ -102,6 +102,23 @@ export async function fetchPlaylistDetail(id: string | number, signal?: AbortSig
   return normalizePlaylist(res.playlist)
 }
 
+/** Add a track to one of the signed-in user's playlists. */
+export async function addSongToPlaylist(
+  playlistId: number | string,
+  trackId: number | string,
+) {
+  return get<{
+    code?: number
+    status?: number
+    body?: { code?: number; message?: string }
+  }>('/playlist/tracks', {
+    op: 'add',
+    pid: playlistId,
+    tracks: String(trackId),
+    timestamp: Date.now(),
+  })
+}
+
 export async function fetchPlaylistTracks(
   id: string | number,
   limit = TRACK_PAGE_SIZE,

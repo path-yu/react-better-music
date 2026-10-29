@@ -1,10 +1,11 @@
-import { memo, useCallback, useEffect, useMemo, useRef } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Trans } from '@lingui/react/macro'
 import { Heart, Pause, Play, Volume2 } from 'lucide-react'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
 import { EmptyState } from '../common/EmptyState'
+import { SongContextMenu } from './SongContextMenu'
 import { Skeleton } from '@pikoloo/darwin-ui'
 import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
@@ -37,6 +38,7 @@ interface SongRowProps {
   priority?: boolean
   onPlay: (index: number) => void
   onLike: (id: number, liked: boolean) => void
+  onContextMenu: (index: number, x: number, y: number) => void
 }
 
 /**
@@ -53,6 +55,7 @@ const SongRow = memo(function SongRow({
   priority = false,
   onPlay,
   onLike,
+  onContextMenu,
 }: SongRowProps) {
   const note = copyrightHint(song)
   return (
@@ -61,6 +64,10 @@ const SongRow = memo(function SongRow({
         // Nested buttons (play / like / artist links) handle their own clicks.
         if ((event.target as HTMLElement).closest('button, a')) return
         onPlay(index)
+      }}
+      onContextMenu={(event) => {
+        event.preventDefault()
+        onContextMenu(index, event.clientX, event.clientY)
       }}
       className={cn(
         SONG_GRID,
@@ -184,6 +191,11 @@ export function SongTable({
   const playing = usePlayerStore((state) => state.playing)
   const likedIds = useUserStore((state) => state.likedIds)
   const likedSet = useMemo(() => new Set(likedIds), [likedIds])
+  const [contextMenu, setContextMenu] = useState<{
+    song: Song
+    x: number
+    y: number
+  } | null>(null)
 
   // Keep row callbacks referentially stable so memoized rows do not repaint
   // when only the parent component re-renders.
@@ -208,6 +220,23 @@ export function SongTable({
     if (!user.isLogin) return
     void user.likeSong(id, !liked)
   }, [])
+
+  const handleContextMenu = useCallback((index: number, x: number, y: number) => {
+    const song = songsRef.current[index]
+    if (song) setContextMenu({ song, x, y })
+  }, [])
+
+  const closeContextMenu = useCallback(() => setContextMenu(null), [])
+
+  const contextMenuNode = contextMenu ? (
+    <SongContextMenu
+      song={contextMenu.song}
+      liked={likedSet.has(contextMenu.song.id)}
+      x={contextMenu.x}
+      y={contextMenu.y}
+      onClose={closeContextMenu}
+    />
+  ) : null
 
   const isVirtual = songs.length > VIRTUAL_THRESHOLD
   const virtualizer = useVirtualizer({
@@ -255,6 +284,7 @@ export function SongTable({
         priority={index < 8}
         onPlay={handlePlay}
         onLike={handleLike}
+        onContextMenu={handleContextMenu}
       />
     )
   }
@@ -317,6 +347,7 @@ export function SongTable({
             })}
           </div>
         </div>
+        {contextMenuNode}
       </div>
     )
   }
@@ -327,6 +358,7 @@ export function SongTable({
       <div className="py-1">
         {songs.map((song, index) => renderRow(song, index))}
       </div>
+      {contextMenuNode}
     </div>
   )
 }
