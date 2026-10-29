@@ -3,22 +3,28 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { ArrowLeft, CalendarDays, UserRound } from 'lucide-react'
+import { ArrowLeft, CalendarDays, Disc3, UserRound } from 'lucide-react'
 import { Avatar, Skeleton, Tabs, TabsContent, TabsList, TabsTrigger } from '@pikoloo/darwin-ui'
 import { EmptyState } from '../../components/common/EmptyState'
+import { AlbumCard } from '../../components/cards/AlbumCard'
 import { PlaylistCard } from '../../components/cards/PlaylistCard'
-import { fetchUserDetail, fetchUserPlaylists } from '../../api'
+import {
+  fetchCollectedAlbums,
+  fetchUserDetail,
+  fetchUserPlaylists,
+} from '../../api'
 import { formatDate, formatNumber } from '../../lib/format'
 import { resizedImageUrl } from '../../lib/image'
 import { useDocumentTitle } from '../../lib/title'
+import { useUserStore } from '../../store/user'
 import { toast } from '../../lib/toast'
-import type { Playlist, UserProfile } from '../../types'
+import type { Album, Playlist, UserProfile } from '../../types'
 
 export const Route = createFileRoute('/users/$id')({
   component: UserDetailPage,
 })
 
-type PlaylistTab = 'created' | 'collected'
+type ProfileTab = 'created' | 'collected' | 'albums'
 
 function UserDetailPage() {
   const { i18n } = useLingui()
@@ -30,7 +36,14 @@ function UserDetailPage() {
   const [loading, setLoading] = useState(true)
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
-  const [tab, setTab] = useState<PlaylistTab>('created')
+  const [tab, setTab] = useState<ProfileTab>('created')
+  const [albums, setAlbums] = useState<Album[]>([])
+  const [albumTotal, setAlbumTotal] = useState(0)
+  const [albumsLoading, setAlbumsLoading] = useState(false)
+  const [albumsLoaded, setAlbumsLoaded] = useState(false)
+  const [albumsFailed, setAlbumsFailed] = useState(false)
+  const [albumAttempt, setAlbumAttempt] = useState(0)
+  const currentUserId = useUserStore((state) => state.profile?.userId)
 
   useDocumentTitle(profile?.nickname ?? i18n._(msg`用户`))
 
@@ -66,6 +79,48 @@ function UserDetailPage() {
     // The request is keyed by the route id and retry counter.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, attempt])
+
+  useEffect(() => {
+    setAlbums([])
+    setAlbumTotal(0)
+    setAlbumsLoaded(false)
+    setAlbumsFailed(false)
+    setTab('created')
+  }, [id])
+
+  // album/sublist is tied to the signed-in cookie, not a uid parameter. Only
+  // query it on the owner's own profile so another user's page can never
+  // display the viewer's private album library.
+  const isOwnProfile = Boolean(
+    profile &&
+      currentUserId &&
+      String(profile.userId) === String(currentUserId),
+  )
+
+  useEffect(() => {
+    if (tab !== 'albums' || !isOwnProfile || albumsLoaded) return
+    const controller = new AbortController()
+    setAlbumsLoading(true)
+    setAlbumsFailed(false)
+    fetchCollectedAlbums(1000, 0, controller.signal)
+      .then(({ albums: list, count }) => {
+        if (controller.signal.aborted) return
+        setAlbums(list)
+        setAlbumTotal(count)
+        setAlbumsLoaded(true)
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return
+        setAlbumsFailed(true)
+        toast.error(i18n._(msg`收藏专辑加载失败`))
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setAlbumsLoading(false)
+      })
+    return () => controller.abort()
+    // The request is intentionally keyed by the profile, tab and retry counter.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, isOwnProfile, albumsLoaded, albumAttempt])
 
   const createdPlaylists = useMemo(
     () =>
@@ -138,7 +193,7 @@ function UserDetailPage() {
             className="absolute inset-0 h-full w-full scale-110 object-cover opacity-25 blur-2xl"
           />
         ) : null}
-        <div className="absolute inset-0 bg-gradient-to-t from-white/85 via-white/45 to-transparent" />
+        <div className="user-profile-hero__scrim absolute inset-0" />
         <button
           type="button"
           onClick={goBack}
@@ -212,7 +267,7 @@ function UserDetailPage() {
 
       <Tabs
         value={tab}
-        onValueChange={(value) => setTab(value as PlaylistTab)}
+        onValueChange={(value) => setTab(value as ProfileTab)}
         className="mt-6"
       >
         <div className="border-b border-black/8 pb-2">
@@ -222,6 +277,10 @@ function UserDetailPage() {
             </TabsTrigger>
             <TabsTrigger value="collected">
               <Trans>收藏的歌单</Trans> ({collectedPlaylists.length})
+            </TabsTrigger>
+            <TabsTrigger value="albums">
+              <Trans>收藏的专辑</Trans>
+              {isOwnProfile && albumsLoaded ? ` (${albumTotal})` : ''}
             </TabsTrigger>
           </TabsList>
         </div>
@@ -253,6 +312,53 @@ function UserDetailPage() {
             </TabsContent>
           )
         })}
+
+        <TabsContent value="albums" className="mt-4">
+          {!isOwnProfile ? (
+            <EmptyState
+              icon={<Disc3 className="h-6 w-6" />}
+              title={i18n._(msg`该用户的收藏专辑不可见`)}
+            />
+          ) : albumsLoading ? (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {Array.from({ length: 10 }).map((_, index) => (
+                <div key={index}>
+                  <Skeleton className="aspect-square w-full rounded-[14px]" />
+                  <Skeleton className="mt-2 h-3 w-3/5 rounded-full" />
+                </div>
+              ))}
+            </div>
+          ) : albumsFailed ? (
+            <EmptyState
+              variant="error"
+              title={i18n._(msg`收藏专辑加载失败`)}
+              description={i18n._(msg`请检查网络或本地 API 服务后重试`)}
+              onRetry={() => {
+                setAlbumsFailed(false)
+                setAlbumAttempt((value) => value + 1)
+              }}
+            />
+          ) : albums.length ? (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {albums.map((album, index) => (
+                <AlbumCard
+                  key={album.id}
+                  album={album}
+                  priority={index < 5}
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              icon={<Disc3 className="h-6 w-6" />}
+              title={
+                isOwnProfile
+                  ? i18n._(msg`还没有收藏专辑`)
+                  : i18n._(msg`该用户的收藏专辑不可见`)
+              }
+            />
+          )}
+        </TabsContent>
       </Tabs>
     </div>
   )

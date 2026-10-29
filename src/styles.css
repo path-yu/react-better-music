@@ -1493,6 +1493,26 @@ html.desktop .app-window {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
+/* User profile hero: keep the portrait readable without washing the dark
+   surface out with a white-to-transparent scrim. */
+.user-profile-hero__scrim {
+  background: linear-gradient(
+    to top,
+    rgba(255, 255, 255, 0.85),
+    rgba(255, 255, 255, 0.45),
+    transparent
+  );
+}
+
+.dark .user-profile-hero__scrim {
+  background: linear-gradient(
+    to top,
+    rgba(17, 17, 19, 0.9),
+    rgba(28, 28, 30, 0.5),
+    transparent
+  );
+}
+
 .dark [class~="bg-white/88"] {
   background-color: rgba(28, 28, 30, 0.88);
 }

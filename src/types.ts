@@ -38,7 +38,11 @@ export interface Album {
   id: number
   name: string
   picUrl?: string
+  blurPicUrl?: string
   artist?: Artist
+  artists?: Artist[]
+  publishTime?: number
+  size?: number
 }
 
 export interface AlbumDetail extends ArtistAlbum {
@@ -103,6 +107,9 @@ export interface Playlist {
     userId: number
     nickname: string
     avatarUrl?: string
+    /** Present when the creator is an artist account, not a normal listener. */
+    artistId?: number | string
+    userType?: number
   }
   tags?: string[]
   createTime?: number
@@ -234,6 +241,8 @@ export interface SearchResult {
   songCount?: number
   playlists?: Playlist[]
   playlistCount?: number
+  albums?: Album[]
+  albumCount?: number
   artists?: ArtistSummary[]
   artistCount?: number
   mvs?: VideoItem[]

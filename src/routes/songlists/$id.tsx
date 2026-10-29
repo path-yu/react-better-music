@@ -31,6 +31,7 @@ import {
   fetchPlaylistDetail,
   fetchPlaylistTracks,
   fetchRemainingPlaylistTracks,
+  searchArtists,
   updatePlaylistSubscribe,
 } from '../../api'
 import { useUserStore } from '../../store/user'
@@ -198,6 +199,46 @@ function PlaylistDetailPage() {
     }
   }
 
+  const openCreator = async () => {
+    const creator = detail.creator
+    if (!creator) return
+    if (creator.artistId) {
+      void navigate({
+        to: '/artist/$id',
+        params: { id: String(creator.artistId) },
+      })
+      return
+    }
+    // Some artist accounts don't expose an artistId on the creator object.
+    // For authenticated creator types, resolve an exact artist match before
+    // falling back to the normal user profile.
+    if (creator.userType && creator.userType !== 0) {
+      try {
+        const artists = await searchArtists(creator.nickname)
+        const match = artists.find(
+          (artist) =>
+            artist.name === creator.nickname ||
+            artist.alias?.includes(creator.nickname),
+        )
+        if (match) {
+          void navigate({
+            to: '/artist/$id',
+            params: { id: String(match.id) },
+          })
+          return
+        }
+      } catch {
+        // Fall through to the user profile if artist lookup fails.
+      }
+    }
+    if (creator.userId) {
+      void navigate({
+        to: '/users/$id',
+        params: { id: String(creator.userId) },
+      })
+    }
+  }
+
   return (
     <div className="px-8 pb-16 pt-7">
       <div className="flex gap-6">
@@ -233,14 +274,20 @@ function PlaylistDetailPage() {
           </div>
 
           <div className="mt-3 flex flex-wrap items-center gap-3 text-[11.5px] text-black/40">
-            <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => void openCreator()}
+              className="pressable flex items-center gap-1.5 rounded-full transition-colors hover:bg-black/[0.04]"
+            >
               <Avatar
                 src={detail.creator?.avatarUrl}
                 alt={detail.creator?.nickname}
                 size="xs"
               />
-              <span className="font-medium text-accent">{detail.creator?.nickname}</span>
-            </div>
+              <span className="font-medium text-accent hover:underline">
+                {detail.creator?.nickname}
+              </span>
+            </button>
             {detail.createTime ? (
               <span className="flex items-center gap-1">
                 <CalendarDays className="h-3 w-3" />

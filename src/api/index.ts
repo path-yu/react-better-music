@@ -1,4 +1,5 @@
 import type {
+  Album,
   AlbumDetail,
   ApiResponse,
   ArtistAlbum,
@@ -472,6 +473,8 @@ export async function fetchSearchSuggest(keywords: string, signal?: AbortSignal)
 type RawSearchResult = {
   songs?: Parameters<typeof normalizeSongs>[0]
   playlists?: Playlist[]
+  albums?: Album[]
+  albumCount?: number
   artists?: ArtistSummary[]
   mvs?: Mv[]
   videos?: VideoSearchItem[]
@@ -480,9 +483,18 @@ type RawSearchResult = {
   [key: string]: unknown
 }
 
+/** Resolve an artist by name for playlist creators that are artist accounts. */
+export async function searchArtists(keywords: string, signal?: AbortSignal) {
+  const result = await searchAll(
+    { keywords, type: '100', limit: 5 },
+    signal,
+  )
+  return result.artists ?? []
+}
+
 export async function searchAll(params: {
   keywords: string
-  type: '1' | '100' | '1000' | '1002' | '1004' | '1014'
+  type: '1' | '10' | '100' | '1000' | '1002' | '1004' | '1014'
   limit?: number
   offset?: number
 }, signal?: AbortSignal) {
@@ -497,6 +509,12 @@ export async function searchAll(params: {
     ...result,
     songs: normalizeSongs(result.songs),
     playlists: (result.playlists ?? []).map(normalizePlaylist),
+    albums: (result.albums ?? []).map((album) => ({
+      ...album,
+      picUrl: album.picUrl ?? album.blurPicUrl,
+      artist: album.artist ?? album.artists?.[0],
+    })),
+    albumCount: result.albumCount ?? 0,
     artists: result.artists ?? [],
     mvs: (result.mvs ?? []).map(normalizeMv).map(videoFromMv),
     videos: (result.videos ?? [])
@@ -682,6 +700,29 @@ export async function fetchUserPlaylists(
     signal,
   )
   return (res.playlist ?? []).map(normalizePlaylist)
+}
+
+/**
+ * Albums saved by the signed-in account. NetEase's `album/sublist` is backed
+ * by the session cookie rather than a `uid` query, so this is only meaningful
+ * on the current user's own profile.
+ */
+export async function fetchCollectedAlbums(
+  limit = 100,
+  offset = 0,
+  signal?: AbortSignal,
+) {
+  const res = await get<{ albums?: Album[]; count?: number }>(
+    '/album/sublist',
+    { limit, offset, total: true, timestamp: Date.now() },
+    signal,
+  )
+  const albums = (res.albums ?? []).map((album) => ({
+    ...album,
+    picUrl: album.picUrl ?? album.blurPicUrl,
+    artist: album.artist ?? album.artists?.[0],
+  }))
+  return { albums, count: res.count ?? albums.length }
 }
 
 export async function fetchLikedIds(uid: number | string) {

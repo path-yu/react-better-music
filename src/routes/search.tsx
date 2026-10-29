@@ -3,11 +3,12 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { ListMusic, Search, Users } from 'lucide-react'
+import { Disc3, ListMusic, Search, Users } from 'lucide-react'
 import { Skeleton, Tabs, TabsContent, TabsList, TabsTrigger } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../components/common/ImageWithFallback'
 import { EmptyState } from '../components/common/EmptyState'
 import { Pager } from '../components/common/Pager'
+import { AlbumCard } from '../components/cards/AlbumCard'
 import { SongTable } from '../components/songs/SongTable'
 import { PlayAllButton } from '../components/songs/PlayAllButton'
 import { UserCard } from '../components/user/UserCard'
@@ -16,9 +17,16 @@ import { searchAll } from '../api'
 import { formatNumber } from '../lib/format'
 import { useDocumentTitle } from '../lib/title'
 import { toast } from '../lib/toast'
-import type { ArtistSummary, Playlist, Song, UserSummary, VideoItem } from '../types'
+import type {
+  Album,
+  ArtistSummary,
+  Playlist,
+  Song,
+  UserSummary,
+  VideoItem,
+} from '../types'
 
-const SEARCH_TABS = ['songs', 'playlists', 'artists', 'users', 'mvs', 'videos'] as const
+const SEARCH_TABS = ['songs', 'playlists', 'albums', 'artists', 'users', 'mvs', 'videos'] as const
 type SearchTab = (typeof SEARCH_TABS)[number]
 
 function normalizeTab(value: unknown): SearchTab {
@@ -37,6 +45,7 @@ export const Route = createFileRoute('/search')({
 
 const SONG_PAGE_SIZE = 30
 const PLAYLIST_PAGE_SIZE = 20
+const ALBUM_PAGE_SIZE = 20
 const ARTIST_PAGE_SIZE = 20
 const USER_PAGE_SIZE = 20
 const VIDEO_PAGE_SIZE = 20
@@ -55,6 +64,8 @@ function SearchPage() {
   const [songTotal, setSongTotal] = useState(0)
   const [playlists, setPlaylists] = useState<Playlist[]>([])
   const [playlistTotal, setPlaylistTotal] = useState(0)
+  const [albums, setAlbums] = useState<Album[]>([])
+  const [albumTotal, setAlbumTotal] = useState(0)
   const [artists, setArtists] = useState<ArtistSummary[]>([])
   const [artistTotal, setArtistTotal] = useState(0)
   const [users, setUsers] = useState<UserSummary[]>([])
@@ -72,12 +83,14 @@ function SearchPage() {
     setPage(1)
     setSongs([])
     setPlaylists([])
+    setAlbums([])
     setArtists([])
     setUsers([])
     setMvs([])
     setVideos([])
     setSongTotal(0)
     setPlaylistTotal(0)
+    setAlbumTotal(0)
     setArtistTotal(0)
     setUserTotal(0)
     setMvTotal(0)
@@ -97,21 +110,25 @@ function SearchPage() {
           ? ARTIST_PAGE_SIZE
           : tab === 'users'
             ? USER_PAGE_SIZE
-            : tab === 'mvs' || tab === 'videos'
-              ? VIDEO_PAGE_SIZE
-              : PLAYLIST_PAGE_SIZE
-    const type: '1' | '100' | '1000' | '1002' | '1004' | '1014' =
+            : tab === 'albums'
+              ? ALBUM_PAGE_SIZE
+              : tab === 'mvs' || tab === 'videos'
+                ? VIDEO_PAGE_SIZE
+                : PLAYLIST_PAGE_SIZE
+    const type: '1' | '10' | '100' | '1000' | '1002' | '1004' | '1014' =
       tab === 'songs'
         ? '1'
         : tab === 'artists'
           ? '100'
           : tab === 'users'
             ? '1002'
-            : tab === 'mvs'
-              ? '1004'
-              : tab === 'videos'
-                ? '1014'
-                : '1000'
+            : tab === 'albums'
+              ? '10'
+              : tab === 'mvs'
+                ? '1004'
+                : tab === 'videos'
+                  ? '1014'
+                  : '1000'
     searchAll(
       {
         keywords: keyword,
@@ -129,6 +146,9 @@ function SearchPage() {
         } else if (tab === 'artists') {
           setArtists(result.artists ?? [])
           setArtistTotal(result.artistCount ?? 0)
+        } else if (tab === 'albums') {
+          setAlbums(result.albums ?? [])
+          setAlbumTotal(result.albumCount ?? 0)
         } else if (tab === 'users') {
           setUsers(result.users ?? [])
           setUserTotal(result.userCount ?? 0)
@@ -190,9 +210,11 @@ function SearchPage() {
         ? ARTIST_PAGE_SIZE
         : tab === 'users'
           ? USER_PAGE_SIZE
-          : tab === 'mvs' || tab === 'videos'
-            ? VIDEO_PAGE_SIZE
-            : PLAYLIST_PAGE_SIZE
+          : tab === 'albums'
+            ? ALBUM_PAGE_SIZE
+            : tab === 'mvs' || tab === 'videos'
+              ? VIDEO_PAGE_SIZE
+              : PLAYLIST_PAGE_SIZE
   const total =
     tab === 'songs'
       ? songTotal
@@ -200,11 +222,13 @@ function SearchPage() {
         ? artistTotal
         : tab === 'users'
           ? userTotal
-          : tab === 'mvs'
-            ? mvTotal
-            : tab === 'videos'
-              ? videoTotal
-              : playlistTotal
+          : tab === 'albums'
+            ? albumTotal
+            : tab === 'mvs'
+              ? mvTotal
+              : tab === 'videos'
+                ? videoTotal
+                : playlistTotal
   const pageCount = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [pageSize, total])
 
   if (!keyword.trim()) {
@@ -212,7 +236,7 @@ function SearchPage() {
       <div className="px-8 pt-10">
         <EmptyState
           icon={<Search className="h-6 w-6" />}
-          title={i18n._(msg`搜索音乐、歌单、歌手、用户、MV 或视频`)}
+          title={i18n._(msg`搜索音乐、歌单、专辑、歌手、用户、MV 或视频`)}
           description={i18n._(msg`在顶部搜索框输入关键词后回车`)}
         />
       </div>
@@ -236,6 +260,9 @@ function SearchPage() {
             </TabsTrigger>
             <TabsTrigger value="playlists">
               <Trans>歌单</Trans>
+            </TabsTrigger>
+            <TabsTrigger value="albums">
+              <Trans>专辑</Trans>
             </TabsTrigger>
             <TabsTrigger value="artists">
               <Trans>歌手</Trans>
@@ -341,6 +368,40 @@ function SearchPage() {
             </div>
           ) : (
             <EmptyState title={i18n._(msg`没有找到相关歌单`)} />
+          )}
+          <Pager page={page} pageCount={pageCount} onChange={setPage} className="mt-6" />
+        </TabsContent>
+        <TabsContent value="albums" className="mt-3">
+          <div className="mb-2 text-[11px] text-black/35">
+            <Trans>共找到 {albumTotal} 张专辑</Trans>
+          </div>
+          {failed ? (
+            <EmptyState
+              variant="error"
+              title={i18n._(msg`专辑加载失败`)}
+              description={i18n._(msg`请检查网络或本地 API 服务后重试`)}
+              onRetry={retry}
+            />
+          ) : loading ? (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {Array.from({ length: 10 }).map((_, index) => (
+                <div key={index}>
+                  <Skeleton className="aspect-square w-full rounded-[14px]" />
+                  <Skeleton className="mt-2 h-3 w-3/5 rounded-full" />
+                </div>
+              ))}
+            </div>
+          ) : albums.length ? (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {albums.map((album, index) => (
+                <AlbumCard key={album.id} album={album} priority={index < 5} />
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              icon={<Disc3 className="h-6 w-6" />}
+              title={i18n._(msg`没有找到相关专辑`)}
+            />
           )}
           <Pager page={page} pageCount={pageCount} onChange={setPage} className="mt-6" />
         </TabsContent>

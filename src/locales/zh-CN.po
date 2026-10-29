@@ -8,6 +8,7 @@ msgstr ""
 "Language: zh-CN\n"
 
 #. placeholder {0}: album.size
+#: src/components/cards/AlbumCard.tsx:48
 #: src/routes/artist/$id.tsx:316
 msgid " · {0} 首"
 msgstr " · {0} 首"
@@ -28,7 +29,7 @@ msgid "{0} 位粉丝"
 msgstr "{0} 位粉丝"
 
 #. placeholder {0}: formatDate(detail.createTime)
-#: src/routes/songlists/$id.tsx:247
+#: src/routes/songlists/$id.tsx:294
 msgid "{0} 创建"
 msgstr "{0} 创建"
 
@@ -40,13 +41,13 @@ msgstr "{0} 发行"
 #. placeholder {0}: artist.albumSize ?? 0
 #. placeholder {0}: formatNumber(profile.albumSize)
 #: src/routes/artist/$id.tsx:199
-#: src/routes/search.tsx:392
+#: src/routes/search.tsx:453
 msgid "{0} 张专辑"
 msgstr "{0} 张专辑"
 
 #. placeholder {0}: artist.albumSize ?? 0
 #. placeholder {1}: artist.mvSize ?? 0
-#: src/routes/search.tsx:395
+#: src/routes/search.tsx:456
 msgid "{0} 张专辑 · {1} 个 MV"
 msgstr "{0} 张专辑 · {1} 个 MV"
 
@@ -56,7 +57,7 @@ msgid "{0} 条"
 msgstr "{0} 条"
 
 #. placeholder {0}: formatNumber(detail.playCount)
-#: src/routes/songlists/$id.tsx:254
+#: src/routes/songlists/$id.tsx:301
 msgid "{0} 次播放"
 msgstr "{0} 次播放"
 
@@ -70,7 +71,7 @@ msgstr "{0} 粉丝"
 #. placeholder {0}: queue.length
 #: src/components/layout/SearchBox.tsx:433
 #: src/components/player/QueuePanel.tsx:86
-#: src/routes/search.tsx:330
+#: src/routes/search.tsx:357
 #: src/routes/settings.tsx:344
 msgid "{0} 首"
 msgstr "{0} 首"
@@ -89,7 +90,7 @@ msgstr "{0} 首单曲"
 #. placeholder {0}: detail.trackCount
 #. placeholder {0}: songs.length
 #: src/routes/albums/$id.tsx:145
-#: src/routes/songlists/$id.tsx:251
+#: src/routes/songlists/$id.tsx:298
 msgid "{0} 首歌曲"
 msgstr "{0} 首歌曲"
 
@@ -125,7 +126,7 @@ msgid "MV 不存在或无法访问"
 msgstr "MV 不存在或无法访问"
 
 #: src/routes/latest-mv.tsx:81
-#: src/routes/search.tsx:447
+#: src/routes/search.tsx:508
 msgid "MV 加载失败"
 msgstr "MV 加载失败"
 
@@ -214,10 +215,11 @@ msgstr "下载选中"
 msgid "下载选中 ({0})"
 msgstr "下载选中 ({0})"
 
-#: src/components/songs/SongTable.tsx:315
+#: src/components/songs/SongTable.tsx:328
 #: src/routes/albums/$id.tsx:35
 #: src/routes/albums/$id.tsx:132
 #: src/routes/artist/$id.tsx:263
+#: src/routes/search.tsx:265
 msgid "专辑"
 msgstr "专辑"
 
@@ -227,6 +229,7 @@ msgstr "专辑不存在或无法访问"
 
 #: src/routes/albums/$id.tsx:50
 #: src/routes/artist/$id.tsx:152
+#: src/routes/search.tsx:381
 msgid "专辑加载失败"
 msgstr "专辑加载失败"
 
@@ -318,32 +321,36 @@ msgstr "全部分类"
 msgid "共 {0} 首热门单曲"
 msgstr "共 {0} 首热门单曲"
 
-#: src/routes/search.tsx:349
+#: src/routes/search.tsx:376
+msgid "共找到 {albumTotal} 张专辑"
+msgstr "共找到 {albumTotal} 张专辑"
+
+#: src/routes/search.tsx:410
 msgid "共找到 {artistTotal} 位歌手"
 msgstr "共找到 {artistTotal} 位歌手"
 
-#: src/routes/search.tsx:442
+#: src/routes/search.tsx:503
 msgid "共找到 {mvTotal} 个 MV"
 msgstr "共找到 {mvTotal} 个 MV"
 
-#: src/routes/search.tsx:288
+#: src/routes/search.tsx:315
 msgid "共找到 {playlistTotal} 个歌单"
 msgstr "共找到 {playlistTotal} 个歌单"
 
-#: src/routes/search.tsx:272
+#: src/routes/search.tsx:299
 msgid "共找到 {songTotal} 首单曲"
 msgstr "共找到 {songTotal} 首单曲"
 
-#: src/routes/search.tsx:410
+#: src/routes/search.tsx:471
 msgid "共找到 {userTotal} 位用户"
 msgstr "共找到 {userTotal} 位用户"
 
-#: src/routes/search.tsx:478
+#: src/routes/search.tsx:539
 msgid "共找到 {videoTotal} 个视频"
 msgstr "共找到 {videoTotal} 个视频"
 
 #: src/components/layout/UserMenu.tsx:95
-#: src/routes/users/$id.tsx:179
+#: src/routes/users/$id.tsx:234
 msgid "关注"
 msgstr "关注"
 
@@ -446,7 +453,7 @@ msgstr "最热"
 msgid "出错了"
 msgstr "出错了"
 
-#: src/routes/songlists/$id.tsx:336
+#: src/routes/songlists/$id.tsx:383
 msgid "分享"
 msgstr "分享"
 
@@ -472,7 +479,7 @@ msgid "切换音源失败，请稍后再试"
 msgstr "切换音源失败，请稍后再试"
 
 #: src/components/layout/Sidebar.tsx:158
-#: src/routes/users/$id.tsx:221
+#: src/routes/users/$id.tsx:276
 msgid "创建的歌单"
 msgstr "创建的歌单"
 
@@ -490,7 +497,7 @@ msgid "前进"
 msgstr "前进"
 
 #. placeholder {0}: formatDate(profile.createTime)
-#: src/routes/users/$id.tsx:196
+#: src/routes/users/$id.tsx:251
 msgid "加入于 {0}"
 msgstr "加入于 {0}"
 
@@ -521,7 +528,7 @@ msgid "华语"
 msgstr "华语"
 
 #: src/components/layout/SearchBox.tsx:377
-#: src/routes/search.tsx:235
+#: src/routes/search.tsx:259
 msgid "单曲"
 msgstr "单曲"
 
@@ -567,11 +574,11 @@ msgstr "取消"
 #: src/components/player/NowPlaying.tsx:217
 #: src/components/player/PlayerBar.tsx:997
 #: src/components/songs/SongContextMenu.tsx:207
-#: src/components/songs/SongTable.tsx:153
+#: src/components/songs/SongTable.tsx:154
 msgid "取消喜欢"
 msgstr "取消喜欢"
 
-#: src/routes/songlists/$id.tsx:172
+#: src/routes/songlists/$id.tsx:173
 msgid "取消收藏失败"
 msgstr "取消收藏失败"
 
@@ -600,7 +607,7 @@ msgstr "向右浏览分类"
 msgid "向左浏览分类"
 msgstr "向左浏览分类"
 
-#: src/routes/songlists/$id.tsx:384
+#: src/routes/songlists/$id.tsx:431
 msgid "听友评论"
 msgstr "听友评论"
 
@@ -608,7 +615,7 @@ msgstr "听友评论"
 #: src/components/player/NowPlaying.tsx:217
 #: src/components/player/PlayerBar.tsx:997
 #: src/components/songs/SongContextMenu.tsx:207
-#: src/components/songs/SongTable.tsx:153
+#: src/components/songs/SongTable.tsx:154
 msgid "喜欢"
 msgstr "喜欢"
 
@@ -647,7 +654,7 @@ msgstr "在搜索建议中选择并进入"
 msgid "在页面任意位置可用（输入框内保留系统默认行为）。"
 msgstr "在页面任意位置可用（输入框内保留系统默认行为）。"
 
-#: src/routes/search.tsx:216
+#: src/routes/search.tsx:240
 msgid "在顶部搜索框输入关键词后回车"
 msgstr "在顶部搜索框输入关键词后回车"
 
@@ -655,7 +662,7 @@ msgstr "在顶部搜索框输入关键词后回车"
 msgid "地区"
 msgstr "地区"
 
-#: src/routes/songlists/$id.tsx:197
+#: src/routes/songlists/$id.tsx:198
 msgid "复制链接失败"
 msgstr "复制链接失败"
 
@@ -699,7 +706,7 @@ msgid "小语种"
 msgstr "小语种"
 
 #: src/routes/albums/$id.tsx:171
-#: src/routes/songlists/$id.tsx:290
+#: src/routes/songlists/$id.tsx:337
 msgid "展开"
 msgstr "展开"
 
@@ -732,7 +739,7 @@ msgstr "已切换到其他音源"
 msgid "已取消喜欢"
 msgstr "已取消喜欢"
 
-#: src/routes/songlists/$id.tsx:183
+#: src/routes/songlists/$id.tsx:184
 msgid "已取消收藏"
 msgstr "已取消收藏"
 
@@ -757,7 +764,7 @@ msgstr "已导出 {count} 首缓存音乐到下载目录"
 msgid "已开始下载「{0}」"
 msgstr "已开始下载「{0}」"
 
-#: src/routes/songlists/$id.tsx:324
+#: src/routes/songlists/$id.tsx:371
 msgid "已收藏"
 msgstr "已收藏"
 
@@ -855,7 +862,9 @@ msgstr "手机号"
 msgid "打开"
 msgstr "打开"
 
+#. placeholder {0}: album.name
 #. placeholder {0}: currentSong.al.name
+#: src/components/cards/AlbumCard.tsx:28
 #: src/components/player/NowPlaying.tsx:309
 msgid "打开专辑 {0}"
 msgstr "打开专辑 {0}"
@@ -907,7 +916,7 @@ msgstr "推荐轮播"
 
 #: src/components/layout/SearchBox.tsx:208
 #: src/components/layout/TitleBar.tsx:24
-#: src/routes/search.tsx:51
+#: src/routes/search.tsx:60
 msgid "搜索"
 msgstr "搜索"
 
@@ -916,7 +925,7 @@ msgid "搜索 “{keyword}”"
 msgstr "搜索 “{keyword}”"
 
 #. placeholder {0}: keyword.trim()
-#: src/routes/search.tsx:50
+#: src/routes/search.tsx:59
 msgid "搜索「{0}」"
 msgstr "搜索「{0}」"
 
@@ -928,8 +937,8 @@ msgstr "搜索专辑歌曲"
 msgid "搜索历史"
 msgstr "搜索历史"
 
-#: src/routes/search.tsx:149
-#: src/routes/search.tsx:264
+#: src/routes/search.tsx:169
+#: src/routes/search.tsx:291
 msgid "搜索失败"
 msgstr "搜索失败"
 
@@ -937,11 +946,11 @@ msgstr "搜索失败"
 msgid "搜索建议"
 msgstr "搜索建议"
 
-#: src/routes/songlists/$id.tsx:361
+#: src/routes/songlists/$id.tsx:408
 msgid "搜索歌单歌曲"
 msgstr "搜索歌单歌曲"
 
-#: src/routes/search.tsx:226
+#: src/routes/search.tsx:250
 msgid "搜索结果"
 msgstr "搜索结果"
 
@@ -949,16 +958,20 @@ msgstr "搜索结果"
 msgid "搜索音乐、歌单"
 msgstr "搜索音乐、歌单"
 
+#: src/routes/search.tsx:239
+msgid "搜索音乐、歌单、专辑、歌手、用户、MV 或视频"
+msgstr "搜索音乐、歌单、专辑、歌手、用户、MV 或视频"
+
 #: src/routes/search.tsx:198
 #~ msgid "搜索音乐、歌单、歌手、MV 或视频"
 #~ msgstr "搜索音乐、歌单、歌手、MV 或视频"
 
 #: src/routes/search.tsx:215
-msgid "搜索音乐、歌单、歌手、用户、MV 或视频"
-msgstr "搜索音乐、歌单、歌手、用户、MV 或视频"
+#~ msgid "搜索音乐、歌单、歌手、用户、MV 或视频"
+#~ msgstr "搜索音乐、歌单、歌手、用户、MV 或视频"
 
 #: src/components/player/PlayerBar.tsx:1083
-#: src/components/songs/SongTable.tsx:98
+#: src/components/songs/SongTable.tsx:99
 msgid "播放"
 msgstr "播放"
 
@@ -990,7 +1003,7 @@ msgstr "播放列表已清空"
 msgid "播放失败"
 msgstr "播放失败"
 
-#: src/routes/search.tsx:255
+#: src/routes/search.tsx:282
 msgid "播放本页"
 msgstr "播放本页"
 
@@ -1018,15 +1031,20 @@ msgstr "播放音质已切换为{label}，正在重新加载"
 
 #: src/components/comments/CommentSection.tsx:212
 #: src/components/comments/CommentSection.tsx:242
-#: src/routes/songlists/$id.tsx:186
+#: src/routes/songlists/$id.tsx:187
 #: src/store/user.ts:242
 #: src/store/user.ts:254
 msgid "操作失败"
 msgstr "操作失败"
 
-#: src/routes/songlists/$id.tsx:324
+#: src/routes/songlists/$id.tsx:371
 msgid "收藏"
 msgstr "收藏"
+
+#: src/routes/users/$id.tsx:115
+#: src/routes/users/$id.tsx:334
+msgid "收藏专辑加载失败"
+msgstr "收藏专辑加载失败"
 
 #: src/components/songs/SongContextMenu.tsx:193
 #: src/components/songs/SongContextMenu.tsx:222
@@ -1035,22 +1053,26 @@ msgstr "收藏到歌单"
 
 #: src/components/songs/SongContextMenu.tsx:132
 #: src/components/songs/SongContextMenu.tsx:140
-#: src/routes/songlists/$id.tsx:172
+#: src/routes/songlists/$id.tsx:173
 msgid "收藏失败"
 msgstr "收藏失败"
 
-#: src/routes/songlists/$id.tsx:183
+#: src/routes/songlists/$id.tsx:184
 msgid "收藏成功"
 msgstr "收藏成功"
 
+#: src/routes/users/$id.tsx:282
+msgid "收藏的专辑"
+msgstr "收藏的专辑"
+
 #: src/components/layout/Sidebar.tsx:172
-#: src/routes/users/$id.tsx:224
+#: src/routes/users/$id.tsx:279
 msgid "收藏的歌单"
 msgstr "收藏的歌单"
 
 #: src/routes/albums/$id.tsx:171
 #: src/routes/artist/$id.tsx:241
-#: src/routes/songlists/$id.tsx:290
+#: src/routes/songlists/$id.tsx:337
 msgid "收起"
 msgstr "收起"
 
@@ -1094,7 +1116,7 @@ msgstr "日本"
 msgid "日语"
 msgstr "日语"
 
-#: src/components/songs/SongTable.tsx:318
+#: src/components/songs/SongTable.tsx:331
 msgid "时长"
 msgstr "时长"
 
@@ -1103,7 +1125,7 @@ msgid "昵称不能为空"
 msgstr "昵称不能为空"
 
 #: src/components/player/PlayerBar.tsx:1082
-#: src/components/songs/SongTable.tsx:98
+#: src/components/songs/SongTable.tsx:99
 msgid "暂停"
 msgstr "暂停"
 
@@ -1168,8 +1190,8 @@ msgid "暂无视频播放地址"
 msgstr "暂无视频播放地址"
 
 #: src/components/user/UserCard.tsx:38
-#: src/routes/users/$id.tsx:128
-#: src/routes/users/$id.tsx:172
+#: src/routes/users/$id.tsx:183
+#: src/routes/users/$id.tsx:227
 msgid "暂无简介"
 msgstr "暂无简介"
 
@@ -1242,11 +1264,11 @@ msgstr "标准"
 msgid "标准 · 64kbps"
 msgstr "标准 · 64kbps"
 
-#: src/routes/songlists/$id.tsx:261
+#: src/routes/songlists/$id.tsx:308
 msgid "标签"
 msgstr "标签"
 
-#: src/components/songs/SongTable.tsx:309
+#: src/components/songs/SongTable.tsx:322
 msgid "标题"
 msgstr "标题"
 
@@ -1283,14 +1305,14 @@ msgstr "欧美"
 
 #: src/components/layout/SearchBox.tsx:413
 #: src/components/layout/TitleBar.tsx:19
-#: src/routes/search.tsx:238
-#: src/routes/songlists/$id.tsx:63
-#: src/routes/songlists/$id.tsx:214
-#: src/routes/users/$id.tsx:191
+#: src/routes/search.tsx:262
+#: src/routes/songlists/$id.tsx:64
+#: src/routes/songlists/$id.tsx:255
+#: src/routes/users/$id.tsx:246
 msgid "歌单"
 msgstr "歌单"
 
-#: src/routes/songlists/$id.tsx:142
+#: src/routes/songlists/$id.tsx:143
 msgid "歌单不存在或无法访问"
 msgstr "歌单不存在或无法访问"
 
@@ -1299,12 +1321,12 @@ msgid "歌单信息已保存"
 msgstr "歌单信息已保存"
 
 #: src/components/songs/SongContextMenu.tsx:119
-#: src/routes/search.tsx:293
+#: src/routes/search.tsx:320
 #: src/routes/songlists/$id.edit.tsx:68
-#: src/routes/songlists/$id.tsx:99
+#: src/routes/songlists/$id.tsx:100
 #: src/routes/songlists/index.tsx:93
 #: src/routes/songlists/index.tsx:248
-#: src/routes/users/$id.tsx:59
+#: src/routes/users/$id.tsx:72
 msgid "歌单加载失败"
 msgstr "歌单加载失败"
 
@@ -1316,14 +1338,14 @@ msgstr "歌单加载失败，请稍后重试"
 msgid "歌单名不能为空"
 msgstr "歌单名不能为空"
 
-#: src/routes/songlists/$id.tsx:375
+#: src/routes/songlists/$id.tsx:422
 msgid "歌单暂时没有歌曲"
 msgstr "歌单暂时没有歌曲"
 
-#: src/components/songs/SongTable.tsx:312
+#: src/components/songs/SongTable.tsx:325
 #: src/routes/artist/$id.tsx:47
 #: src/routes/artist/$id.tsx:172
-#: src/routes/search.tsx:241
+#: src/routes/search.tsx:268
 msgid "歌手"
 msgstr "歌手"
 
@@ -1331,7 +1353,7 @@ msgstr "歌手"
 msgid "歌手不存在或无法访问"
 msgstr "歌手不存在或无法访问"
 
-#: src/routes/search.tsx:354
+#: src/routes/search.tsx:415
 msgid "歌手加载失败"
 msgstr "歌手加载失败"
 
@@ -1345,7 +1367,7 @@ msgid "歌手简介"
 msgstr "歌手简介"
 
 #: src/routes/albums/$id.tsx:201
-#: src/routes/songlists/$id.tsx:347
+#: src/routes/songlists/$id.tsx:394
 msgid "歌曲列表"
 msgstr "歌曲列表"
 
@@ -1439,15 +1461,19 @@ msgid "每日更新的华语与全球新歌速递"
 msgstr "每日更新的华语与全球新歌速递"
 
 #: src/routes/albums/$id.tsx:219
-#: src/routes/songlists/$id.tsx:374
+#: src/routes/songlists/$id.tsx:421
 msgid "没有匹配的歌曲"
 msgstr "没有匹配的歌曲"
 
-#: src/routes/search.tsx:472
+#: src/routes/search.tsx:533
 msgid "没有找到相关 MV"
 msgstr "没有找到相关 MV"
 
-#: src/routes/search.tsx:279
+#: src/routes/search.tsx:403
+msgid "没有找到相关专辑"
+msgstr "没有找到相关专辑"
+
+#: src/routes/search.tsx:306
 msgid "没有找到相关单曲"
 msgstr "没有找到相关单曲"
 
@@ -1455,19 +1481,19 @@ msgstr "没有找到相关单曲"
 msgid "没有找到相关建议"
 msgstr "没有找到相关建议"
 
-#: src/routes/search.tsx:343
+#: src/routes/search.tsx:370
 msgid "没有找到相关歌单"
 msgstr "没有找到相关歌单"
 
-#: src/routes/search.tsx:404
+#: src/routes/search.tsx:465
 msgid "没有找到相关歌手"
 msgstr "没有找到相关歌手"
 
-#: src/routes/search.tsx:434
+#: src/routes/search.tsx:495
 msgid "没有找到相关用户"
 msgstr "没有找到相关用户"
 
-#: src/routes/search.tsx:508
+#: src/routes/search.tsx:569
 msgid "没有找到相关视频"
 msgstr "没有找到相关视频"
 
@@ -1491,7 +1517,7 @@ msgstr "深色模式"
 msgid "添加全部到播放列表"
 msgstr "添加全部到播放列表"
 
-#: src/routes/songlists/$id.tsx:305
+#: src/routes/songlists/$id.tsx:352
 msgid "添加简介"
 msgstr "添加简介"
 
@@ -1528,7 +1554,7 @@ msgstr "点击歌曲开始播放"
 msgid "热搜榜"
 msgstr "热搜榜"
 
-#: src/routes/songlists/$id.tsx:353
+#: src/routes/songlists/$id.tsx:400
 msgid "热议"
 msgstr "热议"
 
@@ -1546,21 +1572,21 @@ msgid "现场版"
 msgstr "现场版"
 
 #: src/components/layout/TitleBar.tsx:18
-#: src/routes/search.tsx:244
-#: src/routes/users/$id.tsx:35
-#: src/routes/users/$id.tsx:162
+#: src/routes/search.tsx:271
+#: src/routes/users/$id.tsx:48
+#: src/routes/users/$id.tsx:217
 msgid "用户"
 msgstr "用户"
 
-#: src/routes/users/$id.tsx:101
+#: src/routes/users/$id.tsx:156
 msgid "用户不存在或无法访问"
 msgstr "用户不存在或无法访问"
 
-#: src/routes/users/$id.tsx:49
+#: src/routes/users/$id.tsx:62
 msgid "用户信息加载失败"
 msgstr "用户信息加载失败"
 
-#: src/routes/search.tsx:415
+#: src/routes/search.tsx:476
 msgid "用户加载失败"
 msgstr "用户加载失败"
 
@@ -1636,14 +1662,14 @@ msgstr "相关视频加载失败"
 msgid "确认清除？"
 msgstr "确认清除？"
 
-#: src/routes/search.tsx:248
+#: src/routes/search.tsx:275
 #: src/routes/video/$id.tsx:42
 #: src/routes/video/$id.tsx:153
 #: src/routes/video/$id.tsx:155
 msgid "视频"
 msgstr "视频"
 
-#: src/routes/search.tsx:483
+#: src/routes/search.tsx:544
 #: src/routes/video/$id.tsx:137
 msgid "视频加载失败"
 msgstr "视频加载失败"
@@ -1688,7 +1714,7 @@ msgstr "签到失败"
 msgid "签到成功"
 msgstr "签到成功"
 
-#: src/routes/users/$id.tsx:206
+#: src/routes/users/$id.tsx:261
 msgid "简介"
 msgstr "简介"
 
@@ -1701,7 +1727,7 @@ msgid "类型"
 msgstr "类型"
 
 #: src/components/layout/UserMenu.tsx:96
-#: src/routes/users/$id.tsx:185
+#: src/routes/users/$id.tsx:240
 msgid "粉丝"
 msgstr "粉丝"
 
@@ -1743,7 +1769,7 @@ msgid "编辑「{0}」"
 msgstr "编辑「{0}」"
 
 #: src/routes/songlists/$id.edit.tsx:49
-#: src/routes/songlists/$id.tsx:221
+#: src/routes/songlists/$id.tsx:262
 msgid "编辑歌单"
 msgstr "编辑歌单"
 
@@ -1788,7 +1814,7 @@ msgstr "设置"
 #: src/components/comments/CommentSection.tsx:39
 #: src/components/comments/CommentSection.tsx:392
 #: src/components/player/NowPlaying.tsx:366
-#: src/routes/songlists/$id.tsx:351
+#: src/routes/songlists/$id.tsx:398
 msgid "评论"
 msgstr "评论"
 
@@ -1829,11 +1855,16 @@ msgstr "该歌曲暂不可用"
 msgid "该歌曲没有官方音源，当前使用匹配到的其他音源"
 msgstr "该歌曲没有官方音源，当前使用匹配到的其他音源"
 
-#: src/routes/users/$id.tsx:248
+#: src/routes/users/$id.tsx:320
+#: src/routes/users/$id.tsx:357
+msgid "该用户的收藏专辑不可见"
+msgstr "该用户的收藏专辑不可见"
+
+#: src/routes/users/$id.tsx:307
 msgid "该用户还没有创建歌单"
 msgstr "该用户还没有创建歌单"
 
-#: src/routes/users/$id.tsx:249
+#: src/routes/users/$id.tsx:308
 msgid "该用户还没有收藏歌单"
 msgstr "该用户还没有收藏歌单"
 
@@ -1850,7 +1881,7 @@ msgstr "请先播放歌曲"
 #: src/components/comments/CommentSection.tsx:340
 #: src/components/songs/SongContextMenu.tsx:101
 #: src/components/songs/SongContextMenu.tsx:149
-#: src/routes/songlists/$id.tsx:162
+#: src/routes/songlists/$id.tsx:163
 #: src/store/user.ts:236
 msgid "请先登录"
 msgstr "请先登录"
@@ -1863,17 +1894,19 @@ msgstr "请先登录后再收藏"
 msgid "请先登录后再试"
 msgstr "请先登录后再试"
 
-#: src/routes/search.tsx:265
-#: src/routes/search.tsx:294
-#: src/routes/search.tsx:355
+#: src/routes/search.tsx:292
+#: src/routes/search.tsx:321
+#: src/routes/search.tsx:382
 #: src/routes/search.tsx:416
-#: src/routes/search.tsx:448
-#: src/routes/search.tsx:484
+#: src/routes/search.tsx:477
+#: src/routes/search.tsx:509
+#: src/routes/search.tsx:545
 #: src/routes/songlists/index.tsx:249
+#: src/routes/users/$id.tsx:335
 msgid "请检查网络或本地 API 服务后重试"
 msgstr "请检查网络或本地 API 服务后重试"
 
-#: src/routes/users/$id.tsx:102
+#: src/routes/users/$id.tsx:157
 msgid "请检查网络或用户主页是否公开"
 msgstr "请检查网络或用户主页是否公开"
 
@@ -1939,7 +1972,7 @@ msgstr "运动"
 
 #: src/components/songs/SongContextMenu.tsx:216
 #: src/routes/mv/$id.tsx:165
-#: src/routes/users/$id.tsx:148
+#: src/routes/users/$id.tsx:203
 #: src/routes/video/$id.tsx:107
 msgid "返回"
 msgstr "返回"
@@ -1948,15 +1981,19 @@ msgstr "返回"
 msgid "返回上一页"
 msgstr "返回上一页"
 
-#: src/routes/songlists/$id.tsx:150
+#: src/routes/songlists/$id.tsx:151
 msgid "返回推荐歌单"
 msgstr "返回推荐歌单"
+
+#: src/routes/users/$id.tsx:356
+msgid "还没有收藏专辑"
+msgstr "还没有收藏专辑"
 
 #: src/components/comments/CommentSection.tsx:412
 msgid "还没有评论，快来抢沙发～"
 msgstr "还没有评论，快来抢沙发～"
 
-#: src/routes/songlists/$id.tsx:392
+#: src/routes/songlists/$id.tsx:439
 msgid "这是你的「我喜欢的音乐」"
 msgstr "这是你的「我喜欢的音乐」"
 
@@ -1984,7 +2021,7 @@ msgstr "部分歌手信息加载失败"
 msgid "重试"
 msgstr "重试"
 
-#: src/routes/songlists/$id.tsx:195
+#: src/routes/songlists/$id.tsx:196
 msgid "链接已复制"
 msgstr "链接已复制"
 

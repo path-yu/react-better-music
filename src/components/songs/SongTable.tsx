@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from '@tanstack/react-router'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
@@ -177,7 +178,19 @@ const SongRow = memo(function SongRow({
           ) : null}
         </div>
       </div>
-      <p className="song-meta truncate text-[11.5px] text-black/40">{song.al.name}</p>
+      <p className="song-meta truncate text-[11.5px] text-black/40">
+        {song.al.id ? (
+          <Link
+            to="/albums/$id"
+            params={{ id: String(song.al.id) }}
+            className="hover:text-accent hover:underline"
+          >
+            {song.al.name}
+          </Link>
+        ) : (
+          song.al.name
+        )}
+      </p>
       <p className="text-right text-[11px] tabular-nums text-black/30">
         {formatDuration(song.dt)}
       </p>
