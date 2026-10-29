@@ -1477,6 +1477,22 @@ html.desktop .app-window {
   background-color: rgba(28, 28, 30, 0.92);
 }
 
+/* Portaled song context menu: the shared dark tokens invert the text, so the
+   panel must become a dark surface too. */
+.dark .song-context-menu,
+.dark .song-context-menu button:hover {
+  background-color: rgba(28, 28, 30, 0.94);
+}
+
+.dark .song-context-menu {
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.5);
+}
+
+.dark .song-context-menu button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
 .dark [class~="bg-white/88"] {
   background-color: rgba(28, 28, 30, 0.88);
 }

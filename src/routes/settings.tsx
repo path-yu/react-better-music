@@ -115,8 +115,8 @@ function SettingsPage() {
     void setDevToolsPolicy(disabled).catch(() => undefined)
     toast.info(
       disabled
-        ? '已禁用开发者工具，重启应用后完全生效'
-        : '已允许开发者工具，重启应用后完全生效',
+        ? i18n._(msg`已禁用开发者工具，重启应用后完全生效`)
+        : i18n._(msg`已允许开发者工具，重启应用后完全生效`),
     )
   }
 

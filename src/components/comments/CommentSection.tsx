@@ -299,9 +299,21 @@ export function CommentSection({
                 </p>
                 {comment.beReplied?.[0] ? (
                   <div className="mt-2 rounded-[10px] bg-black/4 px-3 py-2 text-[11.5px] leading-relaxed text-black/55">
-                    <span className="text-accent">
-                      @{comment.beReplied[0].user?.nickname}：
-                    </span>
+                    {comment.beReplied[0].user?.userId ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          openUser(comment.beReplied[0].user?.userId)
+                        }
+                        className="text-accent hover:underline"
+                      >
+                        @{comment.beReplied[0].user?.nickname}：
+                      </button>
+                    ) : (
+                      <span className="text-accent">
+                        @{comment.beReplied[0].user?.nickname}：
+                      </span>
+                    )}
                     {comment.beReplied[0].content}
                   </div>
                 ) : null}

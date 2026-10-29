@@ -163,7 +163,7 @@ export function SongContextMenu({
       ref={menuRef}
       role="menu"
       aria-label={i18n._(msg`歌曲操作`)}
-      className="fixed z-[1000] min-w-[190px] overflow-hidden rounded-[10px] border border-black/10 bg-white/92 p-1 text-[12px] shadow-[0_14px_40px_rgba(0,0,0,0.22)] backdrop-blur-2xl"
+      className="song-context-menu fixed z-[1000] min-w-[190px] overflow-hidden rounded-[10px] border border-black/10 bg-white/90 p-1 text-[12px] shadow-[0_14px_40px_rgba(0,0,0,0.22)] backdrop-blur-2xl"
       style={{ left, top, width: menuWidth }}
       onContextMenu={(event) => event.preventDefault()}
     >

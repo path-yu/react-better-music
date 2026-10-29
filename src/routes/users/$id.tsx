@@ -38,20 +38,26 @@ function UserDetailPage() {
     const controller = new AbortController()
     setLoading(true)
     setFailed(false)
-    Promise.all([
+    Promise.allSettled([
       fetchUserDetail(id, controller.signal),
       fetchUserPlaylists(id, controller.signal),
     ])
-      .then(([detail, list]) => {
+      .then(([detailResult, playlistResult]) => {
         if (controller.signal.aborted) return
-        setProfile(detail.profile ?? null)
-        setLevel(detail.level ?? 0)
-        setPlaylists(list)
-      })
-      .catch(() => {
-        if (controller.signal.aborted) return
-        setFailed(true)
-        toast.error(i18n._(msg`用户信息加载失败`))
+        if (detailResult.status === 'rejected') {
+          setFailed(true)
+          toast.error(i18n._(msg`用户信息加载失败`))
+          return
+        }
+        setProfile(detailResult.value.profile ?? null)
+        setLevel(detailResult.value.level ?? 0)
+        if (playlistResult.status === 'fulfilled') {
+          setPlaylists(playlistResult.value)
+        } else {
+          // A private/broken playlist response should not hide the profile.
+          setPlaylists([])
+          toast.warning(i18n._(msg`歌单加载失败`))
+        }
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false)

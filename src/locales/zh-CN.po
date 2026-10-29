@@ -51,7 +51,7 @@ msgid "{0} 张专辑 · {1} 个 MV"
 msgstr "{0} 张专辑 · {1} 个 MV"
 
 #. placeholder {0}: data.total
-#: src/components/comments/CommentSection.tsx:351
+#: src/components/comments/CommentSection.tsx:363
 msgid "{0} 条"
 msgstr "{0} 条"
 
@@ -343,7 +343,7 @@ msgid "共找到 {videoTotal} 个视频"
 msgstr "共找到 {videoTotal} 个视频"
 
 #: src/components/layout/UserMenu.tsx:95
-#: src/routes/users/$id.tsx:173
+#: src/routes/users/$id.tsx:179
 msgid "关注"
 msgstr "关注"
 
@@ -427,7 +427,7 @@ msgstr "最新 MV"
 msgid "最新MV"
 msgstr "最新MV"
 
-#: src/components/comments/CommentSection.tsx:397
+#: src/components/comments/CommentSection.tsx:409
 msgid "最新评论"
 msgstr "最新评论"
 
@@ -472,7 +472,7 @@ msgid "切换音源失败，请稍后再试"
 msgstr "切换音源失败，请稍后再试"
 
 #: src/components/layout/Sidebar.tsx:158
-#: src/routes/users/$id.tsx:215
+#: src/routes/users/$id.tsx:221
 msgid "创建的歌单"
 msgstr "创建的歌单"
 
@@ -490,11 +490,11 @@ msgid "前进"
 msgstr "前进"
 
 #. placeholder {0}: formatDate(profile.createTime)
-#: src/routes/users/$id.tsx:190
+#: src/routes/users/$id.tsx:196
 msgid "加入于 {0}"
 msgstr "加入于 {0}"
 
-#: src/components/comments/CommentSection.tsx:413
+#: src/components/comments/CommentSection.tsx:425
 #: src/routes/songlists/index.tsx:283
 msgid "加载更多"
 msgstr "加载更多"
@@ -559,7 +559,7 @@ msgstr "发生未知错误"
 msgid "发送验证码"
 msgstr "发送验证码"
 
-#: src/components/comments/CommentSection.tsx:438
+#: src/components/comments/CommentSection.tsx:450
 msgid "取消"
 msgstr "取消"
 
@@ -612,17 +612,17 @@ msgstr "听友评论"
 msgid "喜欢"
 msgstr "喜欢"
 
-#: src/components/comments/CommentSection.tsx:335
-#: src/components/comments/CommentSection.tsx:447
+#: src/components/comments/CommentSection.tsx:347
+#: src/components/comments/CommentSection.tsx:459
 msgid "回复"
 msgstr "回复"
 
 #. placeholder {0}: replyTarget?.user?.nickname ?? ''
-#: src/components/comments/CommentSection.tsx:423
+#: src/components/comments/CommentSection.tsx:435
 msgid "回复 {0}"
 msgstr "回复 {0}"
 
-#: src/components/comments/CommentSection.tsx:432
+#: src/components/comments/CommentSection.tsx:444
 msgid "回复内容"
 msgstr "回复内容"
 
@@ -716,6 +716,10 @@ msgstr "展开播放页"
 msgid "已保存「{0}」到下载目录"
 msgstr "已保存「{0}」到下载目录"
 
+#: src/routes/settings.tsx:119
+msgid "已允许开发者工具，重启应用后完全生效"
+msgstr "已允许开发者工具，重启应用后完全生效"
+
 #: src/store/player.ts:774
 msgid "已关闭心动模式"
 msgstr "已关闭心动模式"
@@ -770,6 +774,10 @@ msgstr "已添加 {0} 首歌曲到播放列表"
 #: src/store/user.ts:249
 msgid "已添加到我喜欢的音乐"
 msgstr "已添加到我喜欢的音乐"
+
+#: src/routes/settings.tsx:118
+msgid "已禁用开发者工具，重启应用后完全生效"
+msgstr "已禁用开发者工具，重启应用后完全生效"
 
 #: src/store/user.ts:231
 msgid "已退出登录"
@@ -1036,7 +1044,7 @@ msgid "收藏成功"
 msgstr "收藏成功"
 
 #: src/components/layout/Sidebar.tsx:172
-#: src/routes/users/$id.tsx:218
+#: src/routes/users/$id.tsx:224
 msgid "收藏的歌单"
 msgstr "收藏的歌单"
 
@@ -1160,8 +1168,8 @@ msgid "暂无视频播放地址"
 msgstr "暂无视频播放地址"
 
 #: src/components/user/UserCard.tsx:38
-#: src/routes/users/$id.tsx:122
-#: src/routes/users/$id.tsx:166
+#: src/routes/users/$id.tsx:128
+#: src/routes/users/$id.tsx:172
 msgid "暂无简介"
 msgstr "暂无简介"
 
@@ -1278,7 +1286,7 @@ msgstr "欧美"
 #: src/routes/search.tsx:238
 #: src/routes/songlists/$id.tsx:63
 #: src/routes/songlists/$id.tsx:214
-#: src/routes/users/$id.tsx:185
+#: src/routes/users/$id.tsx:191
 msgid "歌单"
 msgstr "歌单"
 
@@ -1296,6 +1304,7 @@ msgstr "歌单信息已保存"
 #: src/routes/songlists/$id.tsx:99
 #: src/routes/songlists/index.tsx:93
 #: src/routes/songlists/index.tsx:248
+#: src/routes/users/$id.tsx:59
 msgid "歌单加载失败"
 msgstr "歌单加载失败"
 
@@ -1539,15 +1548,15 @@ msgstr "现场版"
 #: src/components/layout/TitleBar.tsx:18
 #: src/routes/search.tsx:244
 #: src/routes/users/$id.tsx:35
-#: src/routes/users/$id.tsx:156
+#: src/routes/users/$id.tsx:162
 msgid "用户"
 msgstr "用户"
 
-#: src/routes/users/$id.tsx:95
+#: src/routes/users/$id.tsx:101
 msgid "用户不存在或无法访问"
 msgstr "用户不存在或无法访问"
 
-#: src/routes/users/$id.tsx:54
+#: src/routes/users/$id.tsx:49
 msgid "用户信息加载失败"
 msgstr "用户信息加载失败"
 
@@ -1570,7 +1579,7 @@ msgstr "登录中…"
 msgid "登录二维码"
 msgstr "登录二维码"
 
-#: src/components/comments/CommentSection.tsx:363
+#: src/components/comments/CommentSection.tsx:375
 msgid "登录后参与评论"
 msgstr "登录后参与评论"
 
@@ -1679,7 +1688,7 @@ msgstr "签到失败"
 msgid "签到成功"
 msgstr "签到成功"
 
-#: src/routes/users/$id.tsx:200
+#: src/routes/users/$id.tsx:206
 msgid "简介"
 msgstr "简介"
 
@@ -1692,7 +1701,7 @@ msgid "类型"
 msgstr "类型"
 
 #: src/components/layout/UserMenu.tsx:96
-#: src/routes/users/$id.tsx:179
+#: src/routes/users/$id.tsx:185
 msgid "粉丝"
 msgstr "粉丝"
 
@@ -1704,7 +1713,7 @@ msgstr "粤语"
 msgid "精品歌单"
 msgstr "精品歌单"
 
-#: src/components/comments/CommentSection.tsx:395
+#: src/components/comments/CommentSection.tsx:407
 msgid "精彩评论"
 msgstr "精彩评论"
 
@@ -1777,7 +1786,7 @@ msgid "设置"
 msgstr "设置"
 
 #: src/components/comments/CommentSection.tsx:39
-#: src/components/comments/CommentSection.tsx:380
+#: src/components/comments/CommentSection.tsx:392
 #: src/components/player/NowPlaying.tsx:366
 #: src/routes/songlists/$id.tsx:351
 msgid "评论"
@@ -1820,15 +1829,15 @@ msgstr "该歌曲暂不可用"
 msgid "该歌曲没有官方音源，当前使用匹配到的其他音源"
 msgstr "该歌曲没有官方音源，当前使用匹配到的其他音源"
 
-#: src/routes/users/$id.tsx:242
+#: src/routes/users/$id.tsx:248
 msgid "该用户还没有创建歌单"
 msgstr "该用户还没有创建歌单"
 
-#: src/routes/users/$id.tsx:243
+#: src/routes/users/$id.tsx:249
 msgid "该用户还没有收藏歌单"
 msgstr "该用户还没有收藏歌单"
 
-#: src/components/comments/CommentSection.tsx:362
+#: src/components/comments/CommentSection.tsx:374
 msgid "说点什么…"
 msgstr "说点什么…"
 
@@ -1838,7 +1847,7 @@ msgstr "请先播放歌曲"
 
 #: src/components/comments/CommentSection.tsx:156
 #: src/components/comments/CommentSection.tsx:198
-#: src/components/comments/CommentSection.tsx:328
+#: src/components/comments/CommentSection.tsx:340
 #: src/components/songs/SongContextMenu.tsx:101
 #: src/components/songs/SongContextMenu.tsx:149
 #: src/routes/songlists/$id.tsx:162
@@ -1864,7 +1873,7 @@ msgstr "请先登录后再试"
 msgid "请检查网络或本地 API 服务后重试"
 msgstr "请检查网络或本地 API 服务后重试"
 
-#: src/routes/users/$id.tsx:96
+#: src/routes/users/$id.tsx:102
 msgid "请检查网络或用户主页是否公开"
 msgstr "请检查网络或用户主页是否公开"
 
@@ -1930,7 +1939,7 @@ msgstr "运动"
 
 #: src/components/songs/SongContextMenu.tsx:216
 #: src/routes/mv/$id.tsx:165
-#: src/routes/users/$id.tsx:142
+#: src/routes/users/$id.tsx:148
 #: src/routes/video/$id.tsx:107
 msgid "返回"
 msgstr "返回"
@@ -1943,7 +1952,7 @@ msgstr "返回上一页"
 msgid "返回推荐歌单"
 msgstr "返回推荐歌单"
 
-#: src/components/comments/CommentSection.tsx:400
+#: src/components/comments/CommentSection.tsx:412
 msgid "还没有评论，快来抢沙发～"
 msgstr "还没有评论，快来抢沙发～"
 
