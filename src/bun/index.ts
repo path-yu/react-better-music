@@ -216,6 +216,9 @@ function revealMainWindow() {
   revealCurrentWindow?.()
 }
 
+/** Below this the three-column player bar and sidebar start to collide. */
+const MIN_MAIN_WINDOW = { width: 1100, height: 720 }
+
 function createMainWindow() {
   const window = new BrowserWindow({
     title: '声屿',
@@ -272,6 +275,31 @@ function createMainWindow() {
       console.error('[desktop] failed to hide the main window:', error)
       closeEvent.response = { allow: true }
     }
+  })
+
+  // Electrobun's BrowserWindow options do not expose a native minimum size, so
+  // clamp after a resize instead. Deferring with setTimeout avoids fighting the
+  // native drag loop on every intermediate frame.
+  let clampTimer: ReturnType<typeof setTimeout> | null = null
+  window.on('resize', (event) => {
+    const data = (event as { data?: { width?: number; height?: number } }).data
+    if (!data?.width || !data.height) return
+    if (
+      data.width >= MIN_MAIN_WINDOW.width &&
+      data.height >= MIN_MAIN_WINDOW.height
+    ) {
+      return
+    }
+    if (clampTimer) return
+    clampTimer = setTimeout(() => {
+      clampTimer = null
+      const current = window.getSize()
+      const width = Math.max(current.width, MIN_MAIN_WINDOW.width)
+      const height = Math.max(current.height, MIN_MAIN_WINDOW.height)
+      if (width !== current.width || height !== current.height) {
+        window.setSize(width, height)
+      }
+    }, 0)
   })
 
   applyWindowIcon()

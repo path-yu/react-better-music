@@ -42,9 +42,11 @@ function wordStyle(
  */
 function ActiveWords({
   words,
+  interactive,
   onSeek,
 }: {
   words: LyricWord[]
+  interactive: boolean
   onSeek: (timeMs: number) => void
 }) {
   const [clockMs, setClockMs] = useState(() => (getAudio()?.currentTime ?? 0) * 1000)
@@ -85,12 +87,16 @@ function ActiveWords({
       {words.map((word, index) => (
         <span
           key={`${index}-${word.startTime}`}
-          className="lyric-word"
+          className={cn('lyric-word', interactive && 'lyric-word--interactive')}
           style={wordStyle(word, clockMs, true)}
-          onClick={(event) => {
-            event.stopPropagation()
-            onSeek(word.startTime)
-          }}
+          onClick={
+            interactive
+              ? (event) => {
+                  event.stopPropagation()
+                  onSeek(word.startTime)
+                }
+              : undefined
+          }
         >
           {word.content}
         </span>
@@ -99,12 +105,14 @@ function ActiveWords({
   )
 }
 
-/** Non-active lines keep their words clickable without the karaoke animation. */
+/** Non-active lines render their words without the karaoke animation. */
 function StaticWords({
   words,
+  interactive,
   onSeek,
 }: {
   words: LyricWord[]
+  interactive: boolean
   onSeek: (timeMs: number) => void
 }) {
   return (
@@ -112,11 +120,15 @@ function StaticWords({
       {words.map((word, index) => (
         <span
           key={`${index}-${word.startTime}`}
-          className="lyric-word"
-          onClick={(event) => {
-            event.stopPropagation()
-            onSeek(word.startTime)
-          }}
+          className={cn('lyric-word', interactive && 'lyric-word--interactive')}
+          onClick={
+            interactive
+              ? (event) => {
+                  event.stopPropagation()
+                  onSeek(word.startTime)
+                }
+              : undefined
+          }
         >
           {word.content}
         </span>
@@ -133,7 +145,7 @@ export const LyricsPanel = memo(function LyricsPanel({
   compact,
 }: LyricsPanelProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const lineRefs = useRef<Record<number, HTMLButtonElement | null>>({})
+  const lineRefs = useRef<Record<number, HTMLElement | null>>({})
   const lastActiveRef = useRef(-1)
   const displayMode = useSettingsStore((state) => state.lyricDisplayMode)
 
@@ -186,32 +198,36 @@ export const LyricsPanel = memo(function LyricsPanel({
           const hasWords = Boolean(line.words?.length)
           const translationOnly = displayMode === 'translation' && Boolean(line.translate)
           const text = translationOnly ? line.translate! : line.content
-          return (
-            <button
-              key={`${line.time}-${index}`}
-              ref={(node) => {
-                lineRefs.current[index] = node
-              }}
-              type="button"
-              onClick={() => onSeek(line.time)}
-              style={
-                {
-                  '--lyric-opacity': opacity,
-                  '--lyric-blur': `${blur.toFixed(2)}px`,
-                } as CSSProperties
-              }
-              className={cn(
-                'lyric-line block w-full text-left',
-                active && 'is-active',
-                blur > 0 && 'is-blurred',
-              )}
-            >
+          const interactive = !line.synthetic
+          const className = cn(
+            'lyric-line block w-full text-left',
+            active && 'is-active',
+            blur > 0 && 'is-blurred',
+            !interactive && 'lyric-line--readonly',
+          )
+          const style = {
+            '--lyric-opacity': opacity,
+            '--lyric-blur': `${blur.toFixed(2)}px`,
+          } as CSSProperties
+          const setLineRef = (node: HTMLElement | null) => {
+            lineRefs.current[index] = node
+          }
+          const content = (
+            <>
               <span className="lyric-line__text block">
                 {!translationOnly && hasWords ? (
                   active ? (
-                    <ActiveWords words={line.words!} onSeek={onSeek} />
+                    <ActiveWords
+                      words={line.words!}
+                      interactive={interactive}
+                      onSeek={onSeek}
+                    />
                   ) : (
-                    <StaticWords words={line.words!} onSeek={onSeek} />
+                    <StaticWords
+                      words={line.words!}
+                      interactive={interactive}
+                      onSeek={onSeek}
+                    />
                   )
                 ) : (
                   text
@@ -220,6 +236,33 @@ export const LyricsPanel = memo(function LyricsPanel({
               {displayMode === 'both' && line.translate ? (
                 <span className="lyric-line__translate mt-1 block">{line.translate}</span>
               ) : null}
+            </>
+          )
+
+          if (!interactive) {
+            return (
+              <div
+                key={`${line.time}-${index}`}
+                ref={setLineRef}
+                style={style}
+                className={className}
+                aria-current={active ? 'true' : undefined}
+              >
+                {content}
+              </div>
+            )
+          }
+
+          return (
+            <button
+              key={`${line.time}-${index}`}
+              ref={setLineRef}
+              type="button"
+              onClick={() => onSeek(line.time)}
+              style={style}
+              className={className}
+            >
+              {content}
             </button>
           )
         })}

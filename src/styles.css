@@ -1403,14 +1403,26 @@ html.desktop .app-window {
   line-height: 1.4;
 }
 
-/* Word-level seek: the line is a button, each word jumps to its own timestamp. */
-.lyric-word {
+/* Real YRC keeps word-level seeking; synthesized LRC conversion does not. */
+.lyric-word--interactive {
   cursor: pointer;
 }
 
-.lyric-word:hover {
+.lyric-word--interactive:hover {
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+.lyric-line--readonly {
+  cursor: default;
+}
+
+.lyric-line--readonly:not(.is-active):hover {
+  opacity: var(--lyric-opacity, 1);
+}
+
+.lyric-line--readonly.is-blurred:hover {
+  filter: blur(var(--lyric-blur, 0px));
 }
 
 .lyrics-viewport--compact .lyric-line {

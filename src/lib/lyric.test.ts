@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildLyricLines,
+  convertLrcToYrc,
   findLyricIndex,
   isEmptyLyric,
   parseJsonLyrics,
@@ -53,6 +54,81 @@ describe('parseYrc', () => {
 
   it('ignores lines without a leading timestamp', () => {
     expect(parseYrc('garbage\n[1000,500](1000,200,0)好')).toHaveLength(1)
+  })
+})
+
+describe('convertLrcToYrc', () => {
+  const raw = '[00:01.00]你好世界\n[00:03.00]Hello world!'
+  const lines = parseYrc(convertLrcToYrc(raw))
+
+  it('keeps every line and text intact', () => {
+    expect(lines).toHaveLength(2)
+    expect(lines[0].content).toBe('你好世界')
+    expect(lines[1].content).toBe('Hello world!')
+  })
+
+  it('splits CJK per character and Latin runs per word', () => {
+    expect(lines[0].words?.map((word) => word.content)).toEqual(['你', '好', '世', '界'])
+    expect(lines[1].words?.map((word) => word.content)).toEqual(['Hello ', 'world!'])
+  })
+
+  it('produces monotonic karaoke timings inside the line', () => {
+    const words = lines[0].words ?? []
+    expect(words[0].startTime).toBe(1000)
+    for (let index = 1; index < words.length; index += 1) {
+      expect(words[index].startTime).toBeGreaterThanOrEqual(
+        words[index - 1].startTime + words[index - 1].duration,
+      )
+      expect(words[index].duration).toBeGreaterThan(0)
+    }
+    const last = words[words.length - 1]
+    expect(last.startTime + last.duration).toBeLessThanOrEqual(3000)
+  })
+
+  it('is used automatically when buildLyricLines receives plain LRC', () => {
+    const built = buildLyricLines({ lyric: raw })
+    expect(built[0].words).toHaveLength(4)
+    expect(built[1].words).toHaveLength(2)
+    expect(built[0].synthetic).toBe(true)
+    expect(built[1].synthetic).toBe(true)
+  })
+
+  it('does not mark real YRC lines as synthetic', () => {
+    const built = buildLyricLines({
+      lyric: '[00:01.00]plain',
+      yrc: '[1000,500](1000,200,0)word',
+    })
+    expect(built[0].synthetic).toBeUndefined()
+  })
+
+  it('stretches the line across the gap until the next LRC timestamp', () => {
+    const built = parseYrc(
+      convertLrcToYrc('[00:01.00]你好世界\n[00:06.00]下一句'),
+    )
+    const words = built[0].words ?? []
+    const last = words[words.length - 1]
+    const end = last.startTime + last.duration
+    // Starts at 1000ms; the animation should still be running near 6s, not
+    // finishing at a ~1s text-length estimate.
+    expect(end).toBeGreaterThan(5000)
+    expect(end).toBeLessThanOrEqual(6000)
+  })
+
+  it('uses an empty LRC timestamp as the end of the previous line', () => {
+    const raw = '[00:01.00]你好世界\n[00:02.00]\n[00:06.00]下一句'
+    const yrc = convertLrcToYrc(raw)
+    // Timing fields must stay integers; decimals made parseYrc drop lines.
+    expect(yrc).not.toMatch(/\(\d+\.\d+/)
+    expect(yrc).not.toMatch(/^\[\d+,\d+\.\d+/m)
+    const built = parseYrc(yrc)
+    expect(built).toHaveLength(2)
+    const words = built[0].words ?? []
+    const last = words[words.length - 1]
+    expect(last.startTime + last.duration).toBeLessThanOrEqual(2000)
+  })
+
+  it('returns an empty body for input without LRC timestamps', () => {
+    expect(convertLrcToYrc('no timestamps')).toBe('')
   })
 })
 
