@@ -84,6 +84,14 @@ export function PlayerBar() {
   // refresh, or metadata still loading) is applied once metadata is available.
   const pendingSeekRef = useRef<{ percent: number; songId: number } | null>(null)
   const seekLoadingRef = useRef(false)
+  // A seek can briefly emit `waiting` even when the data is already in the
+  // buffer. Delay the buffering UI instead of flashing a spinner on every
+  // click/drag on the progress bar.
+  const bufferingTimerRef = useRef<number | null>(null)
+  // Seeking an already-buffered stream still emits `waiting` in Chromium.
+  // Ignore those events until `seeked` so the progress click never flashes the
+  // buffering state.
+  const seekingRef = useRef(false)
 
   const queue = usePlayerStore((state) => state.queue)
   const currentIndex = usePlayerStore((state) => state.currentIndex)
@@ -249,6 +257,15 @@ export function PlayerBar() {
     if (audio.paused) return
     startCrossfade(audio)
   }
+
+  useEffect(
+    () => () => {
+      if (bufferingTimerRef.current !== null) {
+        window.clearTimeout(bufferingTimerRef.current)
+      }
+    },
+    [],
+  )
 
   // The HUD can also be toggled by the global shortcut or its own close button,
   // so the two toolbar buttons need to stay in sync. Poll only while the window
@@ -455,6 +472,8 @@ export function PlayerBar() {
       switchingRef.current = true
       setCurrentTime(0)
       setBuffered(0)
+      clearBufferingTimer()
+      seekingRef.current = false
       setAudioReady(false)
       setMediaDuration(0)
     }
@@ -462,6 +481,8 @@ export function PlayerBar() {
     target.pause()
     target.currentTime = 0
     const previousSrc = target.getAttribute('src')
+    // No Web Audio capture anymore, so avoid requesting CORS for media.
+    target.crossOrigin = null
     target.src = audioUrl
     target.load()
     if (previousSrc?.startsWith('blob:')) URL.revokeObjectURL(previousSrc)
@@ -739,8 +760,30 @@ export function PlayerBar() {
     pendingSeekRef.current = null
     setPendingSeek(null)
     const seconds = (value / 100) * (duration / 1000)
+    // A click on the current position should not enter the seeking state.
+    seekingRef.current = Math.abs(audio.currentTime - seconds) > 0.15
     audio.currentTime = seconds
     setCurrentTime(seconds)
+  }
+
+  const clearBufferingTimer = () => {
+    if (bufferingTimerRef.current === null) return
+    window.clearTimeout(bufferingTimerRef.current)
+    bufferingTimerRef.current = null
+  }
+
+  const markAudioReady = () => {
+    clearBufferingTimer()
+    setAudioReady(true)
+  }
+
+  const markBuffering = () => {
+    if (bufferingTimerRef.current !== null) return
+    bufferingTimerRef.current = window.setTimeout(() => {
+      bufferingTimerRef.current = null
+      if (seekingRef.current) return
+      setAudioReady(false)
+    }, 240)
   }
 
   const updateBuffered = () => {
@@ -831,7 +874,8 @@ export function PlayerBar() {
       const audio = event.currentTarget
       if (audio !== audioRef.current && audio !== incomingRef.current) return
       if (!audioUrl || audio.getAttribute('src') !== audioUrl) return
-      setAudioReady(true)
+      seekingRef.current = false
+      markAudioReady()
       if (audio === audioRef.current) {
         switchingRef.current = false
         prefetchNext()
@@ -841,7 +885,7 @@ export function PlayerBar() {
       const audio = event.currentTarget
       if (audio !== audioRef.current && audio !== incomingRef.current) return
       if (!audioUrl || audio.getAttribute('src') !== audioUrl) return
-      setAudioReady(true)
+      markAudioReady()
       if (audio === audioRef.current) {
         switchingRef.current = false
         if (usePlayerStore.getState().playing && audio.paused) {
@@ -860,22 +904,45 @@ export function PlayerBar() {
         return
       }
       switchingRef.current = false
-      setAudioReady(true)
+      markAudioReady()
+    },
+    onSeeking: (event: SyntheticEvent<HTMLAudioElement>) => {
+      if (
+        event.currentTarget !== audioRef.current &&
+        event.currentTarget !== incomingRef.current
+      ) {
+        return
+      }
+      seekingRef.current = true
+      clearBufferingTimer()
+    },
+    onSeeked: (event: SyntheticEvent<HTMLAudioElement>) => {
+      if (
+        event.currentTarget !== audioRef.current &&
+        event.currentTarget !== incomingRef.current
+      ) {
+        return
+      }
+      seekingRef.current = false
+      if (!audioUrl || event.currentTarget.getAttribute('src') !== audioUrl) return
+      markAudioReady()
     },
     onPause: (event: SyntheticEvent<HTMLAudioElement>) => {
       // A user-initiated pause must keep the source ready. Clearing it here
       // made the next resume look like buffering for a few frames, which
       // flashed the loading state and shifted the now-playing layout.
       if (event.currentTarget !== audioRef.current) return
-      if (usePlayerStore.getState().playing) setAudioReady(false)
+      if (usePlayerStore.getState().playing) markBuffering()
     },
     onWaiting: (event: SyntheticEvent<HTMLAudioElement>) => {
       if (event.currentTarget !== audioRef.current) return
-      setAudioReady(false)
+      if (seekingRef.current) return
+      markBuffering()
     },
     onStalled: (event: SyntheticEvent<HTMLAudioElement>) => {
       if (event.currentTarget !== audioRef.current) return
-      setAudioReady(false)
+      if (seekingRef.current) return
+      markBuffering()
     },
     onTimeUpdate: (event: SyntheticEvent<HTMLAudioElement>) => {
       const audio = event.currentTarget
@@ -917,6 +984,7 @@ export function PlayerBar() {
     onError: (event: SyntheticEvent<HTMLAudioElement>) => {
       const audio = event.currentTarget
       if (audio !== audioRef.current && audio !== incomingRef.current) return
+      clearBufferingTimer()
       setAudioReady(false)
       if (!audioUrl) return
       if (audio === incomingRef.current) {

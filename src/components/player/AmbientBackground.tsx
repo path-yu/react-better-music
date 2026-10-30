@@ -9,7 +9,7 @@ import {
 type Props = {
   artwork: string
   palette: Palette
-  /** 播放中 → 背景呼吸更明显 */
+  /** 播放中时色斑更亮，暂停时整体压暗。 */
   playing?: boolean
   className?: string
 }
@@ -41,7 +41,9 @@ export default function AmbientBackground({
   )
 
   return (
-    <div className={cn('pointer-events-none absolute inset-0 overflow-hidden', className)}>
+    <div
+      className={cn('pointer-events-none absolute inset-0 overflow-hidden', className)}
+    >
       {/* 1. 封面本体放大 + 重度模糊：这是底色的来源 */}
       <div className="absolute inset-0 scale-[2.6]">
         <img
@@ -56,7 +58,10 @@ export default function AmbientBackground({
         {blobs.map((b, i) => (
           <div
             key={i}
-            className={cn('absolute rounded-full transition-colors duration-[1600ms] ease-out', b.anim)}
+            className={cn(
+              'absolute rounded-full transition-colors duration-[1600ms] ease-out',
+              b.anim,
+            )}
             style={{
               width: `${b.size}vmax`,
               height: `${b.size}vmax`,
@@ -66,6 +71,9 @@ export default function AmbientBackground({
               opacity: b.o,
               filter: 'blur(90px)',
               mixBlendMode: b.blend as 'screen' | 'normal',
+              // The shared `.am-drift-*` rule only declares timing; the name
+              // must be supplied here or the blobs never move at all.
+              animationName: b.anim,
               animationDuration: `${b.dur}s`,
               animationDelay: `${-i * 3.5}s`,
             }}
