@@ -44,6 +44,14 @@ export function consumePrefetchedAudio(songId: number) {
   return entry
 }
 
+/** Drop a stale prefetched blob (e.g. a 30s preview before source matching). */
+export function discardPrefetchedAudio(songId: number) {
+  const entry = entries.get(songId)
+  if (!entry) return
+  entries.delete(songId)
+  revoke(entry)
+}
+
 /** Keep only the given neighbours prefetched; abort and free everything else. */
 export function retainPrefetchedAudio(songIds: number[]) {
   const keep = new Set(songIds)

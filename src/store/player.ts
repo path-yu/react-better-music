@@ -13,10 +13,11 @@ import { buildLyricLines, isEmptyLyric, type LyricLine } from '../lib/lyric'
 import { copyrightHint } from '../lib/songs'
 import { apiUrl } from '../lib/http'
 import { getAudio } from '../lib/audio'
-import { getCachedAudio, hasCachedAudio } from '../lib/songCache'
+import { getCachedAudio, hasCachedAudio, removeCachedAudio } from '../lib/songCache'
 import {
   clearPrefetchedAudio,
   consumePrefetchedAudio,
+  discardPrefetchedAudio,
   prefetchAudio,
   retainPrefetchedAudio,
 } from '../lib/audioPrefetch'
@@ -255,6 +256,18 @@ let prefetchTimer: number | undefined
 let prefetchToken = 0
 const urlRequests = new Map<number, Promise<SongSource>>()
 
+/**
+ * VIP/free-trial audio may already be cached from before the user enabled
+ * source matching. That cached blob can be a 30s preview or an official URL
+ * from a provider the user no longer prefers, so re-resolve instead of using it.
+ */
+function shouldBypassAudioCache(song: Song) {
+  return (
+    useSettingsStore.getState().autoReplaceVipSource &&
+    (song.fee !== 0 || (song.trialEnd ?? 0) > 0)
+  )
+}
+
 function hasFreshUrl(song: Song) {
   const settings = useSettingsStore.getState()
   // A cached trial URL must not bypass auto matching after the user enables it;
@@ -385,7 +398,9 @@ export const usePlayerStore = create<PlayerState>()(
         if (!neighbors.length) return
 
         const resolves = neighbors.map(async ({ index: neighborIndex, song }) => {
-          if (await hasCachedAudio(song.id)) return null
+          const bypassAudioCache = shouldBypassAudioCache(song)
+          if (bypassAudioCache) void removeCachedAudio(song.id)
+          if (!bypassAudioCache && (await hasCachedAudio(song.id))) return null
           let url = hasFreshUrl(song) ? (song.url ?? null) : null
           let trialEnd = song.trialEnd ?? null
           let unblocked = Boolean(song.unblocked)
@@ -424,8 +439,12 @@ export const usePlayerStore = create<PlayerState>()(
             if (!allowDownload) return
             for (const result of results) {
               // Third-party URLs cannot go through the NetEase-only audio
-              // proxy, so they stay streaming-only (no blob prefetch/cache).
-              if (result && !result.unblocked) {
+              // proxy, so they stay streaming-only. A matched URL that still
+              // points at the NetEase CDN can replace the old trial cache.
+              if (
+                result &&
+                (!result.unblocked || NETEASE_MEDIA.test(result.url ?? ''))
+              ) {
                 void prefetchAudio(result.songId, result.url, result.trialEnd)
               }
             }
@@ -477,8 +496,12 @@ export const usePlayerStore = create<PlayerState>()(
           resumeAt: null,
         })
         try {
-          // Prefer audio cached in IndexedDB (WebCodecs-transcoded Opus).
-          const cached = await getCachedAudio(song.id)
+          // Prefer audio cached in IndexedDB (WebCodecs-transcoded Opus), except
+          // for VIP/trial tracks when source matching is enabled: those caches
+          // may be the old 30s preview and must be refreshed.
+          const bypassAudioCache = shouldBypassAudioCache(song)
+          if (bypassAudioCache) void removeCachedAudio(song.id)
+          const cached = bypassAudioCache ? null : await getCachedAudio(song.id)
           if (get().loadRequestId !== requestId) return true
 
           if (cached) {
@@ -494,8 +517,12 @@ export const usePlayerStore = create<PlayerState>()(
             return true
           }
 
-          // A neighbour preload is already a local Blob: play it immediately.
-          const prefetched = consumePrefetchedAudio(song.id)
+          // A neighbour preload is already a local Blob: play it immediately,
+          // unless it is the stale preview we are trying to replace.
+          if (bypassAudioCache) discardPrefetchedAudio(song.id)
+          const prefetched = bypassAudioCache
+            ? null
+            : consumePrefetchedAudio(song.id)
           if (prefetched) {
             set({ audioUrl: prefetched.url, sourceReady: true, audioBlob: prefetched.blob })
             void useLocalLibraryStore.getState().recordRecent(song)

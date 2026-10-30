@@ -102,6 +102,20 @@ export async function getCachedAudio(id: number): Promise<Blob | null> {
   }
 }
 
+/** Drop one cached track (used when a trial/source-matched URL is stale). */
+export async function removeCachedAudio(id: number): Promise<void> {
+  if (typeof indexedDB === 'undefined') return
+  try {
+    const db = await openDb()
+    const transaction = db.transaction([AUDIO_STORE, META_STORE], 'readwrite')
+    transaction.objectStore(AUDIO_STORE).delete(id)
+    transaction.objectStore(META_STORE).delete(id)
+    await transactionDone(transaction)
+  } catch {
+    // Cache maintenance is best-effort.
+  }
+}
+
 /** True when the track already has a cached copy (cheap metadata read). */
 export async function hasCachedAudio(id: number): Promise<boolean> {
   if (typeof indexedDB === 'undefined') return false

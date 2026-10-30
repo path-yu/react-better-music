@@ -547,8 +547,14 @@ export function PlayerBar() {
       const active = state.queue[state.currentIndex]
       if (!active || active.id !== songId || !state.playing || state.audioFromCache) return
       // Third-party matches are streamed outside the NetEase-only proxy, so
-      // there is nothing to transcode/cache through the local API.
-      if (active.unblocked) return
+      // there is nothing to transcode/cache. A matched URL hosted on the
+      // NetEase CDN, however, should replace the old trial cache.
+      if (
+        active.unblocked &&
+        !/^https?:\/\/[^/]*music\.126\.net\//.test(active.url ?? '')
+      ) {
+        return
+      }
       const meta = {
         id: active.id,
         name: active.name,
