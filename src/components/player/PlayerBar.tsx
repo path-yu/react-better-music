@@ -29,6 +29,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger, Switch } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
+import { PlaylistPicker } from './PlaylistPicker'
 import { ProgressSlider } from './ProgressSlider'
 import { SourcePicker } from './SourcePicker'
 import { VolumeSlider } from './VolumeSlider'
@@ -980,7 +981,12 @@ export function PlayerBar() {
           role="button"
           tabIndex={0}
           className="min-w-0 flex-1 cursor-pointer"
-          onClick={() => toggleNowPlaying()}
+          onClick={(event) => {
+            // Like / add-to-playlist buttons live inside this clickable region.
+            // Never let their click bubble into opening the immersive player.
+            if ((event.target as HTMLElement).closest('button')) return
+            toggleNowPlaying()
+          }}
           onKeyDown={(event) => {
             if (event.target !== event.currentTarget) return
             if (event.key === 'Enter' || event.key === ' ') {
@@ -1028,6 +1034,7 @@ export function PlayerBar() {
                 )}
               />
             </button>
+            <PlaylistPicker song={currentSong} />
           </div>
           <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-black/40">
             {loadingSource ? (
