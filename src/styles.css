@@ -791,6 +791,34 @@ html.desktop .app-window {
   display: block;
 }
 
+/*
+ * macOS-style row hairline: a sub-pixel separator inset from the card edge,
+ * not a full table grid. It disappears on hover/selection so the rounded row
+ * background remains the visual focus.
+ */
+.song-row::after {
+  content: '';
+  position: absolute;
+  right: 10px;
+  bottom: 0;
+  left: 10px;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.055);
+  transform: scaleY(0.5);
+  transform-origin: bottom;
+  pointer-events: none;
+}
+
+.song-row:hover::after,
+.song-row.is-active::after,
+.song-row[data-last='true']::after {
+  opacity: 0;
+}
+
+.dark .song-row::after {
+  background: rgba(255, 255, 255, 0.065);
+}
+
 @media (min-width: 1100px) {
   .song-grid {
     grid-template-columns: 26px minmax(0, 2.2fr) minmax(0, 1.2fr) minmax(0, 1.2fr) 52px;

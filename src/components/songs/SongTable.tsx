@@ -39,6 +39,8 @@ interface SongRowProps {
   virtual?: boolean
   /** The first screenful loads eagerly; the rest stays lazy. */
   priority?: boolean
+  /** The final row should not draw a trailing divider. */
+  last?: boolean
   onPlay: (index: number) => void
   onLike: (id: number, liked: boolean) => void
   onContextMenu: (index: number, x: number, y: number) => void
@@ -56,6 +58,7 @@ const SongRow = memo(function SongRow({
   liked,
   virtual = false,
   priority = false,
+  last = false,
   onPlay,
   onLike,
   onContextMenu,
@@ -73,11 +76,12 @@ const SongRow = memo(function SongRow({
         event.preventDefault()
         onContextMenu(index, event.clientX, event.clientY)
       }}
+      data-last={last || undefined}
       className={cn(
         SONG_GRID,
-        'group rounded-[10px] px-3 py-2 transition-colors',
+        'song-row group relative rounded-[10px] px-3 py-2 transition-colors',
         virtual && 'h-full',
-        active ? 'bg-accent/6' : 'hover:bg-black/4',
+        active ? 'is-active bg-accent/6' : 'hover:bg-black/4',
       )}
     >
       <div className="relative flex h-6 items-center justify-center">
@@ -302,6 +306,7 @@ export function SongTable({
         liked={likedSet.has(song.id)}
         virtual={virtual}
         priority={index < 8}
+        last={index === songs.length - 1}
         onPlay={handlePlay}
         onLike={handleLike}
         onContextMenu={handleContextMenu}

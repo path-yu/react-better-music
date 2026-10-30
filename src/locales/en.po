@@ -215,7 +215,7 @@ msgstr "Download selected"
 msgid "下载选中 ({0})"
 msgstr "Download selected ({0})"
 
-#: src/components/songs/SongTable.tsx:328
+#: src/components/songs/SongTable.tsx:333
 #: src/routes/albums/$id.tsx:35
 #: src/routes/albums/$id.tsx:132
 #: src/routes/artist/$id.tsx:263
@@ -591,7 +591,7 @@ msgstr "Cancel"
 #: src/components/player/NowPlaying.tsx:264
 #: src/components/player/PlayerBar.tsx:1002
 #: src/components/songs/SongContextMenu.tsx:207
-#: src/components/songs/SongTable.tsx:154
+#: src/components/songs/SongTable.tsx:158
 msgid "取消喜欢"
 msgstr "Unlike"
 
@@ -632,7 +632,7 @@ msgstr "Listener comments"
 #: src/components/player/NowPlaying.tsx:264
 #: src/components/player/PlayerBar.tsx:1002
 #: src/components/songs/SongContextMenu.tsx:207
-#: src/components/songs/SongTable.tsx:154
+#: src/components/songs/SongTable.tsx:158
 msgid "喜欢"
 msgstr "Like"
 
@@ -1006,7 +1006,7 @@ msgstr "Search songs, playlists, albums, artists, users, MVs or videos"
 #~ msgstr "Search songs, playlists, artists, users, MVs or videos"
 
 #: src/components/player/PlayerBar.tsx:1088
-#: src/components/songs/SongTable.tsx:99
+#: src/components/songs/SongTable.tsx:103
 msgid "播放"
 msgstr "Play"
 
@@ -1159,7 +1159,7 @@ msgstr "Japan"
 msgid "日语"
 msgstr "Japanese"
 
-#: src/components/songs/SongTable.tsx:331
+#: src/components/songs/SongTable.tsx:336
 msgid "时长"
 msgstr "Duration"
 
@@ -1168,7 +1168,7 @@ msgid "昵称不能为空"
 msgstr "Nickname cannot be empty"
 
 #: src/components/player/PlayerBar.tsx:1087
-#: src/components/songs/SongTable.tsx:99
+#: src/components/songs/SongTable.tsx:103
 msgid "暂停"
 msgstr "Pause"
 
@@ -1316,7 +1316,7 @@ msgstr "Standard · 64kbps"
 msgid "标签"
 msgstr "Tags"
 
-#: src/components/songs/SongTable.tsx:322
+#: src/components/songs/SongTable.tsx:327
 msgid "标题"
 msgstr "Title"
 
@@ -1394,7 +1394,7 @@ msgstr "Playlist name cannot be empty"
 msgid "歌单暂时没有歌曲"
 msgstr "This playlist has no tracks yet"
 
-#: src/components/songs/SongTable.tsx:325
+#: src/components/songs/SongTable.tsx:330
 #: src/routes/artist/$id.tsx:47
 #: src/routes/artist/$id.tsx:172
 #: src/routes/search.tsx:268

@@ -215,7 +215,7 @@ msgstr "下载选中"
 msgid "下载选中 ({0})"
 msgstr "下载选中 ({0})"
 
-#: src/components/songs/SongTable.tsx:328
+#: src/components/songs/SongTable.tsx:333
 #: src/routes/albums/$id.tsx:35
 #: src/routes/albums/$id.tsx:132
 #: src/routes/artist/$id.tsx:263
@@ -591,7 +591,7 @@ msgstr "取消"
 #: src/components/player/NowPlaying.tsx:264
 #: src/components/player/PlayerBar.tsx:1002
 #: src/components/songs/SongContextMenu.tsx:207
-#: src/components/songs/SongTable.tsx:154
+#: src/components/songs/SongTable.tsx:158
 msgid "取消喜欢"
 msgstr "取消喜欢"
 
@@ -632,7 +632,7 @@ msgstr "听友评论"
 #: src/components/player/NowPlaying.tsx:264
 #: src/components/player/PlayerBar.tsx:1002
 #: src/components/songs/SongContextMenu.tsx:207
-#: src/components/songs/SongTable.tsx:154
+#: src/components/songs/SongTable.tsx:158
 msgid "喜欢"
 msgstr "喜欢"
 
@@ -1006,7 +1006,7 @@ msgstr "搜索音乐、歌单、专辑、歌手、用户、MV 或视频"
 #~ msgstr "搜索音乐、歌单、歌手、用户、MV 或视频"
 
 #: src/components/player/PlayerBar.tsx:1088
-#: src/components/songs/SongTable.tsx:99
+#: src/components/songs/SongTable.tsx:103
 msgid "播放"
 msgstr "播放"
 
@@ -1159,7 +1159,7 @@ msgstr "日本"
 msgid "日语"
 msgstr "日语"
 
-#: src/components/songs/SongTable.tsx:331
+#: src/components/songs/SongTable.tsx:336
 msgid "时长"
 msgstr "时长"
 
@@ -1168,7 +1168,7 @@ msgid "昵称不能为空"
 msgstr "昵称不能为空"
 
 #: src/components/player/PlayerBar.tsx:1087
-#: src/components/songs/SongTable.tsx:99
+#: src/components/songs/SongTable.tsx:103
 msgid "暂停"
 msgstr "暂停"
 
@@ -1316,7 +1316,7 @@ msgstr "标准 · 64kbps"
 msgid "标签"
 msgstr "标签"
 
-#: src/components/songs/SongTable.tsx:322
+#: src/components/songs/SongTable.tsx:327
 msgid "标题"
 msgstr "标题"
 
@@ -1394,7 +1394,7 @@ msgstr "歌单名不能为空"
 msgid "歌单暂时没有歌曲"
 msgstr "歌单暂时没有歌曲"
 
-#: src/components/songs/SongTable.tsx:325
+#: src/components/songs/SongTable.tsx:330
 #: src/routes/artist/$id.tsx:47
 #: src/routes/artist/$id.tsx:172
 #: src/routes/search.tsx:268
