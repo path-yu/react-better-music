@@ -1240,22 +1240,27 @@ export function PlayerBar() {
                   <Languages className="h-3.5 w-3.5" />
                   <Trans>歌词显示</Trans>
                 </p>
-                <div className="grid grid-cols-3 gap-1 rounded-[8px] bg-black/4 p-0.5">
-                  {LYRIC_DISPLAY_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => setLyricDisplayMode(option.value)}
-                      className={cn(
-                        'rounded-[6px] px-1 py-1 text-[10.5px] transition-colors',
-                        lyricDisplayMode === option.value
-                          ? 'bg-white text-accent shadow-sm dark:bg-white/15 dark:text-white'
-                          : 'text-black/55 hover:text-black/75 dark:text-white/50 dark:hover:text-white/80',
-                      )}
-                    >
-                      {i18n._(option.label)}
-                    </button>
-                  ))}
+                <div className="space-y-0.5 rounded-[8px] bg-black/4 p-0.5">
+                  {LYRIC_DISPLAY_OPTIONS.map((option) => {
+                    const active = lyricDisplayMode === option.value
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => setLyricDisplayMode(option.value)}
+                        className={cn(
+                          'flex w-full items-center justify-between gap-2 rounded-[6px] px-2 py-1.5 text-left text-[11px] transition-colors',
+                          active
+                            ? 'bg-white text-accent shadow-sm dark:bg-white/15 dark:text-white'
+                            : 'text-black/55 hover:text-black/75 dark:text-white/50 dark:hover:text-white/80',
+                        )}
+                      >
+                        <span>{i18n._(option.label)}</span>
+                        {active ? <Check className="h-3 w-3 shrink-0" /> : null}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             ) : null}
