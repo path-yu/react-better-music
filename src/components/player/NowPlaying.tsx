@@ -7,13 +7,19 @@ import { Disc3, Film, Heart, ListMusic, Loader2, MessageSquareText } from 'lucid
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
 import { LyricsPanel } from './LyricsPanel'
+import AmbientBackground from './AmbientBackground'
 import { CommentSection } from '../comments/CommentSection'
 import { fetchRelatedVideos } from '../../api'
 import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
+import { useSettingsStore } from '../../store/settings'
 import { findLyricIndex } from '../../lib/lyric'
 import { seekAudio } from '../../lib/audio'
-import { extractDominantColor } from '../../lib/color'
+import {
+  FALLBACK_PALETTE,
+  extractPalette,
+  type Palette,
+} from '../../lib/color'
 import { resizedImageUrl } from '../../lib/image'
 import { toast } from '../../lib/toast'
 import { cn } from '../../lib/format'
@@ -44,9 +50,17 @@ export function NowPlaying() {
   const likedIds = useUserStore((state) => state.likedIds)
   const likeSong = useUserStore((state) => state.likeSong)
   const liked = currentSong ? likedIds.includes(currentSong.id) : false
+  const backdrop =
+    useSettingsStore((state) => state.nowPlayingBackdrop) ?? 'gradient'
   const [panel, setPanel] = useState<'lyrics' | 'comments'>('lyrics')
-  const [dominantColor, setDominantColor] = useState<string | null>(null)
+  const [palette, setPalette] = useState<Palette>(FALLBACK_PALETTE)
   const [videoLoading, setVideoLoading] = useState(false)
+  // The CDN URLs returned by the API are HTTP; WebView2 rejects them as mixed
+  // content. Normalise to a secure, smaller copy before colour sampling.
+  const ambientSource = useMemo(
+    () => resizedImageUrl(artwork, '640y640') ?? artwork,
+    [artwork],
+  )
 
   // The overlay is lazy-mounted only while open, so the first effect run is the
   // mount itself — not a navigation. Only close on a real pathname change.
@@ -69,15 +83,16 @@ export function NowPlaying() {
   }, [currentSong?.id])
 
   // Only reset when the artwork changes; reopening the same song keeps the
-  // cached colour instead of flashing back to the un-tinted backdrop.
+  // cached palette instead of flashing back to the un-tinted backdrop.
   useEffect(() => {
-    setDominantColor(null)
+    setPalette(FALLBACK_PALETTE)
   }, [artwork])
 
-  // Preload the cover thumbnails and sample the dominant colour so the blurred
-  // backdrop is ready as soon as the track changes.
+  // Preload the cover thumbnails and sample the artwork palette so both the
+  // animated mesh and the blurred-cover backdrop are ready as soon as the
+  // track changes.
   useEffect(() => {
-    if (!artwork) return
+    if (!ambientSource) return
     let active = true
     const timer = window.setTimeout(() => {
       if (!active) return
@@ -88,16 +103,16 @@ export function NowPlaying() {
         image.src = url
       }
       preload(resizedImageUrl(artwork, '320y320'))
-      preload(resizedImageUrl(artwork, '640y640'))
-      void extractDominantColor(artwork).then((color) => {
-        if (active) setDominantColor(color)
+      preload(ambientSource)
+      void extractPalette(ambientSource).then((nextPalette) => {
+        if (active) setPalette(nextPalette)
       })
     }, 0)
     return () => {
       active = false
       window.clearTimeout(timer)
     }
-  }, [artwork])
+  }, [ambientSource, artwork])
 
   // Preload the next track's cover while the current one plays.
   const nextArtwork = queue[currentIndex + 1]?.al.picUrl
@@ -205,17 +220,25 @@ export function NowPlaying() {
       className="nowplaying-overlay dark"
       style={{ backgroundColor: 'var(--nowplaying-base, #0f0f12)' }}
     >
-      <div className="nowplaying-ambient" aria-hidden="true">
-        {ambientArtwork ? (
-          <img
-            src={ambientArtwork}
-            alt=""
-            decoding="async"
-            className="nowplaying-ambient__art"
-          />
-        ) : null}
-        <div className="nowplaying-ambient__scrim" />
-      </div>
+      {backdrop === 'gradient' ? (
+        <AmbientBackground
+          artwork={ambientSource ?? ''}
+          palette={palette}
+          playing={playing}
+        />
+      ) : (
+        <div className="nowplaying-ambient" aria-hidden="true">
+          {ambientArtwork ? (
+            <img
+              src={ambientArtwork}
+              alt=""
+              decoding="async"
+              className="nowplaying-ambient__art"
+            />
+          ) : null}
+          <div className="nowplaying-ambient__scrim" />
+        </div>
+      )}
 
       {/* The player bar floats over the bottom of the backdrop, so keep the
           immersive content clear of it. */}
@@ -317,11 +340,11 @@ export function NowPlaying() {
 
             <div className="relative mt-6 flex items-center justify-center">
               <div className="now-disc relative">
-                {dominantColor ? (
+                {palette.colors[0] ? (
                   <div
                     aria-hidden="true"
                     className="pointer-events-none absolute -inset-5 rounded-[28px] opacity-40 blur-2xl transition-colors duration-500"
-                    style={{ backgroundColor: dominantColor }}
+                    style={{ backgroundColor: palette.colors[0] }}
                   />
                 ) : null}
                 <button

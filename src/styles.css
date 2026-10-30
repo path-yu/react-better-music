@@ -1110,6 +1110,124 @@ html.desktop .app-window {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
+/* ---------------- 背景：封面慢速推移 ---------------- */
+@keyframes am-kenburns {
+  0% {
+    transform: scale(1.05) translate3d(-1.5%, 1%, 0);
+  }
+  33% {
+    transform: scale(1.18) translate3d(2%, -2.5%, 0);
+  }
+  66% {
+    transform: scale(1.12) translate3d(-2.5%, -1.5%, 0);
+  }
+  100% {
+    transform: scale(1.05) translate3d(-1.5%, 1%, 0);
+  }
+}
+
+.am-kenburns {
+  animation: am-kenburns 38s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* ---------------- 背景：漂浮色斑 ---------------- */
+@keyframes am-drift-a {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  25% {
+    transform: translate3d(14vw, 10vh, 0) scale(1.25);
+  }
+  50% {
+    transform: translate3d(4vw, 26vh, 0) scale(0.9);
+  }
+  75% {
+    transform: translate3d(-10vw, 12vh, 0) scale(1.15);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes am-drift-b {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1.1);
+  }
+  30% {
+    transform: translate3d(-16vw, 14vh, 0) scale(0.85);
+  }
+  60% {
+    transform: translate3d(-8vw, -12vh, 0) scale(1.3);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.1);
+  }
+}
+
+@keyframes am-drift-c {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.95);
+  }
+  40% {
+    transform: translate3d(18vw, -14vh, 0) scale(1.2);
+  }
+  70% {
+    transform: translate3d(-6vw, -22vh, 0) scale(0.9);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(0.95);
+  }
+}
+
+@keyframes am-drift-d {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1.15) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(-20vw, -18vh, 0) scale(0.9) rotate(20deg);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.15) rotate(0deg);
+  }
+}
+
+@keyframes am-drift-e {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  35% {
+    transform: translate3d(20vw, 12vh, 0) scale(1.28);
+  }
+  65% {
+    transform: translate3d(10vw, -10vh, 0) scale(0.88);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.am-drift-a,
+.am-drift-b,
+.am-drift-c,
+.am-drift-d,
+.am-drift-e {
+  animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .am-kenburns,
+  .am-drift-a,
+  .am-drift-b,
+  .am-drift-c,
+  .am-drift-d,
+  .am-drift-e {
+    animation: none !important;
+  }
+}
+
 .lyrics-viewport {
   /* Apple's lyric tokens: current line `--systemPrimary-onDark` (#ffffffeb),
      context `#ffffff40`-`#ffffff80`. */

@@ -26,6 +26,15 @@ export const PLAY_QUALITY_OPTIONS: Array<{
 ]
 
 export type LyricDisplayMode = 'both' | 'original' | 'translation'
+export type NowPlayingBackdrop = 'gradient' | 'blur'
+
+export const NOWPLAYING_BACKDROP_OPTIONS: Array<{
+  value: NowPlayingBackdrop
+  label: MessageDescriptor
+}> = [
+  { value: 'gradient', label: msg`动态渐变` },
+  { value: 'blur', label: msg`封面模糊` },
+]
 
 export const LYRIC_DISPLAY_OPTIONS: Array<{
   value: LyricDisplayMode
@@ -41,6 +50,8 @@ interface SettingsState {
   playLevel: PlayLevel
   /** How lyric lines and their translations are shown. */
   lyricDisplayMode: LyricDisplayMode
+  /** Visual treatment behind the immersive player. */
+  nowPlayingBackdrop: NowPlayingBackdrop
   /** Desktop only: block right-click / F12 / DevTools shortcuts. */
   disableDevTools: boolean
   /** Prefer a matched provider for VIP tracks (manual switch is always available). */
@@ -50,6 +61,7 @@ interface SettingsState {
   setCacheBitrate: (value: number) => void
   setPlayLevel: (value: PlayLevel) => void
   setLyricDisplayMode: (value: LyricDisplayMode) => void
+  setNowPlayingBackdrop: (value: NowPlayingBackdrop) => void
   setDisableDevTools: (value: boolean) => void
   setAutoReplaceVipSource: (value: boolean) => void
   setLocale: (value: Locale) => void
@@ -61,12 +73,14 @@ export const useSettingsStore = create<SettingsState>()(
       cacheBitrate: 96,
       playLevel: 'exhigh',
       lyricDisplayMode: 'both',
+      nowPlayingBackdrop: 'gradient',
       disableDevTools: false,
       autoReplaceVipSource: false,
       locale: defaultLocale,
       setCacheBitrate: (cacheBitrate) => set({ cacheBitrate }),
       setPlayLevel: (playLevel) => set({ playLevel }),
       setLyricDisplayMode: (lyricDisplayMode) => set({ lyricDisplayMode }),
+      setNowPlayingBackdrop: (nowPlayingBackdrop) => set({ nowPlayingBackdrop }),
       setDisableDevTools: (disableDevTools) => set({ disableDevTools }),
       setAutoReplaceVipSource: (autoReplaceVipSource) => set({ autoReplaceVipSource }),
       setLocale: (locale) => {

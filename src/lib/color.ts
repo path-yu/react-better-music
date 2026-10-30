@@ -1,250 +1,220 @@
-import { apiUrl } from './http'
-import { resizedImageUrl } from './image'
-
-const paletteCache = new Map<string, string[]>()
-
-function toRgb(value: string): [number, number, number] | null {
-  const hex = value.trim().match(/^#([\da-f]{3,8})$/i)
-  if (hex) {
-    const digits = hex[1]
-    if (digits.length === 3 || digits.length === 4) {
-      return [
-        parseInt(digits[0] + digits[0], 16),
-        parseInt(digits[1] + digits[1], 16),
-        parseInt(digits[2] + digits[2], 16),
-      ]
-    }
-    if (digits.length === 6 || digits.length === 8) {
-      return [
-        parseInt(digits.slice(0, 2), 16),
-        parseInt(digits.slice(2, 4), 16),
-        parseInt(digits.slice(4, 6), 16),
-      ]
-    }
-    return null
-  }
-  const match = value.match(/rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/)
-  if (!match) return null
-  return [Number(match[1]), Number(match[2]), Number(match[3])]
-}
-
 /**
- * Mix `color` into `base`. `amount` is how much of `color` is used (0 - 1).
+ * 专辑封面主色提取
+ * ------------------------------------------------------------------
+ * 通过 canvas 读取封面像素 → k-means 聚类 → 饱和度/亮度整型，
+ * 得到一组适合做 Apple Music 式"氛围背景"的高饱和主色。
+ * 网易云的图片域名的 CORS 不稳定，所以这里做了多级兜底：
+ *   1. 直接 crossOrigin=anonymous 读取
+ *   2. 走 wsrv.nl 图片代理（带 Access-Control-Allow-Origin: *）
+ *   3. 全部失败 → 使用内置的兜底色板
  */
-export function mixColor(color: string, base: string, amount: number) {
-  const source = toRgb(color)
-  const target = toRgb(base)
-  if (!source || !target) return base
-  const ratio = Math.min(1, Math.max(0, amount))
-  const channels = source.map((channel, index) =>
-    Math.round(channel * ratio + target[index] * (1 - ratio)),
-  )
-  return `rgb(${channels.join(', ')})`
+
+export type Palette = {
+  /** 5 个主色，按饱和度从高到低 */
+  colors: string[];
+  /** 是否为偏暗封面 */
+  dark: boolean;
+  /** 颜色来源 */
+  source: 'canvas' | 'proxy' | 'fallback';
+};
+
+export const FALLBACK_PALETTE: Palette = {
+  colors: ['#b31b22', '#1e3d68', '#c8432a', '#7a2439', '#2a1b3d'],
+  dark: true,
+  source: 'fallback',
+};
+
+/* ------------------------------ 色彩工具 ------------------------------ */
+
+export function clamp(v: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, v));
 }
 
-/** Same colour, but translucent — used for the ambient now-playing gradients. */
-export function withAlpha(color: string, alpha: number) {
-  const rgb = toRgb(color)
-  if (!rgb) return color
-  const value = Math.min(1, Math.max(0, alpha))
-  return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${value})`
-}
-
-function loadImage(url: string): Promise<HTMLImageElement | null> {
-  return new Promise((resolve) => {
-    const image = new Image()
-    image.crossOrigin = 'anonymous'
-    image.decoding = 'async'
-    // A missing/slow CDN response must not leave the NowPlaying palette pending
-    // forever; the caller has a fallback gradient.
-    const timer = window.setTimeout(() => resolve(null), 8000)
-    const finish = (value: HTMLImageElement | null) => {
-      window.clearTimeout(timer)
-      resolve(value)
+export function rgbToHsl(r: number, g: number, b: number) {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  let h = 0;
+  let s = 0;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r:
+        h = ((g - b) / d + (g < b ? 6 : 0)) * 60;
+        break;
+      case g:
+        h = ((b - r) / d + 2) * 60;
+        break;
+      default:
+        h = ((r - g) / d + 4) * 60;
     }
-    image.onload = () => {
-      // Decode before drawImage so the 32×32 sampling does not force a long
-      // synchronous decode on the main thread during the overlay animation.
-      void image
-        .decode()
-        .catch(() => undefined)
-        .finally(() => finish(image))
-    }
-    image.onerror = () => finish(null)
-    image.src = url
-  })
-}
-
-const failedProxySources = new Set<string>()
-
-/**
- * The local API server exposes a same-origin image proxy. Using the returned
- * data URL guarantees an untainted canvas even when the image CDN or a
- * developer proxy environment interferes with CORS requests.
- */
-async function loadProxiedImage(src: string): Promise<HTMLImageElement | null> {
-  if (failedProxySources.has(src)) return null
-  const controller = new AbortController()
-  const timer = window.setTimeout(() => controller.abort(), 8000)
-  try {
-    const response = await fetch(apiUrl('/img/proxy', { url: src }), {
-      credentials: 'include',
-      signal: controller.signal,
-    })
-    if (!response.ok) {
-      failedProxySources.add(src)
-      return null
-    }
-    const payload = (await response.json()) as { code?: number; data?: string }
-    if (payload.code !== 200 || !payload.data) {
-      failedProxySources.add(src)
-      return null
-    }
-    return await loadImage(payload.data)
-  } catch {
-    failedProxySources.add(src)
-    return null
-  } finally {
-    window.clearTimeout(timer)
   }
+  return { h, s, l };
 }
 
-interface Bucket {
-  r: number
-  g: number
-  b: number
-  count: number
-  score: number
+export function hslToHex(h: number, s: number, l: number) {
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    const a = s * Math.min(l, 1 - l);
+    const v = l - a * Math.max(-1, Math.min(k - 3, Math.min(9 - k, 1)));
+    return Math.round(clamp(v, 0, 1) * 255)
+      .toString(16)
+      .padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
 }
 
-function sampleBuckets(image: HTMLImageElement): Bucket[] {
-  const canvas = document.createElement('canvas')
-  try {
-    const size = 32
-    canvas.width = size
-    canvas.height = size
-    const context = canvas.getContext('2d', { willReadFrequently: true })
-    if (!context) return []
-    context.drawImage(image, 0, 0, size, size)
-    const { data } = context.getImageData(0, 0, size, size)
+export function hexToRgb(hex: string) {
+  const clean = hex.replace('#', '');
+  const full =
+    clean.length === 3
+      ? clean
+          .split('')
+          .map((c) => c + c)
+          .join('')
+      : clean;
+  const num = parseInt(full, 16);
+  return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+}
 
-    const buckets = new Map<number, Bucket>()
-    for (let index = 0; index < data.length; index += 4) {
-      const r = data[index]
-      const g = data[index + 1]
-      const b = data[index + 2]
-      const alpha = data[index + 3]
-      if (alpha < 180) continue
+export function withAlpha(hex: string, alpha: number) {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
-      const max = Math.max(r, g, b)
-      const min = Math.min(r, g, b)
-      // Keep dark buckets: a black shirt/cover is often the true dominant
-      // colour, and the gradient needs it as a base. Only drop near-white
-      // specular/background pixels, which would wash the mesh out.
-      if (min > 246) continue
+/** 把封面主色拉成 UI 用的强调色：更亮、更饱和 */
+export function accent(hex: string, lBoost = 0.16) {
+  const { r, g, b } = hexToRgb(hex);
+  const { h, s, l } = rgbToHsl(r, g, b);
+  return hslToHex(h, clamp(s * 1.25, 0.55, 0.92), clamp(l + lBoost, 0.45, 0.72));
+}
 
-      const saturation = (max - min) / 255
-      const key = ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3)
-      const bucket = buckets.get(key)
-      if (bucket) {
-        bucket.r += r
-        bucket.g += g
-        bucket.b += b
-        bucket.count += 1
-        bucket.score += 1 + saturation * 4.5
-      } else {
-        buckets.set(key, {
-          r,
-          g,
-          b,
-          count: 1,
-          score: 1 + saturation * 4.5,
-        })
+/* ------------------------------ 像素聚类 ------------------------------ */
+
+type Vec = [number, number, number];
+
+function kmeans(points: Vec[], k: number, iterations = 10) {
+  if (points.length === 0) return [] as Vec[];
+  const centers: Vec[] = [];
+  const step = Math.max(1, Math.floor(points.length / k));
+  for (let i = 0; i < k; i++) centers.push([...points[Math.min(points.length - 1, i * step)]] as Vec);
+
+  let assignment = new Array(points.length).fill(0);
+  for (let iter = 0; iter < iterations; iter++) {
+    let moved = false;
+    for (let i = 0; i < points.length; i++) {
+      const p = points[i];
+      let best = 0;
+      let bestD = Infinity;
+      for (let c = 0; c < centers.length; c++) {
+        const dr = p[0] - centers[c][0];
+        const dg = p[1] - centers[c][1];
+        const db = p[2] - centers[c][2];
+        const d = dr * dr + dg * dg + db * db;
+        if (d < bestD) {
+          bestD = d;
+          best = c;
+        }
+      }
+      if (assignment[i] !== best) {
+        assignment[i] = best;
+        moved = true;
       }
     }
+    const sums = centers.map(() => [0, 0, 0, 0]);
+    for (let i = 0; i < points.length; i++) {
+      const a = assignment[i];
+      sums[a][0] += points[i][0];
+      sums[a][1] += points[i][1];
+      sums[a][2] += points[i][2];
+      sums[a][3] += 1;
+    }
+    for (let c = 0; c < centers.length; c++) {
+      if (sums[c][3] > 0) {
+        centers[c] = [
+          sums[c][0] / sums[c][3],
+          sums[c][1] / sums[c][3],
+          sums[c][2] / sums[c][3],
+        ];
+      }
+    }
+    if (!moved && iter > 2) break;
+  }
+  return centers;
+}
 
-    return [...buckets.values()]
+function readPixels(img: HTMLImageElement, size: number): Vec[] | null {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return null;
+  ctx.drawImage(img, 0, 0, size, size);
+  try {
+    const { data } = ctx.getImageData(0, 0, size, size);
+    const pts: Vec[] = [];
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3] < 200) continue;
+      pts.push([data[i], data[i + 1], data[i + 2]]);
+    }
+    return pts;
   } catch {
-    return []
-  } finally {
-    canvas.width = 0
-    canvas.height = 0
+    return null;
   }
 }
 
-function bucketColor(bucket: Bucket) {
-  return `rgb(${Math.round(bucket.r / bucket.count)}, ${Math.round(
-    bucket.g / bucket.count,
-  )}, ${Math.round(bucket.b / bucket.count)})`
+function loadimage(src: string, crossOrigin?: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image();
+    if (crossOrigin) img.crossOrigin = crossOrigin;
+    img.decoding = 'async';
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error(`load failed: ${src}`));
+    img.src = src;
+  });
 }
 
-function bucketDistance(a: Bucket, b: Bucket) {
-  return Math.hypot(
-    a.r / a.count - b.r / b.count,
-    a.g / a.count - b.g / b.count,
-    a.b / a.count - b.b / b.count,
-  )
+function paletteFromPixels(pts: Vec[], source: Palette['source']): Palette {
+  const centers = kmeans(pts, 6, 12);
+  const scored = centers
+    .map((c) => {
+      const { h, s, l } = rgbToHsl(c[0], c[1], c[2]);
+      return { h, s, l, weight: s * 0.7 + (1 - Math.abs(l - 0.45)) * 0.3 };
+    })
+    .sort((a, b) => b.weight - a.weight);
+
+  const colors = scored.slice(0, 5).map(({ h, s, l }) =>
+    // 关键一步：把封面的颜色"提纯"，Apple Music 的背景比封面本身鲜艳得多
+    hslToHex(h, clamp(s * 1.5 + 0.12, 0.42, 0.95), clamp(l * 0.95 + 0.04, 0.2, 0.6)),
+  );
+
+  const avgL = scored.reduce((acc, c) => acc + c.l, 0) / Math.max(1, scored.length);
+  return { colors, dark: avgL < 0.5, source };
 }
 
-/**
- * Apple Music builds its lyrics backdrop as a mesh of several artwork colours,
- * not a single tint. Return the most prominent yet visually distinct buckets.
- */
-function samplePalette(image: HTMLImageElement, count: number): string[] {
-  const buckets = sampleBuckets(image).sort((a, b) => b.score - a.score)
-  if (!buckets.length) return []
+/** 主入口：传入任意图片地址，返回主色板 */
+export async function extractPalette(imageUrl: string): Promise<Palette> {
+  const candidates: Array<{ src: string; crossOrigin?: string; source: Palette['source'] }> = [
+    { src: imageUrl, crossOrigin: 'anonymous', source: 'canvas' },
+    {
+      src: `https://wsrv.nl/?url=${encodeURIComponent(imageUrl)}&w=64&h=64&output=jpg`,
+      crossOrigin: 'anonymous',
+      source: 'proxy',
+    },
+  ];
 
-  const picked: Bucket[] = []
-  for (const bucket of buckets) {
-    if (picked.length === count) break
-    if (picked.every((entry) => bucketDistance(entry, bucket) >= 64)) picked.push(bucket)
+  for (const candidate of candidates) {
+    try {
+      const img = await loadimage(candidate.src, candidate.crossOrigin);
+      const pts = readPixels(img, 32);
+      if (pts && pts.length > 24) return paletteFromPixels(pts, candidate.source);
+    } catch {
+      /* 继续尝试下一个来源 */
+    }
   }
-  // Palettes with fewer distinct hues still need enough stops for the mesh.
-  for (const bucket of buckets) {
-    if (picked.length === count) break
-    if (!picked.includes(bucket)) picked.push(bucket)
-  }
-  return picked.map(bucketColor)
-}
-
-/**
- * Extract a small, visually distinct palette from an artwork image using a
- * quantised canvas sample. A resized probe URL is requested first so the
- * CORS request never reuses a non-CORS cache entry from a regular <img>.
- */
-export async function extractArtworkPalette(
-  src?: string | null,
-  count = 4,
-): Promise<string[]> {
-  if (!src) return []
-  const cached = paletteCache.get(src)
-  if (cached) return cached.slice(0, count)
-
-  // Sample a 64px thumbnail, not the original artwork: the proxy otherwise
-  // downloads and base64-encodes a multi-megapixel JPEG just to read 32×32
-  // pixels, which is the main source of first-open jank.
-  const probe = resizedImageUrl(src, '64y64') ?? src
-
-  let palette: string[] = []
-  const proxied = await loadProxiedImage(probe)
-  if (proxied) palette = samplePalette(proxied, 6)
-
-  if (!palette.length) {
-    const probeImage = await loadImage(probe)
-    if (probeImage) palette = samplePalette(probeImage, 6)
-  }
-
-  if (!palette.length) {
-    const fallbackImage = await loadImage(src)
-    if (fallbackImage) palette = samplePalette(fallbackImage, 6)
-  }
-
-  if (palette.length) paletteCache.set(src, palette)
-  return palette.slice(0, count)
-}
-
-/** Backwards compatible single-colour helper. */
-export async function extractDominantColor(src?: string | null): Promise<string | null> {
-  const [color] = await extractArtworkPalette(src, 1)
-  return color ?? null
+  return FALLBACK_PALETTE;
 }
