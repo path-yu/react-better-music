@@ -379,8 +379,8 @@ function DailySongGrid({ songs }: { songs: Song[] }) {
               if (event.key === 'Enter') void initQueue(songs, index, listId)
             }}
             className={cn(
-              'group flex cursor-pointer items-center gap-3 rounded-[14px] px-2.5 py-2 text-left transition-colors',
-              active ? 'bg-accent/6' : 'hover:bg-black/4',
+              'daily-song-row group relative flex cursor-pointer items-center gap-3 rounded-[14px] px-2.5 py-2 text-left transition-colors',
+              active ? 'is-active bg-accent/6' : 'hover:bg-black/4',
             )}
           >
             <span className="relative shrink-0">

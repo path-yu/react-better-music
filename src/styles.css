@@ -819,6 +819,36 @@ html.desktop .app-window {
   background: rgba(255, 255, 255, 0.065);
 }
 
+/* Daily Mix is a two-column card grid, but each card still scans as a row. */
+.daily-song-row::after {
+  content: '';
+  position: absolute;
+  right: 10px;
+  bottom: -4px;
+  left: 10px;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.055);
+  transform: scaleY(0.5);
+  transform-origin: bottom;
+  pointer-events: none;
+}
+
+.daily-song-row:hover::after,
+.daily-song-row.is-active::after,
+.daily-song-row:last-child::after {
+  opacity: 0;
+}
+
+@media (min-width: 768px) {
+  .daily-song-row:nth-last-child(-n + 2)::after {
+    opacity: 0;
+  }
+}
+
+.dark .daily-song-row::after {
+  background: rgba(255, 255, 255, 0.065);
+}
+
 @media (min-width: 1100px) {
   .song-grid {
     grid-template-columns: 26px minmax(0, 2.2fr) minmax(0, 1.2fr) minmax(0, 1.2fr) 52px;
