@@ -4,7 +4,7 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { Heart, Pause, Play, Volume2 } from 'lucide-react'
+import { Heart, Pause, Play, Trash2, Volume2 } from 'lucide-react'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
 import { EmptyState } from '../common/EmptyState'
@@ -12,6 +12,7 @@ import { SongContextMenu } from './SongContextMenu'
 import { Skeleton } from '@pikoloo/darwin-ui'
 import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
+import { useLocalLibraryStore } from '../../store/localLibrary'
 import { formatDuration } from '../../lib/format'
 import { cn } from '../../lib/format'
 import { copyrightHint } from '../../lib/songs'
@@ -24,6 +25,8 @@ interface SongTableProps {
   emptyText?: string
   className?: string
   showHeader?: boolean
+  /** Local playlist page: remove a song from that playlist. */
+  onRemoveSong?: (song: Song) => void
 }
 
 const VIRTUAL_THRESHOLD = 500
@@ -42,7 +45,8 @@ interface SongRowProps {
   /** The final row should not draw a trailing divider. */
   last?: boolean
   onPlay: (index: number) => void
-  onLike: (id: number, liked: boolean) => void
+  onLike: (song: Song, liked: boolean) => void
+  onRemove?: () => void
   onContextMenu: (index: number, x: number, y: number) => void
 }
 
@@ -61,6 +65,7 @@ const SongRow = memo(function SongRow({
   last = false,
   onPlay,
   onLike,
+  onRemove,
   onContextMenu,
 }: SongRowProps) {
   const { i18n } = useLingui()
@@ -152,12 +157,23 @@ const SongRow = memo(function SongRow({
             ) : null}
           </p>
         </div>
+        {onRemove ? (
+          <button
+            type="button"
+            aria-label={i18n._(msg`从歌单移除`)}
+            title={i18n._(msg`从歌单移除`)}
+            onClick={onRemove}
+            className="pressable shrink-0 text-black/30 opacity-0 transition-opacity hover:text-[#ff2d55] focus-visible:opacity-100 group-hover:opacity-100"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        ) : null}
         <button
           type="button"
           aria-label={
             liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)
           }
-          onClick={() => onLike(song.id, liked)}
+          onClick={() => onLike(song, liked)}
           className={cn(
             'pressable shrink-0 transition-opacity focus-visible:opacity-100',
             liked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
@@ -209,12 +225,21 @@ export function SongTable({
   emptyText = '暂无歌曲',
   className,
   showHeader = true,
+  onRemoveSong,
 }: SongTableProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const currentSong = usePlayerStore((state) => state.queue[state.currentIndex])
   const playing = usePlayerStore((state) => state.playing)
   const likedIds = useUserStore((state) => state.likedIds)
-  const likedSet = useMemo(() => new Set(likedIds), [likedIds])
+  const isLogin = useUserStore((state) => state.isLogin)
+  const localFavorites = useLocalLibraryStore((state) => state.favorites)
+  const likedSet = useMemo(
+    () =>
+      new Set(
+        isLogin ? likedIds : localFavorites.map((favorite) => favorite.id),
+      ),
+    [isLogin, likedIds, localFavorites],
+  )
   const [contextMenu, setContextMenu] = useState<{
     song: Song
     x: number
@@ -239,10 +264,14 @@ export function SongTable({
     void player.initQueue(songsRef.current, index, playlistIdRef.current)
   }, [])
 
-  const handleLike = useCallback((id: number, liked: boolean) => {
+  const handleLike = useCallback((song: Song, liked: boolean) => {
     const user = useUserStore.getState()
-    if (!user.isLogin) return
-    void user.likeSong(id, !liked)
+    if (user.isLogin) {
+      void user.likeSong(song.id, !liked)
+      return
+    }
+    // Guest/desktop mode writes favourites to the local library file.
+    void useLocalLibraryStore.getState().toggleFavorite(song)
   }, [])
 
   const handleContextMenu = useCallback((index: number, x: number, y: number) => {
@@ -309,6 +338,7 @@ export function SongTable({
         last={index === songs.length - 1}
         onPlay={handlePlay}
         onLike={handleLike}
+        onRemove={onRemoveSong ? () => onRemoveSong(song) : undefined}
         onContextMenu={handleContextMenu}
       />
     )

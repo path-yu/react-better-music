@@ -19,11 +19,13 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ToplistRouteImport } from './routes/toplist'
 import { Route as AlbumsIdRouteImport } from './routes/albums/$id'
 import { Route as ArtistIdRouteImport } from './routes/artist/$id'
+import { Route as LocalFavoritesRouteImport } from './routes/local/favorites'
 import { Route as MvIdRouteImport } from './routes/mv/$id'
 import { Route as SonglistsIndexRouteImport } from './routes/songlists/index'
 import { Route as SonglistsIdRouteImport } from './routes/songlists/$id'
 import { Route as UsersIdRouteImport } from './routes/users/$id'
 import { Route as VideoIdRouteImport } from './routes/video/$id'
+import { Route as LocalPlaylistsIdRouteImport } from './routes/local/playlists/$id'
 import { Route as SonglistsIdEditRouteImport } from './routes/songlists/$id.edit'
 
 const IndexRoute = IndexRouteImport.update({
@@ -76,6 +78,11 @@ const ArtistIdRoute = ArtistIdRouteImport.update({
   path: '/artist/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocalFavoritesRoute = LocalFavoritesRouteImport.update({
+  id: '/local/favorites',
+  path: '/local/favorites',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MvIdRoute = MvIdRouteImport.update({
   id: '/mv/$id',
   path: '/mv/$id',
@@ -101,6 +108,11 @@ const VideoIdRoute = VideoIdRouteImport.update({
   path: '/video/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocalPlaylistsIdRoute = LocalPlaylistsIdRouteImport.update({
+  id: '/local/playlists/$id',
+  path: '/local/playlists/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SonglistsIdEditRoute = SonglistsIdEditRouteImport.update({
   id: '/edit',
   path: '/edit',
@@ -118,11 +130,13 @@ export interface FileRoutesByFullPath {
   '/toplist': typeof ToplistRoute
   '/albums/$id': typeof AlbumsIdRoute
   '/artist/$id': typeof ArtistIdRoute
+  '/local/favorites': typeof LocalFavoritesRoute
   '/mv/$id': typeof MvIdRoute
   '/songlists/$id': typeof SonglistsIdRouteWithChildren
   '/users/$id': typeof UsersIdRoute
   '/video/$id': typeof VideoIdRoute
   '/songlists/': typeof SonglistsIndexRoute
+  '/local/playlists/$id': typeof LocalPlaylistsIdRoute
   '/songlists/$id/edit': typeof SonglistsIdEditRoute
 }
 export interface FileRoutesByTo {
@@ -136,11 +150,13 @@ export interface FileRoutesByTo {
   '/toplist': typeof ToplistRoute
   '/albums/$id': typeof AlbumsIdRoute
   '/artist/$id': typeof ArtistIdRoute
+  '/local/favorites': typeof LocalFavoritesRoute
   '/mv/$id': typeof MvIdRoute
   '/songlists/$id': typeof SonglistsIdRouteWithChildren
   '/users/$id': typeof UsersIdRoute
   '/video/$id': typeof VideoIdRoute
   '/songlists': typeof SonglistsIndexRoute
+  '/local/playlists/$id': typeof LocalPlaylistsIdRoute
   '/songlists/$id/edit': typeof SonglistsIdEditRoute
 }
 export interface FileRoutesById {
@@ -155,11 +171,13 @@ export interface FileRoutesById {
   '/toplist': typeof ToplistRoute
   '/albums/$id': typeof AlbumsIdRoute
   '/artist/$id': typeof ArtistIdRoute
+  '/local/favorites': typeof LocalFavoritesRoute
   '/mv/$id': typeof MvIdRoute
   '/songlists/$id': typeof SonglistsIdRouteWithChildren
   '/users/$id': typeof UsersIdRoute
   '/video/$id': typeof VideoIdRoute
   '/songlists/': typeof SonglistsIndexRoute
+  '/local/playlists/$id': typeof LocalPlaylistsIdRoute
   '/songlists/$id/edit': typeof SonglistsIdEditRoute
 }
 export interface FileRouteTypes {
@@ -175,11 +193,13 @@ export interface FileRouteTypes {
     | '/toplist'
     | '/albums/$id'
     | '/artist/$id'
+    | '/local/favorites'
     | '/mv/$id'
     | '/songlists/$id'
     | '/users/$id'
     | '/video/$id'
     | '/songlists/'
+    | '/local/playlists/$id'
     | '/songlists/$id/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -193,11 +213,13 @@ export interface FileRouteTypes {
     | '/toplist'
     | '/albums/$id'
     | '/artist/$id'
+    | '/local/favorites'
     | '/mv/$id'
     | '/songlists/$id'
     | '/users/$id'
     | '/video/$id'
     | '/songlists'
+    | '/local/playlists/$id'
     | '/songlists/$id/edit'
   id:
     | '__root__'
@@ -211,11 +233,13 @@ export interface FileRouteTypes {
     | '/toplist'
     | '/albums/$id'
     | '/artist/$id'
+    | '/local/favorites'
     | '/mv/$id'
     | '/songlists/$id'
     | '/users/$id'
     | '/video/$id'
     | '/songlists/'
+    | '/local/playlists/$id'
     | '/songlists/$id/edit'
   fileRoutesById: FileRoutesById
 }
@@ -230,11 +254,13 @@ export interface RootRouteChildren {
   ToplistRoute: typeof ToplistRoute
   AlbumsIdRoute: typeof AlbumsIdRoute
   ArtistIdRoute: typeof ArtistIdRoute
+  LocalFavoritesRoute: typeof LocalFavoritesRoute
   MvIdRoute: typeof MvIdRoute
   SonglistsIdRoute: typeof SonglistsIdRouteWithChildren
   UsersIdRoute: typeof UsersIdRoute
   VideoIdRoute: typeof VideoIdRoute
   SonglistsIndexRoute: typeof SonglistsIndexRoute
+  LocalPlaylistsIdRoute: typeof LocalPlaylistsIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -309,6 +335,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ArtistIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/local/favorites': {
+      id: '/local/favorites'
+      path: '/local/favorites'
+      fullPath: '/local/favorites'
+      preLoaderRoute: typeof LocalFavoritesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mv/$id': {
       id: '/mv/$id'
       path: '/mv/$id'
@@ -344,6 +377,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VideoIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/local/playlists/$id': {
+      id: '/local/playlists/$id'
+      path: '/local/playlists/$id'
+      fullPath: '/local/playlists/$id'
+      preLoaderRoute: typeof LocalPlaylistsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/songlists/$id/edit': {
       id: '/songlists/$id/edit'
       path: '/edit'
@@ -377,11 +417,13 @@ const rootRouteChildren: RootRouteChildren = {
   ToplistRoute: ToplistRoute,
   AlbumsIdRoute: AlbumsIdRoute,
   ArtistIdRoute: ArtistIdRoute,
+  LocalFavoritesRoute: LocalFavoritesRoute,
   MvIdRoute: MvIdRoute,
   SonglistsIdRoute: SonglistsIdRouteWithChildren,
   UsersIdRoute: UsersIdRoute,
   VideoIdRoute: VideoIdRoute,
   SonglistsIndexRoute: SonglistsIndexRoute,
+  LocalPlaylistsIdRoute: LocalPlaylistsIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

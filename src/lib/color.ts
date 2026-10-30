@@ -103,7 +103,7 @@ function kmeans(points: Vec[], k: number, iterations = 10) {
   const step = Math.max(1, Math.floor(points.length / k));
   for (let i = 0; i < k; i++) centers.push([...points[Math.min(points.length - 1, i * step)]] as Vec);
 
-  let assignment = new Array(points.length).fill(0);
+  const assignment = new Array(points.length).fill(0);
   for (let iter = 0; iter < iterations; iter++) {
     let moved = false;
     for (let i = 0; i < points.length; i++) {

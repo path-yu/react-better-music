@@ -25,6 +25,7 @@ import { toast } from '../lib/toast'
 import { apiErrorMessage } from '../lib/apiErrors'
 import { i18n } from '../i18n'
 import { useSettingsStore } from './settings'
+import { useLocalLibraryStore } from './localLibrary'
 import type { Song } from '../types'
 
 export type PlayMode = 'order' | 'random' | 'singleLoop'
@@ -487,6 +488,7 @@ export const usePlayerStore = create<PlayerState>()(
               return true
             }
             set({ audioUrl: url, sourceReady: true, audioFromCache: true })
+            void useLocalLibraryStore.getState().recordRecent(song)
             prefetchNeighbors(index)
             await resolveLyrics(index, song, requestId)
             return true
@@ -496,6 +498,7 @@ export const usePlayerStore = create<PlayerState>()(
           const prefetched = consumePrefetchedAudio(song.id)
           if (prefetched) {
             set({ audioUrl: prefetched.url, sourceReady: true, audioBlob: prefetched.blob })
+            void useLocalLibraryStore.getState().recordRecent(song)
             if (prefetched.trialEnd && prefetched.trialEnd > 0) {
               toast.warning(
                 i18n._(
@@ -554,6 +557,7 @@ export const usePlayerStore = create<PlayerState>()(
           // Stream through the local API: the WebView cannot load the CDN
           // media URL directly (it answers 403 for cross-origin media).
           set({ audioUrl: playbackUrl(url, unblocked), sourceReady: true })
+          void useLocalLibraryStore.getState().recordRecent(song)
           if (trialEnd && trialEnd > 0) {
             toast.warning(
               i18n._(msg`当前仅可试听 ${trialEnd} 秒，登录或开通会员后可播放完整版`),

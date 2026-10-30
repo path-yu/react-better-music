@@ -224,7 +224,7 @@ async function constructServer(moduleDefs) {
           : {}),
         ...(shouldSetVaryHeader ? { Vary: 'Origin' } : {}),
         'Access-Control-Allow-Headers': 'X-Requested-With,Content-Type',
-        'Access-Control-Allow-Methods': 'PUT,POST,GET,DELETE,OPTIONS',
+        'Access-Control-Allow-Methods': 'PUT,PATCH,POST,GET,DELETE,OPTIONS',
         'Content-Type': 'application/json; charset=utf-8',
       })
     }
@@ -334,6 +334,79 @@ async function constructServer(moduleDefs) {
       })
     }
   })
+
+  /**
+   * Guest/local library (desktop app, no NetEase login required).
+   *
+   * These routes intentionally sit before the API cache middleware: mutations
+   * and reads must always hit the JSON file, otherwise a newly created playlist
+   * would appear stale for two minutes.
+   */
+  const localLibrary = require('./util/localLibrary')
+  const localRoute = (handler) => async (req, res) => {
+    try {
+      res.json({ code: 200, data: await handler(req) })
+    } catch (error) {
+      const status = Number(error?.status) || 500
+      res.status(status).json({
+        code: status,
+        msg: error?.message || 'Local library error',
+      })
+    }
+  }
+
+  app.get(
+    '/local/library',
+    localRoute(() => localLibrary.getState()),
+  )
+  app.post(
+    '/local/playlists',
+    localRoute((req) => localLibrary.createPlaylist(req.body?.name)),
+  )
+  app.patch(
+    '/local/playlists/:id',
+    localRoute((req) => localLibrary.updatePlaylist(req.params.id, req.body)),
+  )
+  app.put(
+    '/local/playlists/:id',
+    localRoute((req) => localLibrary.updatePlaylist(req.params.id, req.body)),
+  )
+  app.delete(
+    '/local/playlists/:id',
+    localRoute((req) => localLibrary.deletePlaylist(req.params.id)),
+  )
+  app.post(
+    '/local/playlists/:id/songs',
+    localRoute((req) =>
+      localLibrary.addSongToPlaylist(req.params.id, req.body?.song),
+    ),
+  )
+  app.delete(
+    '/local/playlists/:id/songs/:songId',
+    localRoute((req) =>
+      localLibrary.removeSongFromPlaylist(req.params.id, req.params.songId),
+    ),
+  )
+  app.post(
+    '/local/favorites',
+    localRoute((req) => localLibrary.addFavorite(req.body?.song)),
+  )
+  app.delete(
+    '/local/favorites/:songId',
+    localRoute((req) => localLibrary.removeFavorite(req.params.songId)),
+  )
+  app.post(
+    '/local/recent',
+    localRoute((req) => localLibrary.recordRecent(req.body?.song)),
+  )
+  app.delete(
+    '/local/recent',
+    localRoute(() => localLibrary.clearRecent()),
+  )
+  app.delete(
+    '/local/recent/:songId',
+    localRoute((req) => localLibrary.removeRecent(req.params.songId)),
+  )
 
   /**
    * Cache

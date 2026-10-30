@@ -4,11 +4,13 @@ import { useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { ChevronLeft, Film, Heart, ListPlus, Loader2 } from 'lucide-react'
+import { ChevronLeft, Film, Heart, ListMusic, ListPlus, Loader2 } from 'lucide-react'
 import { addSongToPlaylist, fetchRelatedVideos } from '../../api'
 import { resizedImageUrl } from '../../lib/image'
 import { toast } from '../../lib/toast'
 import { useUserStore } from '../../store/user'
+import { useLocalLibraryStore } from '../../store/localLibrary'
+import type { LocalPlaylist } from '../../api/local'
 import type { Playlist, Song } from '../../types'
 
 interface SongContextMenuProps {
@@ -19,7 +21,7 @@ interface SongContextMenuProps {
   onClose: () => void
 }
 
-type MenuMode = 'root' | 'playlists'
+type MenuMode = 'root' | 'playlists' | 'local-playlists'
 
 /**
  * Lightweight macOS-style context menu for a song row. Rendering through a
@@ -37,6 +39,7 @@ export function SongContextMenu({
   const menuRef = useRef<HTMLDivElement>(null)
   const [mode, setMode] = useState<MenuMode>('root')
   const [playlists, setPlaylists] = useState<Playlist[]>([])
+  const [localPlaylists, setLocalPlaylists] = useState<LocalPlaylist[]>([])
   const [loadingPlaylists, setLoadingPlaylists] = useState(false)
   const [busy, setBusy] = useState(false)
 
@@ -98,7 +101,11 @@ export function SongContextMenu({
   const openPlaylistPicker = async () => {
     const user = useUserStore.getState()
     if (!user.isLogin) {
-      toast.warning(i18n._(msg`请先登录`))
+      // Desktop guest mode: offer the playlists stored in the local library.
+      const local = useLocalLibraryStore.getState()
+      await local.load()
+      setLocalPlaylists(useLocalLibraryStore.getState().playlists)
+      setMode('local-playlists')
       return
     }
     setMode('playlists')
@@ -119,6 +126,21 @@ export function SongContextMenu({
       toast.error(i18n._(msg`歌单加载失败`))
     } finally {
       setLoadingPlaylists(false)
+    }
+  }
+
+  const saveToLocalPlaylist = async (playlist: LocalPlaylist) => {
+    if (busy) return
+    setBusy(true)
+    try {
+      const saved = await useLocalLibraryStore
+        .getState()
+        .addSong(playlist.id, song)
+      if (!saved) return
+      toast.success(i18n._(msg`已收藏到「${playlist.name}」`))
+      onClose()
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -146,15 +168,17 @@ export function SongContextMenu({
   const toggleLike = async () => {
     const user = useUserStore.getState()
     if (!user.isLogin) {
-      toast.warning(i18n._(msg`请先登录`))
+      await useLocalLibraryStore.getState().toggleFavorite(song)
+      onClose()
       return
     }
     const next = await user.likeSong(song.id, !liked)
     if (next === !liked) onClose()
   }
 
-  const menuWidth = mode === 'playlists' ? 240 : 190
-  const menuHeight = mode === 'playlists' ? 320 : 220
+  const inPlaylistMode = mode === 'playlists' || mode === 'local-playlists'
+  const menuWidth = inPlaylistMode ? 240 : 190
+  const menuHeight = inPlaylistMode ? 320 : 220
   const left = Math.max(8, Math.min(x, window.innerWidth - menuWidth - 12))
   const top = Math.max(8, Math.min(y, window.innerHeight - menuHeight))
 
@@ -206,6 +230,47 @@ export function SongContextMenu({
             />
             {liked ? <Trans>取消喜欢</Trans> : <Trans>喜欢</Trans>}
           </button>
+        </>
+      ) : mode === 'local-playlists' ? (
+        <>
+          <div className="flex h-8 items-center gap-1 px-1">
+            <button
+              type="button"
+              onClick={() => setMode('root')}
+              aria-label={i18n._(msg`返回`)}
+              className="pressable flex h-6 w-6 items-center justify-center rounded-[5px] text-black/45 hover:bg-black/6"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </button>
+            <span className="text-[11px] font-medium text-black/55">
+              <Trans>收藏到本地歌单</Trans>
+            </span>
+          </div>
+          <div className="my-1 h-px bg-black/6" />
+          <div className="max-h-[260px] overflow-y-auto">
+            {localPlaylists.length ? (
+              localPlaylists.map((playlist) => (
+                <button
+                  key={playlist.id}
+                  type="button"
+                  role="menuitem"
+                  disabled={busy}
+                  onClick={() => void saveToLocalPlaylist(playlist)}
+                  className="flex h-9 w-full items-center gap-2 rounded-[6px] px-2 text-left text-black/70 transition-colors hover:bg-black/6 disabled:opacity-50"
+                >
+                  <ListMusic className="h-3.5 w-3.5 text-black/35" />
+                  <span className="min-w-0 flex-1 truncate">{playlist.name}</span>
+                  <span className="text-[10px] text-black/25">
+                    {playlist.songs.length}
+                  </span>
+                </button>
+              ))
+            ) : (
+              <p className="px-2 py-4 text-center text-[11px] text-black/35">
+                <Trans>暂无本地歌单，请先在侧栏创建</Trans>
+              </p>
+            )}
+          </div>
         </>
       ) : (
         <>

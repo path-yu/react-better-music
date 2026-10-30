@@ -11,6 +11,7 @@ import { useUiStore } from '../../store/ui'
 import { useUserStore } from '../../store/user'
 import { usePlayerStore } from '../../store/player'
 import { useSettingsStore } from '../../store/settings'
+import { useLocalLibraryStore } from '../../store/localLibrary'
 import { isDesktopShell } from '../../lib/desktop'
 import { useDesktopCommands } from '../../lib/desktopCommands'
 import { useDesktopLyricsPublisher } from '../../lib/desktopLyrics'
@@ -51,6 +52,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const hasQueue = usePlayerStore((state) => state.queue.length > 0)
   const showQueue = usePlayerStore((state) => state.showQueue)
   const ensureLyrics = usePlayerStore((state) => state.ensureLyrics)
+  const loadLocalLibrary = useLocalLibraryStore((state) => state.load)
   const disableDevTools = useSettingsStore((state) => state.disableDevTools)
 
   useDesktopLyricsPublisher()
@@ -83,6 +85,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     void initSession()
   }, [initSession])
+
+  // Guest library is read once per launch; mutations keep the store in sync.
+  useEffect(() => {
+    void loadLocalLibrary()
+  }, [loadLocalLibrary])
 
   // The persisted queue only keeps ids/metadata, so after a refresh the current
   // track has no lyric text until something calls loadAt (i.e. pressing play).

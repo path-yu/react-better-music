@@ -12,6 +12,7 @@ import { CommentSection } from '../comments/CommentSection'
 import { fetchRelatedVideos } from '../../api'
 import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
+import { useLocalLibraryStore } from '../../store/localLibrary'
 import { useSettingsStore } from '../../store/settings'
 import { findLyricIndex } from '../../lib/lyric'
 import { seekAudio } from '../../lib/audio'
@@ -48,8 +49,15 @@ export function NowPlaying() {
   const toggleQueue = usePlayerStore((state) => state.toggleQueue)
   const ensureLyrics = usePlayerStore((state) => state.ensureLyrics)
   const likedIds = useUserStore((state) => state.likedIds)
+  const isLogin = useUserStore((state) => state.isLogin)
   const likeSong = useUserStore((state) => state.likeSong)
-  const liked = currentSong ? likedIds.includes(currentSong.id) : false
+  const localFavorites = useLocalLibraryStore((state) => state.favorites)
+  const toggleLocalFavorite = useLocalLibraryStore((state) => state.toggleFavorite)
+  const liked = currentSong
+    ? isLogin
+      ? likedIds.includes(currentSong.id)
+      : localFavorites.some((song) => song.id === currentSong.id)
+    : false
   const backdrop =
     useSettingsStore((state) => state.nowPlayingBackdrop) ?? 'gradient'
   const [panel, setPanel] = useState<'lyrics' | 'comments'>('lyrics')
@@ -262,7 +270,10 @@ export function NowPlaying() {
               aria-label={liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)}
               aria-pressed={liked}
               title={liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)}
-              onClick={() => void likeSong(currentSong.id, !liked)}
+              onClick={() => {
+                if (isLogin) void likeSong(currentSong.id, !liked)
+                else void toggleLocalFavorite(currentSong)
+              }}
               className="np-round-button pressable flex h-10 w-10 items-center justify-center rounded-full"
             >
               <Heart

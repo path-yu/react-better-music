@@ -34,6 +34,7 @@ import { SourcePicker } from './SourcePicker'
 import { VolumeSlider } from './VolumeSlider'
 import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
+import { useLocalLibraryStore } from '../../store/localLibrary'
 import {
   LYRIC_DISPLAY_OPTIONS,
   NOWPLAYING_BACKDROP_OPTIONS,
@@ -146,8 +147,15 @@ export function PlayerBar() {
   const [pendingSeek, setPendingSeek] = useState<number | null>(null)
 
   const likedIds = useUserStore((state) => state.likedIds)
+  const isLogin = useUserStore((state) => state.isLogin)
   const likeSong = useUserStore((state) => state.likeSong)
-  const liked = currentSong ? likedIds.includes(currentSong.id) : false
+  const localFavorites = useLocalLibraryStore((state) => state.favorites)
+  const toggleLocalFavorite = useLocalLibraryStore((state) => state.toggleFavorite)
+  const liked = currentSong
+    ? isLogin
+      ? likedIds.includes(currentSong.id)
+      : localFavorites.some((song) => song.id === currentSong.id)
+    : false
 
   /** Apply the master volume scaled by a fade gain to one element. */
   const applyGain = (element: HTMLAudioElement | null, gain: number) => {
@@ -1002,7 +1010,8 @@ export function PlayerBar() {
               aria-label={liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)}
               onClick={(event) => {
                 event.stopPropagation()
-                void likeSong(currentSong.id, !liked)
+                if (isLogin) void likeSong(currentSong.id, !liked)
+                else void toggleLocalFavorite(currentSong)
               }}
               className="pressable shrink-0 max-md:hidden"
             >

@@ -1,11 +1,9 @@
 import { useEffect } from 'react'
-import { msg } from '@lingui/core/macro'
-import { i18n } from '../i18n'
 import { isDesktopApp } from './desktopBridge'
 import { seekAudio } from './audio'
 import { usePlayerStore } from '../store/player'
 import { useUserStore } from '../store/user'
-import { toast } from './toast'
+import { useLocalLibraryStore } from '../store/localLibrary'
 
 /**
  * Commands from native surfaces (global shortcuts, tray menu, mini player) are
@@ -54,12 +52,12 @@ export function useDesktopCommands() {
           const song = player.queue[player.currentIndex]
           if (!song) return
           const user = useUserStore.getState()
-          if (!user.isLogin) {
-            toast.warning(i18n._(msg`请先登录后再收藏`))
-            return
+          if (user.isLogin) {
+            const liked = user.likedIds.includes(song.id)
+            void user.likeSong(song.id, !liked)
+          } else {
+            void useLocalLibraryStore.getState().toggleFavorite(song)
           }
-          const liked = user.likedIds.includes(song.id)
-          void user.likeSong(song.id, !liked)
           break
         }
         default:
