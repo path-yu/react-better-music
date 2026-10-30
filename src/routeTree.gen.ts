@@ -16,6 +16,7 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as RecentRouteImport } from './routes/recent'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ToplistRouteImport } from './routes/toplist'
 import { Route as AlbumsIdRouteImport } from './routes/albums/$id'
 import { Route as ArtistIdRouteImport } from './routes/artist/$id'
 import { Route as MvIdRouteImport } from './routes/mv/$id'
@@ -58,6 +59,11 @@ const SearchRoute = SearchRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ToplistRoute = ToplistRouteImport.update({
+  id: '/toplist',
+  path: '/toplist',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AlbumsIdRoute = AlbumsIdRouteImport.update({
@@ -109,6 +115,7 @@ export interface FileRoutesByFullPath {
   '/recent': typeof RecentRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
+  '/toplist': typeof ToplistRoute
   '/albums/$id': typeof AlbumsIdRoute
   '/artist/$id': typeof ArtistIdRoute
   '/mv/$id': typeof MvIdRoute
@@ -126,6 +133,7 @@ export interface FileRoutesByTo {
   '/recent': typeof RecentRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
+  '/toplist': typeof ToplistRoute
   '/albums/$id': typeof AlbumsIdRoute
   '/artist/$id': typeof ArtistIdRoute
   '/mv/$id': typeof MvIdRoute
@@ -144,6 +152,7 @@ export interface FileRoutesById {
   '/recent': typeof RecentRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
+  '/toplist': typeof ToplistRoute
   '/albums/$id': typeof AlbumsIdRoute
   '/artist/$id': typeof ArtistIdRoute
   '/mv/$id': typeof MvIdRoute
@@ -163,6 +172,7 @@ export interface FileRouteTypes {
     | '/recent'
     | '/search'
     | '/settings'
+    | '/toplist'
     | '/albums/$id'
     | '/artist/$id'
     | '/mv/$id'
@@ -180,6 +190,7 @@ export interface FileRouteTypes {
     | '/recent'
     | '/search'
     | '/settings'
+    | '/toplist'
     | '/albums/$id'
     | '/artist/$id'
     | '/mv/$id'
@@ -197,6 +208,7 @@ export interface FileRouteTypes {
     | '/recent'
     | '/search'
     | '/settings'
+    | '/toplist'
     | '/albums/$id'
     | '/artist/$id'
     | '/mv/$id'
@@ -215,6 +227,7 @@ export interface RootRouteChildren {
   RecentRoute: typeof RecentRoute
   SearchRoute: typeof SearchRoute
   SettingsRoute: typeof SettingsRoute
+  ToplistRoute: typeof ToplistRoute
   AlbumsIdRoute: typeof AlbumsIdRoute
   ArtistIdRoute: typeof ArtistIdRoute
   MvIdRoute: typeof MvIdRoute
@@ -273,6 +286,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/toplist': {
+      id: '/toplist'
+      path: '/toplist'
+      fullPath: '/toplist'
+      preLoaderRoute: typeof ToplistRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/albums/$id': {
@@ -354,6 +374,7 @@ const rootRouteChildren: RootRouteChildren = {
   RecentRoute: RecentRoute,
   SearchRoute: SearchRoute,
   SettingsRoute: SettingsRoute,
+  ToplistRoute: ToplistRoute,
   AlbumsIdRoute: AlbumsIdRoute,
   ArtistIdRoute: ArtistIdRoute,
   MvIdRoute: MvIdRoute,

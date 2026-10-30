@@ -92,6 +92,25 @@ export interface Song {
   like?: boolean
 }
 
+export interface ToplistTrack {
+  id?: number
+  name?: string
+  first?: string
+  second?: string
+  ar?: Artist[]
+}
+
+export interface Toplist {
+  id: number
+  name: string
+  coverImgUrl: string
+  updateFrequency?: string
+  trackCount?: number
+  playCount?: number
+  description?: string
+  tracks?: ToplistTrack[]
+}
+
 export interface Playlist {
   id: number
   name: string

@@ -3,6 +3,7 @@ import {
   buildLyricLines,
   findLyricIndex,
   isEmptyLyric,
+  parseJsonLyrics,
   parseLrc,
   parseYrc,
 } from './lyric'
@@ -84,6 +85,28 @@ describe('buildLyricLines', () => {
       yrc: 'invalid',
     })
     expect(fallback[0].content).toBe('plain')
+  })
+
+  it('parses JSON metadata lines when no LRC body exists', () => {
+    const json = [
+      '{"t":0,"c":[{"tx":"作词: "},{"tx":"李荣浩"}]}',
+      '{"t":1000,"c":[{"tx":"作曲: "},{"tx":"李荣浩"}]}',
+    ].join('\n')
+    expect(parseJsonLyrics(json)).toEqual([
+      { time: 0, content: '作词: 李荣浩' },
+      { time: 1000, content: '作曲: 李荣浩' },
+    ])
+    expect(buildLyricLines({ lyric: json })).toHaveLength(2)
+  })
+
+  it('detects yrc timing embedded in the lyric field', () => {
+    const lines = buildLyricLines({
+      lyric: '[1000,500](1000,200,0)你(1200,300,0)好',
+    })
+    expect(lines[0].words).toEqual([
+      { content: '你', startTime: 1000, duration: 200 },
+      { content: '好', startTime: 1200, duration: 300 },
+    ])
   })
 
   it('returns [] when no lyric source exists', () => {

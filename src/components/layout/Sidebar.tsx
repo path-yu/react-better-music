@@ -3,6 +3,7 @@ import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import {
+  ChartNoAxesColumnIncreasing,
   Disc3,
   Film,
   Heart,
@@ -24,6 +25,7 @@ import { cn } from '../../lib/format'
 const primaryNav = [
   { to: '/', label: msg`发现音乐`, icon: Sparkles },
   { to: '/songlists', label: msg`推荐歌单`, icon: ListMusic },
+  { to: '/toplist', label: msg`排行榜`, icon: ChartNoAxesColumnIncreasing },
   { to: '/latest-music', label: msg`最新音乐`, icon: Music2 },
   { to: '/latest-mv', label: msg`最新MV`, icon: Film },
 ] as const

@@ -67,12 +67,13 @@ msgid "{0} 粉丝"
 msgstr "{0} fans"
 
 #. placeholder {0}: items.length
+#. placeholder {0}: list.trackCount ?? 0
 #. placeholder {0}: playlist.trackCount
-#. placeholder {0}: queue.length
 #: src/components/layout/SearchBox.tsx:433
 #: src/components/player/QueuePanel.tsx:86
 #: src/routes/search.tsx:357
 #: src/routes/settings.tsx:434
+#: src/routes/toplist.tsx:137
 msgid "{0} 首"
 msgstr "{0} tracks"
 
@@ -116,7 +117,7 @@ msgstr "ACG"
 msgid "Hi-Res"
 msgstr "Hi-Res"
 
-#: src/components/layout/TitleBar.tsx:23
+#: src/components/layout/TitleBar.tsx:24
 #: src/routes/mv/$id.tsx:47
 msgid "MV"
 msgstr "MV"
@@ -237,7 +238,7 @@ msgstr "Failed to load the album"
 msgid "专辑暂时没有歌曲"
 msgstr "This album has no tracks yet"
 
-#: src/components/layout/TitleBar.tsx:25
+#: src/components/layout/TitleBar.tsx:26
 #: src/routes/profile.tsx:87
 msgid "个人信息"
 msgstr "Profile"
@@ -254,6 +255,10 @@ msgstr "Profile updated"
 #: src/components/layout/LoginModal.tsx:367
 msgid "二维码已失效"
 msgstr "QR code expired"
+
+#: src/routes/toplist.tsx:69
+msgid "云音乐官方榜单，实时更新"
+msgstr "Official NetEase Cloud Music charts, updated in real time"
 
 #: src/store/player.ts:169
 #: src/store/player.ts:459
@@ -316,6 +321,11 @@ msgstr "All"
 msgid "全部分类"
 msgstr "All categories"
 
+#. placeholder {0}: lists.length
+#: src/routes/toplist.tsx:74
+msgid "共 {0} 张榜单"
+msgstr "{0} charts"
+
 #. placeholder {0}: songs.length
 #: src/routes/artist/$id.tsx:278
 msgid "共 {0} 首热门单曲"
@@ -354,12 +364,12 @@ msgstr "Found {videoTotal} videos"
 msgid "关注"
 msgstr "Following"
 
-#: src/components/layout/TitleBar.tsx:167
+#: src/components/layout/TitleBar.tsx:168
 #: src/components/player/QueuePanel.tsx:101
 msgid "关闭"
 msgstr "Close"
 
-#: src/components/layout/TitleBar.tsx:168
+#: src/components/layout/TitleBar.tsx:169
 msgid "关闭到托盘"
 msgstr "Close to tray"
 
@@ -409,13 +419,13 @@ msgstr "Last page"
 msgid "最多可选三个标签"
 msgstr "Select up to three tags"
 
-#: src/components/layout/TitleBar.tsx:154
 #: src/components/layout/TitleBar.tsx:155
+#: src/components/layout/TitleBar.tsx:156
 msgid "最大化"
 msgstr "Maximize"
 
-#: src/components/layout/TitleBar.tsx:145
 #: src/components/layout/TitleBar.tsx:146
+#: src/components/layout/TitleBar.tsx:147
 msgid "最小化"
 msgstr "Minimize"
 
@@ -429,8 +439,8 @@ msgstr "Newest"
 msgid "最新 MV"
 msgstr "Latest MVs"
 
-#: src/components/layout/Sidebar.tsx:28
-#: src/components/layout/TitleBar.tsx:22
+#: src/components/layout/Sidebar.tsx:30
+#: src/components/layout/TitleBar.tsx:23
 msgid "最新MV"
 msgstr "New MVs"
 
@@ -438,8 +448,8 @@ msgstr "New MVs"
 msgid "最新评论"
 msgstr "Latest comments"
 
-#: src/components/layout/Sidebar.tsx:27
-#: src/components/layout/TitleBar.tsx:21
+#: src/components/layout/Sidebar.tsx:29
+#: src/components/layout/TitleBar.tsx:22
 #: src/routes/latest-music.tsx:31
 #: src/routes/latest-music.tsx:60
 msgid "最新音乐"
@@ -453,7 +463,7 @@ msgstr "Hottest"
 msgid "最近听过的歌曲，最多显示 100 首"
 msgstr "Recently played songs, up to 100"
 
-#: src/components/layout/Sidebar.tsx:156
+#: src/components/layout/Sidebar.tsx:158
 #: src/routes/recent.tsx:23
 #: src/routes/recent.tsx:62
 msgid "最近播放"
@@ -491,7 +501,7 @@ msgstr "Changes take effect immediately. Navigation, player and settings are tra
 msgid "切换音源失败，请稍后再试"
 msgstr "Failed to switch sources. Try again later."
 
-#: src/components/layout/Sidebar.tsx:179
+#: src/components/layout/Sidebar.tsx:181
 #: src/routes/users/$id.tsx:276
 msgid "创建的歌单"
 msgstr "Created playlists"
@@ -568,9 +578,10 @@ msgstr "Original"
 msgid "双语对照"
 msgstr "Bilingual"
 
-#: src/components/layout/Sidebar.tsx:25
-#: src/components/layout/TitleBar.tsx:27
+#: src/components/layout/Sidebar.tsx:26
+#: src/components/layout/TitleBar.tsx:28
 #: src/routes/index.tsx:86
+#: src/routes/toplist.tsx:63
 msgid "发现音乐"
 msgstr "Discover"
 
@@ -611,8 +622,8 @@ msgstr "You can only edit playlists you created"
 msgid "后退"
 msgstr "Back"
 
-#: src/components/layout/TitleBar.tsx:154
 #: src/components/layout/TitleBar.tsx:155
+#: src/components/layout/TitleBar.tsx:156
 msgid "向下还原"
 msgstr "Restore Down"
 
@@ -881,11 +892,11 @@ msgstr "Shortcuts"
 msgid "怀旧"
 msgstr "Nostalgia"
 
-#: src/components/layout/Sidebar.tsx:172
+#: src/components/layout/Sidebar.tsx:174
 msgid "我喜欢的音乐"
 msgstr "Liked Songs"
 
-#: src/components/layout/Sidebar.tsx:118
+#: src/components/layout/Sidebar.tsx:120
 msgid "我的音乐"
 msgstr "My Music"
 
@@ -933,8 +944,15 @@ msgstr "Authorized"
 msgid "排序"
 msgstr "Sort"
 
-#: src/components/layout/Sidebar.tsx:26
-#: src/components/layout/TitleBar.tsx:20
+#: src/components/layout/Sidebar.tsx:28
+#: src/components/layout/TitleBar.tsx:19
+#: src/routes/toplist.tsx:28
+#: src/routes/toplist.tsx:66
+msgid "排行榜"
+msgstr "Charts"
+
+#: src/components/layout/Sidebar.tsx:27
+#: src/components/layout/TitleBar.tsx:21
 #: src/routes/index.tsx:228
 #: src/routes/songlists/index.tsx:29
 #: src/routes/songlists/index.tsx:129
@@ -950,7 +968,7 @@ msgid "推荐轮播"
 msgstr "Featured"
 
 #: src/components/layout/SearchBox.tsx:208
-#: src/components/layout/TitleBar.tsx:24
+#: src/components/layout/TitleBar.tsx:25
 #: src/routes/search.tsx:60
 msgid "搜索"
 msgstr "Search"
@@ -1108,7 +1126,7 @@ msgstr "Saved to library"
 msgid "收藏的专辑"
 msgstr "Saved albums"
 
-#: src/components/layout/Sidebar.tsx:193
+#: src/components/layout/Sidebar.tsx:195
 #: src/routes/users/$id.tsx:279
 msgid "收藏的歌单"
 msgstr "Saved playlists"
@@ -1208,7 +1226,11 @@ msgstr "No recommendations"
 msgid "暂无新歌"
 msgstr "No new songs yet"
 
-#: src/components/layout/Sidebar.tsx:208
+#: src/routes/toplist.tsx:167
+msgid "暂无榜单"
+msgstr "No charts available"
+
+#: src/components/layout/Sidebar.tsx:210
 msgid "暂无歌单"
 msgstr "No playlists yet"
 
@@ -1275,7 +1297,7 @@ msgstr "A new account is created automatically for unregistered numbers"
 msgid "未知歌手"
 msgstr "Unknown artist"
 
-#: src/components/layout/Sidebar.tsx:218
+#: src/components/layout/Sidebar.tsx:220
 msgid "本地接口 · 网易云音乐"
 msgstr "Local API · NetEase Cloud Music"
 
@@ -1349,6 +1371,11 @@ msgstr "Desktop lyrics are unavailable"
 msgid "桌面端"
 msgstr "Desktop"
 
+#: src/routes/toplist.tsx:41
+#: src/routes/toplist.tsx:83
+msgid "榜单加载失败"
+msgstr "Failed to load charts"
+
 #: src/lib/tagLabels.ts:10
 #: src/routes/latest-music.tsx:22
 #: src/routes/latest-mv.tsx:32
@@ -1356,7 +1383,7 @@ msgid "欧美"
 msgstr "Western"
 
 #: src/components/layout/SearchBox.tsx:413
-#: src/components/layout/TitleBar.tsx:19
+#: src/components/layout/TitleBar.tsx:20
 #: src/routes/search.tsx:262
 #: src/routes/songlists/$id.tsx:64
 #: src/routes/songlists/$id.tsx:255
@@ -1477,8 +1504,8 @@ msgstr "Loading source…"
 msgid "正在同步最近播放…"
 msgstr "Syncing recent plays…"
 
-#: src/components/layout/Sidebar.tsx:113
-#: src/components/layout/TitleBar.tsx:44
+#: src/components/layout/Sidebar.tsx:115
+#: src/components/layout/TitleBar.tsx:45
 #: src/components/layout/TopBar.tsx:81
 msgid "正在播放"
 msgstr "Now playing"
@@ -1565,7 +1592,7 @@ msgstr "Light"
 msgid "浅色模式"
 msgstr "Light mode"
 
-#: src/components/layout/Sidebar.tsx:63
+#: src/components/layout/Sidebar.tsx:65
 msgid "浏览"
 msgstr "Browse"
 
@@ -1656,7 +1683,7 @@ msgstr "Failed to load users"
 
 #: src/components/layout/LoginModal.tsx:246
 #: src/components/layout/LoginModal.tsx:335
-#: src/components/layout/Sidebar.tsx:134
+#: src/components/layout/Sidebar.tsx:136
 #: src/components/layout/UserMenu.tsx:44
 #: src/routes/recent.tsx:84
 msgid "登录"
@@ -1682,7 +1709,7 @@ msgstr "Sign in to edit this playlist"
 msgid "登录后查看最近播放"
 msgstr "Sign in to view recent plays"
 
-#: src/components/layout/Sidebar.tsx:125
+#: src/components/layout/Sidebar.tsx:127
 msgid "登录后查看我的歌单"
 msgstr "Sign in to view your playlists"
 
@@ -1880,7 +1907,7 @@ msgstr "Failed to get the QR code. Check whether the local API is running."
 msgid "获取歌曲播放地址失败"
 msgstr "Failed to get the playback URL"
 
-#: src/components/layout/TitleBar.tsx:26
+#: src/components/layout/TitleBar.tsx:27
 #: src/components/layout/TopBar.tsx:86
 #: src/components/layout/TopBar.tsx:87
 #: src/routes/settings.tsx:67
@@ -1979,6 +2006,7 @@ msgstr "Please sign in and try again"
 #: src/routes/search.tsx:509
 #: src/routes/search.tsx:545
 #: src/routes/songlists/index.tsx:249
+#: src/routes/toplist.tsx:84
 #: src/routes/users/$id.tsx:335
 msgid "请检查网络或本地 API 服务后重试"
 msgstr "Check your network or the local API and try again."

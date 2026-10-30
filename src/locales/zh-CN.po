@@ -67,12 +67,13 @@ msgid "{0} 粉丝"
 msgstr "{0} 粉丝"
 
 #. placeholder {0}: items.length
+#. placeholder {0}: list.trackCount ?? 0
 #. placeholder {0}: playlist.trackCount
-#. placeholder {0}: queue.length
 #: src/components/layout/SearchBox.tsx:433
 #: src/components/player/QueuePanel.tsx:86
 #: src/routes/search.tsx:357
 #: src/routes/settings.tsx:434
+#: src/routes/toplist.tsx:137
 msgid "{0} 首"
 msgstr "{0} 首"
 
@@ -116,7 +117,7 @@ msgstr "ACG"
 msgid "Hi-Res"
 msgstr "Hi-Res"
 
-#: src/components/layout/TitleBar.tsx:23
+#: src/components/layout/TitleBar.tsx:24
 #: src/routes/mv/$id.tsx:47
 msgid "MV"
 msgstr "MV"
@@ -237,7 +238,7 @@ msgstr "专辑加载失败"
 msgid "专辑暂时没有歌曲"
 msgstr "专辑暂时没有歌曲"
 
-#: src/components/layout/TitleBar.tsx:25
+#: src/components/layout/TitleBar.tsx:26
 #: src/routes/profile.tsx:87
 msgid "个人信息"
 msgstr "个人信息"
@@ -254,6 +255,10 @@ msgstr "个人资料已更新"
 #: src/components/layout/LoginModal.tsx:367
 msgid "二维码已失效"
 msgstr "二维码已失效"
+
+#: src/routes/toplist.tsx:69
+msgid "云音乐官方榜单，实时更新"
+msgstr "云音乐官方榜单，实时更新"
 
 #: src/store/player.ts:169
 #: src/store/player.ts:459
@@ -316,6 +321,11 @@ msgstr "全部"
 msgid "全部分类"
 msgstr "全部分类"
 
+#. placeholder {0}: lists.length
+#: src/routes/toplist.tsx:74
+msgid "共 {0} 张榜单"
+msgstr "共 {0} 张榜单"
+
 #. placeholder {0}: songs.length
 #: src/routes/artist/$id.tsx:278
 msgid "共 {0} 首热门单曲"
@@ -354,12 +364,12 @@ msgstr "共找到 {videoTotal} 个视频"
 msgid "关注"
 msgstr "关注"
 
-#: src/components/layout/TitleBar.tsx:167
+#: src/components/layout/TitleBar.tsx:168
 #: src/components/player/QueuePanel.tsx:101
 msgid "关闭"
 msgstr "关闭"
 
-#: src/components/layout/TitleBar.tsx:168
+#: src/components/layout/TitleBar.tsx:169
 msgid "关闭到托盘"
 msgstr "关闭到托盘"
 
@@ -409,13 +419,13 @@ msgstr "最后一页"
 msgid "最多可选三个标签"
 msgstr "最多可选三个标签"
 
-#: src/components/layout/TitleBar.tsx:154
 #: src/components/layout/TitleBar.tsx:155
+#: src/components/layout/TitleBar.tsx:156
 msgid "最大化"
 msgstr "最大化"
 
-#: src/components/layout/TitleBar.tsx:145
 #: src/components/layout/TitleBar.tsx:146
+#: src/components/layout/TitleBar.tsx:147
 msgid "最小化"
 msgstr "最小化"
 
@@ -429,8 +439,8 @@ msgstr "最新"
 msgid "最新 MV"
 msgstr "最新 MV"
 
-#: src/components/layout/Sidebar.tsx:28
-#: src/components/layout/TitleBar.tsx:22
+#: src/components/layout/Sidebar.tsx:30
+#: src/components/layout/TitleBar.tsx:23
 msgid "最新MV"
 msgstr "最新MV"
 
@@ -438,8 +448,8 @@ msgstr "最新MV"
 msgid "最新评论"
 msgstr "最新评论"
 
-#: src/components/layout/Sidebar.tsx:27
-#: src/components/layout/TitleBar.tsx:21
+#: src/components/layout/Sidebar.tsx:29
+#: src/components/layout/TitleBar.tsx:22
 #: src/routes/latest-music.tsx:31
 #: src/routes/latest-music.tsx:60
 msgid "最新音乐"
@@ -453,7 +463,7 @@ msgstr "最热"
 msgid "最近听过的歌曲，最多显示 100 首"
 msgstr "最近听过的歌曲，最多显示 100 首"
 
-#: src/components/layout/Sidebar.tsx:156
+#: src/components/layout/Sidebar.tsx:158
 #: src/routes/recent.tsx:23
 #: src/routes/recent.tsx:62
 msgid "最近播放"
@@ -491,7 +501,7 @@ msgstr "切换界面语言，立即生效。当前翻译覆盖导航、播放器
 msgid "切换音源失败，请稍后再试"
 msgstr "切换音源失败，请稍后再试"
 
-#: src/components/layout/Sidebar.tsx:179
+#: src/components/layout/Sidebar.tsx:181
 #: src/routes/users/$id.tsx:276
 msgid "创建的歌单"
 msgstr "创建的歌单"
@@ -568,9 +578,10 @@ msgstr "原生"
 msgid "双语对照"
 msgstr "双语对照"
 
-#: src/components/layout/Sidebar.tsx:25
-#: src/components/layout/TitleBar.tsx:27
+#: src/components/layout/Sidebar.tsx:26
+#: src/components/layout/TitleBar.tsx:28
 #: src/routes/index.tsx:86
+#: src/routes/toplist.tsx:63
 msgid "发现音乐"
 msgstr "发现音乐"
 
@@ -611,8 +622,8 @@ msgstr "只能编辑自己创建的歌单"
 msgid "后退"
 msgstr "后退"
 
-#: src/components/layout/TitleBar.tsx:154
 #: src/components/layout/TitleBar.tsx:155
+#: src/components/layout/TitleBar.tsx:156
 msgid "向下还原"
 msgstr "向下还原"
 
@@ -881,11 +892,11 @@ msgstr "快捷键"
 msgid "怀旧"
 msgstr "怀旧"
 
-#: src/components/layout/Sidebar.tsx:172
+#: src/components/layout/Sidebar.tsx:174
 msgid "我喜欢的音乐"
 msgstr "我喜欢的音乐"
 
-#: src/components/layout/Sidebar.tsx:118
+#: src/components/layout/Sidebar.tsx:120
 msgid "我的音乐"
 msgstr "我的音乐"
 
@@ -933,8 +944,15 @@ msgstr "授权登录成功"
 msgid "排序"
 msgstr "排序"
 
-#: src/components/layout/Sidebar.tsx:26
-#: src/components/layout/TitleBar.tsx:20
+#: src/components/layout/Sidebar.tsx:28
+#: src/components/layout/TitleBar.tsx:19
+#: src/routes/toplist.tsx:28
+#: src/routes/toplist.tsx:66
+msgid "排行榜"
+msgstr "排行榜"
+
+#: src/components/layout/Sidebar.tsx:27
+#: src/components/layout/TitleBar.tsx:21
 #: src/routes/index.tsx:228
 #: src/routes/songlists/index.tsx:29
 #: src/routes/songlists/index.tsx:129
@@ -950,7 +968,7 @@ msgid "推荐轮播"
 msgstr "推荐轮播"
 
 #: src/components/layout/SearchBox.tsx:208
-#: src/components/layout/TitleBar.tsx:24
+#: src/components/layout/TitleBar.tsx:25
 #: src/routes/search.tsx:60
 msgid "搜索"
 msgstr "搜索"
@@ -1108,7 +1126,7 @@ msgstr "收藏成功"
 msgid "收藏的专辑"
 msgstr "收藏的专辑"
 
-#: src/components/layout/Sidebar.tsx:193
+#: src/components/layout/Sidebar.tsx:195
 #: src/routes/users/$id.tsx:279
 msgid "收藏的歌单"
 msgstr "收藏的歌单"
@@ -1208,7 +1226,11 @@ msgstr "暂无推荐歌曲"
 msgid "暂无新歌"
 msgstr "暂无新歌"
 
-#: src/components/layout/Sidebar.tsx:208
+#: src/routes/toplist.tsx:167
+msgid "暂无榜单"
+msgstr "暂无榜单"
+
+#: src/components/layout/Sidebar.tsx:210
 msgid "暂无歌单"
 msgstr "暂无歌单"
 
@@ -1275,7 +1297,7 @@ msgstr "未注册的手机号登录后将自动创建账号"
 msgid "未知歌手"
 msgstr "未知歌手"
 
-#: src/components/layout/Sidebar.tsx:218
+#: src/components/layout/Sidebar.tsx:220
 msgid "本地接口 · 网易云音乐"
 msgstr "本地接口 · 网易云音乐"
 
@@ -1349,6 +1371,11 @@ msgstr "桌面歌词窗口暂不可用"
 msgid "桌面端"
 msgstr "桌面端"
 
+#: src/routes/toplist.tsx:41
+#: src/routes/toplist.tsx:83
+msgid "榜单加载失败"
+msgstr "榜单加载失败"
+
 #: src/lib/tagLabels.ts:10
 #: src/routes/latest-music.tsx:22
 #: src/routes/latest-mv.tsx:32
@@ -1356,7 +1383,7 @@ msgid "欧美"
 msgstr "欧美"
 
 #: src/components/layout/SearchBox.tsx:413
-#: src/components/layout/TitleBar.tsx:19
+#: src/components/layout/TitleBar.tsx:20
 #: src/routes/search.tsx:262
 #: src/routes/songlists/$id.tsx:64
 #: src/routes/songlists/$id.tsx:255
@@ -1477,8 +1504,8 @@ msgstr "正在加载音源…"
 msgid "正在同步最近播放…"
 msgstr "正在同步最近播放…"
 
-#: src/components/layout/Sidebar.tsx:113
-#: src/components/layout/TitleBar.tsx:44
+#: src/components/layout/Sidebar.tsx:115
+#: src/components/layout/TitleBar.tsx:45
 #: src/components/layout/TopBar.tsx:81
 msgid "正在播放"
 msgstr "正在播放"
@@ -1565,7 +1592,7 @@ msgstr "浅色"
 msgid "浅色模式"
 msgstr "浅色模式"
 
-#: src/components/layout/Sidebar.tsx:63
+#: src/components/layout/Sidebar.tsx:65
 msgid "浏览"
 msgstr "浏览"
 
@@ -1656,7 +1683,7 @@ msgstr "用户加载失败"
 
 #: src/components/layout/LoginModal.tsx:246
 #: src/components/layout/LoginModal.tsx:335
-#: src/components/layout/Sidebar.tsx:134
+#: src/components/layout/Sidebar.tsx:136
 #: src/components/layout/UserMenu.tsx:44
 #: src/routes/recent.tsx:84
 msgid "登录"
@@ -1682,7 +1709,7 @@ msgstr "登录后才能编辑歌单"
 msgid "登录后查看最近播放"
 msgstr "登录后查看最近播放"
 
-#: src/components/layout/Sidebar.tsx:125
+#: src/components/layout/Sidebar.tsx:127
 msgid "登录后查看我的歌单"
 msgstr "登录后查看我的歌单"
 
@@ -1880,7 +1907,7 @@ msgstr "获取二维码失败，请检查本地 API 服务是否启动"
 msgid "获取歌曲播放地址失败"
 msgstr "获取歌曲播放地址失败"
 
-#: src/components/layout/TitleBar.tsx:26
+#: src/components/layout/TitleBar.tsx:27
 #: src/components/layout/TopBar.tsx:86
 #: src/components/layout/TopBar.tsx:87
 #: src/routes/settings.tsx:67
@@ -1979,6 +2006,7 @@ msgstr "请先登录后再试"
 #: src/routes/search.tsx:509
 #: src/routes/search.tsx:545
 #: src/routes/songlists/index.tsx:249
+#: src/routes/toplist.tsx:84
 #: src/routes/users/$id.tsx:335
 msgid "请检查网络或本地 API 服务后重试"
 msgstr "请检查网络或本地 API 服务后重试"

@@ -16,6 +16,7 @@ import {
 
 const TITLES: Array<[string, MessageDescriptor]> = [
   ['/users/', msg`用户`],
+  ['/toplist', msg`排行榜`],
   ['/songlists/', msg`歌单`],
   ['/songlists', msg`推荐歌单`],
   ['/latest-music', msg`最新音乐`],

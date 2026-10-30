@@ -12,6 +12,8 @@ import type {
   Playlist,
   SearchResult,
   Song,
+  Toplist,
+  ToplistTrack,
   UserDetail,
   UserProfile,
   UserSummary,
@@ -122,6 +124,28 @@ export async function fetchPlaylistTags() {
 
 const TRACK_PAGE_SIZE = 300
 const TRACK_FETCH_CONCURRENCY = 3
+
+/** Official NetEase charts, including their top tracks. */
+export async function fetchToplists(signal?: AbortSignal) {
+  const res = await get<{
+    list?: Array<
+      Omit<Toplist, 'coverImgUrl'> & {
+        coverImgUrl?: string
+        coverUrl?: string
+        tracks?: ToplistTrack[]
+      }
+    >
+  }>('/toplist/detail', { timestamp: Date.now() }, signal)
+  return (res.list ?? []).map((item) => ({
+    ...item,
+    coverImgUrl: item.coverImgUrl ?? item.coverUrl ?? '',
+    tracks: (item.tracks ?? []).map((track, index) => ({
+      ...track,
+      id: track.id ?? index,
+      name: track.name ?? track.first ?? '',
+    })),
+  }))
+}
 
 export async function fetchPlaylistDetail(id: string | number, signal?: AbortSignal) {
   const res = await get<{ playlist: Playlist }>(

@@ -76,17 +76,52 @@ export function parseYrc(raw?: string): LyricLine[] {
   return result.sort((a, b) => a.time - b.time)
 }
 
+/**
+ * Some `/lyric/new` responses begin with one JSON metadata object per line
+ * ({"t":0,"c":[{"tx":"作词: "},...]}) before the plain LRC/yrc body. When the
+ * body is JSON-only, parse those timed credit lines instead of returning [].
+ */
+export function parseJsonLyrics(raw?: string): LyricLine[] {
+  if (!raw) return []
+  const result: LyricLine[] = []
+  for (const line of raw.split(/\r?\n/)) {
+    const trimmed = line.trim()
+    if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) continue
+    try {
+      const payload = JSON.parse(trimmed) as {
+        t?: unknown
+        c?: Array<{ tx?: unknown }>
+      }
+      if (typeof payload.t !== 'number' || !Array.isArray(payload.c)) continue
+      const content = payload.c
+        .map((part) => (typeof part.tx === 'string' ? part.tx : ''))
+        .join('')
+        .trim()
+      if (content) result.push({ time: payload.t, content })
+    } catch {
+      // Ignore malformed metadata lines.
+    }
+  }
+  return result.sort((a, b) => a.time - b.time)
+}
+
+function hasYrcTiming(raw: string) {
+  return /^\[\d+,\d+\]\(\d+,\d+,\d+\)/m.test(raw)
+}
+
 export function buildLyricLines(options: {
   lyric?: string
   tlyric?: string
   yrc?: string
 }): LyricLine[] {
   const { lyric, tlyric, yrc } = options
-  const base = yrc ? parseYrc(yrc) : parseLrc(lyric)
-  if (!base.length) {
-    const fallback = parseLrc(lyric)
-    return fallback
-  }
+  // `lrc` can occasionally carry yrc-formatted lines when the server omits
+  // the separate yrc field; detect the word-timing syntax before falling back.
+  const yrcSource = yrc || (lyric && hasYrcTiming(lyric) ? lyric : '')
+  let base = yrcSource ? parseYrc(yrcSource) : parseLrc(lyric)
+  if (!base.length) base = parseLrc(lyric)
+  if (!base.length) base = parseJsonLyrics(lyric)
+  if (!base.length) return []
   if (!tlyric) return base
   const translated = parseLrc(tlyric)
   if (!translated.length) return base
