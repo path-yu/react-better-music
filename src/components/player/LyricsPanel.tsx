@@ -148,6 +148,7 @@ export const LyricsPanel = memo(function LyricsPanel({
   const lineRefs = useRef<Record<number, HTMLElement | null>>({})
   const lastActiveRef = useRef(-1)
   const displayMode = useSettingsStore((state) => state.lyricDisplayMode)
+  const wordByWordLyrics = useSettingsStore((state) => state.wordByWordLyrics)
 
   useEffect(() => {
     const container = containerRef.current
@@ -195,7 +196,7 @@ export const LyricsPanel = memo(function LyricsPanel({
           // only the line being sung stays sharp.
           const opacity = active ? 1 : Math.max(0.3, 0.55 - away * 0.06)
           const blur = active || activeIndex < 0 ? 0 : Math.min(2.8, 0.9 + away * 0.42)
-          const hasWords = Boolean(line.words?.length)
+          const hasWords = wordByWordLyrics && Boolean(line.words?.length)
           const translationOnly = displayMode === 'translation' && Boolean(line.translate)
           const text = translationOnly ? line.translate! : line.content
           const interactive = !line.synthetic

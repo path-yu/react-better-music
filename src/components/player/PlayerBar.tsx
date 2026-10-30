@@ -27,7 +27,7 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react'
-import { Popover, PopoverContent, PopoverTrigger } from '@pikoloo/darwin-ui'
+import { Popover, PopoverContent, PopoverTrigger, Switch } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
 import { ProgressSlider } from './ProgressSlider'
@@ -125,6 +125,8 @@ export function PlayerBar() {
   const setPlayLevel = useSettingsStore((state) => state.setPlayLevel)
   const lyricDisplayMode = useSettingsStore((state) => state.lyricDisplayMode)
   const setLyricDisplayMode = useSettingsStore((state) => state.setLyricDisplayMode)
+  const wordByWordLyrics = useSettingsStore((state) => state.wordByWordLyrics)
+  const setWordByWordLyrics = useSettingsStore((state) => state.setWordByWordLyrics)
   const nowPlayingBackdrop = useSettingsStore((state) => state.nowPlayingBackdrop)
   const setNowPlayingBackdrop = useSettingsStore(
     (state) => state.setNowPlayingBackdrop,
@@ -1269,6 +1271,22 @@ export function PlayerBar() {
                 </div>
               </div>
             ) : null}
+
+            <div className="flex items-center justify-between gap-3 px-2 pb-1.5 pt-2">
+              <div>
+                <p className="text-[11.5px] font-medium text-black/70 dark:text-white/80">
+                  <Trans>逐字播放</Trans>
+                </p>
+                <p className="mt-0.5 text-[10px] leading-relaxed text-black/35 dark:text-white/40">
+                  <Trans>关闭后只高亮整行，不做逐字动画</Trans>
+                </p>
+              </div>
+              <Switch
+                checked={wordByWordLyrics}
+                onChange={setWordByWordLyrics}
+                aria-label={i18n._(msg`逐字播放`)}
+              />
+            </div>
 
             <div className="px-2 pb-1.5 pt-1">
               <p className="mb-1 flex items-center gap-1.5 text-[11px] text-black/40">

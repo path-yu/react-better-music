@@ -50,6 +50,8 @@ interface SettingsState {
   playLevel: PlayLevel
   /** How lyric lines and their translations are shown. */
   lyricDisplayMode: LyricDisplayMode
+  /** Karaoke word-by-word animation; off falls back to whole-line highlighting. */
+  wordByWordLyrics: boolean
   /** Visual treatment behind the immersive player. */
   nowPlayingBackdrop: NowPlayingBackdrop
   /** Desktop only: block right-click / F12 / DevTools shortcuts. */
@@ -61,6 +63,7 @@ interface SettingsState {
   setCacheBitrate: (value: number) => void
   setPlayLevel: (value: PlayLevel) => void
   setLyricDisplayMode: (value: LyricDisplayMode) => void
+  setWordByWordLyrics: (value: boolean) => void
   setNowPlayingBackdrop: (value: NowPlayingBackdrop) => void
   setDisableDevTools: (value: boolean) => void
   setAutoReplaceVipSource: (value: boolean) => void
@@ -73,6 +76,7 @@ export const useSettingsStore = create<SettingsState>()(
       cacheBitrate: 96,
       playLevel: 'exhigh',
       lyricDisplayMode: 'both',
+      wordByWordLyrics: true,
       nowPlayingBackdrop: 'gradient',
       disableDevTools: false,
       autoReplaceVipSource: false,
@@ -80,6 +84,7 @@ export const useSettingsStore = create<SettingsState>()(
       setCacheBitrate: (cacheBitrate) => set({ cacheBitrate }),
       setPlayLevel: (playLevel) => set({ playLevel }),
       setLyricDisplayMode: (lyricDisplayMode) => set({ lyricDisplayMode }),
+      setWordByWordLyrics: (wordByWordLyrics) => set({ wordByWordLyrics }),
       setNowPlayingBackdrop: (nowPlayingBackdrop) => set({ nowPlayingBackdrop }),
       setDisableDevTools: (disableDevTools) => set({ disableDevTools }),
       setAutoReplaceVipSource: (autoReplaceVipSource) => set({ autoReplaceVipSource }),
