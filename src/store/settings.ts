@@ -52,6 +52,8 @@ interface SettingsState {
   lyricDisplayMode: LyricDisplayMode
   /** Karaoke word-by-word animation; off falls back to whole-line highlighting. */
   wordByWordLyrics: boolean
+  /** Preferred third-party source module; `auto` tries all in order. */
+  preferredSource: string
   /** Visual treatment behind the immersive player. */
   nowPlayingBackdrop: NowPlayingBackdrop
   /** Desktop only: block right-click / F12 / DevTools shortcuts. */
@@ -64,6 +66,7 @@ interface SettingsState {
   setPlayLevel: (value: PlayLevel) => void
   setLyricDisplayMode: (value: LyricDisplayMode) => void
   setWordByWordLyrics: (value: boolean) => void
+  setPreferredSource: (value: string) => void
   setNowPlayingBackdrop: (value: NowPlayingBackdrop) => void
   setDisableDevTools: (value: boolean) => void
   setAutoReplaceVipSource: (value: boolean) => void
@@ -77,6 +80,7 @@ export const useSettingsStore = create<SettingsState>()(
       playLevel: 'exhigh',
       lyricDisplayMode: 'both',
       wordByWordLyrics: true,
+      preferredSource: 'auto',
       nowPlayingBackdrop: 'gradient',
       disableDevTools: false,
       autoReplaceVipSource: false,
@@ -85,6 +89,7 @@ export const useSettingsStore = create<SettingsState>()(
       setPlayLevel: (playLevel) => set({ playLevel }),
       setLyricDisplayMode: (lyricDisplayMode) => set({ lyricDisplayMode }),
       setWordByWordLyrics: (wordByWordLyrics) => set({ wordByWordLyrics }),
+      setPreferredSource: (preferredSource) => set({ preferredSource }),
       setNowPlayingBackdrop: (nowPlayingBackdrop) => set({ nowPlayingBackdrop }),
       setDisableDevTools: (disableDevTools) => set({ disableDevTools }),
       setAutoReplaceVipSource: (autoReplaceVipSource) => set({ autoReplaceVipSource }),

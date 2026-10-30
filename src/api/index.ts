@@ -297,11 +297,17 @@ function matchedUrl(payload: unknown): string {
  * third-party CDN; callers decide whether the media proxy accepts it.
  */
 export async function fetchMatchedSongUrl(id: number | string, source?: string) {
-  const res = await get<{ code?: number; data?: unknown; proxyUrl?: string; msg?: string }>(
-    '/song/url/match',
-    source ? { id, source } : { id },
-  )
-  return { url: matchedUrl(res.data) || res.proxyUrl || '' }
+  const res = await get<{
+    code?: number
+    data?: unknown
+    source?: string
+    proxyUrl?: string
+    msg?: string
+  }>('/song/url/match', source ? { id, source } : { id })
+  return {
+    url: matchedUrl(res.data) || res.proxyUrl || '',
+    source: res.source || '',
+  }
 }
 
 /**

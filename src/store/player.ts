@@ -78,8 +78,8 @@ interface PlayerState {
   refreshCurrentUrl: () => Promise<boolean>
   /** Fetch lyrics for the current track without starting playback. */
   ensureLyrics: () => Promise<void>
-  /** Replace a VIP track with a matched provider source (manual button). */
-  switchToOtherSource: () => Promise<void>
+  /** Replace the current track with a matched provider source (manual picker). */
+  switchToOtherSource: (source?: string, force?: boolean) => Promise<void>
   consumeResumeAt: () => void
   prefetchNext: () => void
   invalidateUrls: () => void
@@ -93,6 +93,8 @@ type SongSource = {
   unblocked: boolean
   /** `/check/music` verdict: false means NetEase reports no copyright. */
   available: boolean
+  /** Which provider module produced the matched URL. */
+  matchedSource?: string
 }
 
 /**
@@ -103,25 +105,65 @@ type SongSource = {
  */
 async function resolveSongSource(song: Song): Promise<SongSource> {
   const level = useSettingsStore.getState().playLevel
+  const autoReplace = useSettingsStore.getState().autoReplaceVipSource
+  const preferredSource = useSettingsStore.getState().preferredSource
+  const requestedSource = preferredSource === 'auto' ? undefined : preferredSource
+
+  // Cache the match attempt so a VIP-first lookup and a trial fallback don't
+  // request the same matcher twice in one resolution.
+  let matchedPromise: Promise<{ url: string; source: string }> | null = null
+  const getMatched = () => {
+    if (!matchedPromise) {
+      matchedPromise = fetchMatchedSongUrl(song.id, requestedSource)
+        .then((matched) => ({ url: matched.url, source: matched.source }))
+        .catch(() => ({ url: '', source: '' }))
+    }
+    return matchedPromise
+  }
+  const autoMatchedSource = async (): Promise<SongSource | null> => {
+    if (!autoReplace) return null
+    const matched = await getMatched()
+    return matched.url
+      ? {
+          url: matched.url,
+          trialEnd: null,
+          unblocked: true,
+          available: true,
+          matchedSource: matched.source || requestedSource,
+        }
+      : null
+  }
+
   // VIP tracks can be replaced before the official lookup when the user opted
   // into automatic source matching; failure simply falls back to NetEase.
-  if (song.fee !== 0 && useSettingsStore.getState().autoReplaceVipSource) {
-    try {
-      const matched = await fetchMatchedSongUrl(song.id)
-      if (matched.url) {
-        return { url: matched.url, trialEnd: null, unblocked: true, available: true }
-      }
-    } catch {
-      // No provider matched; keep the normal official flow.
-    }
+  if (song.fee !== 0 && autoReplace) {
+    const matched = await autoMatchedSource()
+    if (matched) return matched
   }
+
   let urlError: unknown = null
   try {
     const info = await fetchSongUrlInfo(song.id, level)
-    if (info.url) return { ...info, unblocked: false, available: true }
+    if (info.url) {
+      // A 30-second trial is still "a URL", but the user asked to replace
+      // VIP/trial playback whenever possible. Try the matcher before returning
+      // the trial so the official endpoint isn't the only request made.
+      if (autoReplace && info.trialEnd && info.trialEnd > 0) {
+        const matched = await autoMatchedSource()
+        if (matched) return matched
+      }
+      return { ...info, unblocked: false, available: true }
+    }
   } catch (error) {
     // Gray tracks often fail outright; normal tracks surface the error below.
     urlError = error
+  }
+
+  // No official URL at all: if auto matching is on, try it before deciding the
+  // track is unavailable.
+  if (autoReplace) {
+    const matched = await autoMatchedSource()
+    if (matched) return matched
   }
 
   const hint = copyrightHint(song)
@@ -136,13 +178,17 @@ async function resolveSongSource(song: Song): Promise<SongSource> {
     if (available) return { url: null, trialEnd: null, unblocked: false, available: true }
   }
 
-  try {
-    const matched = await fetchMatchedSongUrl(song.id)
-    if (matched.url) {
-      return { url: matched.url, trialEnd: null, unblocked: true, available: false }
+  // Reuse the cached matcher attempt. When auto matching was already enabled
+  // this is a failed result, so we don't hit the provider twice.
+  const fallback = await getMatched()
+  if (fallback.url) {
+    return {
+      url: fallback.url,
+      trialEnd: null,
+      unblocked: true,
+      available: false,
+      matchedSource: fallback.source || requestedSource,
     }
-  } catch {
-    // No provider matched; fall through to the unavailable error.
   }
   return { url: null, trialEnd: null, unblocked: false, available: false }
 }
@@ -175,6 +221,7 @@ async function enrichSong(song: Song): Promise<Song> {
     ...song,
     url: source.url,
     unblocked: source.unblocked,
+    matchedSource: source.matchedSource,
     urlFetchedAt: Date.now(),
     trialEnd: source.trialEnd,
     lyric: lyricData.lyric,
@@ -208,6 +255,27 @@ let prefetchToken = 0
 const urlRequests = new Map<number, Promise<SongSource>>()
 
 function hasFreshUrl(song: Song) {
+  const settings = useSettingsStore.getState()
+  // A cached trial URL must not bypass auto matching after the user enables it;
+  // otherwise an already-played song keeps using the 30s preview for 10 min.
+  if (
+    settings.autoReplaceVipSource &&
+    !song.unblocked &&
+    (song.trialEnd ?? 0) > 0
+  ) {
+    return false
+  }
+  // A different explicit provider was selected: don't reuse the URL produced by
+  // the previous provider.
+  if (
+    settings.autoReplaceVipSource &&
+    song.unblocked &&
+    settings.preferredSource !== 'auto' &&
+    song.matchedSource &&
+    song.matchedSource !== settings.preferredSource
+  ) {
+    return false
+  }
   return Boolean(
     song.url &&
       song.urlFetchedAt &&
@@ -326,13 +394,19 @@ export const usePlayerStore = create<PlayerState>()(
               url = info.url
               trialEnd = info.trialEnd
               unblocked = info.unblocked
+              if (!url) return null
+              const active = get().queue[neighborIndex]
+              if (!active || active.id !== song.id) return null
+              patchSong(neighborIndex, {
+                url,
+                urlFetchedAt: Date.now(),
+                trialEnd,
+                unblocked,
+                matchedSource: info.matchedSource,
+              })
             } catch {
               return null
             }
-            if (!url) return null
-            const active = get().queue[neighborIndex]
-            if (!active || active.id !== song.id) return null
-            patchSong(neighborIndex, { url, urlFetchedAt: Date.now(), trialEnd, unblocked })
           }
           return { songId: song.id, url, trialEnd, unblocked }
         })
@@ -440,6 +514,7 @@ export const usePlayerStore = create<PlayerState>()(
           let url: string | null = fresh ? (song.url ?? null) : null
           let trialEnd: number | null = fresh ? (song.trialEnd ?? null) : null
           let unblocked = fresh ? Boolean(song.unblocked) : false
+          let matchedSource = fresh ? song.matchedSource : undefined
           let available = true
           if (!url) {
             const source = await resolveSongSource(song)
@@ -447,9 +522,16 @@ export const usePlayerStore = create<PlayerState>()(
             url = source.url
             trialEnd = source.trialEnd
             unblocked = source.unblocked
+            matchedSource = source.matchedSource
             available = source.available
             if (url) {
-              patchSong(index, { url, urlFetchedAt: Date.now(), trialEnd, unblocked })
+              patchSong(index, {
+                url,
+                urlFetchedAt: Date.now(),
+                trialEnd,
+                unblocked,
+                matchedSource,
+              })
             }
           }
           if (!url) {
@@ -907,14 +989,15 @@ export const usePlayerStore = create<PlayerState>()(
           }
         },
 
-        async switchToOtherSource() {
+        async switchToOtherSource(source, force = false) {
           const state = get()
           const index = state.currentIndex
           const song = state.queue[index]
-          if (!song || song.unblocked || state.switchingSource) return
+          if (!song || state.switchingSource) return
+          if (!force && song.unblocked) return
           set({ switchingSource: true })
           try {
-            const matched = await fetchMatchedSongUrl(song.id)
+            const matched = await fetchMatchedSongUrl(song.id, source)
             if (!matched.url) {
               toast.info(i18n._(msg`未找到其他可用音源`))
               return
@@ -925,6 +1008,7 @@ export const usePlayerStore = create<PlayerState>()(
             patchSong(active.currentIndex, {
               url: matched.url,
               unblocked: true,
+              matchedSource: matched.source || source,
               trialEnd: null,
               urlFetchedAt: Date.now(),
             })

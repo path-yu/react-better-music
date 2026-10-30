@@ -15,7 +15,6 @@ import {
   Pause,
   PictureInPicture2,
   Play,
-  RefreshCw,
   Repeat,
   Repeat1,
   Shuffle,
@@ -31,6 +30,7 @@ import { Popover, PopoverContent, PopoverTrigger, Switch } from '@pikoloo/darwin
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
 import { ProgressSlider } from './ProgressSlider'
+import { SourcePicker } from './SourcePicker'
 import { VolumeSlider } from './VolumeSlider'
 import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
@@ -116,8 +116,6 @@ export function PlayerBar() {
   const prefetchNext = usePlayerStore((state) => state.prefetchNext)
   const invalidateUrls = usePlayerStore((state) => state.invalidateUrls)
   const showNowPlaying = usePlayerStore((state) => state.showNowPlaying)
-  const switchingSource = usePlayerStore((state) => state.switchingSource)
-  const switchToOtherSource = usePlayerStore((state) => state.switchToOtherSource)
   const resumeAt = usePlayerStore((state) => state.resumeAt)
   const consumeResumeAt = usePlayerStore((state) => state.consumeResumeAt)
 
@@ -1219,6 +1217,8 @@ export function PlayerBar() {
           </PopoverContent>
         </Popover>
 
+        <SourcePicker />
+
         <Popover>
           <PopoverTrigger asChild>
             <button
@@ -1358,23 +1358,6 @@ export function PlayerBar() {
               </>
             ) : null}
 
-            {currentSong.fee !== 0 && !currentSong.unblocked ? (
-              <button
-                type="button"
-                onClick={() => void switchToOtherSource()}
-                disabled={switchingSource}
-                className="flex w-full items-center gap-2 rounded-[7px] px-2 py-1.5 text-left text-[12px] text-black/65 transition-colors hover:bg-black/5 disabled:opacity-50"
-              >
-                {switchingSource ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-4 w-4" />
-                )}
-                <span className="flex-1">
-                  <Trans>切换其他音源</Trans>
-                </span>
-              </button>
-            ) : null}
           </PopoverContent>
         </Popover>
 

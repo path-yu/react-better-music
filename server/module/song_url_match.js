@@ -35,6 +35,7 @@ module.exports = async (query, request) => {
       body: {
         code: 200,
         data: url,
+        source: result?.data?.source || query.source || '',
         proxyUrl,
       },
     }
