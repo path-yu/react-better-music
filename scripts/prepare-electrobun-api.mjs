@@ -157,6 +157,8 @@ await build({
   platform: 'node',
   format: 'cjs',
   target: 'node20',
+  minify: true,
+  legalComments: 'none',
   logLevel: 'warning',
   conditions: ['module-sync'],
   define: {

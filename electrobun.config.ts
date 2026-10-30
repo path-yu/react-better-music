@@ -14,6 +14,7 @@ export default {
     mainProcess: 'bun',
     bun: {
       entrypoint: 'src/bun/index.ts',
+      minify: true,
     },
     // Vite builds to dist-electrobun/, Electrobun serves these through views://
     copy: {

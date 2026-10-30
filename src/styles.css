@@ -1,5 +1,4 @@
 @import "@fontsource-variable/inter/index.css";
-@import "@fontsource-variable/noto-sans-sc/index.css";
 @import "tailwindcss";
 @import "@pikoloo/darwin-ui/styles.css";
 
@@ -67,13 +66,12 @@
   /*
    * macOS resolves `-apple-system` to SF Pro / PingFang SC, so the bundled
    * faces are only used on Windows. Inter is the closest OFL substitute for
-   * SF Pro; Noto Sans SC replaces Microsoft YaHei for Chinese glyphs.
+   * SF Pro; Windows falls back to Microsoft YaHei for Chinese glyphs.
    */
   --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Text",
     "SF Pro Display", "Inter Variable", "Segoe UI Variable Display",
     "Segoe UI Variable Text", "Segoe UI", "PingFang SC",
-    "Noto Sans SC Variable", "Microsoft YaHei UI", "Microsoft YaHei",
-    system-ui, sans-serif;
+    "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif;
   --product-shadow: rgba(0, 0, 0, 0.22) 3px 5px 30px 0;
 
   /* Darwin UI overlay layers must sit above the app chrome */

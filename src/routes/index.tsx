@@ -162,7 +162,9 @@ function DiscoveryPage() {
               alt=""
               rounded="rounded-[22px]"
               className="h-full w-full"
-              resize="1200y600"
+              // The banner is at most ~900 CSS px wide; 1200×600 wasted ~200 KB
+              // on the LCP image. The CDN accepts a smaller 2:1 crop.
+              resize="900y450"
               priority
               imageClassName="transition-transform duration-[900ms] group-hover:scale-[1.02]"
             />
