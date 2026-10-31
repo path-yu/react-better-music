@@ -20,12 +20,6 @@ const { URLSearchParams, URL } = require('url')
 const { APP_CONF } = require('./config.json')
 const { createHttpAgent, createHttpsAgent } = require('./ipv4Agent')
 const { loadNeapiKey } = require('./neapiKey')
-const {
-  getToken: antiCheatTokenV2,
-} = require('../module/register_checktoken_v2')
-const {
-  getToken: antiCheatTokenV3,
-} = require('../module/register_checktoken_v3')
 const registerNeapikey = require('../module/register_neapikey')
 
 // 预先读取匿名token并缓存
@@ -219,14 +213,18 @@ const generateRequestId = () => {
 const createRequest = async (uri, data, options) => {
   let token = ''
   switch (options.checkToken) {
-    case 'v2':
-      // 每次实时获取反作弊 token，不缓存
-      token = await antiCheatTokenV2()
+    case 'v2': {
+      // Loading the v2 anti-cheat bridge pulls in jsdom (~30 MB). Keep it off
+      // the API process baseline; only playlist subscription needs this path.
+      const { getToken } = require('../module/register_checktoken_v2')
+      token = await getToken()
       break
-    case 'v3':
-      // 每次实时获取反作弊 token，不缓存
-      token = await antiCheatTokenV3()
+    }
+    case 'v3': {
+      const { getToken } = require('../module/register_checktoken_v3')
+      token = await getToken()
       break
+    }
   }
 
   return new Promise((resolve, reject) => {

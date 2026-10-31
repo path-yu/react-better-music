@@ -20,12 +20,96 @@ const moduleFiles = fs
   .filter((file) => file.endsWith('.js'))
   .reverse()
 
-const moduleDefs = moduleFiles
+/**
+ * The desktop client only calls this exact subset of the upstream API. Keeping
+ * the other ~385 route modules out of the child bundle avoids parsing and
+ * retaining their code/dependencies for the lifetime of the app. Set
+ * QIMIAO_API_ALL_ROUTES=1 when building a diagnostic bundle.
+ */
+const DESKTOP_MODULE_FILES = new Set([
+  'album.js',
+  'album_sublist.js',
+  'artist_album.js',
+  'artist_detail.js',
+  'artist_mv.js',
+  'artist_top_song.js',
+  'artists.js',
+  'avatar_upload.js',
+  'banner.js',
+  'captcha_sent.js',
+  'check_music.js',
+  'cloudsearch.js',
+  'comment.js',
+  'comment_like.js',
+  'comment_music.js',
+  'comment_mv.js',
+  'comment_playlist.js',
+  'daily_signin.js',
+  'img_proxy.js',
+  'like.js',
+  'likelist.js',
+  'login_cellphone.js',
+  'login_qr_check.js',
+  'login_qr_create.js',
+  'login_qr_key.js',
+  'login_refresh.js',
+  'login_status.js',
+  'logout.js',
+  'lyric_new.js',
+  'mlog_music_rcmd.js',
+  'mlog_url.js',
+  'mv_all.js',
+  'mv_detail.js',
+  'mv_first.js',
+  'mv_url.js',
+  'personal_fm.js',
+  'personalized.js',
+  'playlist_cover_update.js',
+  'playlist_detail.js',
+  'playlist_highquality_tags.js',
+  'playlist_subscribe.js',
+  'playlist_track_all.js',
+  'playlist_tracks.js',
+  'playlist_update.js',
+  'playmode_intelligence_list.js',
+  'recommend_songs.js',
+  'record_recent_song.js',
+  'register_anonimous.js',
+  'search_default.js',
+  'search_hot.js',
+  'search_hot_detail.js',
+  'search_suggest.js',
+  'simi_artist.js',
+  'simi_mv.js',
+  'song_url_match.js',
+  'song_url_v1.js',
+  'top_playlist_highquality.js',
+  'top_song.js',
+  'toplist.js',
+  'toplist_detail.js',
+  'user_account.js',
+  'user_detail.js',
+  'user_playlist.js',
+  'user_update.js',
+  'video_url.js',
+])
+
+function routeForFile(file) {
+  return (
+    SPECIAL_ROUTES[file] ??
+    `/${file.replace(/\.js$/i, '').replace(/_/g, '/')}`
+  )
+}
+
+const selectedModuleFiles =
+  process.env.QIMIAO_API_ALL_ROUTES === '1'
+    ? moduleFiles
+    : moduleFiles.filter((file) => DESKTOP_MODULE_FILES.has(file))
+
+const moduleDefs = selectedModuleFiles
   .map((file) => {
     const identifier = file.split('.').shift()
-    const route =
-      SPECIAL_ROUTES[file] ??
-      `/${file.replace(/\.js$/i, '').replace(/_/g, '/')}`
+    const route = routeForFile(file)
     return `  { identifier: ${JSON.stringify(identifier)}, route: ${JSON.stringify(route)}, module: (query, request) => require('./module/${file}')(query, request) },`
   })
   .join('\n')
@@ -213,5 +297,5 @@ await build({
 
 const size = fs.statSync(bundlePath).size
 console.log(
-  `[electrobun] prepared bundled API server (${moduleFiles.length} routes, ${(size / 1024 / 1024).toFixed(1)} MB) at ${path.relative(root, bundlePath)}`,
+  `[electrobun] prepared bundled API server (${selectedModuleFiles.length}/${moduleFiles.length} routes, ${(size / 1024 / 1024).toFixed(1)} MB) at ${path.relative(root, bundlePath)}`,
 )

@@ -420,8 +420,25 @@ async function constructServer(moduleDefs) {
 
   /**
    * Cache
+   *
+   * Large list/image payloads are deliberately not stored in the in-memory
+   * API cache: a few thousand-track playlists or base64 image responses can
+   * retain tens of megabytes for two minutes. The renderer already has its own
+   * bounded read cache for the lightweight calls.
    */
-  app.use(cache('2 minutes', (_, res) => res.statusCode === 200))
+  const cacheSkipPaths = [
+    '/img/proxy',
+    '/playlist/track/all',
+    '/user/playlist',
+  ]
+  app.use(
+    cache(
+      '2 minutes',
+      (req, res) =>
+        res.statusCode === 200 &&
+        !cacheSkipPaths.some((path) => req.path.startsWith(path)),
+    ),
+  )
 
   /**
    * Special Routers
