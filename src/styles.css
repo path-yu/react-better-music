@@ -162,6 +162,22 @@ svg.lucide.h-6 {
 svg.lucide.brand-mark {
   stroke-width: 1.9;
 }
+/* Header search field: Darwin's input uses neutral white/zinc hover/focus
+   states. Keep every state on the active palette accent so custom dark themes
+   do not flash a grey rectangle when the field is focused. */
+.app-search-input,
+.app-search-input:hover,
+.app-search-input:focus {
+  background-color: rgb(var(--apple-blue-rgb) / 0.1) !important;
+  border-color: rgb(var(--apple-blue-rgb) / 0.32) !important;
+}
+
+.app-search-input:hover,
+.app-search-input:focus {
+  background-color: rgb(var(--apple-blue-rgb) / 0.14) !important;
+  border-color: rgb(var(--apple-blue-rgb) / 0.5) !important;
+}
+
 /* Search fields render the icon with w-full/h-full; size it from the token. */
 svg.lucide-search {
   width: 14px;

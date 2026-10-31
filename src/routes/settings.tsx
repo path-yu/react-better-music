@@ -426,7 +426,7 @@ function SettingsPage() {
                 </Trans>
               </p>
             </div>
-            <div className="rounded-[14px] border border-black/6 bg-[#f5f5f7] px-4 py-3">
+            <div className="rounded-[14px] border border-[var(--app-border)] bg-[var(--app-card)] px-4 py-3">
               <p className="text-[11px] text-black/40">
                 <Trans>当前缓存</Trans>
               </p>
@@ -444,7 +444,7 @@ function SettingsPage() {
           </div>
 
           {desktop ? (
-            <div className="mt-4 flex items-center gap-3 rounded-[14px] border border-black/6 bg-[#f5f5f7] px-4 py-3">
+            <div className="mt-4 flex items-center gap-3 rounded-[14px] border border-[var(--app-border)] bg-[var(--app-card)] px-4 py-3">
               <FolderOpen className="h-4 w-4 flex-none text-accent" />
               <div className="min-w-0 flex-1">
                 <p className="text-[11px] text-black/40">

@@ -240,7 +240,7 @@ export function SearchBox() {
           }
         }}
         wrapperClassName="w-full"
-        className="h-9 rounded-full bg-white/80 pl-9 pr-9 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
+        className="app-search-input h-9 rounded-full border border-[var(--app-border-strong)] bg-accent/10 pl-9 pr-9 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
       />
 
       {/* Own clear button: the slot provided by the input was not clickable and
@@ -263,7 +263,7 @@ export function SearchBox() {
       ) : null}
 
       {open && (
-        <div className="absolute left-0 top-full z-[80] mt-2 w-full min-w-[280px] overflow-hidden rounded-[18px] border border-black/10 bg-white/95 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.35)] backdrop-blur-xl fade-up">
+        <div className="absolute left-0 top-full z-[80] mt-2 w-full min-w-[280px] overflow-hidden rounded-[18px] border border-[var(--app-border)] bg-[var(--app-glass)] shadow-[0_24px_60px_-20px_rgba(0,0,0,0.35)] backdrop-blur-xl fade-up">
           <div className="max-h-[480px] overflow-y-auto">
             {!hasQuery && (
               <>
