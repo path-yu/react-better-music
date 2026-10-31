@@ -388,6 +388,16 @@ async function constructServer(moduleDefs) {
     ),
   )
   app.post(
+    '/local/subscribed-playlists',
+    localRoute((req) => localLibrary.addSubscribedPlaylist(req.body?.playlist)),
+  )
+  app.delete(
+    '/local/subscribed-playlists/:playlistId',
+    localRoute((req) =>
+      localLibrary.removeSubscribedPlaylist(req.params.playlistId),
+    ),
+  )
+  app.post(
     '/local/favorites',
     localRoute((req) => localLibrary.addFavorite(req.body?.song)),
   )

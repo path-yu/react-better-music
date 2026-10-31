@@ -45,6 +45,9 @@ export function Sidebar() {
   const showNowPlaying = usePlayerStore((state) => state.showNowPlaying)
   const toggleNowPlaying = usePlayerStore((state) => state.toggleNowPlaying)
   const localPlaylists = useLocalLibraryStore((state) => state.playlists)
+  const localSubscribedPlaylists = useLocalLibraryStore(
+    (state) => state.subscribedPlaylists,
+  )
   const localFavorites = useLocalLibraryStore((state) => state.favorites)
   const localRecent = useLocalLibraryStore((state) => state.recent)
   const createLocalPlaylist = useLocalLibraryStore((state) => state.createPlaylist)
@@ -268,6 +271,40 @@ export function Sidebar() {
               <p className="px-2.5 py-2 text-[11px] text-black/30">
                 <Trans>暂无本地歌单</Trans>
               </p>
+            ) : null}
+
+            {localSubscribedPlaylists.length ? (
+              <>
+                <p className="px-2.5 pb-1 pt-3 text-[11px] font-medium text-black/35">
+                  <Trans>收藏的歌单</Trans>
+                </p>
+                {localSubscribedPlaylists.map((playlist) => (
+                  <button
+                    key={playlist.id}
+                    type="button"
+                    onClick={() =>
+                      void navigate({
+                        to: '/songlists/$id',
+                        params: { id: String(playlist.id) },
+                      })
+                    }
+                    className={cn(
+                      'flex h-[30px] items-center gap-2.5 rounded-[10px] px-2.5 max-md:h-10 text-left text-[12.5px] transition-colors',
+                      pathname === `/songlists/${playlist.id}`
+                        ? 'bg-black/8 font-medium text-black'
+                        : 'text-black/65 hover:bg-black/4 hover:text-black',
+                    )}
+                  >
+                    <ListMusic
+                      className="h-4 w-4 shrink-0 text-black/40"
+                      strokeWidth={1.75}
+                    />
+                    <span className="min-w-0 flex-1 truncate">
+                      {playlist.name}
+                    </span>
+                  </button>
+                ))}
+              </>
             ) : null}
 
             <div className="mt-2 rounded-[14px] border border-black/8 bg-white/55 p-3">

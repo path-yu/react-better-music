@@ -3,6 +3,7 @@ import { msg } from '@lingui/core/macro'
 import {
   addLocalFavorite,
   addLocalPlaylistSong,
+  addLocalSubscribedPlaylist,
   clearLocalRecent,
   createLocalPlaylist,
   deleteLocalPlaylist,
@@ -11,18 +12,20 @@ import {
   removeLocalFavorite,
   removeLocalPlaylistSong,
   removeLocalRecent,
+  removeLocalSubscribedPlaylist,
   renameLocalPlaylist,
   type LocalPlaylist,
   type LocalRecent,
 } from '../api/local'
 import { toast } from '../lib/toast'
 import { i18n } from '../i18n'
-import type { Song } from '../types'
+import type { Playlist, Song } from '../types'
 
 interface LocalLibraryState {
   loaded: boolean
   loading: boolean
   playlists: LocalPlaylist[]
+  subscribedPlaylists: Playlist[]
   favorites: Song[]
   recent: LocalRecent[]
   load: (force?: boolean) => Promise<void>
@@ -31,6 +34,7 @@ interface LocalLibraryState {
   removePlaylist: (id: string) => Promise<boolean>
   addSong: (playlistId: string, song: Song) => Promise<boolean>
   removeSong: (playlistId: string, songId: number) => Promise<boolean>
+  toggleSubscribedPlaylist: (playlist: Playlist) => Promise<boolean | null>
   toggleFavorite: (song: Song) => Promise<boolean>
   recordRecent: (song: Song) => Promise<void>
   removeRecent: (songId: number) => Promise<void>
@@ -41,6 +45,7 @@ export const useLocalLibraryStore = create<LocalLibraryState>()((set, get) => ({
   loaded: false,
   loading: false,
   playlists: [],
+  subscribedPlaylists: [],
   favorites: [],
   recent: [],
 
@@ -53,6 +58,7 @@ export const useLocalLibraryStore = create<LocalLibraryState>()((set, get) => ({
         loaded: true,
         loading: false,
         playlists: library.playlists ?? [],
+        subscribedPlaylists: library.subscribedPlaylists ?? [],
         favorites: library.favorites ?? [],
         recent: library.recent ?? [],
       })
@@ -129,6 +135,22 @@ export const useLocalLibraryStore = create<LocalLibraryState>()((set, get) => ({
     } catch {
       toast.error(i18n._(msg`移除歌曲失败`))
       return false
+    }
+  },
+
+  async toggleSubscribedPlaylist(playlist) {
+    const subscribed = get().subscribedPlaylists.some(
+      (item) => Number(item.id) === Number(playlist.id),
+    )
+    try {
+      const next = subscribed
+        ? await removeLocalSubscribedPlaylist(playlist.id)
+        : await addLocalSubscribedPlaylist(playlist)
+      set({ subscribedPlaylists: next })
+      return !subscribed
+    } catch {
+      toast.error(i18n._(msg`收藏失败`))
+      return null
     }
   },
 

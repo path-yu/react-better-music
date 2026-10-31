@@ -1,6 +1,6 @@
 import { apiUrl } from '../lib/http'
 import { fetchWithBootRetry } from '../lib/apiFetch'
-import type { Song } from '../types'
+import type { Playlist, Song } from '../types'
 
 export interface LocalPlaylist {
   id: string
@@ -18,6 +18,7 @@ export interface LocalRecent {
 export interface LocalLibrary {
   version: number
   playlists: LocalPlaylist[]
+  subscribedPlaylists: Playlist[]
   favorites: Song[]
   recent: LocalRecent[]
 }
@@ -79,6 +80,19 @@ export const removeLocalPlaylistSong = (id: string, songId: number) =>
   localRequest<LocalPlaylist>(
     'DELETE',
     `/local/playlists/${encodeURIComponent(id)}/songs/${songId}`,
+  )
+
+export const addLocalSubscribedPlaylist = (playlist: Playlist) =>
+  localRequest<Playlist[]>(
+    'POST',
+    '/local/subscribed-playlists',
+    { playlist },
+  )
+
+export const removeLocalSubscribedPlaylist = (playlistId: number) =>
+  localRequest<Playlist[]>(
+    'DELETE',
+    `/local/subscribed-playlists/${playlistId}`,
   )
 
 export const addLocalFavorite = (song: Song) =>

@@ -23,7 +23,13 @@ class LocalLibraryError extends Error {
 }
 
 function emptyState() {
-  return { version: 1, playlists: [], favorites: [], recent: [] }
+  return {
+    version: 2,
+    playlists: [],
+    subscribedPlaylists: [],
+    favorites: [],
+    recent: [],
+  }
 }
 
 let state = null
@@ -48,6 +54,38 @@ function normalizeSong(song) {
   return snapshot
 }
 
+function normalizePlaylist(playlist) {
+  if (
+    !playlist ||
+    typeof playlist !== 'object' ||
+    !Number.isFinite(Number(playlist.id))
+  ) {
+    throw new LocalLibraryError('Invalid playlist')
+  }
+  return {
+    id: Number(playlist.id),
+    name: typeof playlist.name === 'string' ? playlist.name : '',
+    coverImgUrl:
+      typeof playlist.coverImgUrl === 'string' ? playlist.coverImgUrl : '',
+    trackCount: Number(playlist.trackCount) || 0,
+    playCount: Number(playlist.playCount) || 0,
+    creator:
+      playlist.creator && typeof playlist.creator === 'object'
+        ? {
+            userId: Number(playlist.creator.userId) || 0,
+            nickname:
+              typeof playlist.creator.nickname === 'string'
+                ? playlist.creator.nickname
+                : '',
+            avatarUrl:
+              typeof playlist.creator.avatarUrl === 'string'
+                ? playlist.creator.avatarUrl
+                : '',
+          }
+        : undefined,
+  }
+}
+
 function load() {
   if (state) return state
   try {
@@ -55,7 +93,11 @@ function load() {
     state = {
       ...emptyState(),
       ...parsed,
+      version: Math.max(2, Number(parsed.version) || 0),
       playlists: Array.isArray(parsed.playlists) ? parsed.playlists : [],
+      subscribedPlaylists: Array.isArray(parsed.subscribedPlaylists)
+        ? parsed.subscribedPlaylists
+        : [],
       favorites: Array.isArray(parsed.favorites) ? parsed.favorites : [],
       recent: Array.isArray(parsed.recent) ? parsed.recent : [],
     }
@@ -161,6 +203,29 @@ function removeSongFromPlaylist(id, songId) {
   return playlist
 }
 
+function addSubscribedPlaylist(playlist) {
+  const snapshot = normalizePlaylist(playlist)
+  const data = load()
+  if (
+    !data.subscribedPlaylists.some(
+      (item) => Number(item.id) === snapshot.id,
+    )
+  ) {
+    data.subscribedPlaylists.unshift(snapshot)
+    persist()
+  }
+  return data.subscribedPlaylists
+}
+
+function removeSubscribedPlaylist(playlistId) {
+  const data = load()
+  data.subscribedPlaylists = data.subscribedPlaylists.filter(
+    (item) => Number(item.id) !== Number(playlistId),
+  )
+  persist()
+  return data.subscribedPlaylists
+}
+
 function addFavorite(song) {
   const snapshot = normalizeSong(song)
   const data = load()
@@ -216,6 +281,8 @@ module.exports = {
   deletePlaylist,
   addSongToPlaylist,
   removeSongFromPlaylist,
+  addSubscribedPlaylist,
+  removeSubscribedPlaylist,
   addFavorite,
   removeFavorite,
   recordRecent,

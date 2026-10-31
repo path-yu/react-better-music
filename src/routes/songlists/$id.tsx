@@ -35,7 +35,7 @@ import {
   updatePlaylistSubscribe,
 } from '../../api'
 import { useUserStore } from '../../store/user'
-import { useUiStore } from '../../store/ui'
+import { useLocalLibraryStore } from '../../store/localLibrary'
 import { toast } from '../../lib/toast'
 import { useDocumentTitle } from '../../lib/title'
 import {
@@ -66,7 +66,12 @@ function PlaylistDetailPage() {
   const isLogin = useUserStore((state) => state.isLogin)
   const profile = useUserStore((state) => state.profile)
   const loadPlaylists = useUserStore((state) => state.loadPlaylists)
-  const openLogin = useUiStore((state) => state.openLogin)
+  const localSubscribedPlaylists = useLocalLibraryStore(
+    (state) => state.subscribedPlaylists,
+  )
+  const toggleLocalSubscribedPlaylist = useLocalLibraryStore(
+    (state) => state.toggleSubscribedPlaylist,
+  )
 
   useEffect(() => {
     const controller = new AbortController()
@@ -157,11 +162,28 @@ function PlaylistDetailPage() {
   }
 
   const isOwner = Boolean(profile && profile.userId === detail.creator?.userId)
+  const localSubscribed = localSubscribedPlaylists.some(
+    (playlist) => Number(playlist.id) === Number(detail.id),
+  )
+  const subscribed = isLogin ? Boolean(detail.subscribed) : localSubscribed
+  const subscribedCount = Math.max(
+    0,
+    (detail.subscribedCount ?? 0) +
+      (!isLogin && localSubscribed && !detail.subscribed ? 1 : 0),
+  )
 
   const handleSubscribe = async () => {
+    // Guests can keep playlists in the local file library; only the online
+    // subscription path requires a NetEase session.
     if (!isLogin) {
-      toast.warning(i18n._(msg`请先登录`))
-      openLogin()
+      setSubscribing(true)
+      const next = await toggleLocalSubscribedPlaylist(detail)
+      if (next !== null) {
+        toast.success(
+          next ? i18n._(msg`收藏成功`) : i18n._(msg`已取消收藏`),
+        )
+      }
+      setSubscribing(false)
       return
     }
     setSubscribing(true)
@@ -363,14 +385,14 @@ function PlaylistDetailPage() {
               disabled={isOwner}
               onClick={() => void handleSubscribe()}
             >
-              {detail.subscribed ? (
+              {subscribed ? (
                 <Check className="mr-1.5 h-3.5 w-3.5" />
               ) : (
                 <Star className="mr-1.5 h-3.5 w-3.5" />
               )}
-              {detail.subscribed ? <Trans>已收藏</Trans> : <Trans>收藏</Trans>}
+              {subscribed ? <Trans>已收藏</Trans> : <Trans>收藏</Trans>}
               <span className="ml-1 text-black/30">
-                {formatNumber(detail.subscribedCount ?? 0)}
+                {formatNumber(subscribedCount)}
               </span>
             </Button>
             <Button
