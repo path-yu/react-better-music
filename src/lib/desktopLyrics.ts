@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { LyricLine } from './lyric'
 import { formatArtists } from './format'
+import { resizedImageUrl } from './image'
 import {
   bridgeFetch,
   getAuxWindowsState,
@@ -72,7 +73,9 @@ function snapshot(): LyricsSnapshot {
     title: song?.name ?? '',
     artists: formatArtists(song?.ar),
     album: song?.al.name ?? '',
-    cover: song?.al.picUrl ?? '',
+    // The HUD pages are separate origins; use the HTTPS CDN URL so WebView2
+    // does not block the cover as mixed content.
+    cover: resizedImageUrl(song?.al.picUrl, '320y320') ?? '',
     duration: song?.dt ?? 0,
     lines: state.lyricLines.map((line) => ({
       time: line.time,
@@ -114,6 +117,26 @@ export function useDesktopLyricsPublisher() {
       window.removeEventListener('qimiao:aux-windows', onAuxWindows)
     }
   }, [])
+
+  // Tauri/Electrobun may be started with an aux window already visible, or a
+  // bridge event can race the initial render. Poll only while publishing is
+  // disabled; the normal path is fully event-driven.
+  useEffect(() => {
+    if (!isDesktopApp() || enabled) return
+    let active = true
+    const sync = () => {
+      void getAuxWindowsState()
+        .then((state) => {
+          if (active && (state.lyrics || state.mini)) setEnabled(true)
+        })
+        .catch(() => undefined)
+    }
+    const timer = window.setInterval(sync, 3000)
+    return () => {
+      active = false
+      window.clearInterval(timer)
+    }
+  }, [enabled])
 
   useEffect(() => {
     if (!isDesktopApp() || !enabled) return

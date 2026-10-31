@@ -17,4 +17,8 @@ origin
 .cottontail-tmp
 build
 dist-electrobun
+dist-tauri
+src-tauri/target
 
+
+src-tauri/gen

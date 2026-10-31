@@ -5,6 +5,7 @@ import { useLingui } from '@lingui/react'
 import { useRouterState } from '@tanstack/react-router'
 import { Copy, Minus, Music2, Square, X } from 'lucide-react'
 import { isDesktopShell } from '../../lib/desktop'
+import { isTauriApp } from '../../lib/platform'
 import { usePlayerStore } from '../../store/player'
 import {
   closeWindow,
@@ -47,7 +48,9 @@ export function TitleBar() {
       ? i18n._(matched)
       : undefined
 
-  if (isDesktopShell()) return <DesktopTitleBar subtitle={subtitle} />
+  if (isTauriApp() || isDesktopShell()) {
+    return <DesktopTitleBar subtitle={subtitle} />
+  }
 
   return (
     <div className="titlebar">
@@ -129,6 +132,7 @@ function DesktopTitleBar({ subtitle }: { subtitle?: string }) {
   return (
     <div
       className={`desktop-titlebar ${DRAG_CLASS}${nativeControls ? ' desktop-titlebar--mac' : ''}`}
+      data-tauri-drag-region
       onDoubleClick={nativeControls ? undefined : handleBarDoubleClick}
     >
       <div className="titlebar-title flex items-center gap-1.5">
