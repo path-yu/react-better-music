@@ -137,9 +137,11 @@ async function resolveSongSource(song: Song): Promise<SongSource> {
       : null
   }
 
-  // VIP tracks can be replaced before the official lookup when the user opted
-  // into automatic source matching; failure simply falls back to NetEase.
-  if (song.fee !== 0 && autoReplace) {
+  // Only true VIP tracks get the matcher before the official lookup. `fee`
+  // is a bitmask, not a boolean: common free/low-quality tracks use fee=8
+  // and already have a normal CDN URL, so treating every non-zero fee as VIP
+  // made `/song/url/match` run for songs that did not need it.
+  if (song.fee === 1 && autoReplace) {
     const matched = await autoMatchedSource()
     if (matched) return matched
   }
@@ -265,7 +267,7 @@ const urlRequests = new Map<number, Promise<SongSource>>()
 function shouldBypassAudioCache(song: Song) {
   return (
     useSettingsStore.getState().autoReplaceVipSource &&
-    (song.fee !== 0 || (song.trialEnd ?? 0) > 0)
+    (song.fee === 1 || (song.trialEnd ?? 0) > 0)
   )
 }
 

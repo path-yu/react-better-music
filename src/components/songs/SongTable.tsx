@@ -27,6 +27,8 @@ interface SongTableProps {
   showHeader?: boolean
   /** Local playlist page: remove a song from that playlist. */
   onRemoveSong?: (song: Song) => void
+  /** Offset the sticky header when a tab bar is pinned above the table. */
+  stickyTop?: number
 }
 
 const VIRTUAL_THRESHOLD = 500
@@ -226,6 +228,7 @@ export function SongTable({
   className,
   showHeader = true,
   onRemoveSong,
+  stickyTop,
 }: SongTableProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const currentSong = usePlayerStore((state) => state.queue[state.currentIndex])
@@ -348,9 +351,12 @@ export function SongTable({
     <div
       className={cn(
         SONG_GRID,
-        'border-b border-black/8 bg-white/88 px-3 py-2 text-[11px] font-medium text-black/35 backdrop-blur-xl',
+        // Follow the active palette instead of a neutral white/near-black
+        // surface; custom dark themes were showing a grey strip here.
+        'border-b border-[var(--app-border)] bg-[var(--app-glass)] px-3 py-2 text-[11px] font-medium text-[var(--ink-3)] backdrop-blur-xl',
         !isVirtual && 'sticky top-0 z-10',
       )}
+      style={!isVirtual && stickyTop !== undefined ? { top: stickyTop } : undefined}
     >
       <span className="text-center">#</span>
       <span>

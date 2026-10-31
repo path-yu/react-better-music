@@ -410,8 +410,8 @@ function PlaylistDetailPage() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="mt-7">
-        <div className="sticky top-0 z-20 -mx-8 flex items-center justify-between gap-4 border-b border-black/8 bg-white/90 px-8 py-2 backdrop-blur-xl">
-          <TabsList>
+        <div className="sticky top-0 z-20 -mx-8 flex items-center justify-between gap-4 border-b border-[var(--app-border)] bg-[var(--app-glass)] px-8 py-2 backdrop-blur-xl">
+          <TabsList className="border-[var(--app-border)] bg-[var(--app-glass)]">
             <TabsTrigger value="songs">
               <Trans>歌曲列表</Trans>
               <span className="ml-1 text-[11px] text-black/30">{songs.length}</span>
@@ -438,6 +438,7 @@ function PlaylistDetailPage() {
           <SongTable
             songs={filteredSongs}
             playlistId={String(detail.id)}
+            stickyTop={57}
             emptyText={
               keyword
                 ? i18n._(msg`没有匹配的歌曲`)

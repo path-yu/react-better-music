@@ -138,7 +138,7 @@ function SonglistsPage() {
         </span>
       </div>
 
-      <div className="sticky top-0 z-20 -mx-8 mt-5 bg-white/88 px-8 py-2.5 backdrop-blur-xl">
+      <div className="sticky top-0 z-20 -mx-8 mt-5 border-b border-[var(--app-border)] bg-[var(--app-glass)] px-8 py-2.5 backdrop-blur-xl">
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -148,7 +148,7 @@ function SonglistsPage() {
               tagScrollerRef.current?.scrollBy({ left: -260, behavior: 'smooth' })
             }
             className={cn(
-              'pressable flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-black/8 bg-white text-black/45 hover:text-black/75 max-md:h-9 max-md:w-9',
+              'pressable flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--app-border-strong)] bg-accent/10 text-[var(--ink-3)] hover:bg-accent/20 hover:text-[var(--ink-1)] max-md:h-9 max-md:w-9',
               !canScrollTagsLeft && 'pointer-events-none opacity-25',
             )}
           >
@@ -169,7 +169,7 @@ function SonglistsPage() {
                   'shrink-0 rounded-full px-3 py-1.5 text-[11.5px] transition-colors',
                   activeTag === tag
                     ? 'bg-accent text-white'
-                    : 'border border-black/8 bg-[#f5f5f7] text-black/55 hover:bg-[#ececf0] hover:text-black/75',
+                    : 'border border-[var(--app-border-strong)] bg-accent/10 text-[var(--ink-2)] hover:bg-accent/20 hover:text-[var(--ink-1)]',
                 )}
               >
                 {tag === '全部'
@@ -189,7 +189,7 @@ function SonglistsPage() {
               tagScrollerRef.current?.scrollBy({ left: 260, behavior: 'smooth' })
             }
             className={cn(
-              'pressable flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-black/8 bg-white text-black/45 hover:text-black/75 max-md:h-9 max-md:w-9',
+              'pressable flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--app-border-strong)] bg-accent/10 text-[var(--ink-3)] hover:bg-accent/20 hover:text-[var(--ink-1)] max-md:h-9 max-md:w-9',
               !canScrollTagsRight && 'pointer-events-none opacity-25',
             )}
           >
@@ -200,7 +200,7 @@ function SonglistsPage() {
             <PopoverTrigger asChild>
               <button
                 type="button"
-                className="pressable flex h-7 shrink-0 items-center gap-1 rounded-full border border-black/8 bg-white px-2.5 text-[11px] text-black/55 hover:text-black/80"
+                className="pressable flex h-7 shrink-0 items-center gap-1 rounded-full border border-[var(--app-border-strong)] bg-accent/10 px-2.5 text-[11px] text-[var(--ink-2)] hover:bg-accent/20 hover:text-[var(--ink-1)]"
               >
                 <Trans>更多</Trans>
                 <ChevronDown className="h-3 w-3" />
@@ -226,7 +226,7 @@ function SonglistsPage() {
                       'rounded-full px-2.5 py-1 text-[11px] transition-colors',
                       activeTag === tag
                         ? 'bg-accent text-white'
-                        : 'bg-[#f5f5f7] text-black/55 hover:bg-[#ececf0] hover:text-black/75',
+                        : 'bg-accent/10 text-[var(--ink-2)] hover:bg-accent/20 hover:text-[var(--ink-1)]',
                     )}
                   >
                     {tag === '全部'
