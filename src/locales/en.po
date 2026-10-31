@@ -677,10 +677,10 @@ msgstr "Send code"
 msgid "取消"
 msgstr "Cancel"
 
-#: src/components/player/NowPlaying.tsx:270
-#: src/components/player/NowPlaying.tsx:272
+#: src/components/player/NowPlaying.tsx:266
+#: src/components/player/NowPlaying.tsx:268
 #: src/components/player/PlayerBar.tsx:1090
-#: src/components/songs/SongContextMenu.tsx:231
+#: src/components/songs/SongContextMenu.tsx:227
 #: src/components/songs/SongTable.tsx:174
 msgid "取消喜欢"
 msgstr "Unlike"
@@ -718,10 +718,10 @@ msgstr "Browse categories to the left"
 msgid "听友评论"
 msgstr "Listener comments"
 
-#: src/components/player/NowPlaying.tsx:270
-#: src/components/player/NowPlaying.tsx:272
+#: src/components/player/NowPlaying.tsx:266
+#: src/components/player/NowPlaying.tsx:268
 #: src/components/player/PlayerBar.tsx:1090
-#: src/components/songs/SongContextMenu.tsx:231
+#: src/components/songs/SongContextMenu.tsx:227
 #: src/components/songs/SongTable.tsx:174
 msgid "喜欢"
 msgstr "Like"
@@ -909,8 +909,8 @@ msgstr "Saved"
 #. placeholder {0}: choice.name
 #. placeholder {0}: playlist.name
 #: src/components/player/PlaylistPicker.tsx:100
-#: src/components/songs/SongContextMenu.tsx:140
-#: src/components/songs/SongContextMenu.tsx:158
+#: src/components/songs/SongContextMenu.tsx:136
+#: src/components/songs/SongContextMenu.tsx:154
 msgid "已收藏到「{0}」"
 msgstr "Saved to \"{0}\""
 
@@ -1013,7 +1013,7 @@ msgstr "Open"
 #. placeholder {0}: album.name
 #. placeholder {0}: currentSong.al.name
 #: src/components/cards/AlbumCard.tsx:28
-#: src/components/player/NowPlaying.tsx:367
+#: src/components/player/NowPlaying.tsx:363
 msgid "打开专辑 {0}"
 msgstr "Open album {0}"
 
@@ -1146,8 +1146,8 @@ msgstr "Play (Space)"
 msgid "播放全部"
 msgstr "Play all"
 
-#: src/components/player/NowPlaying.tsx:288
-#: src/components/player/NowPlaying.tsx:289
+#: src/components/player/NowPlaying.tsx:284
+#: src/components/player/NowPlaying.tsx:285
 #: src/components/player/PlayerBar.tsx:1208
 #: src/components/player/QueuePanel.tsx:76
 #: src/components/player/QueuePanel.tsx:83
@@ -1217,22 +1217,22 @@ msgstr "Save"
 msgid "收藏专辑加载失败"
 msgstr "Failed to load saved albums"
 
-#: src/components/songs/SongContextMenu.tsx:246
+#: src/components/songs/SongContextMenu.tsx:242
 msgid "收藏到本地歌单"
 msgstr "Add to local playlist"
 
 #: src/components/player/PlaylistPicker.tsx:114
 #: src/components/player/PlaylistPicker.tsx:115
 #: src/components/player/PlaylistPicker.tsx:131
-#: src/components/songs/SongContextMenu.tsx:217
-#: src/components/songs/SongContextMenu.tsx:287
+#: src/components/songs/SongContextMenu.tsx:213
+#: src/components/songs/SongContextMenu.tsx:283
 msgid "收藏到歌单"
 msgstr "Add to playlist"
 
 #: src/components/player/PlaylistPicker.tsx:96
 #: src/components/player/PlaylistPicker.tsx:103
-#: src/components/songs/SongContextMenu.tsx:154
-#: src/components/songs/SongContextMenu.tsx:162
+#: src/components/songs/SongContextMenu.tsx:150
+#: src/components/songs/SongContextMenu.tsx:158
 #: src/routes/songlists/$id.tsx:195
 #: src/store/localLibrary.ts:121
 #: src/store/localLibrary.ts:152
@@ -1335,7 +1335,7 @@ msgid "暂无可播放歌曲"
 msgstr "No playable songs"
 
 #: src/components/player/PlaylistPicker.tsx:158
-#: src/components/songs/SongContextMenu.tsx:316
+#: src/components/songs/SongContextMenu.tsx:312
 msgid "暂无可用歌单"
 msgstr "No playlists available"
 
@@ -1356,7 +1356,7 @@ msgid "暂无本地歌单"
 msgstr "No local playlists"
 
 #: src/components/player/PlaylistPicker.tsx:160
-#: src/components/songs/SongContextMenu.tsx:270
+#: src/components/songs/SongContextMenu.tsx:266
 msgid "暂无本地歌单，请先在侧栏创建"
 msgstr "No local playlists yet. Create one in the sidebar first."
 
@@ -1380,7 +1380,7 @@ msgstr "No popular tracks yet"
 msgid "暂无相关 MV"
 msgstr "No related MVs yet"
 
-#: src/components/player/NowPlaying.tsx:199
+#: src/components/player/NowPlaying.tsx:195
 msgid "暂无相关视频"
 msgstr "No related videos"
 
@@ -1419,7 +1419,7 @@ msgstr "Change avatar"
 msgid "未找到其他可用音源"
 msgstr "No alternative source found"
 
-#: src/components/songs/SongContextMenu.tsx:75
+#: src/components/songs/SongContextMenu.tsx:71
 msgid "未找到相关视频"
 msgstr "No related videos found"
 
@@ -1462,7 +1462,7 @@ msgstr "Ultra"
 msgid "查看 {0} 的主页"
 msgstr "View {0}'s profile"
 
-#: src/components/player/NowPlaying.tsx:383
+#: src/components/player/NowPlaying.tsx:379
 msgid "查看专辑"
 msgstr "View album"
 
@@ -1552,7 +1552,7 @@ msgid "歌单信息已保存"
 msgstr "Playlist saved"
 
 #: src/components/player/PlaylistPicker.tsx:72
-#: src/components/songs/SongContextMenu.tsx:126
+#: src/components/songs/SongContextMenu.tsx:122
 #: src/routes/search.tsx:320
 #: src/routes/songlists/$id.edit.tsx:68
 #: src/routes/songlists/$id.tsx:105
@@ -1615,11 +1615,11 @@ msgstr "Failed to load track"
 msgid "歌曲已在播放列表中"
 msgstr "Track is already in the queue"
 
-#: src/components/songs/SongContextMenu.tsx:189
+#: src/components/songs/SongContextMenu.tsx:185
 msgid "歌曲操作"
 msgstr "Song actions"
 
-#: src/components/player/NowPlaying.tsx:452
+#: src/components/player/NowPlaying.tsx:448
 msgid "歌曲评论"
 msgstr "Song comments"
 
@@ -1627,11 +1627,11 @@ msgstr "Song comments"
 msgid "歌曲资源已失效"
 msgstr "Track source expired"
 
-#: src/components/player/NowPlaying.tsx:414
+#: src/components/player/NowPlaying.tsx:410
 msgid "歌词"
 msgstr "Lyrics"
 
-#: src/components/player/NowPlaying.tsx:400
+#: src/components/player/NowPlaying.tsx:396
 msgid "歌词与评论"
 msgstr "Lyrics and comments"
 
@@ -1644,7 +1644,7 @@ msgstr "Lyrics display"
 #~ msgid "歌词显示方式"
 #~ msgstr "Lyric display mode"
 
-#: src/components/player/NowPlaying.tsx:437
+#: src/components/player/NowPlaying.tsx:433
 msgid "正在加载歌词…"
 msgstr "Loading lyrics…"
 
@@ -1652,7 +1652,7 @@ msgstr "Loading lyrics…"
 msgid "正在加载音源"
 msgstr "Loading source"
 
-#: src/components/player/NowPlaying.tsx:346
+#: src/components/player/NowPlaying.tsx:342
 #: src/components/player/PlayerBar.tsx:1111
 msgid "正在加载音源…"
 msgstr "Loading source…"
@@ -1671,7 +1671,7 @@ msgstr "Now playing"
 msgid "正在缓冲"
 msgstr "Buffering"
 
-#: src/components/player/NowPlaying.tsx:346
+#: src/components/player/NowPlaying.tsx:342
 msgid "正在缓冲…"
 msgstr "Buffering…"
 
@@ -1920,14 +1920,14 @@ msgstr "Your session is no longer valid. Please sign in again."
 msgid "相似歌手"
 msgstr "Similar artists"
 
-#: src/components/player/NowPlaying.tsx:308
-#: src/components/player/NowPlaying.tsx:309
-#: src/components/songs/SongContextMenu.tsx:208
+#: src/components/player/NowPlaying.tsx:304
+#: src/components/player/NowPlaying.tsx:305
+#: src/components/songs/SongContextMenu.tsx:204
 msgid "相关视频"
 msgstr "Related videos"
 
-#: src/components/player/NowPlaying.tsx:220
-#: src/components/songs/SongContextMenu.tsx:95
+#: src/components/player/NowPlaying.tsx:216
+#: src/components/songs/SongContextMenu.tsx:91
 msgid "相关视频加载失败"
 msgstr "Failed to load related videos"
 
@@ -2122,7 +2122,7 @@ msgstr "Settings"
 
 #: src/components/comments/CommentSection.tsx:39
 #: src/components/comments/CommentSection.tsx:392
-#: src/components/player/NowPlaying.tsx:424
+#: src/components/player/NowPlaying.tsx:420
 #: src/routes/songlists/$id.tsx:420
 msgid "评论"
 msgstr "Comments"
@@ -2281,8 +2281,8 @@ msgstr "Higher · 96kbps"
 msgid "运动"
 msgstr "Workout"
 
-#: src/components/songs/SongContextMenu.tsx:240
-#: src/components/songs/SongContextMenu.tsx:281
+#: src/components/songs/SongContextMenu.tsx:236
+#: src/components/songs/SongContextMenu.tsx:277
 #: src/routes/mv/$id.tsx:165
 #: src/routes/users/$id.tsx:203
 #: src/routes/video/$id.tsx:107

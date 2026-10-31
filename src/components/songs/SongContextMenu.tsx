@@ -65,11 +65,7 @@ export function SongContextMenu({
     if (busy) return
     setBusy(true)
     try {
-      const videos = await fetchRelatedVideos(
-        song.id,
-        song.mv ?? song.mvid,
-        8,
-      )
+      const videos = await fetchRelatedVideos(song, 8)
       const first = videos[0]
       if (!first) {
         toast.info(i18n._(msg`未找到相关视频`))

@@ -190,11 +190,7 @@ export function NowPlaying() {
     if (videoLoading) return
     setVideoLoading(true)
     try {
-      const videos = await fetchRelatedVideos(
-        currentSong.id,
-        currentSong.mv ?? currentSong.mvid,
-        12,
-      )
+      const videos = await fetchRelatedVideos(currentSong, 12)
       if (!videos.length) {
         toast.info(i18n._(msg`暂无相关视频`))
         return

@@ -456,22 +456,102 @@ export async function fetchMlogUrl(id: number | string, signal?: AbortSignal) {
   return secureMediaUrl(video?.urlInfos?.[0]?.url ?? video?.urlInfo?.url) ?? ''
 }
 
-/** Videos attached to a song (Mlog clips, optionally its MV first). */
+/**
+ * Videos attached to a song. The Mlog recommendation endpoint is useful for
+ * clips, but it is not an official MV search; resolve the song's own MV (or an
+ * exact title/artist MV search) first so the entry point never opens a random
+ * TV-performance clip when a real MV exists.
+ */
 export async function fetchRelatedVideos(
-  songId: number | string,
-  mvid?: number | string,
+  song: Pick<Song, 'id' | 'name' | 'ar' | 'mv' | 'mvid'>,
   limit = 12,
   signal?: AbortSignal,
 ) {
+  const official: VideoItem[] = []
+  const mvId = song.mv ?? song.mvid
+  const artistNames = new Set(
+    (song.ar ?? []).map((artist) => artist.name.trim().toLowerCase()),
+  )
+  const canonicalTitle = (value: string) =>
+    value
+      .replace(/[（(][^）)]*[）)]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase()
+  const songTitle = canonicalTitle(song.name)
+
+  const scoreMv = (mv: VideoItem) => {
+    const title = canonicalTitle(mv.title)
+    const artist = (mv.artist ?? '').trim().toLowerCase()
+    let score = 0
+    if (title === songTitle) score += 100
+    else if (title.includes(songTitle) || songTitle.includes(title)) score += 55
+    else return -1
+    if (!artistNames.size || [...artistNames].some((name) => artist.includes(name))) {
+      score += 40
+    } else {
+      return -1
+    }
+    // Prefer the studio/official cut over live, programme or behind-the-scenes
+    // clips that NetEase sometimes stores as the song's `mv` reference.
+    if (/live|现场|演唱会|节目|花絮|翻唱|合唱/i.test(mv.title)) score -= 30
+    return score
+  }
+
+  // Search by song + artist first. A song's `mv` field can point at a TV
+  // programme or teaser rather than the official MV (e.g. 我怀念的 → 5484821),
+  // so never trust that id without matching its title and artist.
+  try {
+    const query = [song.name, ...(song.ar ?? []).map((artist) => artist.name)]
+      .filter(Boolean)
+      .join(' ')
+    const result = await searchAll(
+      { keywords: query, type: '1004', limit: 8 },
+      signal,
+    )
+    official.push(
+      ...(result.mvs ?? [])
+        .map((mv) => ({ mv, score: scoreMv(mv) }))
+        .filter((item) => item.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 3)
+        .map((item) => item.mv),
+    )
+  } catch {
+    // Fall through to the song's mv id and then Mlog recommendations.
+  }
+
+  if (!official.length && mvId && Number(mvId) > 0) {
+    try {
+      const detail = await fetchMvDetail(mvId)
+      if (detail) {
+        const candidate = videoFromMv(detail)
+        if (scoreMv(candidate) > 0) official.push(candidate)
+      }
+    } catch {
+      // Keep Mlog recommendations as the fallback.
+    }
+  }
+
   const res = await get<{ data?: { feeds?: RawRelatedVideoFeed[] } }>(
     '/mlog/music/rcmd',
     // A zero `mv` means "no MV"; sending it makes the endpoint skip the list.
-    { songid: songId, mvid: mvid && Number(mvid) > 0 ? mvid : undefined, limit },
+    { songid: song.id, mvid: mvId && Number(mvId) > 0 ? mvId : undefined, limit },
     signal,
   )
-  return (res.data?.feeds ?? [])
+  const clips = (res.data?.feeds ?? [])
     .map(relatedVideoFromFeed)
     .filter((item): item is VideoItem => Boolean(item))
+
+  const seen = new Set<string>()
+  return [...official, ...clips]
+    .filter((item) => {
+      const key = `${item.kind}:${item.id}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+    .slice(0, limit)
 }
 
 export async function fetchSimilarMv(mvid: number | string) {
