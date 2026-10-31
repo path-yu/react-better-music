@@ -36,6 +36,7 @@ import { VolumeSlider } from './VolumeSlider'
 import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
 import { useLocalLibraryStore } from '../../store/localLibrary'
+import { useVideoPlaybackStore } from '../../store/videoPlayback'
 import {
   LYRIC_DISPLAY_OPTIONS,
   NOWPLAYING_BACKDROP_OPTIONS,
@@ -128,6 +129,15 @@ export function PlayerBar() {
   const showNowPlaying = usePlayerStore((state) => state.showNowPlaying)
   const resumeAt = usePlayerStore((state) => state.resumeAt)
   const consumeResumeAt = usePlayerStore((state) => state.consumeResumeAt)
+
+  const videoActive = useVideoPlaybackStore((state) => state.active)
+  const videoPlaying = useVideoPlaybackStore((state) => state.playing)
+  const videoCurrentTime = useVideoPlaybackStore((state) => state.currentTime)
+  const videoDuration = useVideoPlaybackStore((state) => state.duration)
+  const videoVolume = useVideoPlaybackStore((state) => state.volume)
+  const toggleVideo = useVideoPlaybackStore((state) => state.toggle)
+  const seekVideo = useVideoPlaybackStore((state) => state.seek)
+  const setVideoVolume = useVideoPlaybackStore((state) => state.setVolume)
 
   const playLevel = useSettingsStore((state) => state.playLevel)
   const setPlayLevel = useSettingsStore((state) => state.setPlayLevel)
@@ -726,6 +736,15 @@ export function PlayerBar() {
   const displayTime = pendingTime ?? (sourceMatches ? currentTime : 0)
   const displayPercent = pendingSeek ?? (sourceMatches ? percent : 0)
   const displayBuffered = sourceMatches ? buffered : 0
+  const playbackTime = videoActive ? videoCurrentTime : displayTime
+  const playbackDurationMs = videoActive ? videoDuration * 1000 : duration
+  const playbackPercent = videoActive
+    ? videoDuration
+      ? Math.min(100, (videoCurrentTime / videoDuration) * 100)
+      : 0
+    : displayPercent
+  const playbackPlaying = videoActive ? videoPlaying : playing
+  const playbackBusy = videoActive ? false : busy
 
   const handleSeek = (value: number) => {
     const incoming = incomingRef.current
@@ -1169,25 +1188,32 @@ export function PlayerBar() {
           <button
             type="button"
             aria-label={
-              loadingSource
-                ? i18n._(msg`正在加载音源`)
-                : buffering
-                  ? i18n._(msg`正在缓冲`)
-                  : playing
-                    ? i18n._(msg`暂停`)
-                    : i18n._(msg`播放`)
+              videoActive
+                ? playbackPlaying
+                  ? i18n._(msg`暂停`)
+                  : i18n._(msg`播放`)
+                : loadingSource
+                  ? i18n._(msg`正在加载音源`)
+                  : buffering
+                    ? i18n._(msg`正在缓冲`)
+                    : playbackPlaying
+                      ? i18n._(msg`暂停`)
+                      : i18n._(msg`播放`)
             }
-            onClick={() => void togglePlay()}
+            onClick={() => {
+              if (videoActive) toggleVideo()
+              else void togglePlay()
+            }}
             title={
-              playing
+              playbackPlaying
                 ? i18n._(msg`暂停（空格）`)
                 : i18n._(msg`播放（空格）`)
             }
             className="accent-play-shadow pressable flex h-9 w-9 items-center justify-center rounded-full bg-accent text-white hover:bg-accent-hover max-md:h-10 max-md:w-10"
           >
-            {busy ? (
+            {playbackBusy ? (
               <Loader2 className="h-5 w-5 animate-spin" />
-            ) : playing ? (
+            ) : playbackPlaying ? (
               <Pause className="h-5 w-5 fill-current" />
             ) : (
               <Play className="ml-[1px] h-5 w-5 fill-current" />
@@ -1216,17 +1242,23 @@ export function PlayerBar() {
             data-testid="elapsed-time"
             className="w-9 shrink-0 text-right text-[11px] tabular-nums text-black/35 max-md:hidden"
           >
-            {formatDuration(displayTime * 1000)}
+            {formatDuration(playbackTime * 1000)}
           </span>
           <ProgressSlider
-            key={`${currentSong.id}-${playToken}`}
-            value={displayPercent}
-            buffered={displayBuffered}
-            onChange={handleSeek}
-            valueText={`${formatDuration(displayTime * 1000)} / ${formatDuration(duration)}`}
+            key={`${currentSong.id}-${playToken}-${videoActive ? 'video' : 'audio'}`}
+            value={playbackPercent}
+            buffered={videoActive ? 0 : displayBuffered}
+            onChange={(value) => {
+              if (videoActive) {
+                if (videoDuration) seekVideo((value / 100) * videoDuration)
+                return
+              }
+              handleSeek(value)
+            }}
+            valueText={`${formatDuration(playbackTime * 1000)} / ${formatDuration(playbackDurationMs)}`}
           />
           <span className="w-9 shrink-0 text-[11px] tabular-nums text-black/35 max-md:hidden">
-            {formatDuration(duration)}
+            {formatDuration(playbackDurationMs)}
           </span>
         </div>
       </div>
@@ -1301,7 +1333,10 @@ export function PlayerBar() {
             className="w-[52px] px-0 py-3"
           >
             <div className="flex flex-col items-center gap-2">
-              <VolumeSlider value={volume} onChange={setVolume} />
+              <VolumeSlider
+                value={videoActive ? videoVolume : volume}
+                onChange={videoActive ? setVideoVolume : setVolume}
+              />
               <span className="text-[11px] tabular-nums text-black/35">{volume}</span>
             </div>
           </PopoverContent>

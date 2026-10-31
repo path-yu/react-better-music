@@ -7,6 +7,8 @@ interface MvVideoPlayerProps {
   src: string
   poster?: string
   autoPlay?: boolean
+  /** Fill the parent box instead of enforcing a 16:9 aspect ratio. */
+  fill?: boolean
   onPlay?: () => void
   onEnded?: () => void
 }
@@ -37,13 +39,26 @@ export function MvVideoPlayer({
   src,
   poster,
   autoPlay = false,
+  fill = false,
   onPlay,
   onEnded,
 }: MvVideoPlayerProps) {
   return (
     <VideoPlayer>
       <I18nProvider locale="zh-CN">
-        <VideoSkin style={skinStyle}>
+        <VideoSkin
+          style={
+            fill
+              ? ({
+                  ...skinStyle,
+                  height: '100%',
+                  aspectRatio: 'auto',
+                  '--media-frame-border': 'transparent',
+                  '--media-video-border-radius': '0px',
+                } as CSSProperties)
+              : skinStyle
+          }
+        >
           <Video
             src={src}
             poster={poster}

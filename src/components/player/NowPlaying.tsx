@@ -3,16 +3,25 @@ import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { useNavigate, useRouterState } from '@tanstack/react-router'
-import { Disc3, Film, Heart, ListMusic, Loader2, MessageSquareText } from 'lucide-react'
+import {
+  Disc3,
+  Film,
+  Heart,
+  ListMusic,
+  Loader2,
+  MessageSquareText,
+} from 'lucide-react'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
 import { LyricsPanel } from './LyricsPanel'
 import AmbientBackground from './AmbientBackground'
+import { MvVideoPlayer } from '../mv/MvVideoPlayer'
 import { CommentSection } from '../comments/CommentSection'
-import { fetchRelatedVideos } from '../../api'
+import { fetchMvUrl, fetchRelatedVideos } from '../../api'
 import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
 import { useLocalLibraryStore } from '../../store/localLibrary'
+import { useVideoPlaybackStore } from '../../store/videoPlayback'
 import { useSettingsStore } from '../../store/settings'
 import { findLyricIndex } from '../../lib/lyric'
 import { seekAudio } from '../../lib/audio'
@@ -58,11 +67,25 @@ export function NowPlaying() {
       ? likedIds.includes(currentSong.id)
       : localFavorites.some((song) => song.id === currentSong.id)
     : false
+  const setVideoActive = useVideoPlaybackStore((state) => state.setActive)
+  const bindVideo = useVideoPlaybackStore((state) => state.bind)
   const backdrop =
     useSettingsStore((state) => state.nowPlayingBackdrop) ?? 'gradient'
+  const nowPlayingMode = useSettingsStore((state) => state.nowPlayingMode)
+  const setNowPlayingMode = useSettingsStore(
+    (state) => state.setNowPlayingMode,
+  )
   const [panel, setPanel] = useState<'lyrics' | 'comments'>('lyrics')
   const [palette, setPalette] = useState<Palette>(FALLBACK_PALETTE)
   const [videoLoading, setVideoLoading] = useState(false)
+  const [mvMode, setMvMode] = useState(false)
+  const [mvUrl, setMvUrl] = useState('')
+  const [mvLoading, setMvLoading] = useState(false)
+  const [mvFailed, setMvFailed] = useState(false)
+  const mvWasPlayingRef = useRef(false)
+  const videoEndedSongRef = useRef<number | null>(null)
+  const mvId = currentSong?.mv ?? currentSong?.mvid
+  const hasMv = Boolean(mvId && Number(mvId) > 0)
   // The CDN URLs returned by the API are HTTP; WebView2 rejects them as mixed
   // content. Normalise to a secure, smaller copy before colour sampling.
   const ambientSource = useMemo(
@@ -88,7 +111,77 @@ export function NowPlaying() {
 
   useEffect(() => {
     setPanel('lyrics')
+    if (mvMode && mvWasPlayingRef.current) {
+      // Leaving video mode by changing tracks should continue with the new
+      // song's audio rather than leaving playback paused.
+      usePlayerStore.getState().setPlaying(true)
+    }
+    setMvMode(false)
+    setMvUrl('')
+    setMvFailed(false)
+    setMvLoading(false)
+    useVideoPlaybackStore.getState().setActive(false)
+    bindVideo(null)
+    mvWasPlayingRef.current = false
+    videoEndedSongRef.current = null
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSong?.id])
+
+  useEffect(() => {
+    if (show) return
+    setVideoActive(false)
+    if (mvMode) {
+      setMvMode(false)
+      setMvUrl('')
+      if (mvWasPlayingRef.current) usePlayerStore.getState().setPlaying(true)
+      mvWasPlayingRef.current = false
+    }
+  }, [show, mvMode, setVideoActive])
+
+  // If the user last chose video mode, keep that preference for every
+  // following track that has an MV. This also restores the video view when the
+  // immersive player is reopened in a later session.
+  useEffect(() => {
+    if (
+      !show ||
+      mvMode ||
+      mvLoading ||
+      nowPlayingMode !== 'video' ||
+      !hasMv ||
+      videoEndedSongRef.current === currentSong?.id
+    ) {
+      return
+    }
+    void openMvMode()
+    // openMvMode intentionally reads the latest song/mv state on each track.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [show, currentSong?.id, hasMv, mvLoading, mvMode, nowPlayingMode])
+
+  useEffect(() => {
+    if (!mvMode || !mvUrl) return
+    // VideoSkin mounts the real <video> element after its player context is
+    // ready, so retry briefly instead of assuming it exists on the next tick.
+    let timer = 0
+    let attempts = 0
+    let cancelled = false
+    const attach = () => {
+      if (cancelled) return
+      const video =
+        document.querySelector<HTMLVideoElement>('.np-video-player video')
+      if (video) {
+        bindVideo(video)
+        return
+      }
+      if (attempts++ >= 20) return
+      timer = window.setTimeout(attach, 50)
+    }
+    attach()
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+      bindVideo(null)
+    }
+  }, [bindVideo, mvMode, mvUrl])
 
   // Only reset when the artwork changes; reopening the same song keeps the
   // cached palette instead of flashing back to the un-tinted backdrop.
@@ -186,6 +279,55 @@ export function NowPlaying() {
     void navigate({ to: '/albums/$id', params: { id: String(albumId) } })
   }
 
+  const closeMvMode = (resumeAudio = true, rememberAudio = true) => {
+    setMvMode(false)
+    setMvUrl('')
+    setMvFailed(false)
+    setMvLoading(false)
+    useVideoPlaybackStore.getState().setActive(false)
+    bindVideo(null)
+    if (rememberAudio) setNowPlayingMode('audio')
+    if (resumeAudio && mvWasPlayingRef.current) {
+      usePlayerStore.getState().setPlaying(true)
+    }
+    mvWasPlayingRef.current = false
+  }
+
+  const openMvMode = async () => {
+    if (mvMode || !hasMv || !mvId) return
+    mvWasPlayingRef.current = usePlayerStore.getState().playing
+    usePlayerStore.getState().setPlaying(false)
+    setMvMode(true)
+    setMvFailed(false)
+    setMvLoading(true)
+    useVideoPlaybackStore.getState().setActive(true)
+    try {
+      // The song's raw `mv` can point at a programme/teaser clip. Resolve the
+      // official MV through search first, then request that video's URL.
+      const related = await fetchRelatedVideos(currentSong, 12)
+      const official = related.find((video) => video.kind === 'mv')
+      if (!official) throw new Error('no official mv')
+      const url = await fetchMvUrl(official.id)
+      if (!url) throw new Error('empty mv url')
+      setMvUrl(url)
+    } catch {
+      setMvFailed(true)
+      toast.error(i18n._(msg`MV 加载失败`))
+    } finally {
+      setMvLoading(false)
+    }
+  }
+
+  const toggleMvMode = async () => {
+    if (mvMode) {
+      closeMvMode()
+      return
+    }
+    videoEndedSongRef.current = null
+    setNowPlayingMode('video')
+    await openMvMode()
+  }
+
   const openRelatedVideos = async () => {
     if (videoLoading) return
     setVideoLoading(true)
@@ -247,7 +389,12 @@ export function NowPlaying() {
       {/* The player bar floats over the bottom of the backdrop, so keep the
           immersive content clear of it. */}
       <div className="np-content-enter relative flex h-full flex-col pb-[76px]">
-        <div className="flex h-[58px] flex-none items-center justify-between px-6">
+        <div
+          className={cn(
+            'flex h-[58px] flex-none items-center justify-between px-6',
+            mvMode && 'hidden',
+          )}
+        >
           {/* <button
             type="button"
             aria-label={i18n._(msg`收起播放页`)}
@@ -291,6 +438,62 @@ export function NowPlaying() {
           </div>
         </div>
 
+        {mvMode ? (
+          <div className="np-video-player relative min-h-0 flex-1 overflow-hidden bg-black">
+            {mvLoading ? (
+              <div className="flex h-full items-center justify-center text-white/50">
+                <Loader2 className="h-5 w-5 animate-spin" />
+              </div>
+            ) : mvFailed ? (
+              <div className="flex h-full flex-col items-center justify-center gap-3 text-white/55">
+                <p className="text-[12px]">
+                  <Trans>MV 加载失败</Trans>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => closeMvMode()}
+                  className="rounded-full border border-white/15 px-3 py-1.5 text-[11px] text-white/70 transition-colors hover:bg-white/10"
+                >
+                  <Trans>返回音乐</Trans>
+                </button>
+              </div>
+            ) : mvUrl ? (
+              <MvVideoPlayer
+                key={mvUrl}
+                src={mvUrl}
+                poster={
+                  resizedImageUrl(currentSong.al.picUrl, '640y360') ??
+                  undefined
+                }
+                autoPlay
+                fill
+                onPlay={() => usePlayerStore.getState().setPlaying(false)}
+                onEnded={() => {
+                  videoEndedSongRef.current = currentSong.id
+                  closeMvMode(true, false)
+                }}
+              />
+            ) : null}
+
+            <div className="pointer-events-none absolute inset-x-0 top-10 z-20 flex items-start gap-3 bg-gradient-to-b from-black/65 via-black/25 to-transparent px-5 pb-12 pt-2">
+              <div className="min-w-0">
+                <p className="eyebrow text-white/35">MV</p>
+                <h2 className="headline-lg mt-1 truncate text-[24px]">
+                  {currentSong.name}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => closeMvMode()}
+                className="np-round-button pressable pointer-events-auto ml-auto flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] text-white/75"
+              >
+                <Disc3 className="h-3.5 w-3.5" />
+                <Trans>音乐</Trans>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
         {/* Desktop: the columns own their scrolling (lyrics/comments), so the
             page itself never scrolls and the wheel target stays predictable.
             Mobile: one single scroll container for the whole page. */}
@@ -299,6 +502,18 @@ export function NowPlaying() {
             <div className="max-w-[360px] text-center">
               <div className="flex min-w-0 items-center justify-center gap-1.5">
                 <h2 className="headline-lg min-w-0 truncate text-[24px]">{currentSong.name}</h2>
+                {hasMv ? (
+                  <button
+                    type="button"
+                    aria-label={i18n._(msg`切换到视频播放`)}
+                    title={i18n._(msg`切换到视频播放`)}
+                    aria-pressed={mvMode}
+                    onClick={() => void toggleMvMode()}
+                    className="shrink-0 rounded-[4px] border-0 bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-accent transition-colors hover:bg-accent/25"
+                  >
+                    MV
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   aria-label={i18n._(msg`相关视频`)}
@@ -453,6 +668,8 @@ export function NowPlaying() {
             </div>
           </div>
         </div>
+          </>
+        )}
       </div>
     </div>
   )

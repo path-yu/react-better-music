@@ -172,7 +172,7 @@ export function QueuePanel() {
                           </span>
                         ) : null}
                         {song.mv || song.mvid ? (
-                          <span className="shrink-0 rounded bg-accent/10 px-1 text-[11px] text-accent">
+                          <span className="queue-mv-badge shrink-0 rounded-[4px] bg-accent/15 px-1 text-[10px] font-medium leading-[16px] text-accent">
                             MV
                           </span>
                         ) : null}

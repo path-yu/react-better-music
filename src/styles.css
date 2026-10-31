@@ -564,6 +564,26 @@ html.desktop .app-window {
   flex: none;
 }
 
+/* Queue MV tag: theme accent fill with the same white rim used by the
+   immersive player's pill controls. The inset shadow keeps the rim visible on
+   very light accent tints without changing the 4px shape. */
+.queue-mv-badge {
+  border: 1px solid rgb(255 255 255 / 0.9) !important;
+  box-shadow: inset 0 0 0 0.5px rgb(255 255 255 / 0.55);
+}
+
+/* The immersive MV view uses the app's bottom player bar; hide Video.js's
+   duplicate transport/progress surface inside the Now Playing overlay. */
+.np-video-player .video-controls-content,
+.np-video-player .video-controls-backdrop,
+.np-video-player video::-webkit-media-controls {
+  display: none !important;
+}
+
+.np-video-player video {
+  cursor: pointer;
+}
+
 .mv-related__list {
   display: flex;
   min-height: 0;
