@@ -142,8 +142,8 @@ msgstr "MV"
 msgid "MV 不存在或无法访问"
 msgstr "MV 不存在或无法访问"
 
-#: src/components/player/NowPlaying.tsx:315
-#: src/components/player/NowPlaying.tsx:450
+#: src/components/player/NowPlaying.tsx:337
+#: src/components/player/NowPlaying.tsx:468
 #: src/routes/latest-mv.tsx:81
 #: src/routes/search.tsx:508
 msgid "MV 加载失败"
@@ -546,8 +546,8 @@ msgstr "切换到浅色模式"
 msgid "切换到深色模式"
 msgstr "切换到深色模式"
 
-#: src/components/player/NowPlaying.tsx:502
-#: src/components/player/NowPlaying.tsx:503
+#: src/components/player/NowPlaying.tsx:516
+#: src/components/player/NowPlaying.tsx:517
 msgid "切换到视频播放"
 msgstr "切换到视频播放"
 
@@ -684,8 +684,8 @@ msgstr "发送验证码"
 msgid "取消"
 msgstr "取消"
 
-#: src/components/player/NowPlaying.tsx:413
-#: src/components/player/NowPlaying.tsx:415
+#: src/components/player/NowPlaying.tsx:435
+#: src/components/player/NowPlaying.tsx:437
 #: src/components/player/PlayerBar.tsx:1109
 #: src/components/songs/SongContextMenu.tsx:227
 #: src/components/songs/SongTable.tsx:174
@@ -725,8 +725,8 @@ msgstr "向左浏览分类"
 msgid "听友评论"
 msgstr "听友评论"
 
-#: src/components/player/NowPlaying.tsx:413
-#: src/components/player/NowPlaying.tsx:415
+#: src/components/player/NowPlaying.tsx:435
+#: src/components/player/NowPlaying.tsx:437
 #: src/components/player/PlayerBar.tsx:1109
 #: src/components/songs/SongContextMenu.tsx:227
 #: src/components/songs/SongTable.tsx:174
@@ -1025,7 +1025,7 @@ msgstr "打开"
 #. placeholder {0}: album.name
 #. placeholder {0}: currentSong.al.name
 #: src/components/cards/AlbumCard.tsx:28
-#: src/components/player/NowPlaying.tsx:572
+#: src/components/player/NowPlaying.tsx:586
 msgid "打开专辑 {0}"
 msgstr "打开专辑 {0}"
 
@@ -1159,8 +1159,8 @@ msgstr "播放（空格）"
 msgid "播放全部"
 msgstr "播放全部"
 
-#: src/components/player/NowPlaying.tsx:431
-#: src/components/player/NowPlaying.tsx:432
+#: src/components/player/NowPlaying.tsx:453
+#: src/components/player/NowPlaying.tsx:454
 #: src/components/player/PlayerBar.tsx:1234
 #: src/components/player/QueuePanel.tsx:76
 #: src/components/player/QueuePanel.tsx:83
@@ -1399,7 +1399,7 @@ msgstr "暂无热门单曲"
 msgid "暂无相关 MV"
 msgstr "暂无相关 MV"
 
-#: src/components/player/NowPlaying.tsx:337
+#: src/components/player/NowPlaying.tsx:359
 msgid "暂无相关视频"
 msgstr "暂无相关视频"
 
@@ -1481,7 +1481,7 @@ msgstr "极高"
 msgid "查看 {0} 的主页"
 msgstr "查看 {0} 的主页"
 
-#: src/components/player/NowPlaying.tsx:588
+#: src/components/player/NowPlaying.tsx:602
 msgid "查看专辑"
 msgstr "查看专辑"
 
@@ -1638,7 +1638,7 @@ msgstr "歌曲已在播放列表中"
 msgid "歌曲操作"
 msgstr "歌曲操作"
 
-#: src/components/player/NowPlaying.tsx:657
+#: src/components/player/NowPlaying.tsx:671
 msgid "歌曲评论"
 msgstr "歌曲评论"
 
@@ -1646,11 +1646,11 @@ msgstr "歌曲评论"
 msgid "歌曲资源已失效"
 msgstr "歌曲资源已失效"
 
-#: src/components/player/NowPlaying.tsx:619
+#: src/components/player/NowPlaying.tsx:633
 msgid "歌词"
 msgstr "歌词"
 
-#: src/components/player/NowPlaying.tsx:605
+#: src/components/player/NowPlaying.tsx:619
 msgid "歌词与评论"
 msgstr "歌词与评论"
 
@@ -1663,7 +1663,7 @@ msgstr "歌词显示"
 #~ msgid "歌词显示方式"
 #~ msgstr "歌词显示方式"
 
-#: src/components/player/NowPlaying.tsx:642
+#: src/components/player/NowPlaying.tsx:656
 msgid "正在加载歌词…"
 msgstr "正在加载歌词…"
 
@@ -1671,7 +1671,7 @@ msgstr "正在加载歌词…"
 msgid "正在加载音源"
 msgstr "正在加载音源"
 
-#: src/components/player/NowPlaying.tsx:551
+#: src/components/player/NowPlaying.tsx:565
 #: src/components/player/PlayerBar.tsx:1130
 msgid "正在加载音源…"
 msgstr "正在加载音源…"
@@ -1690,7 +1690,7 @@ msgstr "正在播放"
 msgid "正在缓冲"
 msgstr "正在缓冲"
 
-#: src/components/player/NowPlaying.tsx:551
+#: src/components/player/NowPlaying.tsx:565
 msgid "正在缓冲…"
 msgstr "正在缓冲…"
 
@@ -1939,13 +1939,13 @@ msgstr "登录状态已失效，请重新登录"
 msgid "相似歌手"
 msgstr "相似歌手"
 
-#: src/components/player/NowPlaying.tsx:513
-#: src/components/player/NowPlaying.tsx:514
+#: src/components/player/NowPlaying.tsx:527
+#: src/components/player/NowPlaying.tsx:528
 #: src/components/songs/SongContextMenu.tsx:204
 msgid "相关视频"
 msgstr "相关视频"
 
-#: src/components/player/NowPlaying.tsx:358
+#: src/components/player/NowPlaying.tsx:380
 #: src/components/songs/SongContextMenu.tsx:91
 msgid "相关视频加载失败"
 msgstr "相关视频加载失败"
@@ -2141,7 +2141,7 @@ msgstr "设置"
 
 #: src/components/comments/CommentSection.tsx:39
 #: src/components/comments/CommentSection.tsx:392
-#: src/components/player/NowPlaying.tsx:629
+#: src/components/player/NowPlaying.tsx:643
 #: src/routes/songlists/$id.tsx:420
 msgid "评论"
 msgstr "评论"
@@ -2320,7 +2320,7 @@ msgstr "返回推荐歌单"
 msgid "返回本地收藏"
 msgstr "返回本地收藏"
 
-#: src/components/player/NowPlaying.tsx:457
+#: src/components/player/NowPlaying.tsx:475
 msgid "返回音乐"
 msgstr "返回音乐"
 
@@ -2425,7 +2425,7 @@ msgstr "韩国"
 msgid "韩语"
 msgstr "韩语"
 
-#: src/components/player/NowPlaying.tsx:485
+#: src/components/player/NowPlaying.tsx:499
 msgid "音乐"
 msgstr "音乐"
 

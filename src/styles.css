@@ -568,12 +568,35 @@ html.desktop .app-window {
 
 /* The immersive MV view uses the app's bottom player bar; hide Video.js's
    duplicate transport/progress surface inside the Now Playing overlay. */
+/* Dynamic-gradient backgrounds can be very bright. Keep the title readable
+   without dimming the whole artwork; the MV badge gets its own dark glass. */
+.np-track-heading,
+.np-track-meta {
+  text-shadow:
+    0 1px 2px rgb(0 0 0 / 0.3),
+    0 2px 16px rgb(0 0 0 / 0.28);
+}
+
+.np-mv-badge {
+  color: var(--apple-blue);
+}
+
 .np-video-player .video-controls-content,
 .np-video-player .video-controls-backdrop,
 .np-video-player .media-poster,
 .np-video-player .media-buffering-indicator,
 .np-video-player video::-webkit-media-controls {
   display: none !important;
+}
+
+/* Video.js draws its frame as a 1px ::after border on .media-container.
+   Remove it directly in the immersive view; the token override alone can be
+   lost when the skin re-themes the container. */
+.np-video-player .media-container,
+.np-video-player .media-container::after {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
 }
 
 .np-video-player video {

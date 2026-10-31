@@ -509,7 +509,7 @@ export function NowPlaying() {
           <div className="flex min-h-0 flex-col items-center justify-center">
             <div className="max-w-[360px] text-center">
               <div className="flex min-w-0 items-center justify-center gap-1.5">
-                <h2 className="headline-lg min-w-0 truncate text-[24px]">{currentSong.name}</h2>
+                <h2 className="headline-lg np-track-heading min-w-0 truncate text-[24px]">{currentSong.name}</h2>
                 {hasMv ? (
                   <button
                     type="button"
@@ -517,7 +517,7 @@ export function NowPlaying() {
                     title={i18n._(msg`切换到视频播放`)}
                     aria-pressed={mvMode}
                     onClick={() => void toggleMvMode()}
-                    className="shrink-0 rounded-[4px] border-0 bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-accent transition-colors hover:bg-accent/25"
+                    className="np-mv-badge shrink-0 rounded-[4px] border-0 bg-black/40 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-accent shadow-[0_2px_10px_rgba(0,0,0,0.18)] backdrop-blur-md transition-colors hover:bg-black/55"
                   >
                     MV
                   </button>
@@ -540,7 +540,7 @@ export function NowPlaying() {
               {currentSong.alia?.[0] ? (
                 <p className="mt-1 truncate text-[12px] text-black/35">{currentSong.alia[0]}</p>
               ) : null}
-              <p className="mt-2 text-[13px] text-black/45">
+              <p className="np-track-meta mt-2 text-[13px] text-black/45">
                 <ArtistLinks artists={currentSong.ar} />
                 <span className="mx-2 text-black/20">·</span>
                 <button

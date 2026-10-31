@@ -142,8 +142,8 @@ msgstr "MV"
 msgid "MV 不存在或无法访问"
 msgstr "MV not found or unavailable"
 
-#: src/components/player/NowPlaying.tsx:315
-#: src/components/player/NowPlaying.tsx:450
+#: src/components/player/NowPlaying.tsx:337
+#: src/components/player/NowPlaying.tsx:468
 #: src/routes/latest-mv.tsx:81
 #: src/routes/search.tsx:508
 msgid "MV 加载失败"
@@ -546,8 +546,8 @@ msgstr "Switch to light mode"
 msgid "切换到深色模式"
 msgstr "Switch to dark mode"
 
-#: src/components/player/NowPlaying.tsx:502
-#: src/components/player/NowPlaying.tsx:503
+#: src/components/player/NowPlaying.tsx:516
+#: src/components/player/NowPlaying.tsx:517
 msgid "切换到视频播放"
 msgstr "Switch to video"
 
@@ -684,8 +684,8 @@ msgstr "Send code"
 msgid "取消"
 msgstr "Cancel"
 
-#: src/components/player/NowPlaying.tsx:413
-#: src/components/player/NowPlaying.tsx:415
+#: src/components/player/NowPlaying.tsx:435
+#: src/components/player/NowPlaying.tsx:437
 #: src/components/player/PlayerBar.tsx:1109
 #: src/components/songs/SongContextMenu.tsx:227
 #: src/components/songs/SongTable.tsx:174
@@ -725,8 +725,8 @@ msgstr "Browse categories to the left"
 msgid "听友评论"
 msgstr "Listener comments"
 
-#: src/components/player/NowPlaying.tsx:413
-#: src/components/player/NowPlaying.tsx:415
+#: src/components/player/NowPlaying.tsx:435
+#: src/components/player/NowPlaying.tsx:437
 #: src/components/player/PlayerBar.tsx:1109
 #: src/components/songs/SongContextMenu.tsx:227
 #: src/components/songs/SongTable.tsx:174
@@ -1025,7 +1025,7 @@ msgstr "Open"
 #. placeholder {0}: album.name
 #. placeholder {0}: currentSong.al.name
 #: src/components/cards/AlbumCard.tsx:28
-#: src/components/player/NowPlaying.tsx:572
+#: src/components/player/NowPlaying.tsx:586
 msgid "打开专辑 {0}"
 msgstr "Open album {0}"
 
@@ -1159,8 +1159,8 @@ msgstr "Play (Space)"
 msgid "播放全部"
 msgstr "Play all"
 
-#: src/components/player/NowPlaying.tsx:431
-#: src/components/player/NowPlaying.tsx:432
+#: src/components/player/NowPlaying.tsx:453
+#: src/components/player/NowPlaying.tsx:454
 #: src/components/player/PlayerBar.tsx:1234
 #: src/components/player/QueuePanel.tsx:76
 #: src/components/player/QueuePanel.tsx:83
@@ -1399,7 +1399,7 @@ msgstr "No popular tracks yet"
 msgid "暂无相关 MV"
 msgstr "No related MVs yet"
 
-#: src/components/player/NowPlaying.tsx:337
+#: src/components/player/NowPlaying.tsx:359
 msgid "暂无相关视频"
 msgstr "No related videos"
 
@@ -1481,7 +1481,7 @@ msgstr "Ultra"
 msgid "查看 {0} 的主页"
 msgstr "View {0}'s profile"
 
-#: src/components/player/NowPlaying.tsx:588
+#: src/components/player/NowPlaying.tsx:602
 msgid "查看专辑"
 msgstr "View album"
 
@@ -1638,7 +1638,7 @@ msgstr "Track is already in the queue"
 msgid "歌曲操作"
 msgstr "Song actions"
 
-#: src/components/player/NowPlaying.tsx:657
+#: src/components/player/NowPlaying.tsx:671
 msgid "歌曲评论"
 msgstr "Song comments"
 
@@ -1646,11 +1646,11 @@ msgstr "Song comments"
 msgid "歌曲资源已失效"
 msgstr "Track source expired"
 
-#: src/components/player/NowPlaying.tsx:619
+#: src/components/player/NowPlaying.tsx:633
 msgid "歌词"
 msgstr "Lyrics"
 
-#: src/components/player/NowPlaying.tsx:605
+#: src/components/player/NowPlaying.tsx:619
 msgid "歌词与评论"
 msgstr "Lyrics and comments"
 
@@ -1663,7 +1663,7 @@ msgstr "Lyrics display"
 #~ msgid "歌词显示方式"
 #~ msgstr "Lyric display mode"
 
-#: src/components/player/NowPlaying.tsx:642
+#: src/components/player/NowPlaying.tsx:656
 msgid "正在加载歌词…"
 msgstr "Loading lyrics…"
 
@@ -1671,7 +1671,7 @@ msgstr "Loading lyrics…"
 msgid "正在加载音源"
 msgstr "Loading source"
 
-#: src/components/player/NowPlaying.tsx:551
+#: src/components/player/NowPlaying.tsx:565
 #: src/components/player/PlayerBar.tsx:1130
 msgid "正在加载音源…"
 msgstr "Loading source…"
@@ -1690,7 +1690,7 @@ msgstr "Now playing"
 msgid "正在缓冲"
 msgstr "Buffering"
 
-#: src/components/player/NowPlaying.tsx:551
+#: src/components/player/NowPlaying.tsx:565
 msgid "正在缓冲…"
 msgstr "Buffering…"
 
@@ -1939,13 +1939,13 @@ msgstr "Your session is no longer valid. Please sign in again."
 msgid "相似歌手"
 msgstr "Similar artists"
 
-#: src/components/player/NowPlaying.tsx:513
-#: src/components/player/NowPlaying.tsx:514
+#: src/components/player/NowPlaying.tsx:527
+#: src/components/player/NowPlaying.tsx:528
 #: src/components/songs/SongContextMenu.tsx:204
 msgid "相关视频"
 msgstr "Related videos"
 
-#: src/components/player/NowPlaying.tsx:358
+#: src/components/player/NowPlaying.tsx:380
 #: src/components/songs/SongContextMenu.tsx:91
 msgid "相关视频加载失败"
 msgstr "Failed to load related videos"
@@ -2141,7 +2141,7 @@ msgstr "Settings"
 
 #: src/components/comments/CommentSection.tsx:39
 #: src/components/comments/CommentSection.tsx:392
-#: src/components/player/NowPlaying.tsx:629
+#: src/components/player/NowPlaying.tsx:643
 #: src/routes/songlists/$id.tsx:420
 msgid "评论"
 msgstr "Comments"
@@ -2320,7 +2320,7 @@ msgstr "Back to playlists"
 msgid "返回本地收藏"
 msgstr "Back to local favorites"
 
-#: src/components/player/NowPlaying.tsx:457
+#: src/components/player/NowPlaying.tsx:475
 msgid "返回音乐"
 msgstr "Back to music"
 
@@ -2425,7 +2425,7 @@ msgstr "Korea"
 msgid "韩语"
 msgstr "Korean"
 
-#: src/components/player/NowPlaying.tsx:485
+#: src/components/player/NowPlaying.tsx:499
 msgid "音乐"
 msgstr "Music"
 
