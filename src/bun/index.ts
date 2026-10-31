@@ -256,6 +256,8 @@ function createMainWindow() {
     const url = (event as { data?: { detail?: string } })?.data?.detail ?? ''
     // BrowserWindow may emit dom-ready for its initial about:blank first.
     if (!url || url === 'about:blank') return
+    // Re-sync auxiliary-window visibility after a renderer reload.
+    broadcastAuxWindows()
     setTimeout(reveal, 40)
   })
   // Safety net: never leave a hidden window if dom-ready is missed.
@@ -430,6 +432,7 @@ app.on('close', (payload) => {
   if (id && mainWindow?.id === id) mainWindow = null
   if (id && lyricsWindow?.id === id) lyricsWindow = null
   if (id && miniWindow?.id === id) miniWindow = null
+  broadcastAuxWindows()
 })
 
 /* ------------------------------ desktop lyrics ---------------------------- */
@@ -619,6 +622,7 @@ function showLyricsWindow() {
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
       ensureLyricsWindow().showInactive()
+      broadcastAuxWindows()
       return true
     } catch (error) {
       lyricsWindow = null
@@ -635,6 +639,7 @@ function hideLyricsWindow() {
   } catch {
     lyricsWindow = null
   }
+  broadcastAuxWindows()
   return false
 }
 
@@ -696,6 +701,7 @@ function showMiniWindow() {
     try {
       if (!miniWindow) miniWindow = createMiniWindow()
       miniWindow.showInactive()
+      broadcastAuxWindows()
       return true
     } catch (error) {
       miniWindow = null
@@ -712,6 +718,7 @@ function hideMiniWindow() {
   } catch {
     miniWindow = null
   }
+  broadcastAuxWindows()
   return false
 }
 
@@ -719,6 +726,24 @@ function applyMiniAction(action: string | null) {
   if (action === 'hide') return hideMiniWindow()
   if (action === 'show') return showMiniWindow()
   return miniWindowVisible() ? hideMiniWindow() : showMiniWindow()
+}
+
+function auxWindowsState() {
+  return {
+    lyrics: lyricsWindowVisible(),
+    mini: miniWindowVisible(),
+  }
+}
+
+function broadcastAuxWindows() {
+  const detail = JSON.stringify(auxWindowsState())
+  try {
+    mainWindow?.webview.executeJavascript(
+      `window.dispatchEvent(new CustomEvent('qimiao:aux-windows',{detail:${detail}}))`,
+    )
+  } catch (error) {
+    console.warn('[desktop] failed to broadcast aux window state:', error)
+  }
 }
 
 /* ---------------------------- renderer commands ---------------------------- */
@@ -1000,6 +1025,9 @@ try {
           const bytes = await request.arrayBuffer()
           await Bun.write(target, bytes)
           return Response.json({ path: target }, { headers })
+        }
+        if (url.pathname === '/aux-windows' && request.method === 'GET') {
+          return Response.json(auxWindowsState(), { headers })
         }
         if (url.pathname === '/lyrics-window' && request.method === 'GET') {
           return Response.json({ visible: lyricsWindowVisible() }, { headers })

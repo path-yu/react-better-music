@@ -117,6 +117,10 @@ export async function getMiniPlayerVisible() {
   return requestJson<{ visible: boolean }>('/mini-window')
 }
 
+export async function getAuxWindowsState() {
+  return requestJson<{ lyrics: boolean; mini: boolean }>('/aux-windows')
+}
+
 /** Show, hide or toggle the compact mini player window. */
 export async function setMiniPlayerVisible(action: 'show' | 'hide' | 'toggle' = 'toggle') {
   return requestJson<{ visible: boolean }>(`/mini-window?action=${action}`, {

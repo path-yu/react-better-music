@@ -185,7 +185,7 @@ export const LYRICS_WINDOW_HTML = `<!doctype html>
             render();
           })
           .catch(function () {})
-          .then(function () { setTimeout(poll, 250); });
+          .then(function () { setTimeout(poll, 500); });
       }
 
       document.getElementById('close').addEventListener('click', function () {
