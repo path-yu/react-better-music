@@ -26,8 +26,33 @@ pub async fn start(port: u16, library: LocalLibrary) -> Result<(), String> {
         cors_origin: Some(ALLOWED_ORIGINS.to_string()),
         ..Default::default()
     };
-    let ncm =
-        ncm_api_rs::server::build_app_with_config(ncm_api_rs::create_client(None), &ncm_config);
+    // Some public endpoints (notably /simi/artist) require the anonymous
+    // MUSIC_A cookie. The Node server bootstrapped this at startup; do the same
+    // for the Rust client before building the routes.
+    let mut client = ncm_api_rs::create_client(None);
+    for attempt in 0..3 {
+        match client.register_anonimous(&ncm_api_rs::Query::new()).await {
+            Ok(response) if !response.cookie.is_empty() => {
+                client.set_cookie(response.cookie.join("; "));
+                eprintln!("[tauri] anonymous cookie ready");
+                break;
+            }
+            Ok(response) => {
+                eprintln!(
+                    "[tauri] anonymous registration attempt {} returned {} without cookies",
+                    attempt + 1,
+                    response.status
+                );
+            }
+            Err(error) => {
+                eprintln!(
+                    "[tauri] anonymous registration attempt {} failed: {error}",
+                    attempt + 1
+                );
+            }
+        }
+    }
+    let ncm = ncm_api_rs::server::build_app_with_config(client, &ncm_config);
 
     let origins = ALLOWED_ORIGINS
         .split(',')

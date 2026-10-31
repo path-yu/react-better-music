@@ -199,7 +199,7 @@ fn ensure_window(
     let url: url::Url = format!("http://127.0.0.1:{BRIDGE_PORT}/{page}")
         .parse()
         .map_err(|error| format!("invalid aux window url: {error}"))?;
-    WebviewWindowBuilder::new(app, label, WebviewUrl::External(url))
+    let window = WebviewWindowBuilder::new(app, label, WebviewUrl::External(url))
         .title(title)
         .inner_size(width, height)
         .resizable(false)
@@ -209,7 +209,11 @@ fn ensure_window(
         .skip_taskbar(true)
         .visible(false)
         .build()
-        .map_err(|error| error.to_string())
+        .map_err(|error| error.to_string())?;
+    // Keep the WebView surface transparent so the lyrics HUD does not gain a
+    // white rectangle on Windows.
+    let _ = window.set_background_color(None);
+    Ok(window)
 }
 
 fn toggle_window(
