@@ -2,7 +2,17 @@ import { useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { ChevronLeft, ChevronRight, Disc3, Menu, Moon, Settings2, Sun } from 'lucide-react'
+import {
+  ChevronLeft,
+  ChevronRight,
+  Disc3,
+  Menu,
+  Moon,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Settings2,
+  Sun,
+} from 'lucide-react'
 import { SearchBox } from './SearchBox'
 import { UserMenu } from './UserMenu'
 import { usePlayerStore } from '../../store/player'
@@ -17,6 +27,10 @@ export function TopBar() {
   const theme = useUiStore((state) => state.theme)
   const toggleTheme = useUiStore((state) => state.toggleTheme)
   const toggleSidebar = useUiStore((state) => state.toggleSidebar)
+  const sidebarCollapsed = useUiStore((state) => state.sidebarCollapsed)
+  const toggleSidebarCollapsed = useUiStore(
+    (state) => state.toggleSidebarCollapsed,
+  )
 
   return (
     <header className="pushbar-glass relative z-50 flex h-[54px] flex-none items-center gap-3 px-4">
@@ -27,6 +41,23 @@ export function TopBar() {
         className="pressable flex h-7 w-7 items-center justify-center rounded-[6px] text-black/45 transition-colors hover:bg-black/5 hover:text-black/75 max-md:h-10 max-md:w-10 md:hidden"
       >
         <Menu className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        aria-label={
+          sidebarCollapsed ? i18n._(msg`展开侧栏`) : i18n._(msg`收起侧栏`)
+        }
+        title={
+          sidebarCollapsed ? i18n._(msg`展开侧栏`) : i18n._(msg`收起侧栏`)
+        }
+        onClick={toggleSidebarCollapsed}
+        className="pressable flex h-7 w-7 items-center justify-center rounded-[6px] text-black/40 transition-colors hover:bg-black/5 hover:text-black/75 max-md:hidden"
+      >
+        {sidebarCollapsed ? (
+          <PanelLeftOpen className="h-4 w-4" />
+        ) : (
+          <PanelLeftClose className="h-4 w-4" />
+        )}
       </button>
       <div className="flex items-center gap-1 max-md:hidden">
         <button

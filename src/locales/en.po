@@ -138,7 +138,7 @@ msgstr "MSLS"
 msgid "MV"
 msgstr "MV"
 
-#: src/routes/mv/$id.tsx:142
+#: src/routes/mv/$id.tsx:141
 msgid "MV 不存在或无法访问"
 msgstr "MV not found or unavailable"
 
@@ -151,11 +151,11 @@ msgstr "Failed to load MVs"
 msgid "MV 推荐加载失败"
 msgstr "Failed to load MV recommendations"
 
-#: src/routes/mv/$id.tsx:226
+#: src/routes/mv/$id.tsx:225
 msgid "MV 评论"
 msgstr "MV comments"
 
-#: src/routes/mv/$id.tsx:97
+#: src/routes/mv/$id.tsx:102
 msgid "MV 详情加载失败"
 msgstr "Failed to load MV details"
 
@@ -422,7 +422,7 @@ msgstr "Close to tray"
 msgid "关闭后只高亮整行，不做逐字动画"
 msgstr "When off, only the whole line is highlighted; no word-by-word animation"
 
-#: src/components/layout/AppShell.tsx:280
+#: src/components/layout/AppShell.tsx:289
 msgid "关闭导航"
 msgstr "Close navigation"
 
@@ -536,11 +536,11 @@ msgstr "Share"
 #~ msgid "切换其他音源"
 #~ msgstr "Switch source"
 
-#: src/components/layout/TopBar.tsx:59
+#: src/components/layout/TopBar.tsx:90
 msgid "切换到浅色模式"
 msgstr "Switch to light mode"
 
-#: src/components/layout/TopBar.tsx:60
+#: src/components/layout/TopBar.tsx:91
 msgid "切换到深色模式"
 msgstr "Switch to dark mode"
 
@@ -588,7 +588,7 @@ msgstr "Refresh"
 msgid "刷新缓存信息"
 msgstr "Refresh cache info"
 
-#: src/components/layout/TopBar.tsx:42
+#: src/components/layout/TopBar.tsx:73
 msgid "前进"
 msgstr "Forward"
 
@@ -697,7 +697,7 @@ msgstr "Alternative / Indie"
 msgid "只能编辑自己创建的歌单"
 msgstr "You can only edit playlists you created"
 
-#: src/components/layout/TopBar.tsx:34
+#: src/components/layout/TopBar.tsx:65
 msgid "后退"
 msgstr "Back"
 
@@ -836,6 +836,11 @@ msgstr "World"
 #: src/routes/songlists/$id.tsx:359
 msgid "展开"
 msgstr "Expand"
+
+#: src/components/layout/TopBar.tsx:48
+#: src/components/layout/TopBar.tsx:51
+msgid "展开侧栏"
+msgstr "Expand sidebar"
 
 #: src/routes/artist/$id.tsx:241
 msgid "展开全部"
@@ -1017,7 +1022,7 @@ msgstr "Open"
 msgid "打开专辑 {0}"
 msgstr "Open album {0}"
 
-#: src/components/layout/TopBar.tsx:25
+#: src/components/layout/TopBar.tsx:39
 msgid "打开导航"
 msgstr "Open navigation"
 
@@ -1260,6 +1265,11 @@ msgstr "Saved playlists"
 #: src/routes/songlists/$id.tsx:359
 msgid "收起"
 msgstr "Collapse"
+
+#: src/components/layout/TopBar.tsx:48
+#: src/components/layout/TopBar.tsx:51
+msgid "收起侧栏"
+msgstr "Collapse sidebar"
 
 #: src/components/player/PlayerBar.tsx:1027
 #: src/components/player/PlayerBar.tsx:1067
@@ -1663,7 +1673,7 @@ msgstr "Syncing recent plays…"
 
 #: src/components/layout/Sidebar.tsx:140
 #: src/components/layout/TitleBar.tsx:45
-#: src/components/layout/TopBar.tsx:81
+#: src/components/layout/TopBar.tsx:112
 msgid "正在播放"
 msgstr "Now playing"
 
@@ -1749,7 +1759,7 @@ msgstr "Pop"
 msgid "浅色"
 msgstr "Light"
 
-#: src/components/layout/TopBar.tsx:63
+#: src/components/layout/TopBar.tsx:94
 msgid "浅色模式"
 msgstr "Light mode"
 
@@ -1761,7 +1771,7 @@ msgstr "Browse"
 msgid "深色"
 msgstr "Dark"
 
-#: src/components/layout/TopBar.tsx:63
+#: src/components/layout/TopBar.tsx:94
 msgid "深色模式"
 msgstr "Dark mode"
 
@@ -2113,8 +2123,8 @@ msgid "获取歌曲播放地址失败"
 msgstr "Failed to get the playback URL"
 
 #: src/components/layout/TitleBar.tsx:27
-#: src/components/layout/TopBar.tsx:86
-#: src/components/layout/TopBar.tsx:87
+#: src/components/layout/TopBar.tsx:117
+#: src/components/layout/TopBar.tsx:118
 #: src/routes/settings.tsx:67
 #: src/routes/settings.tsx:270
 msgid "设置"
@@ -2283,7 +2293,7 @@ msgstr "Workout"
 
 #: src/components/songs/SongContextMenu.tsx:236
 #: src/components/songs/SongContextMenu.tsx:277
-#: src/routes/mv/$id.tsx:165
+#: src/routes/mv/$id.tsx:164
 #: src/routes/users/$id.tsx:203
 #: src/routes/video/$id.tsx:107
 msgid "返回"

@@ -451,9 +451,46 @@ html.desktop .app-window {
   flex: none;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   background: var(--app-sidebar);
   backdrop-filter: saturate(180%) blur(30px);
   border-right: 1px solid var(--app-border);
+  transition:
+    width 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 180ms ease-out,
+    border-color 180ms ease-out,
+    border-right-width 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 0s linear 0s;
+}
+
+/* Keep labels on one line while the rail width animates; otherwise text
+   reflows for every intermediate pixel and the transition looks jittery. */
+.sidebar-glass > * {
+  min-width: 232px;
+}
+
+@media (min-width: 768px) {
+  .app-body.sidebar-collapsed .sidebar-glass {
+    width: 0;
+    opacity: 0;
+    border-right-width: 0;
+    border-right-color: transparent;
+    pointer-events: none;
+    visibility: hidden;
+    transition:
+      width 260ms cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 160ms ease-in,
+      border-color 160ms ease-in,
+      border-right-width 260ms cubic-bezier(0.22, 1, 0.36, 1),
+      visibility 0s linear 260ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-glass,
+  .app-body.sidebar-collapsed .sidebar-glass {
+    transition: none;
+  }
 }
 
 .sidebar-backdrop {
@@ -507,6 +544,68 @@ html.desktop .app-window {
   flex: 1;
   min-width: 0;
   background: var(--app-content);
+}
+
+/* MV detail: recommendations stay beside the player from tablet width up.
+   These are plain CSS rules because the utility variant order in this bundle
+   put `.flex-col` after `.md\:flex-row`, which kept the layout stacked. */
+.mv-detail-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.mv-related {
+  width: 100%;
+  flex: none;
+}
+
+.mv-related__title {
+  flex: none;
+}
+
+.mv-related__list {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+@media (min-width: 768px) {
+  .mv-related {
+    display: flex;
+    flex-direction: column;
+    /* Reserve room for the top bar, page padding and the player bar. The
+       previous 100dvh - 7rem rail extended below the viewport, so the last
+       recommendation could never be scrolled fully into view. */
+    max-height: calc(100dvh - 16rem);
+  }
+
+  /*
+   * The recommendation rail scrolls independently from the MV page. Keep the
+   * wheel/trackpad gesture inside the rail at its boundaries instead of
+   * handing it to the document (which would scroll the player and comments).
+   */
+  .mv-related__list {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    padding-right: 0.25rem;
+    max-height: calc(100dvh - 19rem);
+  }
+}
+
+@media (min-width: 768px) {
+  .mv-detail-layout {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .mv-related {
+    position: sticky;
+    top: 1rem;
+    width: clamp(240px, 26vw, 320px);
+  }
 }
 
 .apple-content {

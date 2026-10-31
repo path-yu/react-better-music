@@ -14,7 +14,7 @@ import {
   fetchArtistDetail,
   fetchMvDetail,
   fetchMvUrl,
-  fetchSimilarMv,
+  fetchRelatedMvs,
 } from '../../api'
 import { formatDate, formatNumber } from '../../lib/format'
 import { resizedImageUrl } from '../../lib/image'
@@ -92,6 +92,11 @@ function MvDetailPage() {
             })
             .catch(() => undefined)
         }
+        void fetchRelatedMvs(mv)
+          .then((list) => {
+            if (!cancelled) setSimilar(list)
+          })
+          .catch(() => undefined)
       })
       .catch(() => {
         if (!cancelled) toast.error(i18n._(msg`MV 详情加载失败`))
@@ -108,12 +113,6 @@ function MvDetailPage() {
       .finally(() => {
         if (!cancelled) setVideoLoading(false)
       })
-
-    fetchSimilarMv(id)
-      .then((list) => {
-        if (!cancelled) setSimilar(list)
-      })
-      .catch(() => undefined)
 
     return () => {
       cancelled = true
@@ -165,7 +164,7 @@ function MvDetailPage() {
         <Trans>返回</Trans>
       </button>
 
-      <div className="mt-4 flex flex-col gap-7 lg:flex-row">
+      <div className="mv-detail-layout mt-4">
         <div className="min-w-0 flex-1">
           <div className="relative aspect-video w-full overflow-hidden rounded-[18px] bg-black">
             {videoLoading ? (
@@ -228,9 +227,9 @@ function MvDetailPage() {
           </div>
         </div>
 
-        <aside className="w-full shrink-0 lg:w-[clamp(240px,24vw,300px)]">
-          <p className="section-title text-[16px]">相关推荐</p>
-          <div className="mt-3 flex flex-col gap-2.5">
+        <aside className="mv-related">
+          <p className="section-title mv-related__title text-[16px]">相关推荐</p>
+          <div className="mv-related__list mt-3">
             {similar.slice(0, 8).map((mv) => (
               <button
                 key={mv.id}

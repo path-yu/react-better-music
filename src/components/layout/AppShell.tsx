@@ -45,6 +45,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const loginOpen = useUiStore((state) => state.loginOpen)
   const closeLogin = useUiStore((state) => state.closeLogin)
   const sidebarOpen = useUiStore((state) => state.sidebarOpen)
+  const sidebarCollapsed = useUiStore((state) => state.sidebarCollapsed)
   const closeSidebar = useUiStore((state) => state.closeSidebar)
   const theme = useUiStore((state) => state.theme)
   const palette = useUiStore((state) => state.palette)
@@ -262,7 +263,15 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="app-shell">
       <div className="app-window">
         <TitleBar />
-        <div className={sidebarOpen ? 'app-body nav-open' : 'app-body'}>
+        <div
+          className={[
+            'app-body',
+            sidebarOpen ? 'nav-open' : '',
+            sidebarCollapsed ? 'sidebar-collapsed' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
           <Sidebar />
           <div className="main-column relative overflow-hidden">
             <TopBar />

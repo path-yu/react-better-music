@@ -559,6 +559,27 @@ export async function fetchSimilarMv(mvid: number | string) {
   return (res.mvs ?? []).map(normalizeMv)
 }
 
+/**
+ * `/simi/mv` currently returns a generic interview list for many unrelated ids.
+ * Recommend other MVs by the same artist instead, filtering programme clips and
+ * the current MV so every detail page gets a distinct, relevant list.
+ */
+export async function fetchRelatedMvs(mv: Mv, limit = 8) {
+  if (!mv.artistId) return []
+  const NOISE = /超级面对面|访谈|花絮|节目|采访|预告|幕后|邀你一起听/i
+  const list = await fetchArtistMvs(mv.artistId, Math.max(limit * 3, 24))
+  const seen = new Set<number>()
+  return list
+    .filter((item) => {
+      if (item.id === mv.id || NOISE.test(item.name) || seen.has(item.id)) {
+        return false
+      }
+      seen.add(item.id)
+      return true
+    })
+    .slice(0, limit)
+}
+
 export async function fetchArtistDetail(id: number | string) {
   const res = await get<{
     artist?: {
