@@ -100,12 +100,12 @@ msgid "{countdown}s 后重发"
 msgstr "{countdown}s 后重发"
 
 #. placeholder {0}: song.name
-#: src/store/player.ts:581
+#: src/store/player.ts:585
 msgid "「{0}」VIP 歌曲已为你匹配其他音源播放"
 msgstr "「{0}」VIP 歌曲已为你匹配其他音源播放"
 
 #. placeholder {0}: song.name
-#: src/store/player.ts:580
+#: src/store/player.ts:584
 msgid "「{0}」暂无官方音源，已为你匹配其他音源播放"
 msgstr "「{0}」暂无官方音源，已为你匹配其他音源播放"
 
@@ -290,8 +290,8 @@ msgstr "二维码已失效"
 msgid "云音乐官方榜单，实时更新"
 msgstr "云音乐官方榜单，实时更新"
 
-#: src/store/player.ts:217
-#: src/store/player.ts:571
+#: src/store/player.ts:218
+#: src/store/player.ts:572
 msgid "亲爱的，暂无版权，已为你跳过"
 msgstr "亲爱的，暂无版权，已为你跳过"
 
@@ -546,8 +546,8 @@ msgstr "切换到浅色模式"
 msgid "切换到深色模式"
 msgstr "切换到深色模式"
 
-#: src/components/player/NowPlaying.tsx:508
-#: src/components/player/NowPlaying.tsx:509
+#: src/components/player/NowPlaying.tsx:502
+#: src/components/player/NowPlaying.tsx:503
 msgid "切换到视频播放"
 msgstr "切换到视频播放"
 
@@ -555,7 +555,7 @@ msgstr "切换到视频播放"
 msgid "切换界面语言，立即生效。当前翻译覆盖导航、播放器与设置等主要界面，其余页面会逐步补齐。"
 msgstr "切换界面语言，立即生效。当前翻译覆盖导航、播放器与设置等主要界面，其余页面会逐步补齐。"
 
-#: src/store/player.ts:1056
+#: src/store/player.ts:1061
 msgid "切换音源失败，请稍后再试"
 msgstr "切换音源失败，请稍后再试"
 
@@ -640,7 +640,7 @@ msgid "单曲"
 msgstr "单曲"
 
 #: src/components/player/PlayerBar.tsx:1170
-#: src/store/player.ts:879
+#: src/store/player.ts:884
 msgid "单曲循环"
 msgstr "单曲循环"
 
@@ -871,11 +871,11 @@ msgstr "已允许开发者工具，重启应用后完全生效"
 msgid "已关闭"
 msgstr "已关闭"
 
-#: src/store/player.ts:887
+#: src/store/player.ts:892
 msgid "已关闭心动模式"
 msgstr "已关闭心动模式"
 
-#: src/store/player.ts:1054
+#: src/store/player.ts:1059
 msgid "已切换到其他音源"
 msgstr "已切换到其他音源"
 
@@ -927,7 +927,7 @@ msgid "已收藏到「{0}」"
 msgstr "已收藏到「{0}」"
 
 #. placeholder {0}: additions.length
-#: src/store/player.ts:834
+#: src/store/player.ts:839
 msgid "已添加 {0} 首歌曲到播放列表"
 msgstr "已添加 {0} 首歌曲到播放列表"
 
@@ -962,11 +962,11 @@ msgid "当前：{currentLabel}"
 msgstr "当前：{currentLabel}"
 
 #. placeholder {0}: prefetched.trialEnd
-#: src/store/player.ts:532
+#: src/store/player.ts:533
 msgid "当前仅可试听 {0} 秒，登录或开通会员后可播放完整版"
 msgstr "当前仅可试听 {0} 秒，登录或开通会员后可播放完整版"
 
-#: src/store/player.ts:590
+#: src/store/player.ts:595
 msgid "当前仅可试听 {trialEnd} 秒，登录或开通会员后可播放完整版"
 msgstr "当前仅可试听 {trialEnd} 秒，登录或开通会员后可播放完整版"
 
@@ -987,11 +987,11 @@ msgstr "影视原声"
 msgid "心动模式"
 msgstr "心动模式"
 
-#: src/store/player.ts:901
+#: src/store/player.ts:906
 msgid "心动模式已开启，将为你推荐歌曲"
 msgstr "心动模式已开启，将为你推荐歌曲"
 
-#: src/store/player.ts:654
+#: src/store/player.ts:659
 msgid "心动模式暂不可用，请先登录"
 msgstr "心动模式暂不可用，请先登录"
 
@@ -1025,7 +1025,7 @@ msgstr "打开"
 #. placeholder {0}: album.name
 #. placeholder {0}: currentSong.al.name
 #: src/components/cards/AlbumCard.tsx:28
-#: src/components/player/NowPlaying.tsx:578
+#: src/components/player/NowPlaying.tsx:572
 msgid "打开专辑 {0}"
 msgstr "打开专辑 {0}"
 
@@ -1167,7 +1167,7 @@ msgstr "播放全部"
 msgid "播放列表"
 msgstr "播放列表"
 
-#: src/store/player.ts:954
+#: src/store/player.ts:959
 msgid "播放列表已清空"
 msgstr "播放列表已清空"
 
@@ -1434,7 +1434,7 @@ msgstr "更多播放选项"
 msgid "更换头像"
 msgstr "更换头像"
 
-#: src/store/player.ts:1033
+#: src/store/player.ts:1038
 msgid "未找到其他可用音源"
 msgstr "未找到其他可用音源"
 
@@ -1481,7 +1481,7 @@ msgstr "极高"
 msgid "查看 {0} 的主页"
 msgstr "查看 {0} 的主页"
 
-#: src/components/player/NowPlaying.tsx:594
+#: src/components/player/NowPlaying.tsx:588
 msgid "查看专辑"
 msgstr "查看专辑"
 
@@ -1626,11 +1626,11 @@ msgstr "歌手简介"
 msgid "歌曲列表"
 msgstr "歌曲列表"
 
-#: src/store/player.ts:607
+#: src/store/player.ts:612
 msgid "歌曲加载失败"
 msgstr "歌曲加载失败"
 
-#: src/store/player.ts:829
+#: src/store/player.ts:834
 msgid "歌曲已在播放列表中"
 msgstr "歌曲已在播放列表中"
 
@@ -1638,19 +1638,19 @@ msgstr "歌曲已在播放列表中"
 msgid "歌曲操作"
 msgstr "歌曲操作"
 
-#: src/components/player/NowPlaying.tsx:663
+#: src/components/player/NowPlaying.tsx:657
 msgid "歌曲评论"
 msgstr "歌曲评论"
 
-#: src/store/player.ts:982
+#: src/store/player.ts:987
 msgid "歌曲资源已失效"
 msgstr "歌曲资源已失效"
 
-#: src/components/player/NowPlaying.tsx:625
+#: src/components/player/NowPlaying.tsx:619
 msgid "歌词"
 msgstr "歌词"
 
-#: src/components/player/NowPlaying.tsx:611
+#: src/components/player/NowPlaying.tsx:605
 msgid "歌词与评论"
 msgstr "歌词与评论"
 
@@ -1663,7 +1663,7 @@ msgstr "歌词显示"
 #~ msgid "歌词显示方式"
 #~ msgstr "歌词显示方式"
 
-#: src/components/player/NowPlaying.tsx:648
+#: src/components/player/NowPlaying.tsx:642
 msgid "正在加载歌词…"
 msgstr "正在加载歌词…"
 
@@ -1671,7 +1671,7 @@ msgstr "正在加载歌词…"
 msgid "正在加载音源"
 msgstr "正在加载音源"
 
-#: src/components/player/NowPlaying.tsx:557
+#: src/components/player/NowPlaying.tsx:551
 #: src/components/player/PlayerBar.tsx:1130
 msgid "正在加载音源…"
 msgstr "正在加载音源…"
@@ -1690,7 +1690,7 @@ msgstr "正在播放"
 msgid "正在缓冲"
 msgstr "正在缓冲"
 
-#: src/components/player/NowPlaying.tsx:557
+#: src/components/player/NowPlaying.tsx:551
 msgid "正在缓冲…"
 msgstr "正在缓冲…"
 
@@ -1939,8 +1939,8 @@ msgstr "登录状态已失效，请重新登录"
 msgid "相似歌手"
 msgstr "相似歌手"
 
-#: src/components/player/NowPlaying.tsx:519
-#: src/components/player/NowPlaying.tsx:520
+#: src/components/player/NowPlaying.tsx:513
+#: src/components/player/NowPlaying.tsx:514
 #: src/components/songs/SongContextMenu.tsx:204
 msgid "相关视频"
 msgstr "相关视频"
@@ -2126,8 +2126,8 @@ msgstr "若二维码无法刷新，请确认本地 API 服务已在 3000 端口�
 msgid "获取二维码失败，请检查本地 API 服务是否启动"
 msgstr "获取二维码失败，请检查本地 API 服务是否启动"
 
-#: src/store/player.ts:216
-#: src/store/player.ts:570
+#: src/store/player.ts:217
+#: src/store/player.ts:571
 msgid "获取歌曲播放地址失败"
 msgstr "获取歌曲播放地址失败"
 
@@ -2141,7 +2141,7 @@ msgstr "设置"
 
 #: src/components/comments/CommentSection.tsx:39
 #: src/components/comments/CommentSection.tsx:392
-#: src/components/player/NowPlaying.tsx:635
+#: src/components/player/NowPlaying.tsx:629
 #: src/routes/songlists/$id.tsx:420
 msgid "评论"
 msgstr "评论"
@@ -2171,7 +2171,7 @@ msgstr "试听"
 msgid "试听结束，登录或开通会员可播放完整版"
 msgstr "试听结束，登录或开通会员可播放完整版"
 
-#: src/store/player.ts:762
+#: src/store/player.ts:767
 msgid "该列表暂无可播放歌曲"
 msgstr "该列表暂无可播放歌曲"
 
@@ -2200,7 +2200,7 @@ msgstr "该用户还没有收藏歌单"
 msgid "说点什么…"
 msgstr "说点什么…"
 
-#: src/store/player.ts:892
+#: src/store/player.ts:897
 msgid "请先播放歌曲"
 msgstr "请先播放歌曲"
 
@@ -2411,7 +2411,7 @@ msgid "链接已复制"
 msgstr "链接已复制"
 
 #: src/components/player/PlayerBar.tsx:1169
-#: src/store/player.ts:878
+#: src/store/player.ts:883
 msgid "随机播放"
 msgstr "随机播放"
 
@@ -2425,7 +2425,7 @@ msgstr "韩国"
 msgid "韩语"
 msgstr "韩语"
 
-#: src/components/player/NowPlaying.tsx:491
+#: src/components/player/NowPlaying.tsx:485
 msgid "音乐"
 msgstr "音乐"
 
@@ -2477,7 +2477,7 @@ msgid "页面不存在"
 msgstr "页面不存在"
 
 #: src/components/player/PlayerBar.tsx:1167
-#: src/store/player.ts:876
+#: src/store/player.ts:881
 msgid "顺序播放"
 msgstr "顺序播放"
 

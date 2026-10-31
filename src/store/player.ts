@@ -27,6 +27,7 @@ import { apiErrorMessage } from '../lib/apiErrors'
 import { i18n } from '../i18n'
 import { useSettingsStore } from './settings'
 import { useLocalLibraryStore } from './localLibrary'
+import { useVideoPlaybackStore } from './videoPlayback'
 import type { Song } from '../types'
 
 export type PlayMode = 'order' | 'random' | 'singleLoop'
@@ -575,11 +576,15 @@ export const usePlayerStore = create<PlayerState>()(
           // prefetch or a retry (those paths never showed the notice).
           if (unblocked && !unblockAnnounced.has(song.id)) {
             unblockAnnounced.add(song.id)
-            toast.info(
-              song.fee === 0
-                ? i18n._(msg`「${song.name}」暂无官方音源，已为你匹配其他音源播放`)
-                : i18n._(msg`「${song.name}」VIP 歌曲已为你匹配其他音源播放`),
-            )
+            // Video mode has no audible audio source, so the source-match
+            // notice would be noise over the MV. Keep it for audio playback.
+            if (!useVideoPlaybackStore.getState().active) {
+              toast.info(
+                song.fee === 0
+                  ? i18n._(msg`「${song.name}」暂无官方音源，已为你匹配其他音源播放`)
+                  : i18n._(msg`「${song.name}」VIP 歌曲已为你匹配其他音源播放`),
+              )
+            }
           }
           // Stream through the local API: the WebView cannot load the CDN
           // media URL directly (it answers 403 for cross-origin media).

@@ -84,6 +84,9 @@ export function NowPlaying() {
   const [mvFailed, setMvFailed] = useState(false)
   const mvWasPlayingRef = useRef(false)
   const videoEndedSongRef = useRef<number | null>(null)
+  const mvUrlCacheRef = useRef<{ songId: number; url: string; at: number } | null>(
+    null,
+  )
   const mvId = currentSong?.mv ?? currentSong?.mvid
   const hasMv = Boolean(mvId && Number(mvId) > 0)
   // The CDN URLs returned by the API are HTTP; WebView2 rejects them as mixed
@@ -299,8 +302,22 @@ export function NowPlaying() {
     usePlayerStore.getState().setPlaying(false)
     setMvMode(true)
     setMvFailed(false)
-    setMvLoading(true)
     useVideoPlaybackStore.getState().setActive(true)
+
+    // Reopening the play page should not show a cover/poster loading flash or
+    // refetch the same URL. A ten-minute cache is enough for the signed MV URL.
+    const cached = mvUrlCacheRef.current
+    if (
+      cached &&
+      cached.songId === currentSong.id &&
+      Date.now() - cached.at < 10 * 60 * 1000
+    ) {
+      setMvUrl(cached.url)
+      setMvLoading(false)
+      return
+    }
+
+    setMvLoading(true)
     try {
       // The song's raw `mv` can point at a programme/teaser clip. Resolve the
       // official MV through search first, then request that video's URL.
@@ -309,6 +326,11 @@ export function NowPlaying() {
       if (!official) throw new Error('no official mv')
       const url = await fetchMvUrl(official.id)
       if (!url) throw new Error('empty mv url')
+      mvUrlCacheRef.current = {
+        songId: currentSong.id,
+        url,
+        at: Date.now(),
+      }
       setMvUrl(url)
     } catch {
       setMvFailed(true)
@@ -440,11 +462,7 @@ export function NowPlaying() {
 
         {mvMode ? (
           <div className="np-video-player relative min-h-0 flex-1 overflow-hidden bg-black">
-            {mvLoading ? (
-              <div className="flex h-full items-center justify-center text-white/50">
-                <Loader2 className="h-5 w-5 animate-spin" />
-              </div>
-            ) : mvFailed ? (
+            {mvLoading ? null : mvFailed ? (
               <div className="flex h-full flex-col items-center justify-center gap-3 text-white/55">
                 <p className="text-[12px]">
                   <Trans>MV 加载失败</Trans>
@@ -461,10 +479,6 @@ export function NowPlaying() {
               <MvVideoPlayer
                 key={mvUrl}
                 src={mvUrl}
-                poster={
-                  resizedImageUrl(currentSong.al.picUrl, '640y360') ??
-                  undefined
-                }
                 autoPlay
                 fill
                 onPlay={() => usePlayerStore.getState().setPlaying(false)}
@@ -475,17 +489,11 @@ export function NowPlaying() {
               />
             ) : null}
 
-            <div className="pointer-events-none absolute inset-x-0 top-10 z-20 flex items-start gap-3 bg-gradient-to-b from-black/65 via-black/25 to-transparent px-5 pb-12 pt-2">
-              <div className="min-w-0">
-                <p className="eyebrow text-white/35">MV</p>
-                <h2 className="headline-lg mt-1 truncate text-[24px]">
-                  {currentSong.name}
-                </h2>
-              </div>
+            <div className="pointer-events-none absolute inset-x-0 top-10 z-20 flex justify-end bg-gradient-to-b from-black/50 via-black/15 to-transparent px-5 pb-10 pt-2">
               <button
                 type="button"
                 onClick={() => closeMvMode()}
-                className="np-round-button pressable pointer-events-auto ml-auto flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] text-white/75"
+                className="np-round-button pressable pointer-events-auto flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] text-white/75"
               >
                 <Disc3 className="h-3.5 w-3.5" />
                 <Trans>音乐</Trans>
