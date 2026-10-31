@@ -57,6 +57,8 @@ interface SettingsState {
   preferredSource: string
   /** Visual treatment behind the immersive player. */
   nowPlayingBackdrop: NowPlayingBackdrop
+  /** Lower the animated-gradient brightness for comfortable night listening. */
+  softNowPlayingGradient: boolean
   /** Audio/video preference, persisted across tracks and app restarts. */
   nowPlayingMode: NowPlayingMode
   /** Desktop only: block right-click / F12 / DevTools shortcuts. */
@@ -71,6 +73,7 @@ interface SettingsState {
   setWordByWordLyrics: (value: boolean) => void
   setPreferredSource: (value: string) => void
   setNowPlayingBackdrop: (value: NowPlayingBackdrop) => void
+  setSoftNowPlayingGradient: (value: boolean) => void
   setNowPlayingMode: (value: NowPlayingMode) => void
   setDisableDevTools: (value: boolean) => void
   setAutoReplaceVipSource: (value: boolean) => void
@@ -86,6 +89,7 @@ export const useSettingsStore = create<SettingsState>()(
       wordByWordLyrics: true,
       preferredSource: 'auto',
       nowPlayingBackdrop: 'gradient',
+      softNowPlayingGradient: true,
       nowPlayingMode: 'audio',
       disableDevTools: false,
       autoReplaceVipSource: false,
@@ -96,6 +100,8 @@ export const useSettingsStore = create<SettingsState>()(
       setWordByWordLyrics: (wordByWordLyrics) => set({ wordByWordLyrics }),
       setPreferredSource: (preferredSource) => set({ preferredSource }),
       setNowPlayingBackdrop: (nowPlayingBackdrop) => set({ nowPlayingBackdrop }),
+      setSoftNowPlayingGradient: (softNowPlayingGradient) =>
+        set({ softNowPlayingGradient }),
       setNowPlayingMode: (nowPlayingMode) => set({ nowPlayingMode }),
       setDisableDevTools: (disableDevTools) => set({ disableDevTools }),
       setAutoReplaceVipSource: (autoReplaceVipSource) => set({ autoReplaceVipSource }),

@@ -11,6 +11,8 @@ type Props = {
   palette: Palette
   /** 播放中时色斑更亮，暂停时整体压暗。 */
   playing?: boolean
+  /** Dim and desaturate the gradient for comfortable night listening. */
+  soft?: boolean
   className?: string
 }
 
@@ -24,6 +26,7 @@ export default function AmbientBackground({
   artwork,
   palette,
   playing = false,
+  soft = true,
   className,
 }: Props) {
   const colors = palette.colors.length ? palette.colors : FALLBACK_PALETTE.colors
@@ -50,11 +53,19 @@ export default function AmbientBackground({
           src={artwork}
           alt=""
           aria-hidden
-          className="am-kenburns h-full w-full object-cover opacity-90 blur-[120px] saturate-[2] contrast-[1.05]"
+          className={cn(
+            'am-kenburns h-full w-full object-cover blur-[120px]',
+            soft
+              ? 'opacity-[0.55] saturate-[1.4] brightness-[.8]'
+              : 'opacity-90 saturate-[2] contrast-[1.05]',
+          )}
         />
       </div>
       {/* 2. 取色色斑（暂停时整体压暗，突出"静止"感） */}
-      <div className="absolute inset-0 transition-opacity duration-1000" style={{ opacity: playing ? 1 : 0.75 }}>
+      <div
+        className="absolute inset-0 transition-opacity duration-1000"
+        style={{ opacity: playing ? (soft ? 0.55 : 1) : soft ? 0.4 : 0.75 }}
+      >
         {blobs.map((b, i) => (
           <div
             key={i}
@@ -81,7 +92,9 @@ export default function AmbientBackground({
         ))}
       </div>
 
-      {/* 3. 让整体变暗、变柔和，突出前景 UI */}
+      {/* 3. 让整体变暗、变柔和，突出前景 UI。Soft mode adds a flat veil so
+          bright album art does not wash out the white lyrics. */}
+      {soft ? <div className="absolute inset-0 bg-black/30" /> : null}
       <div className="absolute inset-0 bg-[radial-gradient(120%_120%_at_50%_45%,rgba(0,0,0,0.12)_0%,rgba(0,0,0,0.42)_60%,rgba(0,0,0,0.66)_100%)]" />
       <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/35 to-transparent" />
 

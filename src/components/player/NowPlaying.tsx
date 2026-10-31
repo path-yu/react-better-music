@@ -71,6 +71,8 @@ export function NowPlaying() {
   const bindVideo = useVideoPlaybackStore((state) => state.bind)
   const backdrop =
     useSettingsStore((state) => state.nowPlayingBackdrop) ?? 'gradient'
+  const softGradient =
+    useSettingsStore((state) => state.softNowPlayingGradient) ?? true
   const nowPlayingMode = useSettingsStore((state) => state.nowPlayingMode)
   const setNowPlayingMode = useSettingsStore(
     (state) => state.setNowPlayingMode,
@@ -402,6 +404,7 @@ export function NowPlaying() {
           artwork={ambientSource ?? ''}
           palette={palette}
           playing={playing}
+          soft={softGradient}
         />
       ) : (
         <div className="nowplaying-ambient" aria-hidden="true">

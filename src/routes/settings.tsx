@@ -73,6 +73,12 @@ function SettingsPage() {
   )
   const locale = useSettingsStore((state) => state.locale)
   const setLocale = useSettingsStore((state) => state.setLocale)
+  const softNowPlayingGradient = useSettingsStore(
+    (state) => state.softNowPlayingGradient,
+  )
+  const setSoftNowPlayingGradient = useSettingsStore(
+    (state) => state.setSoftNowPlayingGradient,
+  )
   const [items, setItems] = useState<CachedAudioItem[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<number[]>([])
@@ -353,6 +359,24 @@ function SettingsPage() {
                 </div>
               )
             })}
+          </div>
+
+          <div className="mt-5 flex items-center justify-between gap-4 border-t border-[var(--app-border)] pt-4">
+            <div>
+              <p className="text-[13px] font-medium text-black/75">
+                <Trans>柔和播放页渐变</Trans>
+              </p>
+              <p className="mt-1 max-w-[560px] text-[11px] leading-relaxed text-black/40">
+                <Trans>
+                  降低动态渐变背景的亮度和饱和度，夜间长时间播放时更护眼；关闭后恢复鲜艳模式。
+                </Trans>
+              </p>
+            </div>
+            <Switch
+              checked={softNowPlayingGradient}
+              onChange={setSoftNowPlayingGradient}
+              aria-label={i18n._(msg`柔和播放页渐变`)}
+            />
           </div>
         </section>
 
