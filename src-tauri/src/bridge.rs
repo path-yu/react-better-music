@@ -11,7 +11,9 @@ use axum::{
 };
 use serde::Deserialize;
 use serde_json::{json, Value};
-use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
+use tauri::{
+    window::Color, AppHandle, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder,
+};
 use tokio::sync::Mutex;
 use tower_http::cors::{AllowOrigin, CorsLayer};
 
@@ -205,14 +207,18 @@ fn ensure_window(
         .resizable(false)
         .decorations(false)
         .transparent(true)
+        // A decorated/shadowed transparent window gets a white 1px Windows
+        // frame and a white WebView2 controller background. Both aux windows
+        // paint their own rounded card, so the native surface must stay clear.
+        .shadow(false)
+        .background_color(Color(0, 0, 0, 0))
         .always_on_top(true)
         .skip_taskbar(true)
         .visible(false)
         .build()
         .map_err(|error| error.to_string())?;
-    // Keep the WebView surface transparent so the lyrics HUD does not gain a
-    // white rectangle on Windows.
-    let _ = window.set_background_color(None);
+    // `None` means "use the platform default" (white on Windows), not clear.
+    let _ = window.set_background_color(Some(Color(0, 0, 0, 0)));
     Ok(window)
 }
 

@@ -27,31 +27,13 @@ pub async fn start(port: u16, library: LocalLibrary) -> Result<(), String> {
         ..Default::default()
     };
     // Some public endpoints (notably /simi/artist) require the anonymous
-    // MUSIC_A cookie. The Node server bootstrapped this at startup; do the same
-    // for the Rust client before building the routes.
-    let mut client = ncm_api_rs::create_client(None);
-    for attempt in 0..3 {
-        match client.register_anonimous(&ncm_api_rs::Query::new()).await {
-            Ok(response) if !response.cookie.is_empty() => {
-                client.set_cookie(response.cookie.join("; "));
-                eprintln!("[tauri] anonymous cookie ready");
-                break;
-            }
-            Ok(response) => {
-                eprintln!(
-                    "[tauri] anonymous registration attempt {} returned {} without cookies",
-                    attempt + 1,
-                    response.status
-                );
-            }
-            Err(error) => {
-                eprintln!(
-                    "[tauri] anonymous registration attempt {} failed: {error}",
-                    attempt + 1
-                );
-            }
-        }
-    }
+    // MUSIC_A cookie. Do not put that network round-trip in front of binding
+    // the port: the homepage calls /banner, /personalized and friends as soon
+    // as the WebView appears, and a slow proxy made the Tauri API look dead for
+    // several seconds. The cloned client shares the cookie cell, so the worker
+    // below can install the cookie after the server is already responding.
+    let client = ncm_api_rs::create_client(None);
+    let mut registration_client = client.clone();
     let ncm = ncm_api_rs::server::build_app_with_config(client, &ncm_config);
 
     let origins = ALLOWED_ORIGINS
@@ -95,6 +77,35 @@ pub async fn start(port: u16, library: LocalLibrary) -> Result<(), String> {
         .map_err(|error| format!("failed to bind API port {port}: {error}"))?;
 
     eprintln!("[tauri] Rust API listening on http://127.0.0.1:{port}");
+
+    tokio::spawn(async move {
+        for attempt in 0..3 {
+            match registration_client
+                .register_anonimous(&ncm_api_rs::Query::new())
+                .await
+            {
+                Ok(response) if !response.cookie.is_empty() => {
+                    registration_client.set_cookie(response.cookie.join("; "));
+                    eprintln!("[tauri] anonymous cookie ready");
+                    break;
+                }
+                Ok(response) => {
+                    eprintln!(
+                        "[tauri] anonymous registration attempt {} returned {} without cookies",
+                        attempt + 1,
+                        response.status
+                    );
+                }
+                Err(error) => {
+                    eprintln!(
+                        "[tauri] anonymous registration attempt {} failed: {error}",
+                        attempt + 1
+                    );
+                }
+            }
+        }
+    });
+
     axum::serve(listener, app)
         .await
         .map_err(|error| format!("API server stopped: {error}"))

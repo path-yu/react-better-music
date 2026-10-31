@@ -12,7 +12,7 @@ use reqwest::header::{HeaderMap, HeaderValue, COOKIE, REFERER, USER_AGENT};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
-use std::sync::LazyLock;
+use std::sync::{Arc, LazyLock, RwLock};
 
 /// 特殊状态码集合（视为 200）
 static SPECIAL_STATUS_CODES: LazyLock<std::collections::HashSet<i64>> =
@@ -97,7 +97,9 @@ pub struct ApiResponse {
 #[derive(Debug, Clone)]
 pub struct ApiClient {
     pub(crate) client: reqwest::Client,
-    cookie: Option<String>,
+    /// Shared so the long-lived Axum state sees a cookie installed later by
+    /// the background anonymous-registration task.
+    cookie: Arc<RwLock<Option<String>>>,
     anonymous_token: Option<String>,
     /// 自定义设备 ID，None 则使用全局默认值
     device_id: Option<String>,
@@ -112,7 +114,7 @@ impl ApiClient {
 
         Self {
             client,
-            cookie,
+            cookie: Arc::new(RwLock::new(cookie)),
             anonymous_token: None,
             device_id: None,
         }
@@ -129,7 +131,7 @@ impl ApiClient {
 
         Ok(Self {
             client,
-            cookie,
+            cookie: Arc::new(RwLock::new(cookie)),
             anonymous_token: None,
             device_id: None,
         })
@@ -137,7 +139,9 @@ impl ApiClient {
 
     /// 设置 cookie
     pub fn set_cookie(&mut self, cookie: String) {
-        self.cookie = Some(cookie);
+        if let Ok(mut value) = self.cookie.write() {
+            *value = Some(cookie);
+        }
     }
 
     /// 设置匿名 token
@@ -182,11 +186,17 @@ impl ApiClient {
             }
         }
 
-        // Cookie 处理
+        // Cookie 处理. The stored value can be installed asynchronously, so
+        // take a snapshot instead of borrowing the lock across the request.
+        let stored_cookie = self
+            .cookie
+            .read()
+            .ok()
+            .and_then(|value| value.clone());
         let cookie_str = options
             .cookie
             .as_deref()
-            .or(self.cookie.as_deref())
+            .or(stored_cookie.as_deref())
             .unwrap_or("");
         let mut cookie_map = cookie_to_json(cookie_str);
 

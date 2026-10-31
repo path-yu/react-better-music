@@ -11,6 +11,9 @@ interface MvVideoPlayerProps {
   fill?: boolean
   onPlay?: () => void
   onEnded?: () => void
+  /** Fired once the browser has enough data to start playback. */
+  onReady?: () => void
+  onError?: () => void
 }
 
 /**
@@ -42,6 +45,8 @@ export function MvVideoPlayer({
   fill = false,
   onPlay,
   onEnded,
+  onReady,
+  onError,
 }: MvVideoPlayerProps) {
   return (
     <VideoPlayer>
@@ -67,6 +72,8 @@ export function MvVideoPlayer({
             preload="metadata"
             onPlay={onPlay}
             onEnded={onEnded}
+            onCanPlay={onReady}
+            onError={onError}
           />
         </VideoSkin>
       </I18nProvider>

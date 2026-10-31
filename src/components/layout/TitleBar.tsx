@@ -82,6 +82,7 @@ export function TitleBar() {
 function DesktopTitleBar({ subtitle }: { subtitle?: string }) {
   const { i18n } = useLingui()
   const nativeControls = desktopPlatform() === 'macos'
+  const tauri = isTauriApp()
   const [maximized, setMaximized] = useState(false)
 
   // Keep the maximize icon in sync with the OS: snapping, double-clicking the
@@ -132,16 +133,26 @@ function DesktopTitleBar({ subtitle }: { subtitle?: string }) {
   return (
     <div
       className={`desktop-titlebar ${DRAG_CLASS}${nativeControls ? ' desktop-titlebar--mac' : ''}`}
-      data-tauri-drag-region
-      onDoubleClick={nativeControls ? undefined : handleBarDoubleClick}
+      onDoubleClick={nativeControls || tauri ? undefined : handleBarDoubleClick}
     >
-      <div className="titlebar-title flex items-center gap-1.5">
+      <div
+        className="titlebar-title flex items-center gap-1.5"
+        data-tauri-drag-region={tauri ? '' : undefined}
+      >
         <Music2 className="brand-mark h-3.5 w-3.5 text-accent" strokeWidth={1.9} />
         声屿
         {subtitle ? (
           <span className="titlebar-subtitle font-normal">— {subtitle}</span>
         ) : null}
       </div>
+
+      {/* Tauri treats descendants of a drag region as draggable, which makes
+          the window buttons below ignore clicks. Keep the drag surface in the
+          empty space only. Electrobun still uses its CSS class on the root. */}
+      <div
+        className="min-w-0 flex-1 self-stretch"
+        data-tauri-drag-region={tauri ? '' : undefined}
+      />
 
       {nativeControls ? null : (
         <div className="desktop-titlebar__controls">
@@ -152,7 +163,7 @@ function DesktopTitleBar({ subtitle }: { subtitle?: string }) {
             className={`desktop-titlebar__button ${NO_DRAG_CLASS}`}
             onClick={() => void minimizeWindow().catch(() => {})}
           >
-            <Minus className="h-3.5 w-3.5" strokeWidth={1.6} />
+            <Minus className="h-3.5 w-3.5" strokeWidth={1.8} />
           </button>
           <button
             type="button"
@@ -162,9 +173,9 @@ function DesktopTitleBar({ subtitle }: { subtitle?: string }) {
             onClick={handleToggleMaximize}
           >
             {maximized ? (
-              <Copy className="h-3 w-3 -scale-x-100" strokeWidth={1.5} />
+              <Copy className="h-3 w-3 -scale-x-100" strokeWidth={1.7} />
             ) : (
-              <Square className="h-[11px] w-[11px]" strokeWidth={1.5} />
+              <Square className="h-[11px] w-[11px]" strokeWidth={1.7} />
             )}
           </button>
           <button
@@ -174,7 +185,7 @@ function DesktopTitleBar({ subtitle }: { subtitle?: string }) {
             className={`desktop-titlebar__button desktop-titlebar__button--close ${NO_DRAG_CLASS}`}
             onClick={() => void closeWindow().catch(() => {})}
           >
-            <X className="h-3.5 w-3.5" strokeWidth={1.6} />
+            <X className="h-3.5 w-3.5" strokeWidth={1.8} />
           </button>
         </div>
       )}

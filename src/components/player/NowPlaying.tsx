@@ -82,6 +82,7 @@ export function NowPlaying() {
   const [mvUrl, setMvUrl] = useState('')
   const [mvLoading, setMvLoading] = useState(false)
   const [mvFailed, setMvFailed] = useState(false)
+  const [mvVideoReady, setMvVideoReady] = useState(false)
   const mvWasPlayingRef = useRef(false)
   const videoEndedSongRef = useRef<number | null>(null)
   const mvUrlCacheRef = useRef<{ songId: number; url: string; at: number } | null>(
@@ -123,6 +124,7 @@ export function NowPlaying() {
     setMvUrl('')
     setMvFailed(false)
     setMvLoading(false)
+    setMvVideoReady(false)
     useVideoPlaybackStore.getState().setActive(false)
     bindVideo(null)
     mvWasPlayingRef.current = false
@@ -132,13 +134,10 @@ export function NowPlaying() {
 
   useEffect(() => {
     if (show) return
-    setVideoActive(false)
-    if (mvMode) {
-      setMvMode(false)
-      setMvUrl('')
-      if (mvWasPlayingRef.current) usePlayerStore.getState().setPlaying(true)
-      mvWasPlayingRef.current = false
-    }
+    // Closing the play page must not interrupt a running MV. Keep the video
+    // element mounted in the hidden overlay and keep it as the active player;
+    // only clear that state when we are actually back in audio mode.
+    if (!mvMode) setVideoActive(false)
   }, [show, mvMode, setVideoActive])
 
   // If the user last chose video mode, keep that preference for every
@@ -262,7 +261,9 @@ export function NowPlaying() {
     seekAudio(timeMs / 1000)
   }, [])
 
-  if (!show || !currentSong) return null
+  // Keep the MV mounted while the overlay is closed so video keeps playing in
+  // the background. Audio-only mode can unmount as before.
+  if (!currentSong || (!show && !mvMode)) return null
 
   const loadingSource = playing && !sourceReady
   const buffering = playing && sourceReady && !audioReady
@@ -287,6 +288,7 @@ export function NowPlaying() {
     setMvUrl('')
     setMvFailed(false)
     setMvLoading(false)
+    setMvVideoReady(false)
     useVideoPlaybackStore.getState().setActive(false)
     bindVideo(null)
     if (rememberAudio) setNowPlayingMode('audio')
@@ -302,6 +304,7 @@ export function NowPlaying() {
     usePlayerStore.getState().setPlaying(false)
     setMvMode(true)
     setMvFailed(false)
+    setMvVideoReady(false)
     useVideoPlaybackStore.getState().setActive(true)
 
     // Reopening the play page should not show a cover/poster loading flash or
@@ -385,8 +388,14 @@ export function NowPlaying() {
 
   return (
     <div
-      className="nowplaying-overlay dark"
+      className={cn(
+        'nowplaying-overlay dark',
+        // `opacity-0` rather than `display:none`: WebView2 keeps decoding and
+        // playing the <video> audio while the overlay is invisible.
+        !show && 'pointer-events-none opacity-0',
+      )}
       style={{ backgroundColor: 'var(--nowplaying-base, #0f0f12)' }}
+      aria-hidden={!show}
     >
       {backdrop === 'gradient' ? (
         <AmbientBackground
@@ -462,7 +471,7 @@ export function NowPlaying() {
 
         {mvMode ? (
           <div className="np-video-player relative min-h-0 flex-1 overflow-hidden bg-black">
-            {mvLoading ? null : mvFailed ? (
+            {mvFailed ? (
               <div className="flex h-full flex-col items-center justify-center gap-3 text-white/55">
                 <p className="text-[12px]">
                   <Trans>MV 加载失败</Trans>
@@ -481,12 +490,32 @@ export function NowPlaying() {
                 src={mvUrl}
                 autoPlay
                 fill
+                onReady={() => setMvVideoReady(true)}
+                onError={() => {
+                  setMvVideoReady(false)
+                  setMvFailed(true)
+                }}
                 onPlay={() => usePlayerStore.getState().setPlaying(false)}
                 onEnded={() => {
                   videoEndedSongRef.current = currentSong.id
                   closeMvMode(true, false)
                 }}
               />
+            ) : null}
+
+            {/* The URL request and the first video segment are separate waits.
+                Keep a spinner over the black frame until `canplay` fires. */}
+            {!mvFailed && !mvVideoReady ? (
+              <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-black/25 text-white/70">
+                <Loader2 className="h-6 w-6 animate-spin text-accent" />
+                <p className="text-[12px]">
+                  {mvLoading ? (
+                    <Trans>正在获取 MV…</Trans>
+                  ) : (
+                    <Trans>视频加载中…</Trans>
+                  )}
+                </p>
+              </div>
             ) : null}
 
             <div className="pointer-events-none absolute inset-x-0 top-10 z-20 flex justify-end bg-gradient-to-b from-black/50 via-black/15 to-transparent px-5 pb-10 pt-2">
@@ -517,7 +546,7 @@ export function NowPlaying() {
                     title={i18n._(msg`切换到视频播放`)}
                     aria-pressed={mvMode}
                     onClick={() => void toggleMvMode()}
-                    className="np-mv-badge shrink-0 rounded-[4px] border-0 bg-black/40 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-accent shadow-[0_2px_10px_rgba(0,0,0,0.18)] backdrop-blur-md transition-colors hover:bg-black/55"
+                    className="np-mv-badge  shrink-0 rounded-[5px] border-0 bg-transparent px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-accent transition-colors hover:bg-white/10"
                   >
                     MV
                   </button>
@@ -528,7 +557,7 @@ export function NowPlaying() {
                   title={i18n._(msg`相关视频`)}
                   disabled={videoLoading}
                   onClick={() => void openRelatedVideos()}
-                  className="np-round-button pressable flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white/60 transition-colors hover:text-white disabled:opacity-50"
+                  className=" np-round-button pressable flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white/60 transition-colors hover:text-white disabled:opacity-50"
                 >
                   {videoLoading ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />

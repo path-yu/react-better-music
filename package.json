@@ -21,7 +21,7 @@
     "desktop:build": "hutch run build",
     "desktop:installer": "node scripts/installer/build.mjs",
     "desktop:release": "pnpm desktop:build && pnpm desktop:installer",
-    "dev:tauri": "vite dev --mode tauri --port 5173",
+    "dev:tauri": "vite dev --mode tauri --port 5173 --strictPort",
     "build:tauri": "tsc --noEmit && vite build --mode tauri",
     "tauri:dev": "node scripts/tauri-cli.mjs dev",
     "tauri:build": "node scripts/tauri-cli.mjs build --no-bundle",

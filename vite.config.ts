@@ -31,6 +31,10 @@ export default defineConfig(({ mode }) => {
     },
   server: {
     port: 5173,
+    // Tauri's devUrl is fixed to 5173. Without strictPort a stale Vite process
+    // silently moves to 5174, while Tauri keeps showing the old page — HMR
+    // updates then go to the new server that the WebView never connects to.
+    strictPort: true,
     // Keep the API proxy reachable only from this machine.
     host: 'localhost',
     proxy,

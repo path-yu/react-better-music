@@ -386,7 +386,7 @@ html.desktop .app-window {
   border: 0;
   padding: 0;
   background: transparent;
-  color: rgba(0, 0, 0, 0.5);
+  color: rgba(0, 0, 0, 0.68);
   -webkit-app-region: no-drag;
   app-region: no-drag;
   transition:
@@ -395,8 +395,8 @@ html.desktop .app-window {
 }
 
 .desktop-titlebar__button:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.9);
 }
 
 .desktop-titlebar__button:focus-visible {
@@ -414,8 +414,8 @@ html.desktop .app-window {
  * chrome above it (native title bar) switches to dark glass, otherwise a light
  * strip sits on top of the artwork.
  */
-.app-window:has(.nowplaying-overlay) .desktop-titlebar,
-.app-window:has(.nowplaying-overlay) .titlebar {
+.app-window:has(.nowplaying-overlay:not(.opacity-0)) .desktop-titlebar,
+.app-window:has(.nowplaying-overlay:not(.opacity-0)) .titlebar {
   background: transparent;
   /* The glass bar border is a light hairline in the default palette; over the
      immersive artwork it reads as a stray white line. Let the artwork run under
@@ -423,19 +423,19 @@ html.desktop .app-window {
   border-bottom-color: transparent;
 }
 
-.app-window:has(.nowplaying-overlay) .titlebar-title {
+.app-window:has(.nowplaying-overlay:not(.opacity-0)) .titlebar-title {
   color: rgba(255, 255, 255, 0.72);
 }
 
-.app-window:has(.nowplaying-overlay) .titlebar-subtitle {
+.app-window:has(.nowplaying-overlay:not(.opacity-0)) .titlebar-subtitle {
   color: rgba(255, 255, 255, 0.58);
 }
 
-.app-window:has(.nowplaying-overlay) .desktop-titlebar__button {
+.app-window:has(.nowplaying-overlay:not(.opacity-0)) .desktop-titlebar__button {
   color: rgba(255, 255, 255, 0.55);
 }
 
-.app-window:has(.nowplaying-overlay) .desktop-titlebar__button:hover {
+.app-window:has(.nowplaying-overlay:not(.opacity-0)) .desktop-titlebar__button:hover {
   background: rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.85);
 }
@@ -578,7 +578,10 @@ html.desktop .app-window {
 }
 
 .np-mv-badge {
-  color: var(--apple-blue);
+  color: white;
+  border: 1px solid rgba(255, 255, 255);
+  /* ios圆角 */
+  corner-shape: squircle;
 }
 
 .np-video-player .video-controls-content,
