@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod api_cache;
 mod api_server;
 mod bridge;
 mod local_library;

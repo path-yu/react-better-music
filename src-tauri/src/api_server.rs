@@ -84,7 +84,12 @@ pub async fn start(port: u16, library: LocalLibrary) -> Result<(), String> {
         .merge(crate::local_library::router(library))
         .layer(cors);
 
-    let app = ncm.merge(custom);
+    let app = ncm
+        .merge(custom)
+        .layer(axum::middleware::from_fn_with_state(
+            crate::api_cache::ApiCache::new(),
+            crate::api_cache::middleware,
+        ));
     let listener = tokio::net::TcpListener::bind(("127.0.0.1", port))
         .await
         .map_err(|error| format!("failed to bind API port {port}: {error}"))?;
