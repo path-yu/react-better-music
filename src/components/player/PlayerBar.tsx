@@ -127,6 +127,7 @@ export function PlayerBar() {
   const prefetchNext = usePlayerStore((state) => state.prefetchNext)
   const invalidateUrls = usePlayerStore((state) => state.invalidateUrls)
   const showNowPlaying = usePlayerStore((state) => state.showNowPlaying)
+  const showQueue = usePlayerStore((state) => state.showQueue)
   const resumeAt = usePlayerStore((state) => state.resumeAt)
   const consumeResumeAt = usePlayerStore((state) => state.consumeResumeAt)
 
@@ -1035,6 +1036,11 @@ export function PlayerBar() {
         // backdrop as frosted glass instead of sitting in its own strip.
         showNowPlaying ? 'dark player-glass--immersive z-[70]' : 'z-30',
       )}
+      onClick={() => {
+        // The queue backdrop stops above the player bar so controls stay
+        // usable; clicking the bar itself is still an outside click.
+        if (showQueue) toggleQueue(false)
+      }}
     >
       <div className="flex min-w-0 items-center gap-3">
         <button
