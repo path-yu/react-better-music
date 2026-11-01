@@ -1,5 +1,6 @@
 import { API_BASE } from './apiBase'
 import { fetchWithBootRetry } from './apiFetch'
+import { isNetworkFailure, reportNetworkError } from './networkStatus'
 import {
   fetchGuestCookie,
   getActiveCookie,
@@ -86,6 +87,9 @@ async function parse<T>(response: Response): Promise<T> {
     // keep raw text
   }
   if (!response.ok) {
+    if (response.status === 502 || response.status === 503 || response.status === 504) {
+      reportNetworkError()
+    }
     const message =
       (payload as { message?: string; msg?: string })?.message ??
       (payload as { msg?: string })?.msg ??
@@ -145,12 +149,15 @@ async function runWithSession<T>(path: string, run: () => Promise<Response>) {
   try {
     const payload = await parse<T>(await run())
     const code = (payload as { code?: number } | null)?.code
+    // Some endpoints encode upstream gateway failures in a 200 response body.
+    if (code === 502 || code === 503 || code === 504) reportNetworkError()
     // Some endpoints report an expired session as HTTP 200 with body code 301.
     if (canRetry && code === 301 && (await recoverSession())) {
       return parse<T>(await run())
     }
     return payload
   } catch (error) {
+    if (isNetworkFailure(error)) reportNetworkError()
     if (!isSessionFailure(error) || !canRetry) throw error
     if (!(await recoverSession())) throw error
     return parse<T>(await run())

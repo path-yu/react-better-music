@@ -17,6 +17,7 @@ import { useDesktopCommands } from '../../lib/desktopCommands'
 import { useDesktopLyricsPublisher } from '../../lib/desktopLyrics'
 import { applyTheme } from '../../lib/theme'
 import { getLastLoginRefreshAt, getLoginCookie, refreshLogin } from '../../lib/session'
+import { installNetworkStatus } from '../../lib/networkStatus'
 
 // The queue panel and login dialog are only needed after a user action; keep
 // them out of the first-paint parse. NowPlaying stays eager because it owns
@@ -82,6 +83,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       trigger?.focus()
     }
   }, [sidebarOpen, closeSidebar])
+
+  useEffect(() => installNetworkStatus(), [])
 
   useEffect(() => {
     void initSession()

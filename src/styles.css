@@ -169,7 +169,7 @@ svg.lucide.brand-mark {
 .app-search-input:hover,
 .app-search-input:focus {
   background-color: rgb(var(--apple-blue-rgb) / 0.1) !important;
-  border-color: rgb(var(--apple-blue-rgb) / 0.32) !important;
+  /* border-color: rgb(var(--apple-blue-rgb) / 0.32) !important; */
 }
 
 .app-search-input:hover,
