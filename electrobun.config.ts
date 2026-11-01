@@ -4,7 +4,7 @@ export default {
   app: {
     name: '声屿',
     identifier: 'com.qimiao.music',
-    version: '0.1.0',
+    version: '1.1',
   },
   // Keep the Bun process (and tray) alive even if the last window is destroyed.
   runtime: {
