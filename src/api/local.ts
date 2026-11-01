@@ -15,10 +15,15 @@ export interface LocalRecent {
   playedAt: number
 }
 
+/** A guest-favorited NetEase playlist, including a local track snapshot. */
+export interface LocalSubscribedPlaylist extends Playlist {
+  songs?: Song[]
+}
+
 export interface LocalLibrary {
   version: number
   playlists: LocalPlaylist[]
-  subscribedPlaylists: Playlist[]
+  subscribedPlaylists: LocalSubscribedPlaylist[]
   favorites: Song[]
   recent: LocalRecent[]
 }
@@ -82,15 +87,17 @@ export const removeLocalPlaylistSong = (id: string, songId: number) =>
     `/local/playlists/${encodeURIComponent(id)}/songs/${songId}`,
   )
 
-export const addLocalSubscribedPlaylist = (playlist: Playlist) =>
-  localRequest<Playlist[]>(
+export const addLocalSubscribedPlaylist = (
+  playlist: LocalSubscribedPlaylist,
+) =>
+  localRequest<LocalSubscribedPlaylist[]>(
     'POST',
     '/local/subscribed-playlists',
     { playlist },
   )
 
 export const removeLocalSubscribedPlaylist = (playlistId: number) =>
-  localRequest<Playlist[]>(
+  localRequest<LocalSubscribedPlaylist[]>(
     'DELETE',
     `/local/subscribed-playlists/${playlistId}`,
   )

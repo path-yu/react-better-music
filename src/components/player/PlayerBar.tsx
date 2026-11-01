@@ -594,6 +594,7 @@ export function PlayerBar() {
         url: active.url ?? '',
         artists: formatArtists(active.ar),
         duration: active.dt,
+        trialEnd: active.trialEnd ?? 0,
       }
       if (audioBlob) {
         cacheSongFromBlob(meta, audioBlob)

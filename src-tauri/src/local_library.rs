@@ -265,10 +265,13 @@ async fn add_subscribed_playlist(
     let items = value["subscribedPlaylists"]
         .as_array_mut()
         .expect("subscribedPlaylists is an array");
-    if !items
+    if let Some(index) = items
         .iter()
-        .any(|item| item.get("id").and_then(Value::as_i64) == Some(playlist_id))
+        .position(|item| item.get("id").and_then(Value::as_i64) == Some(playlist_id))
     {
+        // Backfill songs for playlists saved before snapshots included tracks.
+        items[index] = playlist;
+    } else {
         items.insert(0, playlist);
     }
     if let Err(error) = library.write(&value).await {

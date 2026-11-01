@@ -2,16 +2,66 @@ const fs = require('fs')
 const path = require('path')
 
 /**
- * Guest library persisted next to the installed app (not in browser storage).
- * The packaged main process passes QIMIAO_INSTALL_DIR; dev/API-only runs fall
- * back to the current working directory.
+ * Guest library persisted in the app-data directory (not in browser storage).
+ * The packaged main process passes QIMIAO_DATA_DIR so dev rebuilds cannot wipe
+ * it; API-only runs fall back to the install/current working directory.
  */
 const INSTALL_DIR =
   process.env.QIMIAO_INSTALL_DIR && process.env.QIMIAO_INSTALL_DIR.trim()
     ? process.env.QIMIAO_INSTALL_DIR.trim()
     : process.cwd()
-const DATA_DIR = path.join(INSTALL_DIR, 'local-data')
+const DATA_DIR =
+  process.env.QIMIAO_DATA_DIR && process.env.QIMIAO_DATA_DIR.trim()
+    ? process.env.QIMIAO_DATA_DIR.trim()
+    : path.join(INSTALL_DIR, 'local-data')
 const DATA_FILE = path.join(DATA_DIR, 'library.json')
+
+/**
+ * Older builds stored the guest library inside the generated dev/install tree.
+ * Copy the newest legacy file into the stable app-data directory once, before
+ * the API starts serving requests.
+ */
+function migrateLegacyLibrary() {
+  if (fs.existsSync(DATA_FILE)) return
+  const candidates = [
+    path.join(process.cwd(), 'local-data', 'library.json'),
+    path.join(INSTALL_DIR, 'local-data', 'library.json'),
+    process.env.LOCALAPPDATA
+      ? path.join(
+          process.env.LOCALAPPDATA,
+          'com.qimiao.music',
+          'stable',
+          'app',
+          'bin',
+          'local-data',
+          'library.json',
+        )
+      : null,
+  ].filter(Boolean)
+
+  let source = null
+  let sourceTime = 0
+  for (const candidate of candidates) {
+    try {
+      const stat = fs.statSync(candidate)
+      if (stat.size <= 2 || stat.mtimeMs <= sourceTime) continue
+      source = candidate
+      sourceTime = stat.mtimeMs
+    } catch {
+      // Missing legacy path.
+    }
+  }
+  if (!source) return
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true })
+    fs.copyFileSync(source, DATA_FILE)
+    console.log(`[local-library] migrated ${source} -> ${DATA_FILE}`)
+  } catch {
+    // A read-only data dir cannot be recovered here; the API still starts.
+  }
+}
+
+migrateLegacyLibrary()
 const MAX_RECENT = 200
 
 class LocalLibraryError extends Error {
@@ -62,12 +112,17 @@ function normalizePlaylist(playlist) {
   ) {
     throw new LocalLibraryError('Invalid playlist')
   }
+  const songs = Array.isArray(playlist.songs)
+    ? playlist.songs
+    : Array.isArray(playlist.tracks)
+      ? playlist.tracks
+      : []
   return {
     id: Number(playlist.id),
     name: typeof playlist.name === 'string' ? playlist.name : '',
     coverImgUrl:
       typeof playlist.coverImgUrl === 'string' ? playlist.coverImgUrl : '',
-    trackCount: Number(playlist.trackCount) || 0,
+    trackCount: Number(playlist.trackCount) || songs.length,
     playCount: Number(playlist.playCount) || 0,
     creator:
       playlist.creator && typeof playlist.creator === 'object'
@@ -83,6 +138,7 @@ function normalizePlaylist(playlist) {
                 : '',
           }
         : undefined,
+    songs: songs.map(normalizeSong),
   }
 }
 
@@ -206,14 +262,17 @@ function removeSongFromPlaylist(id, songId) {
 function addSubscribedPlaylist(playlist) {
   const snapshot = normalizePlaylist(playlist)
   const data = load()
-  if (
-    !data.subscribedPlaylists.some(
-      (item) => Number(item.id) === snapshot.id,
-    )
-  ) {
+  const existing = data.subscribedPlaylists.findIndex(
+    (item) => Number(item.id) === snapshot.id,
+  )
+  if (existing >= 0) {
+    // Opening a previously subscribed playlist can backfill songs that were
+    // saved before track snapshots were part of the guest library.
+    data.subscribedPlaylists[existing] = snapshot
+  } else {
     data.subscribedPlaylists.unshift(snapshot)
-    persist()
   }
+  persist()
   return data.subscribedPlaylists
 }
 

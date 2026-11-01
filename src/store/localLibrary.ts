@@ -16,16 +16,17 @@ import {
   renameLocalPlaylist,
   type LocalPlaylist,
   type LocalRecent,
+  type LocalSubscribedPlaylist,
 } from '../api/local'
 import { toast } from '../lib/toast'
 import { i18n } from '../i18n'
-import type { Playlist, Song } from '../types'
+import type { Song } from '../types'
 
 interface LocalLibraryState {
   loaded: boolean
   loading: boolean
   playlists: LocalPlaylist[]
-  subscribedPlaylists: Playlist[]
+  subscribedPlaylists: LocalSubscribedPlaylist[]
   favorites: Song[]
   recent: LocalRecent[]
   load: (force?: boolean) => Promise<void>
@@ -34,7 +35,12 @@ interface LocalLibraryState {
   removePlaylist: (id: string) => Promise<boolean>
   addSong: (playlistId: string, song: Song) => Promise<boolean>
   removeSong: (playlistId: string, songId: number) => Promise<boolean>
-  toggleSubscribedPlaylist: (playlist: Playlist) => Promise<boolean | null>
+  toggleSubscribedPlaylist: (
+    playlist: LocalSubscribedPlaylist,
+  ) => Promise<boolean | null>
+  cacheSubscribedPlaylist: (
+    playlist: LocalSubscribedPlaylist,
+  ) => Promise<void>
   toggleFavorite: (song: Song) => Promise<boolean>
   recordRecent: (song: Song) => Promise<void>
   removeRecent: (songId: number) => Promise<void>
@@ -151,6 +157,16 @@ export const useLocalLibraryStore = create<LocalLibraryState>()((set, get) => ({
     } catch {
       toast.error(i18n._(msg`收藏失败`))
       return null
+    }
+  },
+
+  async cacheSubscribedPlaylist(playlist) {
+    try {
+      const next = await addLocalSubscribedPlaylist(playlist)
+      set({ subscribedPlaylists: next })
+    } catch {
+      // Backfilling a subscribed playlist is best-effort; the normal favorite
+      // action still works even if this silent refresh fails.
     }
   },
 

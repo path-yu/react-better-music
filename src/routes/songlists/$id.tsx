@@ -72,6 +72,9 @@ function PlaylistDetailPage() {
   const toggleLocalSubscribedPlaylist = useLocalLibraryStore(
     (state) => state.toggleSubscribedPlaylist,
   )
+  const cacheLocalSubscribedPlaylist = useLocalLibraryStore(
+    (state) => state.cacheSubscribedPlaylist,
+  )
 
   useEffect(() => {
     const controller = new AbortController()
@@ -110,6 +113,39 @@ function PlaylistDetailPage() {
 
     return () => controller.abort()
   }, [id])
+
+  // Guests who favorited this playlist before track snapshots were stored get
+  // backfilled automatically as soon as the detail page has song data.
+  useEffect(() => {
+    if (isLogin || !detail || songs.length === 0) return
+    const existing = localSubscribedPlaylists.find(
+      (playlist) => Number(playlist.id) === Number(detail.id),
+    )
+    if (!existing || (existing.songs?.length ?? 0) >= songs.length) return
+    void cacheLocalSubscribedPlaylist({ ...detail, songs })
+  }, [
+    isLogin,
+    detail,
+    songs,
+    localSubscribedPlaylists,
+    cacheLocalSubscribedPlaylist,
+  ])
+
+  const collectPlaylistSongs = async () => {
+    const collected = new Map<number, Song>()
+    for (const song of songs) collected.set(song.id, song)
+    if (!detail) return [...collected.values()]
+
+    let offset = songs.length
+    const target = Math.max(detail.trackCount || 0, offset)
+    while (offset < target) {
+      const page = await fetchPlaylistTracks(detail.id, 300, offset)
+      if (page.length === 0) break
+      offset += page.length
+      for (const song of page) collected.set(song.id, song)
+    }
+    return [...collected.values()]
+  }
 
   const filteredSongs = useMemo(() => {
     if (!keyword.trim()) return songs
@@ -177,13 +213,31 @@ function PlaylistDetailPage() {
     // subscription path requires a NetEase session.
     if (!isLogin) {
       setSubscribing(true)
-      const next = await toggleLocalSubscribedPlaylist(detail)
-      if (next !== null) {
-        toast.success(
-          next ? i18n._(msg`收藏成功`) : i18n._(msg`已取消收藏`),
-        )
+      try {
+        // A subscribed playlist must remain usable offline, so persist the
+        // complete track snapshot (not just the playlist card metadata). If a
+        // page fetch fails, keep the tracks already loaded rather than losing
+        // the favorite action entirely.
+        let tracks = songs
+        if (!localSubscribed) {
+          try {
+            tracks = await collectPlaylistSongs()
+          } catch {
+            tracks = songs
+          }
+        }
+        const next = await toggleLocalSubscribedPlaylist({
+          ...detail,
+          songs: tracks,
+        })
+        if (next !== null) {
+          toast.success(
+            next ? i18n._(msg`收藏成功`) : i18n._(msg`已取消收藏`),
+          )
+        }
+      } finally {
+        setSubscribing(false)
       }
-      setSubscribing(false)
       return
     }
     setSubscribing(true)

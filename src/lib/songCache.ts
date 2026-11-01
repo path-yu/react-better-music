@@ -14,6 +14,8 @@ interface CacheMeta {
   artists?: string
   duration?: number
   bitrate?: number
+  /** 0 = full track; >0 = cached audio is only a 30s preview. */
+  trialEnd?: number
 }
 
 interface AudioRecord {
@@ -27,6 +29,7 @@ export interface CacheableSong {
   url: string
   artists?: string
   duration?: number
+  trialEnd?: number | null
 }
 
 const DB_NAME = 'react-music-audio'
@@ -116,25 +119,35 @@ export async function removeCachedAudio(id: number): Promise<void> {
   }
 }
 
-/** True when the track already has a cached copy (cheap metadata read). */
-export async function hasCachedAudio(id: number): Promise<boolean> {
-  if (typeof indexedDB === 'undefined') return false
+export async function getCachedAudioMeta(id: number): Promise<CacheMeta | null> {
+  if (typeof indexedDB === 'undefined') return null
   try {
     const db = await openDb()
-    const meta = await requestResult<CacheMeta | undefined>(
-      db.transaction(META_STORE, 'readonly').objectStore(META_STORE).get(id),
+    return (
+      (await requestResult<CacheMeta | undefined>(
+        db.transaction(META_STORE, 'readonly').objectStore(META_STORE).get(id),
+      )) ?? null
     )
-    return Boolean(meta)
   } catch {
-    return false
+    return null
   }
+}
+
+/** True when the track already has a cached copy (cheap metadata read). */
+export async function hasCachedAudio(id: number): Promise<boolean> {
+  return Boolean(await getCachedAudioMeta(id))
 }
 
 async function putCachedAudio(
   id: number,
   name: string,
   blob: Blob,
-  extra?: { artists?: string; duration?: number; bitrate?: number },
+  extra?: {
+    artists?: string
+    duration?: number
+    bitrate?: number
+    trialEnd?: number
+  },
 ) {
   if (blob.size > MAX_BYTES) return
   const db = await openDb()
@@ -265,6 +278,7 @@ async function transcodeAndStore(song: CacheableSong, epoch: number, source?: Bl
       artists: song.artists,
       duration: song.duration,
       bitrate,
+      trialEnd: song.trialEnd && song.trialEnd > 0 ? song.trialEnd : 0,
     })
   } catch (error) {
     console.warn('[song cache] encode failed:', error)

@@ -127,6 +127,9 @@ function resolveBunExecutable() {
 
 let apiProcess: ReturnType<typeof Bun.spawn> | null = null
 let apiStarted = false
+let apiRestartTimer: ReturnType<typeof setTimeout> | null = null
+let apiRestartAttempts = 0
+let quitting = false
 
 /**
  * Run the 12 MB API bundle in a child Bun process. Parsing it in this process
@@ -139,6 +142,7 @@ function startApiServer() {
   const script = resolveApiScript()
   if (!script) {
     console.error('[desktop] bundled API script not found')
+    apiStarted = false
     return
   }
   try {
@@ -147,6 +151,10 @@ function startApiServer() {
         ...process.env,
         QIMIAO_API_PORT: String(API_PORT),
         QIMIAO_API_PARENT_PID: String(process.pid),
+        // Never derive user data from the API child's working directory. Dev
+        // rebuilds replace build/dev-*/bin, which used to wipe playlists.
+        QIMIAO_DATA_DIR: join(APP_DATA_DIR, 'local-data'),
+        QIMIAO_INSTALL_DIR: join(import.meta.dir, '..'),
       },
       stdout: 'inherit',
       stderr: 'inherit',
@@ -155,11 +163,23 @@ function startApiServer() {
     console.log(`[desktop] API child started (pid ${apiProcess.pid})`)
   } catch (error) {
     console.error('[desktop] failed to start API child:', error)
+    apiStarted = false
     return
   }
   void apiProcess.exited.then((code) => {
     apiProcess = null
+    apiStarted = false
     console.error(`[desktop] API child exited with code ${code}`)
+    if (quitting || apiRestartAttempts >= 5) return
+    // The child can lose a startup race with an old API still holding 13000.
+    // Retry instead of leaving the window alive with no backend forever.
+    apiRestartAttempts += 1
+    const delay = Math.min(1000 * apiRestartAttempts, 5000)
+    console.error(`[desktop] restarting API child in ${delay}ms`)
+    apiRestartTimer = setTimeout(() => {
+      apiRestartTimer = null
+      startApiServer()
+    }, delay)
   })
   // The renderer already retries; this only records readiness in startup.log.
   void (async () => {
@@ -168,6 +188,7 @@ function startApiServer() {
       try {
         const response = await fetch(API_READY_URL)
         if (response.ok) {
+          apiRestartAttempts = 0
           markStartup('api-ready')
           return
         }
@@ -180,6 +201,11 @@ function startApiServer() {
 }
 
 function stopApiServer() {
+  quitting = true
+  if (apiRestartTimer) {
+    clearTimeout(apiRestartTimer)
+    apiRestartTimer = null
+  }
   if (!apiProcess) return
   try {
     apiProcess.kill()

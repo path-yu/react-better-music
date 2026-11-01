@@ -13,7 +13,12 @@ import { buildLyricLines, isEmptyLyric, type LyricLine } from '../lib/lyric'
 import { copyrightHint } from '../lib/songs'
 import { apiUrl } from '../lib/http'
 import { getAudio } from '../lib/audio'
-import { getCachedAudio, hasCachedAudio, removeCachedAudio } from '../lib/songCache'
+import {
+  getCachedAudio,
+  getCachedAudioMeta,
+  hasCachedAudio,
+  removeCachedAudio,
+} from '../lib/songCache'
 import {
   clearPrefetchedAudio,
   consumePrefetchedAudio,
@@ -264,11 +269,17 @@ const urlRequests = new Map<number, Promise<SongSource>>()
  * source matching. That cached blob can be a 30s preview or an official URL
  * from a provider the user no longer prefers, so re-resolve instead of using it.
  */
-function shouldBypassAudioCache(song: Song) {
-  return (
-    useSettingsStore.getState().autoReplaceVipSource &&
-    (song.fee === 1 || (song.trialEnd ?? 0) > 0)
-  )
+async function shouldBypassAudioCache(song: Song) {
+  if (!useSettingsStore.getState().autoReplaceVipSource) return false
+  // The current source is a preview: resolve it again and replace the cache.
+  if ((song.trialEnd ?? 0) > 0) return true
+  if (song.fee !== 1) return false
+
+  // Do not discard every VIP cache just because matching is enabled. Only a
+  // cached 30s preview (or a legacy entry without trial metadata) is stale;
+  // a full matched track must be reused or it is re-resolved on every play.
+  const meta = await getCachedAudioMeta(song.id)
+  return Boolean(meta && (meta.trialEnd === undefined || meta.trialEnd > 0))
 }
 
 function hasFreshUrl(song: Song) {
@@ -401,7 +412,7 @@ export const usePlayerStore = create<PlayerState>()(
         if (!neighbors.length) return
 
         const resolves = neighbors.map(async ({ index: neighborIndex, song }) => {
-          const bypassAudioCache = shouldBypassAudioCache(song)
+          const bypassAudioCache = await shouldBypassAudioCache(song)
           if (bypassAudioCache) void removeCachedAudio(song.id)
           if (!bypassAudioCache && (await hasCachedAudio(song.id))) return null
           let url = hasFreshUrl(song) ? (song.url ?? null) : null
@@ -502,7 +513,7 @@ export const usePlayerStore = create<PlayerState>()(
           // Prefer audio cached in IndexedDB (WebCodecs-transcoded Opus), except
           // for VIP/trial tracks when source matching is enabled: those caches
           // may be the old 30s preview and must be refreshed.
-          const bypassAudioCache = shouldBypassAudioCache(song)
+          const bypassAudioCache = await shouldBypassAudioCache(song)
           if (bypassAudioCache) void removeCachedAudio(song.id)
           const cached = bypassAudioCache ? null : await getCachedAudio(song.id)
           if (get().loadRequestId !== requestId) return true
