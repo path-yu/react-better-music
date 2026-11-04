@@ -14,6 +14,7 @@ import {
   Loader2,
   Moon,
   Palette as PaletteIcon,
+  Play,
   RefreshCw,
   Settings2,
   Shield,
@@ -30,6 +31,12 @@ import {
   listCachedAudio,
   type CachedAudioItem,
 } from '../lib/songCache'
+import {
+  desktopAudioCacheDir,
+  openDesktopAudioCacheDir,
+  pickDesktopAudioCacheDir,
+} from '../lib/desktopAudioCache'
+import { usePlayerStore } from '../store/player'
 import {
   getDownloadDir,
   isDesktopApp,
@@ -90,6 +97,9 @@ function SettingsPage() {
   const desktop = isDesktopApp()
   const [downloadDir, setDownloadDir] = useState('')
   const [pickingDir, setPickingDir] = useState(false)
+  const [cacheDir, setCacheDir] = useState('')
+  const [canPickCacheDir, setCanPickCacheDir] = useState(false)
+  const [pickingCacheDir, setPickingCacheDir] = useState(false)
   const disableDevTools = useSettingsStore((state) => state.disableDevTools)
   const setDisableDevTools = useSettingsStore((state) => state.setDisableDevTools)
   const theme = useUiStore((state) => state.theme)
@@ -103,6 +113,21 @@ function SettingsPage() {
     void getDownloadDir()
       .then((dir) => {
         if (active) setDownloadDir(dir)
+      })
+      .catch(() => undefined)
+    return () => {
+      active = false
+    }
+  }, [desktop])
+
+  useEffect(() => {
+    if (!desktop) return
+    let active = true
+    void desktopAudioCacheDir()
+      .then(({ dir, canPick }) => {
+        if (!active) return
+        setCacheDir(dir)
+        setCanPickCacheDir(canPick)
       })
       .catch(() => undefined)
     return () => {
@@ -266,6 +291,45 @@ function SettingsPage() {
     } catch {
       toast.error(i18n._(msg`无法打开下载目录`))
     }
+  }
+
+  const handlePickCacheDir = async () => {
+    if (pickingCacheDir) return
+    setPickingCacheDir(true)
+    try {
+      const dir = await pickDesktopAudioCacheDir()
+      if (dir) {
+        setCacheDir(dir)
+        toast.success(i18n._(msg`缓存目录已更新`))
+        void loadCache()
+      }
+    } catch {
+      toast.error(i18n._(msg`无法选择缓存目录`))
+    } finally {
+      setPickingCacheDir(false)
+    }
+  }
+
+  const handleOpenCacheDir = async () => {
+    try {
+      await openDesktopAudioCacheDir()
+    } catch {
+      toast.error(i18n._(msg`无法打开缓存目录`))
+    }
+  }
+
+  const handlePlayAll = async () => {
+    if (!items.length) return
+    const songs = items.map((item) => ({
+      id: item.id,
+      name: item.name,
+      ar: [],
+      al: { id: 0, name: '' },
+      dt: item.duration ?? 0,
+      fee: 0,
+    }))
+    await usePlayerStore.getState().initQueue(songs, 0, 'cached-audio')
+    toast.success(i18n._(msg`开始播放缓存音乐`))
   }
 
   return (
@@ -491,6 +555,37 @@ function SettingsPage() {
               </Button>
             </div>
           ) : null}
+
+          {desktop ? (
+            <div className="mt-2 flex items-center gap-3 rounded-[14px] border border-[var(--app-border)] bg-[var(--app-card)] px-4 py-3">
+              <HardDrive className="h-4 w-4 flex-none text-accent" />
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] text-black/40">
+                  <Trans>缓存目录</Trans>
+                </p>
+                <p className="mt-0.5 truncate text-[12px] text-black/70" title={cacheDir}>
+                  {cacheDir || i18n._(msg`正在读取…`)}
+                </p>
+              </div>
+              {canPickCacheDir ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  loading={pickingCacheDir}
+                  onClick={() => void handlePickCacheDir()}
+                >
+                  <Trans>选择文件夹</Trans>
+                </Button>
+              ) : null}
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => void handleOpenCacheDir()}
+              >
+                <Trans>打开</Trans>
+              </Button>
+            </div>
+          ) : null}
         </section>
 
         <section className="apple-card p-6">
@@ -561,20 +656,31 @@ function SettingsPage() {
                 )}
               </p>
             </div>
-            <Button
-              variant="secondary"
-              size="sm"
-              leftIcon={<Download className="h-3.5 w-3.5" />}
-              loading={downloading}
-              disabled={!selected.length || loading}
-              onClick={() => void handleDownloadSelected()}
-            >
-              {selected.length ? (
-                <Trans>下载选中 ({selected.length})</Trans>
-              ) : (
-                <Trans>下载选中</Trans>
-              )}
-            </Button>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<Play className="h-3.5 w-3.5" />}
+                disabled={!items.length || loading || downloading}
+                onClick={() => void handlePlayAll()}
+              >
+                <Trans>播放全部</Trans>
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<Download className="h-3.5 w-3.5" />}
+                loading={downloading}
+                disabled={!selected.length || loading}
+                onClick={() => void handleDownloadSelected()}
+              >
+                {selected.length ? (
+                  <Trans>下载选中 ({selected.length})</Trans>
+                ) : (
+                  <Trans>下载选中</Trans>
+                )}
+              </Button>
+            </div>
           </div>
 
           {!loading && items.length === 0 ? (

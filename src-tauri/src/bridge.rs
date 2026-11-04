@@ -1,5 +1,6 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::{
     body::Bytes,
@@ -9,7 +10,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use tauri::{
     window::Color, AppHandle, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder,
@@ -27,6 +28,7 @@ struct BridgeState {
     lyrics_state: Arc<Mutex<Value>>,
     devtools_disabled: Arc<Mutex<bool>>,
     download_dir: Arc<Mutex<PathBuf>>,
+    audio_cache_dir: Arc<Mutex<PathBuf>>,
 }
 
 #[derive(Deserialize)]
@@ -41,6 +43,27 @@ struct FileQuery {
     name: Option<String>,
 }
 
+#[derive(Deserialize)]
+struct AudioCacheQuery {
+    id: Option<String>,
+    meta: Option<String>,
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+struct AudioCacheMeta {
+    id: u64,
+    name: String,
+    size: u64,
+    #[serde(rename = "createdAt")]
+    created_at: u64,
+    artists: Option<String>,
+    duration: Option<u64>,
+    bitrate: Option<u32>,
+    #[serde(rename = "trialEnd")]
+    trial_end: Option<u64>,
+    file: Option<String>,
+}
+
 pub async fn start(app: AppHandle, port: u16) -> Result<(), String> {
     let download_dir = app
         .path()
@@ -48,11 +71,18 @@ pub async fn start(app: AppHandle, port: u16) -> Result<(), String> {
         .or_else(|_| app.path().app_data_dir().map(|dir| dir.join("downloads")))
         .unwrap_or_else(|_| std::env::temp_dir());
 
+    let audio_cache_dir = app
+        .path()
+        .app_data_dir()
+        .map(|dir| dir.join("audio-cache"))
+        .unwrap_or_else(|_| std::env::temp_dir().join("qimiao-audio-cache"));
+
     let state = BridgeState {
         app,
         lyrics_state: Arc::new(Mutex::new(json!({}))),
         devtools_disabled: Arc::new(Mutex::new(false)),
         download_dir: Arc::new(Mutex::new(download_dir)),
+        audio_cache_dir: Arc::new(Mutex::new(audio_cache_dir)),
     };
 
     let origins = ALLOWED_ORIGINS
@@ -100,6 +130,17 @@ pub async fn start(app: AppHandle, port: u16) -> Result<(), String> {
         .route("/pick-dir", post(pick_dir))
         .route("/open-dir", post(open_dir))
         .route("/save-file", post(save_file))
+        .route(
+            "/audio-cache",
+            get(list_audio_cache)
+                .post(save_audio_cache)
+                .delete(clear_audio_cache),
+        )
+        .route("/audio-cache/meta", get(get_audio_cache_meta))
+        .route("/audio-cache/file", get(get_audio_cache_file))
+        .route("/audio-cache/dir", get(get_audio_cache_dir))
+        .route("/audio-cache/pick-dir", post(pick_audio_cache_dir))
+        .route("/audio-cache/open-dir", post(open_audio_cache_dir))
         .layer(cors)
         .with_state(state);
 
@@ -360,6 +401,302 @@ async fn desktop_command(
     match window.eval(&script) {
         Ok(()) => StatusCode::NO_CONTENT,
         Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
+    }
+}
+
+const AUDIO_CACHE_INDEX: &str = "index.json";
+const AUDIO_CACHE_MAX_ENTRIES: usize = 60;
+const AUDIO_CACHE_MAX_BYTES: u64 = 80 * 1024 * 1024;
+
+fn audio_cache_stem(name: &str, id: u64) -> String {
+    let safe: String = name
+        .chars()
+        .map(|ch| {
+            if ch.is_control() || matches!(ch, '\\' | '/' | ':' | '*' | '?' | '"' | '<' | '>' | '|') {
+                '_'
+            } else {
+                ch
+            }
+        })
+        .collect();
+    let trimmed = safe.trim().trim_end_matches(|ch| ch == '.' || ch == ' ');
+    if trimmed.is_empty() {
+        format!("cached-song-{id}")
+    } else {
+        trimmed.chars().take(120).collect()
+    }
+}
+
+fn audio_cache_file(dir: &Path, item: &AudioCacheMeta) -> PathBuf {
+    if let Some(file) = item.file.as_deref() {
+        if !file.contains('/') && !file.contains('\\') && !file.contains("..") {
+            return dir.join(file);
+        }
+    }
+    dir.join(format!("{}.opus", item.id))
+}
+
+fn audio_cache_file_for(
+    dir: &Path,
+    items: &[AudioCacheMeta],
+    id: u64,
+    name: &str,
+    keep: Option<&str>,
+) -> String {
+    if let Some(file) = keep {
+        if !file.contains('/') && !file.contains('\\') && !file.contains("..") {
+            return file.to_string();
+        }
+    }
+    let base = audio_cache_stem(name, id);
+    let used: Vec<&str> = items
+        .iter()
+        .filter(|item| item.id != id)
+        .filter_map(|item| item.file.as_deref())
+        .collect();
+    let legacy = format!("{id}.opus");
+    let mut candidate = format!("{base}.opus");
+    let mut index = 1;
+    while used.contains(&candidate.as_str())
+        || (dir.join(&candidate).exists() && candidate != legacy)
+    {
+        candidate = format!("{base} ({index}).opus");
+        index += 1;
+    }
+    candidate
+}
+
+async fn sync_audio_cache_files(dir: &Path, items: &mut [AudioCacheMeta]) -> bool {
+    let snapshot = items.to_vec();
+    let mut changed = false;
+    for index in 0..items.len() {
+        let item = items[index].clone();
+        if item
+            .file
+            .as_deref()
+            .map(|file| audio_cache_file(dir, &item).exists() && !file.is_empty())
+            .unwrap_or(false)
+        {
+            continue;
+        }
+        let legacy = dir.join(format!("{}.opus", item.id));
+        let file = audio_cache_file_for(
+            dir,
+            &snapshot,
+            item.id,
+            &item.name,
+            item.file.as_deref(),
+        );
+        let target = dir.join(&file);
+        if legacy.exists() && legacy != target {
+            let _ = tokio::fs::rename(&legacy, &target).await;
+        }
+        items[index].file = Some(file);
+        changed = true;
+    }
+    changed
+}
+
+fn audio_cache_index_file(dir: &Path) -> PathBuf {
+    dir.join(AUDIO_CACHE_INDEX)
+}
+
+fn parse_cache_id(raw: Option<&str>) -> Option<u64> {
+    raw.and_then(|value| value.parse::<u64>().ok()).filter(|id| *id > 0)
+}
+
+async fn read_audio_cache_index(dir: &Path) -> Vec<AudioCacheMeta> {
+    let raw = match tokio::fs::read_to_string(audio_cache_index_file(dir)).await {
+        Ok(raw) => raw,
+        Err(_) => return Vec::new(),
+    };
+    serde_json::from_str::<Vec<AudioCacheMeta>>(&raw).unwrap_or_default()
+}
+
+async fn write_audio_cache_index(dir: &Path, items: &[AudioCacheMeta]) -> std::io::Result<()> {
+    tokio::fs::create_dir_all(dir).await?;
+    let raw = serde_json::to_vec(items).unwrap_or_else(|_| b"[]".to_vec());
+    tokio::fs::write(audio_cache_index_file(dir), raw).await
+}
+
+async fn prune_audio_cache(dir: &Path, items: Vec<AudioCacheMeta>) -> Vec<AudioCacheMeta> {
+    let mut sorted = items;
+    sorted.sort_by_key(|item| item.created_at);
+    let mut count = sorted.len();
+    let mut bytes: u64 = sorted.iter().map(|item| item.size).sum();
+    let mut keep = Vec::new();
+    for item in sorted {
+        if count <= AUDIO_CACHE_MAX_ENTRIES && bytes <= AUDIO_CACHE_MAX_BYTES {
+            keep.push(item);
+            continue;
+        }
+        let _ = tokio::fs::remove_file(audio_cache_file(dir, &item)).await;
+        count = count.saturating_sub(1);
+        bytes = bytes.saturating_sub(item.size);
+    }
+    keep
+}
+
+async fn list_audio_cache(State(state): State<BridgeState>) -> Json<Value> {
+    let dir = state.audio_cache_dir.lock().await.clone();
+    let mut items = read_audio_cache_index(&dir).await;
+    if sync_audio_cache_files(&dir, &mut items).await {
+        let _ = write_audio_cache_index(&dir, &items).await;
+    }
+    let mut live = Vec::new();
+    for item in items.drain(..) {
+        if tokio::fs::try_exists(audio_cache_file(&dir, &item))
+            .await
+            .unwrap_or(false)
+        {
+            live.push(item);
+        }
+    }
+    live.sort_by_key(|item| std::cmp::Reverse(item.created_at));
+    Json(json!({ "dir": dir.display().to_string(), "items": live }))
+}
+
+async fn get_audio_cache_meta(
+    State(state): State<BridgeState>,
+    Query(query): Query<AudioCacheQuery>,
+) -> Response {
+    let Some(id) = parse_cache_id(query.id.as_deref()) else {
+        return (StatusCode::BAD_REQUEST, "invalid id").into_response();
+    };
+    let dir = state.audio_cache_dir.lock().await.clone();
+    let items = read_audio_cache_index(&dir).await;
+    match items.into_iter().find(|item| item.id == id) {
+        Some(item)
+            if tokio::fs::try_exists(audio_cache_file(&dir, &item))
+                .await
+                .unwrap_or(false) =>
+        {
+            Json(item).into_response()
+        }
+        _ => StatusCode::NOT_FOUND.into_response(),
+    }
+}
+
+async fn get_audio_cache_file(
+    State(state): State<BridgeState>,
+    Query(query): Query<AudioCacheQuery>,
+) -> Response {
+    let Some(id) = parse_cache_id(query.id.as_deref()) else {
+        return (StatusCode::BAD_REQUEST, "invalid id").into_response();
+    };
+    let dir = state.audio_cache_dir.lock().await.clone();
+    let items = read_audio_cache_index(&dir).await;
+    let path = items
+        .iter()
+        .find(|item| item.id == id)
+        .map(|item| audio_cache_file(&dir, item))
+        .unwrap_or_else(|| dir.join(format!("{id}.opus")));
+    match tokio::fs::read(path).await {
+        Ok(bytes) => (
+            [(header::CONTENT_TYPE, "audio/ogg"), (header::CACHE_CONTROL, "no-store")],
+            bytes,
+        )
+            .into_response(),
+        Err(_) => StatusCode::NOT_FOUND.into_response(),
+    }
+}
+
+async fn save_audio_cache(
+    State(state): State<BridgeState>,
+    Query(query): Query<AudioCacheQuery>,
+    body: Bytes,
+) -> Response {
+    let Some(meta) = query.meta else {
+        return (StatusCode::BAD_REQUEST, "missing meta").into_response();
+    };
+    let mut item = match serde_json::from_str::<AudioCacheMeta>(&meta) {
+        Ok(item) if item.id > 0 && !body.is_empty() => item,
+        _ => return (StatusCode::BAD_REQUEST, "invalid meta").into_response(),
+    };
+    item.name = item.name.chars().take(300).collect();
+    item.size = body.len() as u64;
+    if item.created_at == 0 {
+        item.created_at = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|value| value.as_millis() as u64)
+            .unwrap_or_default();
+    }
+    let dir = state.audio_cache_dir.lock().await.clone();
+    if let Err(error) = tokio::fs::create_dir_all(&dir).await {
+        return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+    }
+    let mut items = read_audio_cache_index(&dir).await;
+    let previous = items.iter().find(|entry| entry.id == item.id).cloned();
+    let file = audio_cache_file_for(
+        &dir,
+        &items,
+        item.id,
+        &item.name,
+        previous.as_ref().and_then(|entry| entry.file.as_deref()),
+    );
+    item.file = Some(file.clone());
+    let target = dir.join(&file);
+    if let Err(error) = tokio::fs::write(&target, &body).await {
+        return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+    }
+    let legacy = dir.join(format!("{}.opus", item.id));
+    if legacy != target && legacy.exists() {
+        let _ = tokio::fs::remove_file(&legacy).await;
+    }
+    items.retain(|entry| entry.id != item.id);
+    items.push(item.clone());
+    let items = prune_audio_cache(&dir, items).await;
+    if let Err(error) = write_audio_cache_index(&dir, &items).await {
+        return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+    }
+    Json(item).into_response()
+}
+
+async fn clear_audio_cache(
+    State(state): State<BridgeState>,
+    Query(query): Query<AudioCacheQuery>,
+) -> Response {
+    let dir = state.audio_cache_dir.lock().await.clone();
+    let items = read_audio_cache_index(&dir).await;
+    if let Some(id) = parse_cache_id(query.id.as_deref()) {
+        let item = items.iter().find(|entry| entry.id == id);
+        let path = item
+            .map(|entry| audio_cache_file(&dir, entry))
+            .unwrap_or_else(|| dir.join(format!("{id}.opus")));
+        let _ = tokio::fs::remove_file(path).await;
+        let remaining: Vec<_> = items.into_iter().filter(|item| item.id != id).collect();
+        if let Err(error) = write_audio_cache_index(&dir, &remaining).await {
+            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+        }
+    } else {
+        for item in items {
+            let _ = tokio::fs::remove_file(audio_cache_file(&dir, &item)).await;
+        }
+        if let Err(error) = write_audio_cache_index(&dir, &[]).await {
+            return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+        }
+    }
+    Json(json!({ "ok": true })).into_response()
+}
+
+async fn get_audio_cache_dir(State(state): State<BridgeState>) -> Json<Value> {
+    let dir = state.audio_cache_dir.lock().await.clone();
+    Json(json!({ "dir": dir.display().to_string(), "canPick": false }))
+}
+
+async fn pick_audio_cache_dir(State(state): State<BridgeState>) -> Json<Value> {
+    let dir = state.audio_cache_dir.lock().await.clone();
+    Json(json!({ "dir": dir.display().to_string(), "cancelled": true }))
+}
+
+async fn open_audio_cache_dir(State(state): State<BridgeState>) -> Response {
+    let dir = state.audio_cache_dir.lock().await.clone();
+    if let Err(error) = tokio::fs::create_dir_all(&dir).await {
+        return (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response();
+    }
+    match open_path(&dir) {
+        Ok(()) => Json(json!({ "dir": dir.display().to_string() })).into_response(),
+        Err(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
     }
 }
 

@@ -72,14 +72,14 @@ msgstr "{0} fans"
 #: src/components/layout/SearchBox.tsx:433
 #: src/components/player/QueuePanel.tsx:86
 #: src/routes/search.tsx:357
-#: src/routes/settings.tsx:458
+#: src/routes/settings.tsx:522
 #: src/routes/toplist.tsx:137
 msgid "{0} 首"
 msgstr "{0} tracks"
 
 #. placeholder {0}: items.length
 #. placeholder {1}: formatBytes(totalBytes)
-#: src/routes/settings.tsx:558
+#: src/routes/settings.tsx:653
 msgid "{0} 首 · {1}"
 msgstr "{0} tracks · {1}"
 
@@ -177,11 +177,11 @@ msgstr "R&B/Soul"
 msgid "UNM 聚合"
 msgstr "UNM aggregate"
 
-#: src/routes/settings.tsx:504
+#: src/routes/settings.tsx:599
 msgid "VIP 歌曲无法播放或仅能试听时，自动尝试匹配其他音源；也可以在底部播放条点击 「切换其他音源」手动替换。"
 msgstr "When a VIP song is unavailable or preview-only, the app can try another source automatically. You can also use “Switch source” in the player bar."
 
-#: src/routes/settings.tsx:513
+#: src/routes/settings.tsx:608
 msgid "VIP 歌曲自动替换音源"
 msgstr "Automatically replace VIP sources"
 
@@ -217,36 +217,36 @@ msgstr "Next track"
 msgid "下一首播放"
 msgstr "Play next"
 
-#: src/routes/settings.tsx:657
+#: src/routes/settings.tsx:763
 msgid "下载会保存为 .opus 文件到上方设置的下载目录。"
 msgstr "Downloads are saved as .opus files in the folder above."
 
-#: src/routes/settings.tsx:659
+#: src/routes/settings.tsx:765
 msgid "下载会导出为 .opus 文件；多选下载会打包为一个 ZIP 压缩包。"
 msgstr "Downloads are exported as .opus files; selecting multiple tracks creates a ZIP archive."
 
-#: src/routes/settings.tsx:636
+#: src/routes/settings.tsx:742
 msgid "下载到本地"
 msgstr "Download"
 
-#: src/routes/settings.tsx:241
+#: src/routes/settings.tsx:266
 msgid "下载失败"
 msgstr "Download failed"
 
-#: src/routes/settings.tsx:475
+#: src/routes/settings.tsx:539
 msgid "下载目录"
 msgstr "Download folder"
 
-#: src/routes/settings.tsx:254
+#: src/routes/settings.tsx:279
 msgid "下载目录已更新"
 msgstr "Download folder updated"
 
-#: src/routes/settings.tsx:575
+#: src/routes/settings.tsx:680
 msgid "下载选中"
 msgstr "Download selected"
 
 #. placeholder {0}: selected.length
-#: src/routes/settings.tsx:573
+#: src/routes/settings.tsx:678
 msgid "下载选中 ({0})"
 msgstr "Download selected ({0})"
 
@@ -356,8 +356,8 @@ msgstr "Failed to save"
 msgid "保存文件失败 ({0})"
 msgstr "Failed to save file ({0})"
 
-#: src/routes/settings.tsx:589
-#: src/routes/settings.tsx:596
+#: src/routes/settings.tsx:695
+#: src/routes/settings.tsx:702
 msgid "全选"
 msgstr "Select all"
 
@@ -440,7 +440,7 @@ msgstr "Turn off Heart Mode"
 msgid "关闭播放列表"
 msgstr "Close queue"
 
-#: src/routes/settings.tsx:56
+#: src/routes/settings.tsx:63
 msgid "关闭播放页、播放列表、侧栏或搜索建议"
 msgstr "Close the immersive player, queue, sidebar or search suggestions"
 
@@ -557,7 +557,7 @@ msgstr "Switch to dark mode"
 msgid "切换到视频播放"
 msgstr "Switch to video"
 
-#: src/routes/settings.tsx:391
+#: src/routes/settings.tsx:455
 msgid "切换界面语言，立即生效。当前翻译覆盖导航、播放器与设置等主要界面，其余页面会逐步补齐。"
 msgstr "Changes take effect immediately. Navigation, player and settings are translated first; remaining pages will follow."
 
@@ -593,11 +593,11 @@ msgid "删除歌单失败"
 msgstr "Failed to delete playlist"
 
 #: src/components/layout/LoginModal.tsx:371
-#: src/routes/settings.tsx:425
+#: src/routes/settings.tsx:489
 msgid "刷新"
 msgstr "Refresh"
 
-#: src/routes/settings.tsx:424
+#: src/routes/settings.tsx:488
 msgid "刷新缓存信息"
 msgstr "Refresh cache info"
 
@@ -651,7 +651,7 @@ msgid "单曲循环"
 msgstr "Repeat one"
 
 #. placeholder {0}: formatBytes(totalBytes)
-#: src/routes/settings.tsx:464
+#: src/routes/settings.tsx:528
 msgid "占用 {0}"
 msgstr "Using {0}"
 
@@ -766,7 +766,7 @@ msgstr "Failed to reply"
 msgid "图片不能超过 5MB"
 msgstr "Image must be 5 MB or smaller"
 
-#: src/routes/settings.tsx:55
+#: src/routes/settings.tsx:62
 msgid "在搜索建议中选择并进入"
 msgstr "Select a search suggestion and open it"
 
@@ -774,7 +774,7 @@ msgstr "Select a search suggestion and open it"
 msgid "在歌曲右侧点击心形，收藏会写入本地曲库。"
 msgstr "Click the heart beside a song; favorites are saved to the local library."
 
-#: src/routes/settings.tsx:683
+#: src/routes/settings.tsx:789
 msgid "在页面任意位置可用（输入框内保留系统默认行为）。"
 msgstr "Available anywhere on the page (inputs keep the system default behavior)."
 
@@ -790,7 +790,7 @@ msgstr "Region"
 msgid "复制链接失败"
 msgstr "Failed to copy the link"
 
-#: src/routes/settings.tsx:289
+#: src/routes/settings.tsx:353
 msgid "外观"
 msgstr "Appearance"
 
@@ -831,7 +831,7 @@ msgstr "Official"
 msgid "定位当前播放"
 msgstr "Locate now playing"
 
-#: src/routes/settings.tsx:224
+#: src/routes/settings.tsx:249
 msgid "导出缓存失败"
 msgstr "Failed to export cache"
 
@@ -875,11 +875,11 @@ msgid "展开播放页"
 msgstr "Open Now Playing"
 
 #. placeholder {0}: item.name
-#: src/routes/settings.tsx:237
+#: src/routes/settings.tsx:262
 msgid "已保存「{0}」到下载目录"
 msgstr "Saved 「{0}」 to Downloads"
 
-#: src/routes/settings.tsx:134
+#: src/routes/settings.tsx:159
 msgid "已允许开发者工具，重启应用后完全生效"
 msgstr "Developer tools enabled. Restart the app to apply fully."
 
@@ -905,19 +905,19 @@ msgstr "Removed from Liked Songs"
 msgid "已取消收藏"
 msgstr "Removed from library"
 
-#: src/routes/settings.tsx:221
+#: src/routes/settings.tsx:246
 msgid "已导出 {count} 首缓存音乐，请查看下载目录"
 msgstr "Exported {count} cached tracks to Downloads"
 
-#: src/routes/settings.tsx:220
+#: src/routes/settings.tsx:245
 msgid "已导出 {count} 首缓存音乐（ZIP 压缩包）"
 msgstr "Exported {count} cached tracks (ZIP archive)"
 
-#: src/routes/settings.tsx:217
+#: src/routes/settings.tsx:242
 msgid "已导出 {count} 首缓存音乐到 {downloadDir}"
 msgstr "Exported {count} cached tracks to {downloadDir}"
 
-#: src/routes/settings.tsx:218
+#: src/routes/settings.tsx:243
 msgid "已导出 {count} 首缓存音乐到下载目录"
 msgstr "Exported {count} cached tracks to Downloads"
 
@@ -927,7 +927,7 @@ msgid "已开启"
 msgstr "On"
 
 #. placeholder {0}: item.name
-#: src/routes/settings.tsx:238
+#: src/routes/settings.tsx:263
 msgid "已开始下载「{0}」"
 msgstr "Started downloading 「{0}」"
 
@@ -952,7 +952,7 @@ msgstr "Added {0} tracks to the queue"
 msgid "已添加到我喜欢的音乐"
 msgstr "Added to Liked Songs"
 
-#: src/routes/settings.tsx:133
+#: src/routes/settings.tsx:158
 msgid "已禁用开发者工具，重启应用后完全生效"
 msgstr "Developer tools disabled. Restart the app to apply fully."
 
@@ -965,7 +965,7 @@ msgid "已退出登录"
 msgstr "Signed out"
 
 #. placeholder {0}: selected.length
-#: src/routes/settings.tsx:599
+#: src/routes/settings.tsx:705
 msgid "已选 {0} 首"
 msgstr "{0} selected"
 
@@ -977,6 +977,10 @@ msgstr "{0} selected"
 #: src/components/player/PlayerBar.tsx:1245
 #~ msgid "开启迷你播放器"
 #~ msgstr "Open mini player"
+
+#: src/routes/settings.tsx:332
+msgid "开始播放缓存音乐"
+msgstr "Playing cached music"
 
 #: src/components/player/SourcePicker.tsx:86
 msgid "当前：{currentLabel}"
@@ -991,11 +995,11 @@ msgstr "Preview only ({0}s). Sign in or get VIP for the full track."
 msgid "当前仅可试听 {trialEnd} 秒，登录或开通会员后可播放完整版"
 msgstr "Preview only ({trialEnd}s). Sign in or get VIP for the full track."
 
-#: src/lib/songCache.ts:228
+#: src/lib/songCache.ts:264
 msgid "当前环境不支持 Opus 编码"
 msgstr "This environment does not support Opus encoding"
 
-#: src/routes/settings.tsx:455
+#: src/routes/settings.tsx:519
 msgid "当前缓存"
 msgstr "Current cache"
 
@@ -1016,7 +1020,7 @@ msgstr "Heart Mode is on; recommendations will be added"
 msgid "心动模式暂不可用，请先登录"
 msgstr "Heart Mode is unavailable. Please sign in."
 
-#: src/routes/settings.tsx:680
+#: src/routes/settings.tsx:786
 msgid "快捷键"
 msgstr "Shortcuts"
 
@@ -1041,7 +1045,8 @@ msgstr "My Music"
 msgid "手机号"
 msgstr "Phone number"
 
-#: src/routes/settings.tsx:490
+#: src/routes/settings.tsx:554
+#: src/routes/settings.tsx:585
 msgid "打开"
 msgstr "Open"
 
@@ -1170,7 +1175,7 @@ msgstr "Search songs, playlists, albums, artists, users, MVs or videos"
 msgid "播放"
 msgstr "Play"
 
-#: src/routes/settings.tsx:52
+#: src/routes/settings.tsx:59
 msgid "播放 / 暂停"
 msgstr "Play / Pause"
 
@@ -1179,6 +1184,7 @@ msgid "播放（空格）"
 msgstr "Play (Space)"
 
 #: src/components/songs/PlayAllButton.tsx:17
+#: src/routes/settings.tsx:667
 msgid "播放全部"
 msgstr "Play all"
 
@@ -1210,7 +1216,7 @@ msgstr "Play popular tracks"
 msgid "播放过的歌曲会自动记录在这里。"
 msgstr "Played songs are recorded here automatically."
 
-#: src/routes/settings.tsx:416
+#: src/routes/settings.tsx:480
 msgid "播放过的歌曲会转码为 Opus 并缓存到本地，用于加速之后的播放。修改品质只影响之后缓存的新歌曲， 已缓存的歌曲保持原品质。"
 msgstr "Played songs are transcoded to Opus and cached locally to speed up future playback. Changing quality only affects new cache entries; existing files keep their quality."
 
@@ -1320,17 +1326,25 @@ msgstr "Lossless"
 msgid "无损 / Hi-Res 需要对应会员权益；已缓存歌曲按设置中的缓存品质播放。"
 msgstr "Lossless / Hi-Res requires the matching membership tier; cached songs play at the cache quality chosen in Settings."
 
-#: src/routes/settings.tsx:267
+#: src/routes/settings.tsx:292
 msgid "无法打开下载目录"
 msgstr "Cannot open the download folder"
+
+#: src/routes/settings.tsx:317
+msgid "无法打开缓存目录"
+msgstr "Cannot open the cache folder"
 
 #: src/routes/songlists/$id.edit.tsx:108
 msgid "无法编辑该歌单"
 msgstr "This playlist cannot be edited"
 
-#: src/routes/settings.tsx:257
+#: src/routes/settings.tsx:282
 msgid "无法选择下载目录"
 msgstr "Cannot choose a download folder"
+
+#: src/routes/settings.tsx:307
+msgid "无法选择缓存目录"
+msgstr "Cannot choose a cache folder"
 
 #: src/lib/tagLabels.ts:26
 #: src/routes/latest-music.tsx:23
@@ -1436,7 +1450,7 @@ msgstr "No video source available"
 msgid "暂无简介"
 msgstr "No bio yet"
 
-#: src/routes/settings.tsx:582
+#: src/routes/settings.tsx:688
 msgid "暂无缓存音乐，播放歌曲后会自动缓存"
 msgstr "No cached music yet. Songs are cached automatically after playback."
 
@@ -1469,7 +1483,7 @@ msgstr "No related videos found"
 msgid "未注册的手机号登录后将自动创建账号"
 msgstr "A new account is created automatically for unregistered numbers"
 
-#: src/routes/settings.tsx:621
+#: src/routes/settings.tsx:727
 msgid "未知歌手"
 msgstr "Unknown artist"
 
@@ -1499,8 +1513,8 @@ msgstr "Local playlist not found"
 msgid "极高"
 msgstr "Ultra"
 
-#: src/routes/settings.tsx:367
-#: src/routes/settings.tsx:378
+#: src/routes/settings.tsx:431
+#: src/routes/settings.tsx:442
 msgid "柔和播放页渐变"
 msgstr "Soft now-playing gradient"
 
@@ -1558,7 +1572,7 @@ msgstr "Desktop service request failed ({0})"
 msgid "桌面歌词"
 msgstr "Desktop lyrics"
 
-#: src/routes/settings.tsx:540
+#: src/routes/settings.tsx:635
 msgid "桌面歌词：Ctrl / ⌘ + Shift + L 显示或隐藏，窗口始终置顶，可拖动到任意位置。"
 msgstr "Desktop lyrics: Ctrl / ⌘ + Shift + L to show or hide. The window stays on top and can be dragged anywhere."
 
@@ -1566,7 +1580,7 @@ msgstr "Desktop lyrics: Ctrl / ⌘ + Shift + L to show or hide. The window stays
 msgid "桌面歌词窗口暂不可用"
 msgstr "Desktop lyrics are unavailable"
 
-#: src/routes/settings.tsx:524
+#: src/routes/settings.tsx:619
 msgid "桌面端"
 msgstr "Desktop"
 
@@ -1732,8 +1746,9 @@ msgstr "Fetching MV…"
 msgid "正在获取视频…"
 msgstr "Loading video…"
 
-#: src/routes/settings.tsx:462
-#: src/routes/settings.tsx:478
+#: src/routes/settings.tsx:526
+#: src/routes/settings.tsx:542
+#: src/routes/settings.tsx:567
 msgid "正在读取…"
 msgstr "Loading…"
 
@@ -1741,7 +1756,7 @@ msgstr "Loading…"
 msgid "正在读取本地歌单…"
 msgstr "Loading local playlist…"
 
-#: src/routes/settings.tsx:556
+#: src/routes/settings.tsx:651
 msgid "正在读取缓存…"
 msgstr "Loading cache…"
 
@@ -1798,7 +1813,7 @@ msgstr "No matching videos"
 msgid "流行"
 msgstr "Pop"
 
-#: src/routes/settings.tsx:307
+#: src/routes/settings.tsx:371
 msgid "浅色"
 msgstr "Light"
 
@@ -1810,7 +1825,7 @@ msgstr "Light mode"
 msgid "浏览"
 msgstr "Browse"
 
-#: src/routes/settings.tsx:320
+#: src/routes/settings.tsx:384
 msgid "深色"
 msgstr "Dark"
 
@@ -1847,11 +1862,11 @@ msgstr "Failed to clear recent plays"
 msgid "清除"
 msgstr "Clear"
 
-#: src/routes/settings.tsx:672
+#: src/routes/settings.tsx:778
 msgid "清除缓存"
 msgstr "Clear cache"
 
-#: src/routes/settings.tsx:203
+#: src/routes/settings.tsx:228
 msgid "清除缓存失败"
 msgstr "Failed to clear cache"
 
@@ -1988,7 +2003,7 @@ msgstr "Failed to load related videos"
 msgid "确定删除这个本地歌单吗？"
 msgstr "Delete this local playlist?"
 
-#: src/routes/settings.tsx:672
+#: src/routes/settings.tsx:778
 msgid "确认清除？"
 msgstr "Clear everything?"
 
@@ -2012,11 +2027,11 @@ msgstr "Failed to load videos"
 msgid "视频评论"
 msgstr "Video comments"
 
-#: src/routes/settings.tsx:527
+#: src/routes/settings.tsx:622
 msgid "禁用后，右键菜单与 F12 / Ctrl+Shift+I 等入口不再打开开发者工具。 当前窗口立即生效，WebView2 层面需要重启应用。"
 msgstr "Disables the context menu and F12 / Ctrl+Shift+I. Applies to this window immediately; WebView2 needs an app restart."
 
-#: src/routes/settings.tsx:536
+#: src/routes/settings.tsx:631
 msgid "禁用开发者工具"
 msgstr "Disable developer tools"
 
@@ -2032,7 +2047,7 @@ msgstr "Failed to remove recent play"
 msgid "移除歌曲失败"
 msgstr "Failed to remove track"
 
-#: src/routes/settings.tsx:52
+#: src/routes/settings.tsx:59
 msgid "空格"
 msgstr "Space"
 
@@ -2072,7 +2087,7 @@ msgstr "Checked in"
 msgid "简介"
 msgstr "Bio"
 
-#: src/routes/settings.tsx:279
+#: src/routes/settings.tsx:343
 msgid "管理外观、语言与本地音乐缓存"
 msgstr "Manage appearance, language and local music cache"
 
@@ -2105,19 +2120,27 @@ msgstr "Top comments"
 msgid "精选音乐视频"
 msgstr "Featured music videos"
 
-#: src/routes/settings.tsx:448
+#: src/routes/settings.tsx:512
 msgid "约 64kbps ≈ 1.9MB / 4 分钟，96kbps ≈ 2.9MB，128kbps ≈ 3.8MB。"
 msgstr "About 64 kbps ≈ 1.9 MB / 4 min, 96 kbps ≈ 2.9 MB, 128 kbps ≈ 3.8 MB."
 
-#: src/routes/settings.tsx:552
+#: src/routes/settings.tsx:647
 msgid "缓存列表"
 msgstr "Cached tracks"
 
-#: src/routes/settings.tsx:436
+#: src/routes/settings.tsx:500
 msgid "缓存品质"
 msgstr "Cache quality"
 
-#: src/routes/settings.tsx:201
+#: src/routes/settings.tsx:564
+msgid "缓存目录"
+msgstr "Cache folder"
+
+#: src/routes/settings.tsx:303
+msgid "缓存目录已更新"
+msgstr "Cache folder updated"
+
+#: src/routes/settings.tsx:226
 msgid "缓存音乐已清除"
 msgstr "Cached music cleared"
 
@@ -2172,8 +2195,8 @@ msgstr "Failed to get the playback URL"
 #: src/components/layout/TitleBar.tsx:28
 #: src/components/layout/TopBar.tsx:117
 #: src/components/layout/TopBar.tsx:118
-#: src/routes/settings.tsx:67
-#: src/routes/settings.tsx:276
+#: src/routes/settings.tsx:74
+#: src/routes/settings.tsx:340
 msgid "设置"
 msgstr "Settings"
 
@@ -2413,11 +2436,12 @@ msgstr "Select a song to start playing"
 msgid "选择后立即重新获取当前歌曲；自动匹配会按内置顺序尝试。"
 msgstr "Selecting one refetches the current track immediately; auto match tries sources in built-in order."
 
-#: src/routes/settings.tsx:487
+#: src/routes/settings.tsx:551
+#: src/routes/settings.tsx:577
 msgid "选择文件夹"
 msgstr "Choose folder"
 
-#: src/routes/settings.tsx:292
+#: src/routes/settings.tsx:356
 msgid "选择界面明暗与主题配色，立即生效，并会记住你的选择。"
 msgstr "Choose a light or dark appearance and theme color. Changes apply immediately and are remembered."
 
@@ -2452,7 +2476,7 @@ msgstr "Retry"
 msgid "链接已复制"
 msgstr "Link copied"
 
-#: src/routes/settings.tsx:370
+#: src/routes/settings.tsx:434
 msgid "降低动态渐变背景的亮度和饱和度，夜间长时间播放时更护眼；关闭后恢复鲜艳模式。"
 msgstr "Lowers the animated gradient's brightness and saturation for comfortable night listening; turn off to restore the vivid look."
 
@@ -2475,11 +2499,11 @@ msgstr "Korean"
 msgid "音乐"
 msgstr "Music"
 
-#: src/routes/settings.tsx:413
+#: src/routes/settings.tsx:477
 msgid "音乐缓存"
 msgstr "Audio cache"
 
-#: src/routes/settings.tsx:501
+#: src/routes/settings.tsx:596
 msgid "音源匹配"
 msgstr "Source matching"
 
@@ -2488,11 +2512,11 @@ msgstr "Source matching"
 msgid "音量"
 msgstr "Volume"
 
-#: src/routes/settings.tsx:54
+#: src/routes/settings.tsx:61
 msgid "音量 +1 / -1"
 msgstr "Volume +1 / -1"
 
-#: src/routes/settings.tsx:53
+#: src/routes/settings.tsx:60
 msgid "音量 +5 / -5"
 msgstr "Volume +5 / -5"
 
@@ -2501,20 +2525,20 @@ msgid "音量（Alt + ↑ / ↓）"
 msgstr "Volume (Alt + ↑ / ↓)"
 
 #. placeholder {0}: response.status
-#: src/lib/songCache.ts:261
+#: src/lib/songCache.ts:297
 msgid "音频下载失败 ({0})"
 msgstr "Audio download failed ({0})"
 
 #. placeholder {0}: reason.slice(0, 60)
-#: src/lib/songCache.ts:304
+#: src/lib/songCache.ts:340
 msgid "音频缓存暂不可用：{0}"
 msgstr "Audio cache unavailable: {0}"
 
-#: src/lib/songCache.ts:248
+#: src/lib/songCache.ts:284
 msgid "音频编码结果为空"
 msgstr "Audio encoding returned no data"
 
-#: src/lib/songCache.ts:218
+#: src/lib/songCache.ts:254
 msgid "音频解码失败"
 msgstr "Audio decoding failed"
 

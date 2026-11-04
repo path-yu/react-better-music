@@ -8,7 +8,15 @@ import {
   Utils,
   type ElectrobunEvent,
 } from 'electrobun/main'
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { acquireInstanceLock, releaseInstanceLock } from './instanceLock'
@@ -858,6 +866,178 @@ function uniqueDownloadPath(name: string) {
   return target
 }
 
+/* --------------------------- filesystem audio cache ------------------------ */
+
+interface AudioCacheMeta {
+  id: number
+  name: string
+  size: number
+  createdAt: number
+  artists?: string
+  duration?: number
+  bitrate?: number
+  trialEnd?: number
+  /** Human-readable filename stored in the cache directory. */
+  file?: string
+}
+
+const AUDIO_CACHE_DIR_FILE = join(APP_DATA_DIR, 'audio-cache-dir.json')
+const DEFAULT_AUDIO_CACHE_DIR = join(APP_DATA_DIR, 'audio-cache')
+const AUDIO_CACHE_INDEX = 'index.json'
+const AUDIO_CACHE_MAX_ENTRIES = 60
+const AUDIO_CACHE_MAX_BYTES = 80 * 1024 * 1024
+
+function readAudioCacheDir() {
+  try {
+    const parsed = JSON.parse(readFileSync(AUDIO_CACHE_DIR_FILE, 'utf8')) as {
+      dir?: string
+    }
+    if (parsed.dir && existsSync(parsed.dir)) return parsed.dir
+  } catch {
+    // no saved setting yet
+  }
+  return DEFAULT_AUDIO_CACHE_DIR
+}
+
+let audioCacheDir = readAudioCacheDir()
+
+function persistAudioCacheDir(dir: string) {
+  audioCacheDir = dir
+  mkdirSync(APP_DATA_DIR, { recursive: true })
+  writeFileSync(AUDIO_CACHE_DIR_FILE, JSON.stringify({ dir }), 'utf8')
+}
+
+function audioCacheStem(name: string, id: number) {
+  const safe = name
+    .replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_')
+    .replace(/[. ]+$/g, '')
+    .trim()
+  return (safe || `cached-song-${id}`).slice(0, 120)
+}
+
+function audioCachePath(item: AudioCacheMeta | number) {
+  if (typeof item === 'number') {
+    return join(audioCacheDir, `${item}.opus`)
+  }
+  const file = item.file
+  if (
+    file &&
+    !file.includes('/') &&
+    !file.includes('\\') &&
+    !file.includes('..')
+  ) {
+    return join(audioCacheDir, file)
+  }
+  return join(audioCacheDir, `${item.id}.opus`)
+}
+
+function audioCacheFileFor(
+  items: AudioCacheMeta[],
+  id: number,
+  name: string,
+  keep?: string,
+) {
+  if (keep && !keep.includes('/') && !keep.includes('\\') && !keep.includes('..')) {
+    return keep
+  }
+  const base = audioCacheStem(name, id)
+  const used = new Set(
+    items
+      .filter((item) => item.id !== id && item.file)
+      .map((item) => item.file as string),
+  )
+  let candidate = `${base}.opus`
+  let index = 1
+  while (
+    used.has(candidate) ||
+    (existsSync(join(audioCacheDir, candidate)) &&
+      candidate !== `${id}.opus`)
+  ) {
+    candidate = `${base} (${index}).opus`
+    index += 1
+  }
+  return candidate
+}
+
+/** Rename legacy numeric files to their song names once. */
+function syncAudioCacheFiles(items: AudioCacheMeta[]) {
+  let changed = false
+  for (const item of items) {
+    if (item.file && existsSync(audioCachePath(item))) continue
+    const legacy = join(audioCacheDir, `${item.id}.opus`)
+    const file = audioCacheFileFor(items, item.id, item.name, item.file)
+    const target = join(audioCacheDir, file)
+    try {
+      if (existsSync(legacy) && legacy !== target) {
+        renameSync(legacy, target)
+      }
+    } catch {
+      // A stale index entry without a readable file is ignored below.
+    }
+    item.file = file
+    changed = true
+  }
+  return changed
+}
+
+function readAudioCacheIndex(): AudioCacheMeta[] {
+  try {
+    const parsed = JSON.parse(
+      readFileSync(join(audioCacheDir, AUDIO_CACHE_INDEX), 'utf8'),
+    ) as unknown
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter(
+      (item): item is AudioCacheMeta =>
+        Boolean(
+          item &&
+            typeof item === 'object' &&
+            Number.isFinite(Number((item as AudioCacheMeta).id)) &&
+            typeof (item as AudioCacheMeta).name === 'string',
+        ),
+    )
+  } catch {
+    return []
+  }
+}
+
+function writeAudioCacheIndex(items: AudioCacheMeta[]) {
+  mkdirSync(audioCacheDir, { recursive: true })
+  writeFileSync(
+    join(audioCacheDir, AUDIO_CACHE_INDEX),
+    JSON.stringify(items),
+    'utf8',
+  )
+}
+
+// Existing numeric cache entries are renamed before the bridge starts serving.
+try {
+  const initialCache = readAudioCacheIndex()
+  if (syncAudioCacheFiles(initialCache)) writeAudioCacheIndex(initialCache)
+} catch {
+  // A cache directory on a disconnected drive must not block startup.
+}
+
+function pruneAudioCache(items: AudioCacheMeta[]) {
+  const sorted = [...items].sort((a, b) => a.createdAt - b.createdAt)
+  let count = sorted.length
+  let bytes = sorted.reduce((total, item) => total + (item.size || 0), 0)
+  const removed: number[] = []
+  for (const item of sorted) {
+    if (count <= AUDIO_CACHE_MAX_ENTRIES && bytes <= AUDIO_CACHE_MAX_BYTES) {
+      break
+    }
+    removed.push(item.id)
+    count -= 1
+    bytes -= item.size || 0
+  }
+  for (const item of sorted) {
+    if (removed.includes(item.id)) {
+      rmSync(audioCachePath(item), { force: true })
+    }
+  }
+  return items.filter((item) => !removed.includes(item.id))
+}
+
 /* ------------------------------ window controls ----------------------------- */
 
 /** Mirrors the real window state so the custom title bar can render correctly. */
@@ -1032,6 +1212,132 @@ try {
           const bytes = await request.arrayBuffer()
           await Bun.write(target, bytes)
           return Response.json({ path: target }, { headers })
+        }
+        if (url.pathname === '/audio-cache/dir' && request.method === 'GET') {
+          return Response.json(
+            { dir: audioCacheDir, canPick: true },
+            { headers },
+          )
+        }
+        if (url.pathname === '/audio-cache/pick-dir' && request.method === 'POST') {
+          const chosen = await Utils.openFileDialog({
+            startingFolder: audioCacheDir,
+            canChooseFiles: false,
+            canChooseDirectory: true,
+            allowsMultipleSelection: false,
+          })
+          const picked = chosen?.[0]
+          if (!picked) {
+            return Response.json(
+              { dir: audioCacheDir, cancelled: true },
+              { headers },
+            )
+          }
+          persistAudioCacheDir(picked)
+          return Response.json({ dir: picked, cancelled: false }, { headers })
+        }
+        if (url.pathname === '/audio-cache/open-dir' && request.method === 'POST') {
+          mkdirSync(audioCacheDir, { recursive: true })
+          Utils.openPath(audioCacheDir)
+          return Response.json({ dir: audioCacheDir }, { headers })
+        }
+        if (url.pathname === '/audio-cache' && request.method === 'GET') {
+          const items = readAudioCacheIndex()
+          if (syncAudioCacheFiles(items)) writeAudioCacheIndex(items)
+          const live = items
+            .filter((item) => existsSync(audioCachePath(item)))
+            .sort((a, b) => b.createdAt - a.createdAt)
+          return Response.json({ dir: audioCacheDir, items: live }, { headers })
+        }
+        if (url.pathname === '/audio-cache/meta' && request.method === 'GET') {
+          const id = Number(url.searchParams.get('id'))
+          if (!Number.isSafeInteger(id) || id <= 0) {
+            return Response.json({ error: 'invalid id' }, { status: 400, headers })
+          }
+          const item = readAudioCacheIndex().find((entry) => entry.id === id)
+          if (!item || !existsSync(audioCachePath(item))) {
+            return Response.json({ error: 'not found' }, { status: 404, headers })
+          }
+          return Response.json(item, { headers })
+        }
+        if (url.pathname === '/audio-cache/file' && request.method === 'GET') {
+          const id = Number(url.searchParams.get('id'))
+          if (!Number.isSafeInteger(id) || id <= 0) {
+            return Response.json({ error: 'invalid id' }, { status: 400, headers })
+          }
+          const item = readAudioCacheIndex().find((entry) => entry.id === id)
+          const target = item ? audioCachePath(item) : audioCachePath(id)
+          if (!existsSync(target)) {
+            return Response.json({ error: 'not found' }, { status: 404, headers })
+          }
+          return new Response(Bun.file(target), {
+            headers: {
+              ...headers,
+              'content-type': 'audio/ogg',
+              'cache-control': 'no-store',
+            },
+          })
+        }
+        if (url.pathname === '/audio-cache' && request.method === 'POST') {
+          let meta: AudioCacheMeta
+          try {
+            meta = JSON.parse(url.searchParams.get('meta') ?? '') as AudioCacheMeta
+          } catch {
+            return Response.json({ error: 'invalid meta' }, { status: 400, headers })
+          }
+          const id = Number(meta.id)
+          if (!Number.isSafeInteger(id) || id <= 0) {
+            return Response.json({ error: 'invalid id' }, { status: 400, headers })
+          }
+          const bytes = await request.arrayBuffer()
+          if (!bytes.byteLength) {
+            return Response.json({ error: 'empty audio' }, { status: 400, headers })
+          }
+          mkdirSync(audioCacheDir, { recursive: true })
+          const existing = readAudioCacheIndex()
+          const previous = existing.find((entry) => entry.id === id)
+          const name = String(meta.name ?? '').slice(0, 300)
+          const file = audioCacheFileFor(existing, id, name, previous?.file)
+          const target = join(audioCacheDir, file)
+          await Bun.write(target, bytes)
+          const legacy = join(audioCacheDir, `${id}.opus`)
+          if (legacy !== target && existsSync(legacy)) {
+            rmSync(legacy, { force: true })
+          }
+          const item: AudioCacheMeta = {
+            id,
+            name,
+            size: bytes.byteLength,
+            createdAt: Number(meta.createdAt) || Date.now(),
+            artists: meta.artists ? String(meta.artists).slice(0, 300) : undefined,
+            duration: Number(meta.duration) || undefined,
+            bitrate: Number(meta.bitrate) || undefined,
+            trialEnd: Number(meta.trialEnd) || 0,
+            file,
+          }
+          const items = existing.filter((entry) => entry.id !== id)
+          const next = pruneAudioCache([...items, item])
+          writeAudioCacheIndex(next)
+          return Response.json(item, { headers })
+        }
+        if (url.pathname === '/audio-cache' && request.method === 'DELETE') {
+          const rawId = url.searchParams.get('id')
+          if (rawId) {
+            const id = Number(rawId)
+            if (!Number.isSafeInteger(id) || id <= 0) {
+              return Response.json({ error: 'invalid id' }, { status: 400, headers })
+            }
+            const items = readAudioCacheIndex()
+            const item = items.find((entry) => entry.id === id)
+            rmSync(item ? audioCachePath(item) : audioCachePath(id), { force: true })
+            writeAudioCacheIndex(items.filter((entry) => entry.id !== id))
+          } else {
+            for (const item of readAudioCacheIndex()) {
+              rmSync(audioCachePath(item), { force: true })
+            }
+            writeAudioCacheIndex([])
+          }
+          return Response.json({ ok: true }, { headers })
         }
         if (url.pathname === '/aux-windows' && request.method === 'GET') {
           return Response.json(auxWindowsState(), { headers })

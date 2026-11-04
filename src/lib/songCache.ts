@@ -3,6 +3,14 @@ import { apiUrl } from './http'
 import { i18n } from '../i18n'
 import { reportDesktopLog } from './desktopBridge'
 import { isDesktopApp, saveDownloadFile } from './desktopDownloads'
+import {
+  desktopAudioCacheClear,
+  desktopAudioCacheGet,
+  desktopAudioCacheList,
+  desktopAudioCacheMeta,
+  desktopAudioCachePut,
+  desktopAudioCacheRemove,
+} from './desktopAudioCache'
 import { toast } from './toast'
 import { useSettingsStore } from '../store/settings'
 
@@ -93,6 +101,13 @@ function transactionDone(transaction: IDBTransaction) {
 }
 
 export async function getCachedAudio(id: number): Promise<Blob | null> {
+  if (isDesktopApp()) {
+    try {
+      return await desktopAudioCacheGet(id)
+    } catch {
+      return null
+    }
+  }
   if (typeof indexedDB === 'undefined') return null
   try {
     const db = await openDb()
@@ -107,6 +122,14 @@ export async function getCachedAudio(id: number): Promise<Blob | null> {
 
 /** Drop one cached track (used when a trial/source-matched URL is stale). */
 export async function removeCachedAudio(id: number): Promise<void> {
+  if (isDesktopApp()) {
+    try {
+      await desktopAudioCacheRemove(id)
+    } catch {
+      // Cache maintenance is best-effort.
+    }
+    return
+  }
   if (typeof indexedDB === 'undefined') return
   try {
     const db = await openDb()
@@ -120,6 +143,13 @@ export async function removeCachedAudio(id: number): Promise<void> {
 }
 
 export async function getCachedAudioMeta(id: number): Promise<CacheMeta | null> {
+  if (isDesktopApp()) {
+    try {
+      return await desktopAudioCacheMeta(id)
+    } catch {
+      return null
+    }
+  }
   if (typeof indexedDB === 'undefined') return null
   try {
     const db = await openDb()
@@ -150,9 +180,6 @@ async function putCachedAudio(
   },
 ) {
   if (blob.size > MAX_BYTES) return
-  const db = await openDb()
-  const transaction = db.transaction([AUDIO_STORE, META_STORE], 'readwrite')
-  const record: AudioRecord = { id, blob }
   const meta: CacheMeta = {
     id,
     name,
@@ -160,6 +187,15 @@ async function putCachedAudio(
     createdAt: Date.now(),
     ...extra,
   }
+  // Desktop keeps audio on disk (configurable cache directory); IndexedDB is
+  // only the browser fallback.
+  if (isDesktopApp()) {
+    await desktopAudioCachePut(meta, blob)
+    return
+  }
+  const db = await openDb()
+  const transaction = db.transaction([AUDIO_STORE, META_STORE], 'readwrite')
+  const record: AudioRecord = { id, blob }
   transaction.objectStore(AUDIO_STORE).put(record)
   transaction.objectStore(META_STORE).put(meta)
   await transactionDone(transaction)
@@ -264,8 +300,8 @@ async function fetchAudioBlob(url: string): Promise<Blob> {
 
 async function transcodeAndStore(song: CacheableSong, epoch: number, source?: Blob) {
   if (epoch !== cacheEpoch) return
-  const existing = await getCachedAudio(song.id)
-  if (existing) return
+  // Metadata lookup avoids loading the whole cached file just to skip encoding.
+  if (await hasCachedAudio(song.id)) return
 
   const bitrate = useSettingsStore.getState().cacheBitrate
   try {
@@ -332,6 +368,14 @@ export interface CachedAudioItem {
 }
 
 export async function listCachedAudio(): Promise<CachedAudioItem[]> {
+  if (isDesktopApp()) {
+    try {
+      const { items } = await desktopAudioCacheList()
+      return items.sort((a, b) => b.createdAt - a.createdAt)
+    } catch {
+      return []
+    }
+  }
   if (typeof indexedDB === 'undefined') return []
   try {
     const db = await openDb()
@@ -345,8 +389,12 @@ export async function listCachedAudio(): Promise<CachedAudioItem[]> {
 }
 
 export async function clearAudioCache() {
-  if (typeof indexedDB === 'undefined') return
   cacheEpoch += 1
+  if (isDesktopApp()) {
+    await desktopAudioCacheClear()
+    return
+  }
+  if (typeof indexedDB === 'undefined') return
   const db = await openDb()
   const transaction = db.transaction([AUDIO_STORE, META_STORE], 'readwrite')
   transaction.objectStore(AUDIO_STORE).clear()
@@ -379,21 +427,16 @@ function downloadBlob(blob: Blob, name: string) {
  * blocked by many browsers.
  */
 export async function downloadCachedAudio(ids: number[]): Promise<number> {
-  if (typeof indexedDB === 'undefined' || !ids.length) return 0
-  const db = await openDb()
+  if (!ids.length) return 0
   const desktop = isDesktopApp()
   const entries: Array<{ meta: CacheMeta; blob: Blob }> = []
 
   for (const id of ids) {
-    const meta = await requestResult<CacheMeta | undefined>(
-      db.transaction(META_STORE, 'readonly').objectStore(META_STORE).get(id),
-    )
+    const meta = await getCachedAudioMeta(id)
     if (!meta) continue
-    const record = await requestResult<AudioRecord | undefined>(
-      db.transaction(AUDIO_STORE, 'readonly').objectStore(AUDIO_STORE).get(id),
-    )
-    if (!record) continue
-    entries.push({ meta, blob: record.blob })
+    const blob = await getCachedAudio(id)
+    if (!blob) continue
+    entries.push({ meta, blob })
   }
 
   if (!entries.length) return 0
