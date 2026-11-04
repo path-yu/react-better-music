@@ -162,20 +162,25 @@ svg.lucide.h-6 {
 svg.lucide.brand-mark {
   stroke-width: 1.9;
 }
-/* Header search field: Darwin's input uses neutral white/zinc hover/focus
-   states. Keep every state on the active palette accent so custom dark themes
-   do not flash a grey rectangle when the field is focused. */
+/* Header search field: keep the field itself transparent so it blends with the
+   glass header. Only the border/ring carries the palette accent. */
 .app-search-input,
 .app-search-input:hover,
 .app-search-input:focus {
-  background-color: rgb(var(--apple-blue-rgb) / 0.1) !important;
-  /* border-color: rgb(var(--apple-blue-rgb) / 0.32) !important; */
+  background-color: transparent !important;
 }
 
 .app-search-input:hover,
 .app-search-input:focus {
-  background-color: rgb(var(--apple-blue-rgb) / 0.14) !important;
   border-color: rgb(var(--apple-blue-rgb) / 0.5) !important;
+}
+
+/* Darwin's Input.Search hardcodes a blue focus ring (`focus:ring-blue-500`).
+   Override the ring token as well as the border so the active outline follows
+   the selected palette. */
+.app-search-input:focus,
+.app-search-input:focus-visible {
+  --tw-ring-color: rgb(var(--apple-blue-rgb) / 0.6) !important;
 }
 
 /* Search fields render the icon with w-full/h-full; size it from the token. */
@@ -487,19 +492,19 @@ html.desktop .app-window {
 
 @media (min-width: 768px) {
   .app-body.sidebar-collapsed .sidebar-glass {
-    width: 0;
-    opacity: 0;
-    border-right-width: 0;
-    border-right-color: transparent;
-    pointer-events: none;
-    visibility: hidden;
-    transition:
-      width 260ms cubic-bezier(0.22, 1, 0.36, 1),
-      opacity 160ms ease-in,
-      border-color 160ms ease-in,
-      border-right-width 260ms cubic-bezier(0.22, 1, 0.36, 1),
-      visibility 0s linear 260ms;
+    width: 64px;
+    opacity: 1;
+    border-right-width: 1px;
+    border-right-color: var(--app-border);
+    pointer-events: auto;
+    visibility: visible;
   }
+}
+
+/* The compact rail does not need the 232px label column reserved by the full
+   sidebar; keep its icon buttons centred as the panel animates. */
+.sidebar-glass--rail > * {
+  min-width: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

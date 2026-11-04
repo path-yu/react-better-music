@@ -44,6 +44,7 @@ export function Sidebar() {
   const queue = usePlayerStore((state) => state.queue)
   const showNowPlaying = usePlayerStore((state) => state.showNowPlaying)
   const toggleNowPlaying = usePlayerStore((state) => state.toggleNowPlaying)
+  const sidebarCollapsed = useUiStore((state) => state.sidebarCollapsed)
   const localPlaylists = useLocalLibraryStore((state) => state.playlists)
   const localSubscribedPlaylists = useLocalLibraryStore(
     (state) => state.subscribedPlaylists,
@@ -82,6 +83,90 @@ export function Sidebar() {
   }
 
   const playlistActive = (id: number) => pathname === `/songlists/${id}`
+
+  // Icon rail: keep the primary destinations reachable after collapsing the
+  // full sidebar. The top bar's expand button remains the way back.
+  if (sidebarCollapsed) {
+    return (
+      <aside
+        className="sidebar-glass sidebar-glass--rail select-none"
+        aria-label={i18n._(msg`导航`)}
+      >
+        <div className="flex flex-1 flex-col items-center gap-1 py-4">
+          {primaryNav.map((item) => {
+            const Icon = item.icon
+            return (
+              <button
+                key={item.to}
+                type="button"
+                title={i18n._(item.label)}
+                aria-label={i18n._(item.label)}
+                aria-current={isActive(item.to) ? 'page' : undefined}
+                onClick={() => void navigate({ to: item.to })}
+                className={cn(
+                  'pressable flex h-9 w-9 items-center justify-center rounded-[10px] transition-colors',
+                  isActive(item.to)
+                    ? 'bg-accent/12 text-accent'
+                    : 'text-black/45 hover:bg-black/6 hover:text-black/75',
+                )}
+              >
+                <Icon className="h-4 w-4" strokeWidth={1.75} />
+              </button>
+            )
+          })}
+
+          <div className="my-2 h-px w-7 bg-black/8" />
+
+          {queue.length ? (
+            <button
+              type="button"
+              title={i18n._(msg`正在播放`)}
+              aria-label={i18n._(msg`正在播放`)}
+              onClick={() => toggleNowPlaying(true)}
+              className={cn(
+                'pressable flex h-9 w-9 items-center justify-center rounded-[10px] transition-colors',
+                showNowPlaying
+                  ? 'bg-accent/12 text-accent'
+                  : 'text-black/45 hover:bg-black/6 hover:text-black/75',
+              )}
+            >
+              <Disc3 className="h-4 w-4" strokeWidth={1.75} />
+            </button>
+          ) : null}
+
+          <button
+            type="button"
+            title={i18n._(msg`我喜欢的音乐`)}
+            aria-label={i18n._(msg`我喜欢的音乐`)}
+            onClick={() => void navigate({ to: '/local/favorites' })}
+            className={cn(
+              'pressable flex h-9 w-9 items-center justify-center rounded-[10px] transition-colors',
+              isActive('/local/favorites')
+                ? 'bg-accent/12 text-accent'
+                : 'text-black/45 hover:bg-black/6 hover:text-black/75',
+            )}
+          >
+            <Heart className="h-4 w-4" strokeWidth={1.75} />
+          </button>
+
+          <button
+            type="button"
+            title={i18n._(msg`最近播放`)}
+            aria-label={i18n._(msg`最近播放`)}
+            onClick={() => void navigate({ to: '/recent' })}
+            className={cn(
+              'pressable flex h-9 w-9 items-center justify-center rounded-[10px] transition-colors',
+              isActive('/recent')
+                ? 'bg-accent/12 text-accent'
+                : 'text-black/45 hover:bg-black/6 hover:text-black/75',
+            )}
+          >
+            <History className="h-4 w-4" strokeWidth={1.75} />
+          </button>
+        </div>
+      </aside>
+    )
+  }
 
   return (
     <aside className="sidebar-glass select-none">

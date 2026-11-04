@@ -100,12 +100,12 @@ msgid "{countdown}s 后重发"
 msgstr "Resend in {countdown}s"
 
 #. placeholder {0}: song.name
-#: src/store/player.ts:626
+#: src/store/player.ts:633
 msgid "「{0}」VIP 歌曲已为你匹配其他音源播放"
 msgstr "「{0}」VIP track matched to another source"
 
 #. placeholder {0}: song.name
-#: src/store/player.ts:625
+#: src/store/player.ts:632
 msgid "「{0}」暂无官方音源，已为你匹配其他音源播放"
 msgstr "「{0}」has no official source; matched another source"
 
@@ -295,7 +295,7 @@ msgid "云音乐官方榜单，实时更新"
 msgstr "Official NetEase Cloud Music charts, updated in real time"
 
 #: src/store/player.ts:227
-#: src/store/player.ts:613
+#: src/store/player.ts:620
 msgid "亲爱的，暂无版权，已为你跳过"
 msgstr "Sorry, this track is unavailable due to copyright; skipping"
 
@@ -519,8 +519,10 @@ msgstr "Hottest"
 msgid "最近听过的歌曲，最多显示 100 首"
 msgstr "Recently played songs, up to 100"
 
-#: src/components/layout/Sidebar.tsx:193
-#: src/components/layout/Sidebar.tsx:345
+#: src/components/layout/Sidebar.tsx:154
+#: src/components/layout/Sidebar.tsx:155
+#: src/components/layout/Sidebar.tsx:278
+#: src/components/layout/Sidebar.tsx:430
 #: src/routes/recent.tsx:22
 #: src/routes/recent.tsx:67
 msgid "最近播放"
@@ -559,16 +561,16 @@ msgstr "Switch to video"
 msgid "切换界面语言，立即生效。当前翻译覆盖导航、播放器与设置等主要界面，其余页面会逐步补齐。"
 msgstr "Changes take effect immediately. Navigation, player and settings are translated first; remaining pages will follow."
 
-#: src/store/player.ts:1135
+#: src/store/player.ts:1157
 msgid "切换音源失败，请稍后再试"
 msgstr "Failed to switch sources. Try again later."
 
-#: src/components/layout/Sidebar.tsx:241
+#: src/components/layout/Sidebar.tsx:326
 msgid "创建"
 msgstr "Create"
 
-#: src/components/layout/Sidebar.tsx:206
-#: src/components/layout/Sidebar.tsx:207
+#: src/components/layout/Sidebar.tsx:291
+#: src/components/layout/Sidebar.tsx:292
 msgid "创建歌单"
 msgstr "Create playlist"
 
@@ -576,7 +578,7 @@ msgstr "Create playlist"
 msgid "创建歌单失败"
 msgstr "Failed to create playlist"
 
-#: src/components/layout/Sidebar.tsx:368
+#: src/components/layout/Sidebar.tsx:453
 #: src/routes/users/$id.tsx:276
 msgid "创建的歌单"
 msgstr "Created playlists"
@@ -644,7 +646,7 @@ msgid "单曲"
 msgstr "Songs"
 
 #: src/components/player/PlayerBar.tsx:1158
-#: src/store/player.ts:958
+#: src/store/player.ts:980
 msgid "单曲循环"
 msgstr "Repeat one"
 
@@ -683,7 +685,7 @@ msgid "发送验证码"
 msgstr "Send code"
 
 #: src/components/comments/CommentSection.tsx:450
-#: src/components/layout/Sidebar.tsx:234
+#: src/components/layout/Sidebar.tsx:319
 #: src/routes/local/playlists/$id.tsx:126
 msgid "取消"
 msgstr "Cancel"
@@ -833,6 +835,10 @@ msgstr "Locate now playing"
 msgid "导出缓存失败"
 msgstr "Failed to export cache"
 
+#: src/components/layout/Sidebar.tsx:93
+msgid "导航"
+msgstr "Navigation"
+
 #: src/routes/songlists/$id.edit.tsx:156
 #: src/routes/songlists/$id.edit.tsx:159
 msgid "封面上传失败"
@@ -882,11 +888,11 @@ msgstr "Developer tools enabled. Restart the app to apply fully."
 msgid "已关闭"
 msgstr "Off"
 
-#: src/store/player.ts:966
+#: src/store/player.ts:988
 msgid "已关闭心动模式"
 msgstr "Heart Mode turned off"
 
-#: src/store/player.ts:1133
+#: src/store/player.ts:1155
 msgid "已切换到其他音源"
 msgstr "Switched to another source"
 
@@ -938,7 +944,7 @@ msgid "已收藏到「{0}」"
 msgstr "Saved to \"{0}\""
 
 #. placeholder {0}: additions.length
-#: src/store/player.ts:913
+#: src/store/player.ts:935
 msgid "已添加 {0} 首歌曲到播放列表"
 msgstr "Added {0} tracks to the queue"
 
@@ -977,11 +983,11 @@ msgid "当前：{currentLabel}"
 msgstr "Current: {currentLabel}"
 
 #. placeholder {0}: prefetched.trialEnd
-#: src/store/player.ts:574
+#: src/store/player.ts:581
 msgid "当前仅可试听 {0} 秒，登录或开通会员后可播放完整版"
 msgstr "Preview only ({0}s). Sign in or get VIP for the full track."
 
-#: src/store/player.ts:636
+#: src/store/player.ts:643
 msgid "当前仅可试听 {trialEnd} 秒，登录或开通会员后可播放完整版"
 msgstr "Preview only ({trialEnd}s). Sign in or get VIP for the full track."
 
@@ -1002,11 +1008,11 @@ msgstr "Soundtrack"
 msgid "心动模式"
 msgstr "Heart Mode"
 
-#: src/store/player.ts:980
+#: src/store/player.ts:1002
 msgid "心动模式已开启，将为你推荐歌曲"
 msgstr "Heart Mode is on; recommendations will be added"
 
-#: src/store/player.ts:700
+#: src/store/player.ts:707
 msgid "心动模式暂不可用，请先登录"
 msgstr "Heart Mode is unavailable. Please sign in."
 
@@ -1018,14 +1024,16 @@ msgstr "Shortcuts"
 msgid "怀旧"
 msgstr "Nostalgia"
 
-#: src/components/layout/Sidebar.tsx:168
-#: src/components/layout/Sidebar.tsx:361
+#: src/components/layout/Sidebar.tsx:139
+#: src/components/layout/Sidebar.tsx:140
+#: src/components/layout/Sidebar.tsx:253
+#: src/components/layout/Sidebar.tsx:446
 #: src/routes/local/favorites.tsx:19
 #: src/routes/local/favorites.tsx:29
 msgid "我喜欢的音乐"
 msgstr "Liked Songs"
 
-#: src/components/layout/Sidebar.tsx:145
+#: src/components/layout/Sidebar.tsx:230
 msgid "我的音乐"
 msgstr "My Music"
 
@@ -1182,7 +1190,7 @@ msgstr "Play all"
 msgid "播放列表"
 msgstr "Queue"
 
-#: src/store/player.ts:1033
+#: src/store/player.ts:1055
 msgid "播放列表已清空"
 msgstr "Queue cleared"
 
@@ -1277,8 +1285,8 @@ msgstr "Saved to library"
 msgid "收藏的专辑"
 msgstr "Saved albums"
 
-#: src/components/layout/Sidebar.tsx:279
-#: src/components/layout/Sidebar.tsx:382
+#: src/components/layout/Sidebar.tsx:364
+#: src/components/layout/Sidebar.tsx:467
 #: src/routes/users/$id.tsx:279
 msgid "收藏的歌单"
 msgstr "Saved playlists"
@@ -1385,7 +1393,7 @@ msgstr "No recommendations"
 msgid "暂无新歌"
 msgstr "No new songs yet"
 
-#: src/components/layout/Sidebar.tsx:272
+#: src/components/layout/Sidebar.tsx:357
 msgid "暂无本地歌单"
 msgstr "No local playlists"
 
@@ -1398,7 +1406,7 @@ msgstr "No local playlists yet. Create one in the sidebar first."
 msgid "暂无榜单"
 msgstr "No charts available"
 
-#: src/components/layout/Sidebar.tsx:397
+#: src/components/layout/Sidebar.tsx:482
 msgid "暂无歌单"
 msgstr "No playlists yet"
 
@@ -1449,7 +1457,7 @@ msgstr "More playback options"
 msgid "更换头像"
 msgstr "Change avatar"
 
-#: src/store/player.ts:1112
+#: src/store/player.ts:1134
 msgid "未找到其他可用音源"
 msgstr "No alternative source found"
 
@@ -1465,7 +1473,7 @@ msgstr "A new account is created automatically for unregistered numbers"
 msgid "未知歌手"
 msgstr "Unknown artist"
 
-#: src/components/layout/Sidebar.tsx:407
+#: src/components/layout/Sidebar.tsx:492
 msgid "本地接口 · 网易云音乐"
 msgstr "Local API · NetEase Cloud Music"
 
@@ -1473,7 +1481,7 @@ msgstr "Local API · NetEase Cloud Music"
 msgid "本地收藏"
 msgstr "Local favorites"
 
-#: src/components/layout/Sidebar.tsx:202
+#: src/components/layout/Sidebar.tsx:287
 #: src/routes/local/playlists/$id.tsx:33
 msgid "本地歌单"
 msgstr "Local playlists"
@@ -1609,7 +1617,7 @@ msgstr "Failed to load playlists. Try again later."
 msgid "歌单名不能为空"
 msgstr "Playlist name cannot be empty"
 
-#: src/components/layout/Sidebar.tsx:222
+#: src/components/layout/Sidebar.tsx:307
 msgid "歌单名称"
 msgstr "Playlist name"
 
@@ -1646,11 +1654,11 @@ msgstr "Artist bio"
 msgid "歌曲列表"
 msgstr "Tracks"
 
-#: src/store/player.ts:653
+#: src/store/player.ts:660
 msgid "歌曲加载失败"
 msgstr "Failed to load track"
 
-#: src/store/player.ts:908
+#: src/store/player.ts:930
 msgid "歌曲已在播放列表中"
 msgstr "Track is already in the queue"
 
@@ -1662,7 +1670,7 @@ msgstr "Song actions"
 msgid "歌曲评论"
 msgstr "Song comments"
 
-#: src/store/player.ts:1061
+#: src/store/player.ts:1083
 msgid "歌曲资源已失效"
 msgstr "Track source expired"
 
@@ -1700,7 +1708,9 @@ msgstr "Loading source…"
 msgid "正在同步最近播放…"
 msgstr "Syncing recent plays…"
 
-#: src/components/layout/Sidebar.tsx:140
+#: src/components/layout/Sidebar.tsx:123
+#: src/components/layout/Sidebar.tsx:124
+#: src/components/layout/Sidebar.tsx:225
 #: src/components/layout/TitleBar.tsx:46
 #: src/components/layout/TopBar.tsx:112
 msgid "正在播放"
@@ -1796,7 +1806,7 @@ msgstr "Light"
 msgid "浅色模式"
 msgstr "Light mode"
 
-#: src/components/layout/Sidebar.tsx:90
+#: src/components/layout/Sidebar.tsx:175
 msgid "浏览"
 msgstr "Browse"
 
@@ -1896,7 +1906,7 @@ msgstr "Failed to load users"
 
 #: src/components/layout/LoginModal.tsx:246
 #: src/components/layout/LoginModal.tsx:335
-#: src/components/layout/Sidebar.tsx:322
+#: src/components/layout/Sidebar.tsx:407
 #: src/components/layout/UserMenu.tsx:44
 msgid "登录"
 msgstr "Sign in"
@@ -1913,7 +1923,7 @@ msgstr "Sign-in QR code"
 msgid "登录后参与评论"
 msgstr "Sign in to comment"
 
-#: src/components/layout/Sidebar.tsx:313
+#: src/components/layout/Sidebar.tsx:398
 msgid "登录后可同步网易云歌单"
 msgstr "Sign in to sync NetEase playlists"
 
@@ -2155,7 +2165,7 @@ msgid "获取二维码失败，请检查本地 API 服务是否启动"
 msgstr "Failed to get the QR code. Check whether the local API is running."
 
 #: src/store/player.ts:226
-#: src/store/player.ts:612
+#: src/store/player.ts:619
 msgid "获取歌曲播放地址失败"
 msgstr "Failed to get the playback URL"
 
@@ -2199,7 +2209,7 @@ msgstr "Preview"
 msgid "试听结束，登录或开通会员可播放完整版"
 msgstr "Preview ended. Sign in or get VIP to play the full track."
 
-#: src/store/player.ts:817
+#: src/store/player.ts:833
 msgid "该列表暂无可播放歌曲"
 msgstr "No playable tracks in this list"
 
@@ -2228,7 +2238,7 @@ msgstr "This user hasn't saved any playlists"
 msgid "说点什么…"
 msgstr "Say something…"
 
-#: src/store/player.ts:971
+#: src/store/player.ts:993
 msgid "请先播放歌曲"
 msgstr "Play a track first"
 
@@ -2447,7 +2457,7 @@ msgid "降低动态渐变背景的亮度和饱和度，夜间长时间播放时�
 msgstr "Lowers the animated gradient's brightness and saturation for comfortable night listening; turn off to restore the vivid look."
 
 #: src/components/player/PlayerBar.tsx:1157
-#: src/store/player.ts:957
+#: src/store/player.ts:979
 msgid "随机播放"
 msgstr "Shuffle"
 
@@ -2513,7 +2523,7 @@ msgid "页面不存在"
 msgstr "Page not found"
 
 #: src/components/player/PlayerBar.tsx:1155
-#: src/store/player.ts:955
+#: src/store/player.ts:977
 msgid "顺序播放"
 msgstr "Play in order"
 

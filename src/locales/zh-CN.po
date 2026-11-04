@@ -100,12 +100,12 @@ msgid "{countdown}s 后重发"
 msgstr "{countdown}s 后重发"
 
 #. placeholder {0}: song.name
-#: src/store/player.ts:626
+#: src/store/player.ts:633
 msgid "「{0}」VIP 歌曲已为你匹配其他音源播放"
 msgstr "「{0}」VIP 歌曲已为你匹配其他音源播放"
 
 #. placeholder {0}: song.name
-#: src/store/player.ts:625
+#: src/store/player.ts:632
 msgid "「{0}」暂无官方音源，已为你匹配其他音源播放"
 msgstr "「{0}」暂无官方音源，已为你匹配其他音源播放"
 
@@ -295,7 +295,7 @@ msgid "云音乐官方榜单，实时更新"
 msgstr "云音乐官方榜单，实时更新"
 
 #: src/store/player.ts:227
-#: src/store/player.ts:613
+#: src/store/player.ts:620
 msgid "亲爱的，暂无版权，已为你跳过"
 msgstr "亲爱的，暂无版权，已为你跳过"
 
@@ -519,8 +519,10 @@ msgstr "最热"
 msgid "最近听过的歌曲，最多显示 100 首"
 msgstr "最近听过的歌曲，最多显示 100 首"
 
-#: src/components/layout/Sidebar.tsx:193
-#: src/components/layout/Sidebar.tsx:345
+#: src/components/layout/Sidebar.tsx:154
+#: src/components/layout/Sidebar.tsx:155
+#: src/components/layout/Sidebar.tsx:278
+#: src/components/layout/Sidebar.tsx:430
 #: src/routes/recent.tsx:22
 #: src/routes/recent.tsx:67
 msgid "最近播放"
@@ -559,16 +561,16 @@ msgstr "切换到视频播放"
 msgid "切换界面语言，立即生效。当前翻译覆盖导航、播放器与设置等主要界面，其余页面会逐步补齐。"
 msgstr "切换界面语言，立即生效。当前翻译覆盖导航、播放器与设置等主要界面，其余页面会逐步补齐。"
 
-#: src/store/player.ts:1135
+#: src/store/player.ts:1157
 msgid "切换音源失败，请稍后再试"
 msgstr "切换音源失败，请稍后再试"
 
-#: src/components/layout/Sidebar.tsx:241
+#: src/components/layout/Sidebar.tsx:326
 msgid "创建"
 msgstr "创建"
 
-#: src/components/layout/Sidebar.tsx:206
-#: src/components/layout/Sidebar.tsx:207
+#: src/components/layout/Sidebar.tsx:291
+#: src/components/layout/Sidebar.tsx:292
 msgid "创建歌单"
 msgstr "创建歌单"
 
@@ -576,7 +578,7 @@ msgstr "创建歌单"
 msgid "创建歌单失败"
 msgstr "创建歌单失败"
 
-#: src/components/layout/Sidebar.tsx:368
+#: src/components/layout/Sidebar.tsx:453
 #: src/routes/users/$id.tsx:276
 msgid "创建的歌单"
 msgstr "创建的歌单"
@@ -644,7 +646,7 @@ msgid "单曲"
 msgstr "单曲"
 
 #: src/components/player/PlayerBar.tsx:1158
-#: src/store/player.ts:958
+#: src/store/player.ts:980
 msgid "单曲循环"
 msgstr "单曲循环"
 
@@ -683,7 +685,7 @@ msgid "发送验证码"
 msgstr "发送验证码"
 
 #: src/components/comments/CommentSection.tsx:450
-#: src/components/layout/Sidebar.tsx:234
+#: src/components/layout/Sidebar.tsx:319
 #: src/routes/local/playlists/$id.tsx:126
 msgid "取消"
 msgstr "取消"
@@ -833,6 +835,10 @@ msgstr "定位当前播放"
 msgid "导出缓存失败"
 msgstr "导出缓存失败"
 
+#: src/components/layout/Sidebar.tsx:93
+msgid "导航"
+msgstr "导航"
+
 #: src/routes/songlists/$id.edit.tsx:156
 #: src/routes/songlists/$id.edit.tsx:159
 msgid "封面上传失败"
@@ -882,11 +888,11 @@ msgstr "已允许开发者工具，重启应用后完全生效"
 msgid "已关闭"
 msgstr "已关闭"
 
-#: src/store/player.ts:966
+#: src/store/player.ts:988
 msgid "已关闭心动模式"
 msgstr "已关闭心动模式"
 
-#: src/store/player.ts:1133
+#: src/store/player.ts:1155
 msgid "已切换到其他音源"
 msgstr "已切换到其他音源"
 
@@ -938,7 +944,7 @@ msgid "已收藏到「{0}」"
 msgstr "已收藏到「{0}」"
 
 #. placeholder {0}: additions.length
-#: src/store/player.ts:913
+#: src/store/player.ts:935
 msgid "已添加 {0} 首歌曲到播放列表"
 msgstr "已添加 {0} 首歌曲到播放列表"
 
@@ -977,11 +983,11 @@ msgid "当前：{currentLabel}"
 msgstr "当前：{currentLabel}"
 
 #. placeholder {0}: prefetched.trialEnd
-#: src/store/player.ts:574
+#: src/store/player.ts:581
 msgid "当前仅可试听 {0} 秒，登录或开通会员后可播放完整版"
 msgstr "当前仅可试听 {0} 秒，登录或开通会员后可播放完整版"
 
-#: src/store/player.ts:636
+#: src/store/player.ts:643
 msgid "当前仅可试听 {trialEnd} 秒，登录或开通会员后可播放完整版"
 msgstr "当前仅可试听 {trialEnd} 秒，登录或开通会员后可播放完整版"
 
@@ -1002,11 +1008,11 @@ msgstr "影视原声"
 msgid "心动模式"
 msgstr "心动模式"
 
-#: src/store/player.ts:980
+#: src/store/player.ts:1002
 msgid "心动模式已开启，将为你推荐歌曲"
 msgstr "心动模式已开启，将为你推荐歌曲"
 
-#: src/store/player.ts:700
+#: src/store/player.ts:707
 msgid "心动模式暂不可用，请先登录"
 msgstr "心动模式暂不可用，请先登录"
 
@@ -1018,14 +1024,16 @@ msgstr "快捷键"
 msgid "怀旧"
 msgstr "怀旧"
 
-#: src/components/layout/Sidebar.tsx:168
-#: src/components/layout/Sidebar.tsx:361
+#: src/components/layout/Sidebar.tsx:139
+#: src/components/layout/Sidebar.tsx:140
+#: src/components/layout/Sidebar.tsx:253
+#: src/components/layout/Sidebar.tsx:446
 #: src/routes/local/favorites.tsx:19
 #: src/routes/local/favorites.tsx:29
 msgid "我喜欢的音乐"
 msgstr "我喜欢的音乐"
 
-#: src/components/layout/Sidebar.tsx:145
+#: src/components/layout/Sidebar.tsx:230
 msgid "我的音乐"
 msgstr "我的音乐"
 
@@ -1182,7 +1190,7 @@ msgstr "播放全部"
 msgid "播放列表"
 msgstr "播放列表"
 
-#: src/store/player.ts:1033
+#: src/store/player.ts:1055
 msgid "播放列表已清空"
 msgstr "播放列表已清空"
 
@@ -1277,8 +1285,8 @@ msgstr "收藏成功"
 msgid "收藏的专辑"
 msgstr "收藏的专辑"
 
-#: src/components/layout/Sidebar.tsx:279
-#: src/components/layout/Sidebar.tsx:382
+#: src/components/layout/Sidebar.tsx:364
+#: src/components/layout/Sidebar.tsx:467
 #: src/routes/users/$id.tsx:279
 msgid "收藏的歌单"
 msgstr "收藏的歌单"
@@ -1385,7 +1393,7 @@ msgstr "暂无推荐歌曲"
 msgid "暂无新歌"
 msgstr "暂无新歌"
 
-#: src/components/layout/Sidebar.tsx:272
+#: src/components/layout/Sidebar.tsx:357
 msgid "暂无本地歌单"
 msgstr "暂无本地歌单"
 
@@ -1398,7 +1406,7 @@ msgstr "暂无本地歌单，请先在侧栏创建"
 msgid "暂无榜单"
 msgstr "暂无榜单"
 
-#: src/components/layout/Sidebar.tsx:397
+#: src/components/layout/Sidebar.tsx:482
 msgid "暂无歌单"
 msgstr "暂无歌单"
 
@@ -1449,7 +1457,7 @@ msgstr "更多播放选项"
 msgid "更换头像"
 msgstr "更换头像"
 
-#: src/store/player.ts:1112
+#: src/store/player.ts:1134
 msgid "未找到其他可用音源"
 msgstr "未找到其他可用音源"
 
@@ -1465,7 +1473,7 @@ msgstr "未注册的手机号登录后将自动创建账号"
 msgid "未知歌手"
 msgstr "未知歌手"
 
-#: src/components/layout/Sidebar.tsx:407
+#: src/components/layout/Sidebar.tsx:492
 msgid "本地接口 · 网易云音乐"
 msgstr "本地接口 · 网易云音乐"
 
@@ -1473,7 +1481,7 @@ msgstr "本地接口 · 网易云音乐"
 msgid "本地收藏"
 msgstr "本地收藏"
 
-#: src/components/layout/Sidebar.tsx:202
+#: src/components/layout/Sidebar.tsx:287
 #: src/routes/local/playlists/$id.tsx:33
 msgid "本地歌单"
 msgstr "本地歌单"
@@ -1609,7 +1617,7 @@ msgstr "歌单加载失败，请稍后重试"
 msgid "歌单名不能为空"
 msgstr "歌单名不能为空"
 
-#: src/components/layout/Sidebar.tsx:222
+#: src/components/layout/Sidebar.tsx:307
 msgid "歌单名称"
 msgstr "歌单名称"
 
@@ -1646,11 +1654,11 @@ msgstr "歌手简介"
 msgid "歌曲列表"
 msgstr "歌曲列表"
 
-#: src/store/player.ts:653
+#: src/store/player.ts:660
 msgid "歌曲加载失败"
 msgstr "歌曲加载失败"
 
-#: src/store/player.ts:908
+#: src/store/player.ts:930
 msgid "歌曲已在播放列表中"
 msgstr "歌曲已在播放列表中"
 
@@ -1662,7 +1670,7 @@ msgstr "歌曲操作"
 msgid "歌曲评论"
 msgstr "歌曲评论"
 
-#: src/store/player.ts:1061
+#: src/store/player.ts:1083
 msgid "歌曲资源已失效"
 msgstr "歌曲资源已失效"
 
@@ -1700,7 +1708,9 @@ msgstr "正在加载音源…"
 msgid "正在同步最近播放…"
 msgstr "正在同步最近播放…"
 
-#: src/components/layout/Sidebar.tsx:140
+#: src/components/layout/Sidebar.tsx:123
+#: src/components/layout/Sidebar.tsx:124
+#: src/components/layout/Sidebar.tsx:225
 #: src/components/layout/TitleBar.tsx:46
 #: src/components/layout/TopBar.tsx:112
 msgid "正在播放"
@@ -1796,7 +1806,7 @@ msgstr "浅色"
 msgid "浅色模式"
 msgstr "浅色模式"
 
-#: src/components/layout/Sidebar.tsx:90
+#: src/components/layout/Sidebar.tsx:175
 msgid "浏览"
 msgstr "浏览"
 
@@ -1896,7 +1906,7 @@ msgstr "用户加载失败"
 
 #: src/components/layout/LoginModal.tsx:246
 #: src/components/layout/LoginModal.tsx:335
-#: src/components/layout/Sidebar.tsx:322
+#: src/components/layout/Sidebar.tsx:407
 #: src/components/layout/UserMenu.tsx:44
 msgid "登录"
 msgstr "登录"
@@ -1913,7 +1923,7 @@ msgstr "登录二维码"
 msgid "登录后参与评论"
 msgstr "登录后参与评论"
 
-#: src/components/layout/Sidebar.tsx:313
+#: src/components/layout/Sidebar.tsx:398
 msgid "登录后可同步网易云歌单"
 msgstr "登录后可同步网易云歌单"
 
@@ -2155,7 +2165,7 @@ msgid "获取二维码失败，请检查本地 API 服务是否启动"
 msgstr "获取二维码失败，请检查本地 API 服务是否启动"
 
 #: src/store/player.ts:226
-#: src/store/player.ts:612
+#: src/store/player.ts:619
 msgid "获取歌曲播放地址失败"
 msgstr "获取歌曲播放地址失败"
 
@@ -2199,7 +2209,7 @@ msgstr "试听"
 msgid "试听结束，登录或开通会员可播放完整版"
 msgstr "试听结束，登录或开通会员可播放完整版"
 
-#: src/store/player.ts:817
+#: src/store/player.ts:833
 msgid "该列表暂无可播放歌曲"
 msgstr "该列表暂无可播放歌曲"
 
@@ -2228,7 +2238,7 @@ msgstr "该用户还没有收藏歌单"
 msgid "说点什么…"
 msgstr "说点什么…"
 
-#: src/store/player.ts:971
+#: src/store/player.ts:993
 msgid "请先播放歌曲"
 msgstr "请先播放歌曲"
 
@@ -2447,7 +2457,7 @@ msgid "降低动态渐变背景的亮度和饱和度，夜间长时间播放时�
 msgstr "降低动态渐变背景的亮度和饱和度，夜间长时间播放时更护眼；关闭后恢复鲜艳模式。"
 
 #: src/components/player/PlayerBar.tsx:1157
-#: src/store/player.ts:957
+#: src/store/player.ts:979
 msgid "随机播放"
 msgstr "随机播放"
 
@@ -2513,7 +2523,7 @@ msgid "页面不存在"
 msgstr "页面不存在"
 
 #: src/components/player/PlayerBar.tsx:1155
-#: src/store/player.ts:955
+#: src/store/player.ts:977
 msgid "顺序播放"
 msgstr "顺序播放"
 
