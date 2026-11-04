@@ -268,6 +268,8 @@ let prefetchToken = 0
 // the next/previous action can consume the actual downloaded blobs.
 let randomNextIndex: number | null = null
 let randomPrevIndex: number | null = null
+// Explicit "Play next" must win over the random reservation.
+let forcedNextSongId: number | null = null
 const urlRequests = new Map<number, Promise<SongSource>>()
 
 /**
@@ -416,7 +418,12 @@ export const usePlayerStore = create<PlayerState>()(
             )
             return available[Math.floor(Math.random() * available.length)] ?? null
           }
-          randomNextIndex = pick()
+          const forcedIndex =
+            forcedNextSongId === null
+              ? -1
+              : queue.findIndex((song) => song.id === forcedNextSongId)
+          randomNextIndex =
+            forcedIndex >= 0 && forcedIndex !== index ? forcedIndex : pick()
           randomPrevIndex = pick(randomNextIndex === null ? [] : [randomNextIndex])
           neighbors = [randomNextIndex, randomPrevIndex]
             .filter((candidateIndex): candidateIndex is number => candidateIndex !== null)
@@ -723,14 +730,23 @@ export const usePlayerStore = create<PlayerState>()(
             set({ playing: false })
             return
           }
+          const forcedIndex =
+            direction === 1 && forcedNextSongId !== null
+              ? queue.findIndex((item) => item.id === forcedNextSongId)
+              : -1
           const reserved =
-            direction === 1 ? randomNextIndex : randomPrevIndex
+            forcedIndex >= 0
+              ? forcedIndex
+              : direction === 1
+                ? randomNextIndex
+                : randomPrevIndex
           const nextIndex =
             reserved !== null &&
             reserved !== currentIndex &&
             queue[reserved]
               ? reserved
               : candidates[Math.floor(Math.random() * candidates.length)]
+          if (direction === 1) forcedNextSongId = null
           randomNextIndex = null
           randomPrevIndex = null
           set((state) => ({
@@ -840,6 +856,9 @@ export const usePlayerStore = create<PlayerState>()(
         },
 
         async playAt(index) {
+          // A manual selection starts a new intent; don't keep an old forced
+          // next-selection around.
+          forcedNextSongId = null
           const { queue } = get()
           const song = queue[index]
           if (!song) return false
@@ -895,6 +914,9 @@ export const usePlayerStore = create<PlayerState>()(
             queue.splice(Math.min(currentIndex + 1, queue.length), 0, song)
           }
           set({ queue, currentIndex })
+          // In random mode, regular prefetch reserves a random target. Force
+          // this song to be that forward target so it really plays next.
+          forcedNextSongId = song.id
           // The new neighbour should be ready before the current track ends.
           prefetchNeighbors(currentIndex, 0)
           return true
