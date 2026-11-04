@@ -52,7 +52,7 @@ msgid "{0} 张专辑 · {1} 个 MV"
 msgstr "{0} albums · {1} MVs"
 
 #. placeholder {0}: data.total
-#: src/components/comments/CommentSection.tsx:363
+#: src/components/comments/CommentSection.tsx:452
 msgid "{0} 条"
 msgstr "{0}"
 
@@ -500,7 +500,7 @@ msgstr "Latest MVs"
 msgid "最新MV"
 msgstr "New MVs"
 
-#: src/components/comments/CommentSection.tsx:409
+#: src/components/comments/CommentSection.tsx:498
 msgid "最新评论"
 msgstr "Latest comments"
 
@@ -610,7 +610,7 @@ msgstr "Forward"
 msgid "加入于 {0}"
 msgstr "Joined {0}"
 
-#: src/components/comments/CommentSection.tsx:425
+#: src/components/comments/CommentSection.tsx:514
 #: src/routes/songlists/index.tsx:283
 msgid "加载更多"
 msgstr "Load more"
@@ -623,7 +623,7 @@ msgstr "Load more albums"
 msgid "加载更多失败"
 msgstr "Failed to load more"
 
-#: src/components/comments/CommentSection.tsx:117
+#: src/components/comments/CommentSection.tsx:206
 msgid "加载更多评论失败"
 msgstr "Failed to load more comments"
 
@@ -684,7 +684,7 @@ msgstr "An unknown error occurred"
 msgid "发送验证码"
 msgstr "Send code"
 
-#: src/components/comments/CommentSection.tsx:450
+#: src/components/comments/CommentSection.tsx:539
 #: src/components/layout/Sidebar.tsx:319
 #: src/routes/local/playlists/$id.tsx:126
 msgid "取消"
@@ -739,25 +739,25 @@ msgstr "Listener comments"
 msgid "喜欢"
 msgstr "Like"
 
-#: src/components/comments/CommentSection.tsx:347
-#: src/components/comments/CommentSection.tsx:459
+#: src/components/comments/CommentSection.tsx:436
+#: src/components/comments/CommentSection.tsx:548
 msgid "回复"
 msgstr "Reply"
 
 #. placeholder {0}: replyTarget?.user?.nickname ?? ''
-#: src/components/comments/CommentSection.tsx:435
+#: src/components/comments/CommentSection.tsx:524
 msgid "回复 {0}"
 msgstr "Reply to {0}"
 
-#: src/components/comments/CommentSection.tsx:444
+#: src/components/comments/CommentSection.tsx:533
 msgid "回复内容"
 msgstr "Reply"
 
-#: src/components/comments/CommentSection.tsx:177
+#: src/components/comments/CommentSection.tsx:266
 msgid "回复内容不能为空"
 msgstr "Reply cannot be empty"
 
-#: src/components/comments/CommentSection.tsx:190
+#: src/components/comments/CommentSection.tsx:279
 msgid "回复失败"
 msgstr "Failed to reply"
 
@@ -1242,8 +1242,8 @@ msgstr "Playback quality switched to {label}. Reloading."
 msgid "播放页背景"
 msgstr "Now Playing background"
 
-#: src/components/comments/CommentSection.tsx:212
-#: src/components/comments/CommentSection.tsx:242
+#: src/components/comments/CommentSection.tsx:301
+#: src/components/comments/CommentSection.tsx:331
 #: src/routes/songlists/$id.tsx:263
 #: src/store/user.ts:242
 #: src/store/user.ts:254
@@ -1519,7 +1519,7 @@ msgid "柔和播放页渐变"
 msgstr "Soft now-playing gradient"
 
 #. placeholder {0}: comment.user?.nickname ?? ''
-#: src/components/comments/CommentSection.tsx:268
+#: src/components/comments/CommentSection.tsx:357
 msgid "查看 {0} 的主页"
 msgstr "View {0}'s profile"
 
@@ -1887,7 +1887,7 @@ msgstr "Trending"
 msgid "热议"
 msgstr "Hot"
 
-#: src/components/comments/CommentSection.tsx:293
+#: src/components/comments/CommentSection.tsx:382
 msgid "热门"
 msgstr "Hot"
 
@@ -1934,7 +1934,7 @@ msgstr "Signing in…"
 msgid "登录二维码"
 msgstr "Sign-in QR code"
 
-#: src/components/comments/CommentSection.tsx:375
+#: src/components/comments/CommentSection.tsx:464
 msgid "登录后参与评论"
 msgstr "Sign in to comment"
 
@@ -2112,7 +2112,7 @@ msgstr "Cantonese"
 msgid "精品歌单"
 msgstr "Featured playlists"
 
-#: src/components/comments/CommentSection.tsx:407
+#: src/components/comments/CommentSection.tsx:496
 msgid "精彩评论"
 msgstr "Top comments"
 
@@ -2200,27 +2200,27 @@ msgstr "Failed to get the playback URL"
 msgid "设置"
 msgstr "Settings"
 
-#: src/components/comments/CommentSection.tsx:39
-#: src/components/comments/CommentSection.tsx:392
+#: src/components/comments/CommentSection.tsx:94
+#: src/components/comments/CommentSection.tsx:481
 #: src/components/player/NowPlaying.tsx:675
 #: src/routes/songlists/$id.tsx:474
 msgid "评论"
 msgstr "Comments"
 
-#: src/components/comments/CommentSection.tsx:160
+#: src/components/comments/CommentSection.tsx:249
 msgid "评论不能为空"
 msgstr "Comment cannot be empty"
 
-#: src/components/comments/CommentSection.tsx:80
+#: src/components/comments/CommentSection.tsx:170
 msgid "评论加载失败"
 msgstr "Failed to load comments"
 
-#: src/components/comments/CommentSection.tsx:140
-#: src/components/comments/CommentSection.tsx:168
+#: src/components/comments/CommentSection.tsx:229
+#: src/components/comments/CommentSection.tsx:257
 msgid "评论失败"
 msgstr "Failed to post the comment"
 
-#: src/components/comments/CommentSection.tsx:151
+#: src/components/comments/CommentSection.tsx:240
 msgid "评论成功"
 msgstr "Comment posted"
 
@@ -2257,7 +2257,7 @@ msgstr "This user hasn't created any playlists"
 msgid "该用户还没有收藏歌单"
 msgstr "This user hasn't saved any playlists"
 
-#: src/components/comments/CommentSection.tsx:374
+#: src/components/comments/CommentSection.tsx:463
 msgid "说点什么…"
 msgstr "Say something…"
 
@@ -2265,9 +2265,9 @@ msgstr "Say something…"
 msgid "请先播放歌曲"
 msgstr "Play a track first"
 
-#: src/components/comments/CommentSection.tsx:156
-#: src/components/comments/CommentSection.tsx:198
-#: src/components/comments/CommentSection.tsx:340
+#: src/components/comments/CommentSection.tsx:245
+#: src/components/comments/CommentSection.tsx:287
+#: src/components/comments/CommentSection.tsx:429
 #: src/store/user.ts:236
 msgid "请先登录"
 msgstr "Please sign in first"
@@ -2400,7 +2400,7 @@ msgstr "No recent plays yet"
 msgid "还没有收藏专辑"
 msgstr "No saved albums yet"
 
-#: src/components/comments/CommentSection.tsx:412
+#: src/components/comments/CommentSection.tsx:501
 msgid "还没有评论，快来抢沙发～"
 msgstr "No comments yet. Be the first!"
 

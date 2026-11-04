@@ -52,7 +52,7 @@ msgid "{0} 张专辑 · {1} 个 MV"
 msgstr "{0} 张专辑 · {1} 个 MV"
 
 #. placeholder {0}: data.total
-#: src/components/comments/CommentSection.tsx:363
+#: src/components/comments/CommentSection.tsx:452
 msgid "{0} 条"
 msgstr "{0} 条"
 
@@ -500,7 +500,7 @@ msgstr "最新 MV"
 msgid "最新MV"
 msgstr "最新MV"
 
-#: src/components/comments/CommentSection.tsx:409
+#: src/components/comments/CommentSection.tsx:498
 msgid "最新评论"
 msgstr "最新评论"
 
@@ -610,7 +610,7 @@ msgstr "前进"
 msgid "加入于 {0}"
 msgstr "加入于 {0}"
 
-#: src/components/comments/CommentSection.tsx:425
+#: src/components/comments/CommentSection.tsx:514
 #: src/routes/songlists/index.tsx:283
 msgid "加载更多"
 msgstr "加载更多"
@@ -623,7 +623,7 @@ msgstr "加载更多专辑"
 msgid "加载更多失败"
 msgstr "加载更多失败"
 
-#: src/components/comments/CommentSection.tsx:117
+#: src/components/comments/CommentSection.tsx:206
 msgid "加载更多评论失败"
 msgstr "加载更多评论失败"
 
@@ -684,7 +684,7 @@ msgstr "发生未知错误"
 msgid "发送验证码"
 msgstr "发送验证码"
 
-#: src/components/comments/CommentSection.tsx:450
+#: src/components/comments/CommentSection.tsx:539
 #: src/components/layout/Sidebar.tsx:319
 #: src/routes/local/playlists/$id.tsx:126
 msgid "取消"
@@ -739,25 +739,25 @@ msgstr "听友评论"
 msgid "喜欢"
 msgstr "喜欢"
 
-#: src/components/comments/CommentSection.tsx:347
-#: src/components/comments/CommentSection.tsx:459
+#: src/components/comments/CommentSection.tsx:436
+#: src/components/comments/CommentSection.tsx:548
 msgid "回复"
 msgstr "回复"
 
 #. placeholder {0}: replyTarget?.user?.nickname ?? ''
-#: src/components/comments/CommentSection.tsx:435
+#: src/components/comments/CommentSection.tsx:524
 msgid "回复 {0}"
 msgstr "回复 {0}"
 
-#: src/components/comments/CommentSection.tsx:444
+#: src/components/comments/CommentSection.tsx:533
 msgid "回复内容"
 msgstr "回复内容"
 
-#: src/components/comments/CommentSection.tsx:177
+#: src/components/comments/CommentSection.tsx:266
 msgid "回复内容不能为空"
 msgstr "回复内容不能为空"
 
-#: src/components/comments/CommentSection.tsx:190
+#: src/components/comments/CommentSection.tsx:279
 msgid "回复失败"
 msgstr "回复失败"
 
@@ -1242,8 +1242,8 @@ msgstr "播放音质已切换为{label}，正在重新加载"
 msgid "播放页背景"
 msgstr "播放页背景"
 
-#: src/components/comments/CommentSection.tsx:212
-#: src/components/comments/CommentSection.tsx:242
+#: src/components/comments/CommentSection.tsx:301
+#: src/components/comments/CommentSection.tsx:331
 #: src/routes/songlists/$id.tsx:263
 #: src/store/user.ts:242
 #: src/store/user.ts:254
@@ -1519,7 +1519,7 @@ msgid "柔和播放页渐变"
 msgstr "柔和播放页渐变"
 
 #. placeholder {0}: comment.user?.nickname ?? ''
-#: src/components/comments/CommentSection.tsx:268
+#: src/components/comments/CommentSection.tsx:357
 msgid "查看 {0} 的主页"
 msgstr "查看 {0} 的主页"
 
@@ -1887,7 +1887,7 @@ msgstr "热搜榜"
 msgid "热议"
 msgstr "热议"
 
-#: src/components/comments/CommentSection.tsx:293
+#: src/components/comments/CommentSection.tsx:382
 msgid "热门"
 msgstr "热门"
 
@@ -1934,7 +1934,7 @@ msgstr "登录中…"
 msgid "登录二维码"
 msgstr "登录二维码"
 
-#: src/components/comments/CommentSection.tsx:375
+#: src/components/comments/CommentSection.tsx:464
 msgid "登录后参与评论"
 msgstr "登录后参与评论"
 
@@ -2112,7 +2112,7 @@ msgstr "粤语"
 msgid "精品歌单"
 msgstr "精品歌单"
 
-#: src/components/comments/CommentSection.tsx:407
+#: src/components/comments/CommentSection.tsx:496
 msgid "精彩评论"
 msgstr "精彩评论"
 
@@ -2200,27 +2200,27 @@ msgstr "获取歌曲播放地址失败"
 msgid "设置"
 msgstr "设置"
 
-#: src/components/comments/CommentSection.tsx:39
-#: src/components/comments/CommentSection.tsx:392
+#: src/components/comments/CommentSection.tsx:94
+#: src/components/comments/CommentSection.tsx:481
 #: src/components/player/NowPlaying.tsx:675
 #: src/routes/songlists/$id.tsx:474
 msgid "评论"
 msgstr "评论"
 
-#: src/components/comments/CommentSection.tsx:160
+#: src/components/comments/CommentSection.tsx:249
 msgid "评论不能为空"
 msgstr "评论不能为空"
 
-#: src/components/comments/CommentSection.tsx:80
+#: src/components/comments/CommentSection.tsx:170
 msgid "评论加载失败"
 msgstr "评论加载失败"
 
-#: src/components/comments/CommentSection.tsx:140
-#: src/components/comments/CommentSection.tsx:168
+#: src/components/comments/CommentSection.tsx:229
+#: src/components/comments/CommentSection.tsx:257
 msgid "评论失败"
 msgstr "评论失败"
 
-#: src/components/comments/CommentSection.tsx:151
+#: src/components/comments/CommentSection.tsx:240
 msgid "评论成功"
 msgstr "评论成功"
 
@@ -2257,7 +2257,7 @@ msgstr "该用户还没有创建歌单"
 msgid "该用户还没有收藏歌单"
 msgstr "该用户还没有收藏歌单"
 
-#: src/components/comments/CommentSection.tsx:374
+#: src/components/comments/CommentSection.tsx:463
 msgid "说点什么…"
 msgstr "说点什么…"
 
@@ -2265,9 +2265,9 @@ msgstr "说点什么…"
 msgid "请先播放歌曲"
 msgstr "请先播放歌曲"
 
-#: src/components/comments/CommentSection.tsx:156
-#: src/components/comments/CommentSection.tsx:198
-#: src/components/comments/CommentSection.tsx:340
+#: src/components/comments/CommentSection.tsx:245
+#: src/components/comments/CommentSection.tsx:287
+#: src/components/comments/CommentSection.tsx:429
 #: src/store/user.ts:236
 msgid "请先登录"
 msgstr "请先登录"
@@ -2400,7 +2400,7 @@ msgstr "还没有播放记录"
 msgid "还没有收藏专辑"
 msgstr "还没有收藏专辑"
 
-#: src/components/comments/CommentSection.tsx:412
+#: src/components/comments/CommentSection.tsx:501
 msgid "还没有评论，快来抢沙发～"
 msgstr "还没有评论，快来抢沙发～"
 

@@ -27,6 +27,61 @@ interface CommentSectionProps {
 }
 
 const PAGE_SIZE = 20
+const COMMENT_CACHE_TTL = 2 * 60_000
+const MAX_COMMENT_CACHES = 24
+
+interface CommentCacheEntry {
+  data: CommentResponse
+  serverCount: number
+  updatedAt: number
+}
+
+// Tabs unmount their inactive content in several screens (playlist comments and
+// the immersive player). Keep the last page in memory so toggling tabs does not
+// refetch and flash a loading state each time.
+const commentCache = new Map<string, CommentCacheEntry>()
+// Coalesce the first-page request across rapid unmount/remount cycles. Tab
+// switching must not cancel and immediately restart the same network call.
+const commentRequests = new Map<string, Promise<CommentResponse>>()
+
+type CommentFetcher = typeof fetchMusicComments
+
+function fetchFirstCommentPage(
+  key: string,
+  fetcher: CommentFetcher,
+  resourceId: number,
+) {
+  const pending = commentRequests.get(key)
+  if (pending) return pending
+  const request = fetcher({
+    id: resourceId,
+    limit: PAGE_SIZE,
+    offset: 0,
+  }).finally(() => {
+    commentRequests.delete(key)
+  })
+  commentRequests.set(key, request)
+  return request
+}
+
+function commentCacheKey(type: CommentSectionProps['type'], resourceId: number) {
+  return `${type}:${resourceId}`
+}
+
+function rememberComments(
+  key: string,
+  data: CommentResponse,
+  serverCount: number,
+) {
+  commentCache.set(key, {
+    data,
+    serverCount,
+    updatedAt: Date.now(),
+  })
+  if (commentCache.size > MAX_COMMENT_CACHES) {
+    commentCache.delete(commentCache.keys().next().value as string)
+  }
+}
 
 export function CommentSection({
   type,
@@ -37,8 +92,12 @@ export function CommentSection({
   const { i18n } = useLingui()
   const navigate = useNavigate()
   const sectionTitle = title ?? i18n._(msg`评论`)
-  const [data, setData] = useState<CommentResponse>({ total: 0, comments: [] })
-  const [loading, setLoading] = useState(false)
+  const key = commentCacheKey(type, resourceId)
+  const initial = commentCache.get(key)
+  const [data, setData] = useState<CommentResponse>(
+    () => initial?.data ?? { total: 0, comments: [] },
+  )
+  const [loading, setLoading] = useState(() => !initial)
   const [loadingMore, setLoadingMore] = useState(false)
   const [content, setContent] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -48,7 +107,8 @@ export function CommentSection({
   const requestIdRef = useRef(0)
   // Offset is tracked separately from the local list length: a posted comment
   // is prepended locally and must not shift the next server page.
-  const serverCountRef = useRef(0)
+  const serverCountRef = useRef(initial?.serverCount ?? 0)
+  const loadedRef = useRef(Boolean(initial))
   const isLogin = useUserStore((state) => state.isLogin)
 
   const fetcher =
@@ -58,34 +118,63 @@ export function CommentSection({
     return fetcher({ id: resourceId, limit: PAGE_SIZE, offset, before }, signal)
   }
 
+  // Persist local mutations (new comment, like, reply) without extending the
+  // server cache TTL; only a successful network fetch should do that.
   useEffect(() => {
-    const controller = new AbortController()
+    if (!loadedRef.current) return
+    const current = commentCache.get(key)
+    commentCache.set(key, {
+      data,
+      serverCount: serverCountRef.current,
+      updatedAt: current?.updatedAt ?? Date.now(),
+    })
+  }, [data, key])
+
+  useEffect(() => {
     const requestId = ++requestIdRef.current
-    setLoading(true)
-    setData({ total: 0, comments: [] })
-    serverCountRef.current = 0
-    fetchPage(0, undefined, controller.signal)
+    const cached = commentCache.get(key)
+    const fresh =
+      cached && Date.now() - cached.updatedAt < COMMENT_CACHE_TTL
+    setLoadingMore(false)
+    if (cached) {
+      // Hydrate immediately, even if slightly stale; a stale entry refreshes
+      // silently below without replacing the list with a spinner.
+      setData(cached.data)
+      serverCountRef.current = cached.serverCount
+      loadedRef.current = true
+      setLoading(false)
+      if (fresh) return
+    } else {
+      setLoading(true)
+      setData({ total: 0, comments: [] })
+      serverCountRef.current = 0
+      loadedRef.current = false
+    }
+
+    fetchFirstCommentPage(key, fetcher, resourceId)
       .then((response) => {
         if (requestIdRef.current !== requestId) return
         const comments = response.comments ?? []
-        serverCountRef.current = comments.length
-        setData({
+        const next: CommentResponse = {
           total: response.total ?? 0,
           hotComments: response.hotComments ?? [],
           comments,
-        })
+        }
+        serverCountRef.current = comments.length
+        loadedRef.current = true
+        rememberComments(key, next, comments.length)
+        setData(next)
       })
       .catch(() => {
-        if (requestIdRef.current === requestId && !controller.signal.aborted) {
+        if (requestIdRef.current === requestId && !cached) {
           toast.error(i18n._(msg`评论加载失败`))
         }
       })
       .finally(() => {
-        if (requestIdRef.current === requestId && !controller.signal.aborted) {
+        if (requestIdRef.current === requestId) {
           setLoading(false)
         }
       })
-    return () => controller.abort()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type, resourceId])
 
