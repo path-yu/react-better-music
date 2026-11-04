@@ -418,7 +418,7 @@ export function SongTable({
         {header}
         <div
           ref={scrollRef}
-          className="relative h-[72vh] max-h-[700px] min-h-[360px] overflow-y-auto overscroll-contain pr-1"
+          className="relative h-[72vh] max-h-[700px] min-h-[360px] overflow-y-auto pr-1"
         >
           <div
             className="relative w-full"
