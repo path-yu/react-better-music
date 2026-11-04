@@ -1568,18 +1568,6 @@ html.desktop .app-window {
   text-underline-offset: 3px;
 }
 
-.lyric-line--readonly {
-  cursor: default;
-}
-
-.lyric-line--readonly:not(.is-active):hover {
-  opacity: var(--lyric-opacity, 1);
-}
-
-.lyric-line--readonly.is-blurred:hover {
-  filter: blur(var(--lyric-blur, 0px));
-}
-
 .lyrics-viewport--compact .lyric-line {
   padding-block: 0.35em;
 }

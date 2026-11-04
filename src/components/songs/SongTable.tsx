@@ -4,7 +4,7 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { Heart, Pause, Play, Trash2, Volume2 } from 'lucide-react'
+import { Heart, LocateFixed, Pause, Play, Trash2, Volume2 } from 'lucide-react'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
 import { EmptyState } from '../common/EmptyState'
@@ -230,7 +230,9 @@ export function SongTable({
   onRemoveSong,
   stickyTop,
 }: SongTableProps) {
+  const { i18n } = useLingui()
   const scrollRef = useRef<HTMLDivElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
   const currentSong = usePlayerStore((state) => state.queue[state.currentIndex])
   const playing = usePlayerStore((state) => state.playing)
   const likedIds = useUserStore((state) => state.likedIds)
@@ -301,11 +303,46 @@ export function SongTable({
     estimateSize: () => ROW_HEIGHT,
     overscan: 10,
   })
+  const currentIndexInList = useMemo(
+    () =>
+      currentSong
+        ? songs.findIndex((song) => song.id === currentSong.id)
+        : -1,
+    [currentSong, songs],
+  )
 
   useEffect(() => {
     if (!isVirtual || !scrollRef.current) return
     scrollRef.current.scrollTop = 0
   }, [isVirtual, songs])
+
+  const locateCurrent = () => {
+    if (currentIndexInList < 0) return
+    if (isVirtual) {
+      virtualizer.scrollToIndex(currentIndexInList, {
+        align: 'center',
+        behavior: 'smooth',
+      })
+      return
+    }
+    const row = listRef.current?.querySelector<HTMLElement>(
+      `[data-song-id="${currentSong?.id}"]`,
+    )
+    row?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+
+  const locateButton =
+    currentIndexInList >= 0 ? (
+      <button
+        type="button"
+        aria-label={i18n._(msg`定位当前播放`)}
+        title={i18n._(msg`定位当前播放`)}
+        onClick={locateCurrent}
+        className="pressable fixed bottom-[88px] right-5 z-40 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--app-border-strong)] bg-[var(--app-glass)] text-accent shadow-[0_10px_30px_rgba(0,0,0,0.22)] backdrop-blur-xl transition-colors hover:bg-accent/15 max-md:right-4"
+      >
+        <LocateFixed className="h-4 w-4" strokeWidth={1.8} />
+      </button>
+    ) : null
 
   if (loading) {
     return (
@@ -408,6 +445,7 @@ export function SongTable({
             })}
           </div>
         </div>
+        {locateButton}
         {contextMenuNode}
       </div>
     )
@@ -416,9 +454,14 @@ export function SongTable({
   return (
     <div className={cn('select-none', className)}>
       {header}
-      <div className="py-1">
-        {songs.map((song, index) => renderRow(song, index))}
+      <div ref={listRef} className="py-1">
+        {songs.map((song, index) => (
+          <div key={`${song.id}-${index}`} data-song-id={song.id}>
+            {renderRow(song, index)}
+          </div>
+        ))}
       </div>
+      {locateButton}
       {contextMenuNode}
     </div>
   )

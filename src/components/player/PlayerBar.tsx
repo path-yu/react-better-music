@@ -58,8 +58,6 @@ import type { PlayLevel } from '../../types'
 
 /** Crossfade length for track changes; inside the 200–400ms sweet spot. */
 const CROSSFADE_MS = 320
-/** Stop holding the previous track if the next source takes too long to load. */
-const CROSSFADE_MAX_WAIT = 6000
 
 export function PlayerBar() {
   const { i18n } = useLingui()
@@ -362,8 +360,8 @@ export function PlayerBar() {
   }, [volume])
 
   // Every play request (previous / next / pick a song / replay) bumps
-  // playToken. Instead of silencing the old track right away, keep it playing
-  // while the next source resolves, then crossfade once the new one is ready.
+  // playToken. Stop the old track synchronously on that commit; the source
+  // effect starts the new track once its URL/blob is ready.
   useEffect(() => {
     if (lastPlayTokenRef.current === playToken) return
     lastPlayTokenRef.current = playToken
@@ -400,41 +398,24 @@ export function PlayerBar() {
       return
     }
 
-    const state = usePlayerStore.getState()
-    const audible = !audio.paused && audio.readyState >= 2 && audio.currentTime > 0.25
-    if (!state.playing || !audible) {
-      crossfadePendingRef.current = false
-      clearCrossfadeTimer()
-      outgoingRef.current = null
-      switchingRef.current = true
-      audio.pause()
-      audio.currentTime = 0
-      return
-    }
-
-    // The old track keeps playing (silently for the UI) until the new source
-    // is playable, so the hand-off has no audible gap.
-    switchingRef.current = true
-    crossfadePendingRef.current = true
-    outgoingRef.current = audio
+    // Stop the outgoing track immediately. Waiting for the new URL used to be
+    // masked by a crossfade, but that let two tracks play at once and made the
+    // previous song audible after switching. The source effect below starts the
+    // new track as soon as its URL/blob is ready.
+    crossfadePendingRef.current = false
     clearCrossfadeTimer()
-    crossfadeTimerRef.current = window.setTimeout(() => {
-      crossfadeTimerRef.current = null
-      if (!crossfadePendingRef.current) return
-      crossfadePendingRef.current = false
-      const incoming = incomingRef.current
-      incomingRef.current = null
-      outgoingRef.current = null
-      audio.pause()
-      audio.currentTime = 0
-      if (incoming && incoming.getAttribute('src')) {
-        // Promote the next element without a fade; it starts as soon as it can.
-        audioRef.current = incoming
-        incoming.volume = masterVolumeRef.current
-        registerAudio(incoming)
-      }
-      switchingRef.current = false
-    }, CROSSFADE_MAX_WAIT)
+    clearFadeEndTimer()
+    clearFade()
+    const incoming = incomingRef.current
+    incomingRef.current = null
+    if (incoming && incoming !== audio) settleElement(incoming)
+    outgoingRef.current = null
+    switchingRef.current = true
+    audio.pause()
+    audio.currentTime = 0
+    audio.volume = masterVolumeRef.current
+
+    if (!usePlayerStore.getState().playing) return
   }, [playToken, audioUrl, currentSong?.id, setAudioReady, setBuffered, setCurrentTime])
 
   // A pending seek belongs to the track it was made on. Error retries are also

@@ -3,7 +3,7 @@ import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { ListMusic, Trash2, Volume2, X } from 'lucide-react'
+import { ListMusic, LocateFixed, Trash2, Volume2, X } from 'lucide-react'
 import { Button } from '@pikoloo/darwin-ui'
 import { ArtistLinks } from '../common/ArtistLinks'
 import { usePlayerStore } from '../../store/player'
@@ -195,6 +195,23 @@ export function QueuePanel() {
             })}
           </div>
         </div>
+
+        {queue.length ? (
+          <button
+            type="button"
+            aria-label={i18n._(msg`定位当前播放`)}
+            title={i18n._(msg`定位当前播放`)}
+            onClick={() =>
+              virtualizer.scrollToIndex(currentIndex, {
+                align: 'center',
+                behavior: 'smooth',
+              })
+            }
+            className="pressable absolute bottom-[58px] right-4 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-[var(--app-border-strong)] bg-[var(--app-glass)] text-accent shadow-[0_8px_24px_rgba(0,0,0,0.2)] backdrop-blur-xl transition-colors hover:bg-accent/15 max-md:h-11 max-md:w-11"
+          >
+            <LocateFixed className="h-4 w-4" strokeWidth={1.8} />
+          </button>
+        ) : null}
 
         <div className="border-t border-black/8 px-4 py-3 text-center text-[11px] text-black/30">
           <Trans>点击歌曲开始播放</Trans>

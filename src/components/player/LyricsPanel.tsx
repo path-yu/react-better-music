@@ -199,12 +199,14 @@ export const LyricsPanel = memo(function LyricsPanel({
           const hasWords = wordByWordLyrics && Boolean(line.words?.length)
           const translationOnly = displayMode === 'translation' && Boolean(line.translate)
           const text = translationOnly ? line.translate! : line.content
-          const interactive = !line.synthetic
+          // Converted LRC has synthetic word timings but still has a real line
+          // timestamp. Keep the line clickable/hoverable; only disable per-word
+          // seeking, which would use fabricated timings.
+          const wordInteractive = !line.synthetic
           const className = cn(
             'lyric-line block w-full text-left',
             active && 'is-active',
             blur > 0 && 'is-blurred',
-            !interactive && 'lyric-line--readonly',
           )
           const style = {
             '--lyric-opacity': opacity,
@@ -220,13 +222,13 @@ export const LyricsPanel = memo(function LyricsPanel({
                   active ? (
                     <ActiveWords
                       words={line.words!}
-                      interactive={interactive}
+                      interactive={wordInteractive}
                       onSeek={onSeek}
                     />
                   ) : (
                     <StaticWords
                       words={line.words!}
-                      interactive={interactive}
+                      interactive={wordInteractive}
                       onSeek={onSeek}
                     />
                   )
@@ -239,20 +241,6 @@ export const LyricsPanel = memo(function LyricsPanel({
               ) : null}
             </>
           )
-
-          if (!interactive) {
-            return (
-              <div
-                key={`${line.time}-${index}`}
-                ref={setLineRef}
-                style={style}
-                className={className}
-                aria-current={active ? 'true' : undefined}
-              >
-                {content}
-              </div>
-            )
-          }
 
           return (
             <button

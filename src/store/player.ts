@@ -68,6 +68,8 @@ interface PlayerState {
   initQueue: (songs: Song[], index: number, playlistId: string) => Promise<void>
   playAt: (index: number) => Promise<boolean>
   playSong: (song: Song) => Promise<void>
+  /** Queue this song right after the current track (deduplicating/moving it). */
+  playNext: (song: Song) => Promise<boolean>
   addToQueue: (songs: Song[]) => void
   togglePlay: () => Promise<void>
   /** `auto` is true only when the current track ended on its own. */
@@ -262,6 +264,10 @@ const AUDIO_PREFETCH_DELAY = 1800
 
 let prefetchTimer: number | undefined
 let prefetchToken = 0
+// In random mode the prefetched forward/backward candidates are reserved so
+// the next/previous action can consume the actual downloaded blobs.
+let randomNextIndex: number | null = null
+let randomPrevIndex: number | null = null
 const urlRequests = new Map<number, Promise<SongSource>>()
 
 /**
@@ -388,30 +394,52 @@ export const usePlayerStore = create<PlayerState>()(
           prefetchTimer = undefined
         }
 
-        const findNext = () => {
-          // Random jumps are unpredictable and single-track loop replays the
-          // same song, so only sequential playback has a reliable neighbour.
-          if (mode !== 'order') return null
-          for (let step = 1; index + step < queue.length; step += 1) {
-            const candidateIndex = index + step
-            const candidate = queue[candidateIndex]
-            if (candidate) {
-              return { index: candidateIndex, song: candidate }
-            }
-          }
-          return null
+        const findNeighbor = (candidateIndex: number) => {
+          if (candidateIndex === index) return null
+          const candidate = queue[candidateIndex]
+          return candidate ? { index: candidateIndex, song: candidate } : null
         }
-        // Only the next track is prefetched: downloading the previous one as
-        // well doubled the bandwidth and Blob memory for a case users rarely
-        // hit.
-        const next = findNext()
-        const neighbors = next ? [next] : []
 
-        // Only the reachable neighbour may keep its prefetched audio.
-        retainPrefetchedAudio(neighbors.map((entry) => entry.song.id))
-        if (!neighbors.length) return
+        // Prefetch both directions. In order/single-loop mode the adjacent
+        // indices are deterministic. Random mode picks the same two indices it
+        // will use for the next/previous action, so playback can actually
+        // consume the prefetched blob instead of choosing another random track
+        // that was never downloaded.
+        let neighbors: Array<{ index: number; song: Song }>
+        if (mode === 'random' && queue.length > 1) {
+          const candidates = queue
+            .map((song, candidateIndex) => (song && candidateIndex !== index ? candidateIndex : -1))
+            .filter((candidateIndex) => candidateIndex >= 0)
+          const pick = (exclude: number[] = []) => {
+            const available = candidates.filter(
+              (candidateIndex) => !exclude.includes(candidateIndex),
+            )
+            return available[Math.floor(Math.random() * available.length)] ?? null
+          }
+          randomNextIndex = pick()
+          randomPrevIndex = pick(randomNextIndex === null ? [] : [randomNextIndex])
+          neighbors = [randomNextIndex, randomPrevIndex]
+            .filter((candidateIndex): candidateIndex is number => candidateIndex !== null)
+            .map((candidateIndex) => findNeighbor(candidateIndex))
+            .filter((entry): entry is { index: number; song: Song } => Boolean(entry))
+        } else {
+          randomNextIndex = null
+          randomPrevIndex = null
+          const nextIndex = (index + 1) % queue.length
+          const previousIndex = (index - 1 + queue.length) % queue.length
+          neighbors = [findNeighbor(nextIndex), findNeighbor(previousIndex)].filter(
+            (entry): entry is { index: number; song: Song } => Boolean(entry),
+          )
+        }
+        const uniqueNeighbors = Array.from(
+          new Map(neighbors.map((entry) => [entry.song.id, entry])).values(),
+        )
 
-        const resolves = neighbors.map(async ({ index: neighborIndex, song }) => {
+        // Both reachable neighbours may keep their prefetched audio.
+        retainPrefetchedAudio(uniqueNeighbors.map((entry) => entry.song.id))
+        if (!uniqueNeighbors.length) return
+
+        const resolves = uniqueNeighbors.map(async ({ index: neighborIndex, song }) => {
           const bypassAudioCache = await shouldBypassAudioCache(song)
           if (bypassAudioCache) void removeCachedAudio(song.id)
           if (!bypassAudioCache && (await hasCachedAudio(song.id))) return null
@@ -695,7 +723,16 @@ export const usePlayerStore = create<PlayerState>()(
             set({ playing: false })
             return
           }
-          const nextIndex = candidates[Math.floor(Math.random() * candidates.length)]
+          const reserved =
+            direction === 1 ? randomNextIndex : randomPrevIndex
+          const nextIndex =
+            reserved !== null &&
+            reserved !== currentIndex &&
+            queue[reserved]
+              ? reserved
+              : candidates[Math.floor(Math.random() * candidates.length)]
+          randomNextIndex = null
+          randomPrevIndex = null
           set((state) => ({
             currentIndex: nextIndex,
             playing: true,
@@ -837,6 +874,30 @@ export const usePlayerStore = create<PlayerState>()(
           nextQueue.splice(insertIndex, 0, song)
           set({ queue: nextQueue })
           await get().playAt(insertIndex)
+        },
+
+        async playNext(song) {
+          const state = get()
+          if (!state.queue.length) {
+            await state.initQueue([song], 0, '')
+            return true
+          }
+          if (state.queue[state.currentIndex]?.id === song.id) return false
+
+          const queue = [...state.queue]
+          let currentIndex = state.currentIndex
+          const existingIndex = queue.findIndex((item) => item.id === song.id)
+          if (existingIndex >= 0) {
+            const [existing] = queue.splice(existingIndex, 1)
+            if (existingIndex < currentIndex) currentIndex -= 1
+            queue.splice(Math.min(currentIndex + 1, queue.length), 0, existing)
+          } else {
+            queue.splice(Math.min(currentIndex + 1, queue.length), 0, song)
+          }
+          set({ queue, currentIndex })
+          // The new neighbour should be ready before the current track ends.
+          prefetchNeighbors(currentIndex, 0)
+          return true
         },
 
         addToQueue(songs) {

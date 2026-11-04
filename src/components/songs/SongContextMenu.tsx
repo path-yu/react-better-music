@@ -4,12 +4,21 @@ import { useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { ChevronLeft, Film, Heart, ListMusic, ListPlus, Loader2 } from 'lucide-react'
+import {
+  ChevronLeft,
+  CornerDownRight,
+  Film,
+  Heart,
+  ListMusic,
+  ListPlus,
+  Loader2,
+} from 'lucide-react'
 import { addSongToPlaylist, fetchRelatedVideos } from '../../api'
 import { resizedImageUrl } from '../../lib/image'
 import { toast } from '../../lib/toast'
 import { useUserStore } from '../../store/user'
 import { useLocalLibraryStore } from '../../store/localLibrary'
+import { usePlayerStore } from '../../store/player'
 import type { LocalPlaylist } from '../../api/local'
 import type { Playlist, Song } from '../../types'
 
@@ -161,6 +170,22 @@ export function SongContextMenu({
     }
   }
 
+  const queueAsNext = async () => {
+    if (busy) return
+    setBusy(true)
+    try {
+      const queued = await usePlayerStore.getState().playNext(song)
+      if (queued) {
+        toast.success(i18n._(msg`已设为下一首播放`))
+      } else {
+        toast.info(i18n._(msg`这首歌正在播放`))
+      }
+      onClose()
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const toggleLike = async () => {
     const user = useUserStore.getState()
     if (!user.isLogin) {
@@ -174,7 +199,7 @@ export function SongContextMenu({
 
   const inPlaylistMode = mode === 'playlists' || mode === 'local-playlists'
   const menuWidth = inPlaylistMode ? 240 : 190
-  const menuHeight = inPlaylistMode ? 320 : 220
+  const menuHeight = inPlaylistMode ? 320 : 252
   const left = Math.max(8, Math.min(x, window.innerWidth - menuWidth - 12))
   const top = Math.max(8, Math.min(y, window.innerHeight - menuHeight))
 
@@ -202,6 +227,16 @@ export function SongContextMenu({
               <Film className="h-3.5 w-3.5 text-black/40" />
             )}
             <Trans>相关视频</Trans>
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            disabled={busy}
+            onClick={() => void queueAsNext()}
+            className="flex h-8 w-full items-center gap-2 rounded-[6px] px-2.5 text-left text-black/70 transition-colors hover:bg-black/6 disabled:opacity-50"
+          >
+            <CornerDownRight className="h-3.5 w-3.5 text-black/40" />
+            <Trans>下一首播放</Trans>
           </button>
           <button
             type="button"
