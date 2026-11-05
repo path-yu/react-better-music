@@ -39,7 +39,6 @@ import { useLocalLibraryStore } from '../../store/localLibrary'
 import { useVideoPlaybackStore } from '../../store/videoPlayback'
 import {
   LYRIC_DISPLAY_OPTIONS,
-  NOWPLAYING_BACKDROP_OPTIONS,
   PLAY_QUALITY_OPTIONS,
   useSettingsStore,
 } from '../../store/settings'
@@ -144,10 +143,6 @@ export function PlayerBar() {
   const setLyricDisplayMode = useSettingsStore((state) => state.setLyricDisplayMode)
   const wordByWordLyrics = useSettingsStore((state) => state.wordByWordLyrics)
   const setWordByWordLyrics = useSettingsStore((state) => state.setWordByWordLyrics)
-  const nowPlayingBackdrop = useSettingsStore((state) => state.nowPlayingBackdrop)
-  const setNowPlayingBackdrop = useSettingsStore(
-    (state) => state.setNowPlayingBackdrop,
-  )
   // The mode menu is only meaningful when the current lyric actually carries a translation.
   const hasTranslation = useMemo(
     () => lyricLines.some((line) => Boolean(line.translate)),
@@ -1399,35 +1394,6 @@ export function PlayerBar() {
                 onChange={setWordByWordLyrics}
                 aria-label={i18n._(msg`逐字播放`)}
               />
-            </div>
-
-            <div className="px-2 pb-1.5 pt-1">
-              <p className="mb-1 flex items-center gap-1.5 text-[11px] text-black/40">
-                <Sparkles className="h-3.5 w-3.5" />
-                <Trans>播放页背景</Trans>
-              </p>
-              <div className="space-y-0.5 rounded-[8px] bg-black/4 p-0.5">
-                {NOWPLAYING_BACKDROP_OPTIONS.map((option) => {
-                  const active = nowPlayingBackdrop === option.value
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      aria-pressed={active}
-                      onClick={() => setNowPlayingBackdrop(option.value)}
-                      className={cn(
-                        'flex w-full items-center justify-between gap-2 rounded-[6px] px-2 py-1.5 text-left text-[11px] transition-colors',
-                        active
-                          ? 'bg-white text-accent shadow-sm dark:bg-white/15 dark:text-white'
-                          : 'text-black/55 hover:text-black/75 dark:text-white/50 dark:hover:text-white/80',
-                      )}
-                    >
-                      <span>{i18n._(option.label)}</span>
-                      {active ? <Check className="h-3 w-3 shrink-0" /> : null}
-                    </button>
-                  )
-                })}
-              </div>
             </div>
 
             {desktopShell ? (

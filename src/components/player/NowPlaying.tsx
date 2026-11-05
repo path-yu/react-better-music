@@ -10,10 +10,12 @@ import {
   Heart,
   ListMusic,
   Loader2,
+  Volume2,
 } from 'lucide-react'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
 import { LyricsPanel } from './LyricsPanel'
+import { LyricStage } from './LyricStage'
 import AmbientBackground from './AmbientBackground'
 import { MvVideoPlayer } from '../mv/MvVideoPlayer'
 import { CommentSection, useCommentTotal } from '../comments/CommentSection'
@@ -32,9 +34,9 @@ import {
 } from '../../lib/color'
 import { resizedImageUrl } from '../../lib/image'
 import { toast } from '../../lib/toast'
-import { cn } from '../../lib/format'
+import { cn, formatDuration } from '../../lib/format'
 
-type NowPlayingPanel = 'lyrics' | 'queue' | 'comments'
+type NowPlayingPanel = 'lyrics' | 'stage' | 'queue' | 'wall' | 'comments'
 
 function formatCommentCount(value: number, locale: string) {
   if (value < 1000) return String(value)
@@ -84,16 +86,13 @@ export function NowPlaying() {
     : false
   const setVideoActive = useVideoPlaybackStore((state) => state.setActive)
   const bindVideo = useVideoPlaybackStore((state) => state.bind)
-  const backdrop =
-    useSettingsStore((state) => state.nowPlayingBackdrop) ?? 'gradient'
-  const softGradient =
-    useSettingsStore((state) => state.softNowPlayingGradient) ?? true
   const nowPlayingMode = useSettingsStore((state) => state.nowPlayingMode)
   const setNowPlayingMode = useSettingsStore(
     (state) => state.setNowPlayingMode,
   )
   const [panel, setPanel] = useState<NowPlayingPanel>('lyrics')
   const queueScrollRef = useRef<HTMLDivElement>(null)
+  const queueListRef = useRef<HTMLDivElement>(null)
   const [queueWidth, setQueueWidth] = useState(0)
   const [palette, setPalette] = useState<Palette>(FALLBACK_PALETTE)
   const [videoLoading, setVideoLoading] = useState(false)
@@ -119,7 +118,7 @@ export function NowPlaying() {
   // Measure the picker once before laying out rows. Only visible rows are
   // mounted below, so a 1000+ song queue does not create thousands of covers.
   useEffect(() => {
-    if (panel !== 'queue') return
+    if (panel !== 'wall') return
     const element = queueScrollRef.current
     if (!element) return
     const updateWidth = () => setQueueWidth(element.clientWidth)
@@ -138,14 +137,20 @@ export function NowPlaying() {
   const queueRowHeight = Math.max(80, queueTileWidth + SONG_TILE_GAP)
   const queueRowCount = Math.ceil(queue.length / queueColumns)
   const queueVirtualizer = useVirtualizer({
-    count: panel === 'queue' && queueWidth > 0 ? queueRowCount : 0,
+    count: panel === 'wall' && queueWidth > 0 ? queueRowCount : 0,
     getScrollElement: () => queueScrollRef.current,
     estimateSize: () => queueRowHeight,
     overscan: 4,
   })
+  const queueListVirtualizer = useVirtualizer({
+    count: panel === 'queue' ? queue.length : 0,
+    getScrollElement: () => queueListRef.current,
+    estimateSize: () => 58,
+    overscan: 8,
+  })
   const measureQueue = queueVirtualizer.measure
   useEffect(() => {
-    if (panel !== 'queue') return
+    if (panel !== 'wall') return
     measureQueue()
   }, [panel, queueColumns, queueRowHeight, measureQueue])
 
@@ -322,7 +327,7 @@ export function NowPlaying() {
   const busy = loadingSource || buffering
   // The backdrop is heavily blurred, so a 320px copy is indistinguishable from
   // the original but avoids fetching/decoding a multi-megapixel cover.
-  const ambientArtwork = resizedImageUrl(artwork, '320y320')
+
 
   const albumId = currentSong.al.id
   const openAlbum = () => {
@@ -449,26 +454,11 @@ export function NowPlaying() {
       style={{ backgroundColor: 'var(--nowplaying-base, #0f0f12)' }}
       aria-hidden={!show}
     >
-      {backdrop === 'gradient' ? (
-        <AmbientBackground
-          artwork={ambientSource ?? ''}
-          palette={palette}
-          playing={playing}
-          soft={softGradient}
-        />
-      ) : (
-        <div className="nowplaying-ambient" aria-hidden="true">
-          {ambientArtwork ? (
-            <img
-              src={ambientArtwork}
-              alt=""
-              decoding="async"
-              className="nowplaying-ambient__art"
-            />
-          ) : null}
-          <div className="nowplaying-ambient__scrim" />
-        </div>
-      )}
+      <AmbientBackground
+        artwork={ambientSource ?? ''}
+        palette={palette}
+        playing={playing}
+      />
 
       {/* The player bar floats over the bottom of the backdrop, so keep the
           immersive content clear of it. */}
@@ -693,7 +683,7 @@ export function NowPlaying() {
               <div
                 className="np-tabs"
                 role="tablist"
-                aria-label={i18n._(msg`歌词、选歌与评论`)}
+                aria-label={i18n._(msg`歌词、律动、待播清单、选歌与评论`)}
               >
                 <button
                   type="button"
@@ -707,9 +697,27 @@ export function NowPlaying() {
                 <button
                   type="button"
                   role="tab"
+                  aria-selected={panel === 'stage'}
+                  onClick={() => setPanel('stage')}
+                  className={cn('np-tab', panel === 'stage' && 'is-active')}
+                >
+                  <Trans>律动</Trans>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
                   aria-selected={panel === 'queue'}
                   onClick={() => setPanel('queue')}
                   className={cn('np-tab', panel === 'queue' && 'is-active')}
+                >
+                  <Trans>待播清单</Trans>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={panel === 'wall'}
+                  onClick={() => setPanel('wall')}
+                  className={cn('np-tab', panel === 'wall' && 'is-active')}
                 >
                   <Trans>选歌</Trans>
                 </button>
@@ -748,7 +756,98 @@ export function NowPlaying() {
                     className="h-full max-md:h-auto"
                   />
                 )
+              ) : panel === 'stage' ? (
+                lyricLoading && !lyricLines.length ? (
+                  <div
+                    className="flex h-full flex-col items-center justify-center gap-2.5 text-[12px] text-white/40"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <Loader2 className="h-4 w-4 animate-spin text-accent" />
+                    <Trans>正在加载歌词…</Trans>
+                  </div>
+                ) : (
+                  <LyricStage
+                    lines={lyricLines}
+                    activeIndex={activeIndex}
+                    currentTime={currentTime * 1000}
+                    onSeek={handleSeek}
+                    className="h-full max-md:h-auto"
+                  />
+                )
               ) : panel === 'queue' ? (
+                <div
+                  ref={queueListRef}
+                  className="h-[min(72vh,620px)] min-h-[360px] overflow-y-auto px-2 pb-8 pt-2 md:h-full [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                >
+                  {queue.length ? (
+                    <div
+                      className="relative w-full"
+                      style={{ height: `${queueListVirtualizer.getTotalSize()}px` }}
+                    >
+                      {queueListVirtualizer.getVirtualItems().map((row) => {
+                        const song = queue[row.index]
+                        if (!song) return null
+                        const active = row.index === currentIndex
+                        return (
+                          <button
+                            key={`${song.id}-${row.index}`}
+                            type="button"
+                            aria-current={active ? 'true' : undefined}
+                            onClick={() => {
+                              if (!active) void playAt(row.index)
+                            }}
+                            className={cn(
+                              'np-queue-row group',
+                              active && 'is-current',
+                            )}
+                            style={{
+                              position: 'absolute',
+                              top: 0,
+                              right: 0,
+                              left: 0,
+                              height: `${row.size}px`,
+                              transform: `translateY(${row.start}px)`,
+                            }}
+                          >
+                            <span className="np-queue-row__index">
+                              {active ? (
+                                <Volume2 className="h-3.5 w-3.5" />
+                              ) : (
+                                String(row.index + 1).padStart(2, '0')
+                              )}
+                            </span>
+                            <ImageWithFallback
+                              src={song.al.picUrl}
+                              alt={song.name}
+                              rounded="rounded-[7px]"
+                              className="h-[42px] w-[42px] shrink-0"
+                              resize="96y96"
+                            />
+                            <span className="np-queue-row__text">
+                              <span className="np-queue-row__name">
+                                {song.name}
+                              </span>
+                              <span className="np-queue-row__artist">
+                                {song.ar
+                                  .map((artist) => artist.name)
+                                  .join(' / ')}
+                              </span>
+                            </span>
+                            <span className="np-queue-row__time">
+                              {formatDuration(song.dt)}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <div className="flex h-full min-h-[180px] items-center justify-center text-[12px] text-white/45">
+                      <Trans>播放队列为空</Trans>
+                    </div>
+                  )}
+                </div>
+              ) : panel === 'wall' ? (
                 <div
                   ref={queueScrollRef}
                   className="h-[min(72vh,620px)] min-h-[360px] overflow-y-auto px-2 pb-8 pt-2 md:h-full [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"

@@ -26,15 +26,16 @@ export const PLAY_QUALITY_OPTIONS: Array<{
 ]
 
 export type LyricDisplayMode = 'both' | 'original' | 'translation'
-export type NowPlayingBackdrop = 'gradient' | 'blur'
 export type NowPlayingMode = 'audio' | 'video'
+export type LyricStageStyle = 'flow' | 'partita' | 'tilt'
 
-export const NOWPLAYING_BACKDROP_OPTIONS: Array<{
-  value: NowPlayingBackdrop
+export const LYRIC_STAGE_STYLE_OPTIONS: Array<{
+  value: LyricStageStyle
   label: MessageDescriptor
 }> = [
-  { value: 'gradient', label: msg`动态渐变` },
-  { value: 'blur', label: msg`封面模糊` },
+  { value: 'flow', label: msg`流光` },
+  { value: 'partita', label: msg`云阶` },
+  { value: 'tilt', label: msg`倾诉` },
 ]
 
 export const LYRIC_DISPLAY_OPTIONS: Array<{
@@ -53,12 +54,10 @@ interface SettingsState {
   lyricDisplayMode: LyricDisplayMode
   /** Karaoke word-by-word animation; off falls back to whole-line highlighting. */
   wordByWordLyrics: boolean
+  /** Visualizer used by the song detail "律动" tab. */
+  lyricStageStyle: LyricStageStyle
   /** Preferred third-party source module; `auto` tries all in order. */
   preferredSource: string
-  /** Visual treatment behind the immersive player. */
-  nowPlayingBackdrop: NowPlayingBackdrop
-  /** Lower the animated-gradient brightness for comfortable night listening. */
-  softNowPlayingGradient: boolean
   /** Audio/video preference, persisted across tracks and app restarts. */
   nowPlayingMode: NowPlayingMode
   /** Desktop only: block right-click / F12 / DevTools shortcuts. */
@@ -71,9 +70,8 @@ interface SettingsState {
   setPlayLevel: (value: PlayLevel) => void
   setLyricDisplayMode: (value: LyricDisplayMode) => void
   setWordByWordLyrics: (value: boolean) => void
+  setLyricStageStyle: (value: LyricStageStyle) => void
   setPreferredSource: (value: string) => void
-  setNowPlayingBackdrop: (value: NowPlayingBackdrop) => void
-  setSoftNowPlayingGradient: (value: boolean) => void
   setNowPlayingMode: (value: NowPlayingMode) => void
   setDisableDevTools: (value: boolean) => void
   setAutoReplaceVipSource: (value: boolean) => void
@@ -87,9 +85,8 @@ export const useSettingsStore = create<SettingsState>()(
       playLevel: 'exhigh',
       lyricDisplayMode: 'both',
       wordByWordLyrics: true,
+      lyricStageStyle: 'flow',
       preferredSource: 'auto',
-      nowPlayingBackdrop: 'gradient',
-      softNowPlayingGradient: true,
       nowPlayingMode: 'audio',
       disableDevTools: false,
       autoReplaceVipSource: false,
@@ -98,10 +95,8 @@ export const useSettingsStore = create<SettingsState>()(
       setPlayLevel: (playLevel) => set({ playLevel }),
       setLyricDisplayMode: (lyricDisplayMode) => set({ lyricDisplayMode }),
       setWordByWordLyrics: (wordByWordLyrics) => set({ wordByWordLyrics }),
+      setLyricStageStyle: (lyricStageStyle) => set({ lyricStageStyle }),
       setPreferredSource: (preferredSource) => set({ preferredSource }),
-      setNowPlayingBackdrop: (nowPlayingBackdrop) => set({ nowPlayingBackdrop }),
-      setSoftNowPlayingGradient: (softNowPlayingGradient) =>
-        set({ softNowPlayingGradient }),
       setNowPlayingMode: (nowPlayingMode) => set({ nowPlayingMode }),
       setDisableDevTools: (disableDevTools) => set({ disableDevTools }),
       setAutoReplaceVipSource: (autoReplaceVipSource) => set({ autoReplaceVipSource }),

@@ -1104,13 +1104,21 @@ html.desktop .app-window {
    surrounding track. The active pill is a translucent white fill. */
 .np-tabs {
   display: flex;
+  max-width: 100%;
   height: 28px;
   align-items: center;
   gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.np-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .np-tab {
   display: inline-flex;
+  flex: none;
   height: 28px;
   align-items: center;
   padding: 0 14px;
@@ -1143,6 +1151,350 @@ html.desktop .app-window {
 .np-tab__count {
   margin-left: 3px;
   font-variant-numeric: tabular-nums;
+}
+
+/* Queue pane ("待播清单"): a compact, virtualized list of what plays next. */
+.np-queue-row {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 12px;
+  padding: 0 10px;
+  border-radius: 12px;
+  color: #fff;
+  text-align: left;
+  transition: background-color 0.16s ease;
+}
+
+.np-queue-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.np-queue-row.is-current {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.np-queue-row__index {
+  display: inline-flex;
+  width: 22px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.np-queue-row.is-current .np-queue-row__index {
+  color: #fff;
+}
+
+.np-queue-row__text {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.np-queue-row__name,
+.np-queue-row__artist {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.np-queue-row__name {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.np-queue-row__artist {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 11.5px;
+}
+
+.np-queue-row__time {
+  flex: none;
+  padding-right: 4px;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A word-by-word stage for the lyric being sung, in the spirit of Folia's
+   "律动" view: each word rests a little off the line and springs up. */
+.np-stage {
+  position: relative;
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0 clamp(20px, 6vw, 62px);
+}
+
+.np-stage__glow {
+  position: absolute;
+  inset: 12% 8%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgb(var(--nowplaying-accent-rgb, 255 255 255) / 0.18),
+    transparent 68%
+  );
+  filter: blur(48px);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.np-stage__body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  min-height: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.np-stage__styles {
+  position: absolute;
+  z-index: 3;
+  top: 10px;
+  right: 12px;
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.np-stage__style {
+  padding: 4px 9px;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  transition:
+    color 0.16s ease,
+    background-color 0.16s ease;
+}
+
+.np-stage__style:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.np-stage__style.is-active {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.np-stage__content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  text-align: center;
+}
+
+/* 云阶: stacked rows, each sliding in from alternating sides. */
+.np-stage__content--partita {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.np-stage-rows {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.np-stage-row {
+  opacity: 0;
+  transform: translateX(var(--stage-row-x, 0)) scale(0.86);
+  transition:
+    opacity 0.3s ease,
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--stage-row-delay, 0ms);
+}
+
+.np-stage-row.is-due {
+  opacity: 1;
+  transform: translateX(0) scale(var(--stage-row-scale, 1));
+}
+
+.np-stage-row__line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.02em 0.06em;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.34);
+  font-size: clamp(20px, 2.8vw, 34px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+/* 倾诉: a few large parts, one leaning, characters swelling as sung. */
+.np-stage__content--tilt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.np-stage-tilt {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: clamp(26px, 4.1vw, 48px);
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  line-height: 1.25;
+  opacity: 0;
+  transform: translateY(20px);
+  transition:
+    opacity 0.4s ease,
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--stage-tilt-delay, 0ms);
+}
+
+.np-stage-tilt.is-due {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.np-stage-tilt.is-lean {
+  color: rgb(var(--nowplaying-accent-rgb, 255 255 255) / 0.92);
+  font-style: italic;
+  font-weight: 300;
+  letter-spacing: 0.15em;
+}
+
+.np-stage-tilt__word {
+  display: inline-block;
+}
+
+.np-stage-tilt__char {
+  position: relative;
+  display: inline-block;
+  opacity: 0.34;
+  transform: scale(0.94);
+  transition:
+    color 0.22s ease,
+    opacity 0.22s ease,
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.np-stage-tilt.is-lean .np-stage-tilt__char:nth-child(even) {
+  top: -2px;
+}
+
+.np-stage-tilt.is-lean .np-stage-tilt__char:nth-child(odd) {
+  top: 2px;
+}
+
+.np-stage-tilt__char.is-sung {
+  color: rgba(255, 255, 255, 0.82);
+  opacity: 0.66;
+  transform: scale(1);
+}
+
+.np-stage-tilt__char.is-active {
+  color: #fff;
+  opacity: 1;
+  text-shadow:
+    0 0 18px rgba(255, 255, 255, 0.4),
+    0 0 40px rgba(255, 255, 255, 0.16);
+  transform: scale(1.12);
+}
+
+.np-stage-tilt__char.is-space {
+  width: 0.28em;
+}
+
+.np-stage__line {
+  display: flex;
+  max-width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.08em 0.12em;
+  margin: 0 auto;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.34);
+  font-size: clamp(27px, 4vw, 46px);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.35;
+}
+
+.np-stage__word {
+  display: inline-block;
+  transform: translate(var(--stage-x), var(--stage-y))
+    rotate(var(--stage-rotate)) scale(0.94);
+  opacity: 0.34;
+  transform-origin: center;
+  transition:
+    transform 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.3s ease,
+    opacity 0.3s ease,
+    text-shadow 0.3s ease;
+  transition-delay: var(--stage-delay, 0ms);
+}
+
+.np-stage__word.is-sung {
+  color: rgba(255, 255, 255, 0.78);
+  opacity: 0.62;
+  transform: translate(var(--stage-x), var(--stage-y))
+    rotate(var(--stage-rotate)) scale(1);
+}
+
+.np-stage__word.is-active {
+  color: #fff;
+  opacity: 1;
+  text-shadow:
+    0 0 22px rgba(255, 255, 255, 0.45),
+    0 0 54px rgba(255, 255, 255, 0.2);
+  transform: translate(var(--stage-x), var(--stage-y))
+    rotate(var(--stage-rotate)) scale(1.12);
+}
+
+.np-stage__translation {
+  margin-top: 24px;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.np-stage__next {
+  margin-top: 9px;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .np-stage__word {
+    transition: none;
+  }
 }
 
 /* The queue wall mirrors the native player: square 112px covers, a 14px
