@@ -2336,7 +2336,7 @@ html.desktop .app-window {
    panel must become a dark surface too. */
 .dark .song-context-menu,
 .dark .song-context-menu button:hover {
-  background-color: rgba(28, 28, 30, 0.94);
+  background-color: var(--app-glass);
 }
 
 .dark .song-context-menu {

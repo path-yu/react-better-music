@@ -167,6 +167,10 @@ function LocalPlaylistPage() {
           playlistId={`local-${playlist.id}`}
           emptyText={i18n._(msg`这个歌单还没有歌曲`)}
           onRemoveSong={(song) => void removeSong(playlist.id, song.id)}
+          onRemoveFromPlaylist={async (song) => {
+            const removed = await removeSong(playlist.id, song.id)
+            if (!removed) throw new Error('remove failed')
+          }}
         />
       </div>
     </div>

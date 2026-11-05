@@ -182,6 +182,23 @@ export async function addSongToPlaylist(
   })
 }
 
+/** Remove a track from one of the signed-in user's playlists. */
+export async function removeSongFromPlaylist(
+  playlistId: number | string,
+  trackId: number | string,
+) {
+  return get<{
+    code?: number
+    status?: number
+    body?: { code?: number; message?: string }
+  }>('/playlist/tracks', {
+    op: 'del',
+    pid: playlistId,
+    tracks: String(trackId),
+    timestamp: Date.now(),
+  })
+}
+
 export async function fetchPlaylistTracks(
   id: string | number,
   limit = TRACK_PAGE_SIZE,

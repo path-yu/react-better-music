@@ -31,6 +31,7 @@ import {
   fetchPlaylistDetail,
   fetchPlaylistTracks,
   fetchRemainingPlaylistTracks,
+  removeSongFromPlaylist,
   searchArtists,
   updatePlaylistSubscribe,
 } from '../../api'
@@ -65,6 +66,9 @@ function PlaylistDetailPage() {
 
   const isLogin = useUserStore((state) => state.isLogin)
   const profile = useUserStore((state) => state.profile)
+  const canEditPlaylist = Boolean(
+    profile?.userId && detail?.creator.userId === profile.userId,
+  )
   const loadPlaylists = useUserStore((state) => state.loadPlaylists)
   const localSubscribedPlaylists = useLocalLibraryStore(
     (state) => state.subscribedPlaylists,
@@ -492,6 +496,22 @@ function PlaylistDetailPage() {
           <SongTable
             songs={filteredSongs}
             playlistId={String(detail.id)}
+            onRemoveFromPlaylist={
+              canEditPlaylist
+                ? async (song) => {
+                    const response = await removeSongFromPlaylist(
+                      detail.id,
+                      song.id,
+                    )
+                    const code =
+                      response.code ?? response.body?.code ?? response.status
+                    if (code !== 200) throw new Error('remove failed')
+                    setSongs((current) =>
+                      current.filter((item) => item.id !== song.id),
+                    )
+                  }
+                : undefined
+            }
             stickyTop={57}
             emptyText={
               keyword

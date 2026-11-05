@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
@@ -7,11 +7,14 @@ import { Trans } from '@lingui/react/macro'
 import {
   ChevronLeft,
   CornerDownRight,
+  Disc3,
   Film,
   Heart,
   ListMusic,
   ListPlus,
   Loader2,
+  Trash2,
+  UserRound,
 } from 'lucide-react'
 import { addSongToPlaylist, fetchRelatedVideos } from '../../api'
 import { resizedImageUrl } from '../../lib/image'
@@ -28,6 +31,12 @@ interface SongContextMenuProps {
   x: number
   y: number
   onClose: () => void
+  /** Only supplied on an editable playlist page. */
+  onRemoveFromPlaylist?: () => void | Promise<void>
+  /** Optional palette tint used by the immersive player. */
+  menuStyle?: CSSProperties
+  /** The immersive player is dark even when the app theme is light. */
+  dark?: boolean
 }
 
 type MenuMode = 'root' | 'playlists' | 'local-playlists'
@@ -42,6 +51,9 @@ export function SongContextMenu({
   x,
   y,
   onClose,
+  onRemoveFromPlaylist,
+  menuStyle,
+  dark,
 }: SongContextMenuProps) {
   const { i18n } = useLingui()
   const navigate = useNavigate()
@@ -197,21 +209,60 @@ export function SongContextMenu({
     if (next === !liked) onClose()
   }
 
+  const openArtist = (artistId: number) => {
+    onClose()
+    void navigate({
+      to: '/artist/$id',
+      params: { id: String(artistId) },
+    })
+  }
+
+  const openAlbum = (albumId: number) => {
+    onClose()
+    void navigate({
+      to: '/albums/$id',
+      params: { id: String(albumId) },
+    })
+  }
+
+  const removeFromPlaylist = async () => {
+    if (!onRemoveFromPlaylist || busy) return
+    setBusy(true)
+    try {
+      await onRemoveFromPlaylist()
+      toast.success(i18n._(msg`已从歌单移除`))
+      onClose()
+    } catch {
+      toast.error(i18n._(msg`移除失败`))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const artists = (song.ar ?? []).filter((artist) => artist.id)
+  const hasAlbum = Boolean(song.al.id)
+  const extraItems =
+    artists.length +
+    (hasAlbum ? 1 : 0) +
+    (onRemoveFromPlaylist ? 1 : 0)
   const inPlaylistMode = mode === 'playlists' || mode === 'local-playlists'
   const menuWidth = inPlaylistMode ? 240 : 190
-  const menuHeight = inPlaylistMode ? 320 : 252
+  const menuHeight = inPlaylistMode
+    ? 320
+    : Math.min(460, 252 + extraItems * 32)
   const left = Math.max(8, Math.min(x, window.innerWidth - menuWidth - 12))
   const top = Math.max(8, Math.min(y, window.innerHeight - menuHeight))
 
   return createPortal(
-    <div
-      ref={menuRef}
-      role="menu"
-      aria-label={i18n._(msg`歌曲操作`)}
-      className="song-context-menu fixed z-[1000] min-w-[190px] overflow-hidden rounded-[10px] border border-black/10 bg-white/90 p-1 text-[12px] shadow-[0_14px_40px_rgba(0,0,0,0.22)] backdrop-blur-2xl"
-      style={{ left, top, width: menuWidth }}
-      onContextMenu={(event) => event.preventDefault()}
-    >
+    <div className={dark ? 'dark' : undefined}>
+      <div
+        ref={menuRef}
+        role="menu"
+        aria-label={i18n._(msg`歌曲操作`)}
+        className="song-context-menu fixed z-[1000] min-w-[190px] max-h-[calc(100vh-16px)] overflow-y-auto rounded-[10px] border border-black/10 bg-white/90 p-1 text-[12px] shadow-[0_14px_40px_rgba(0,0,0,0.22)] backdrop-blur-2xl [scrollbar-width:none]"
+        style={{ left, top, width: menuWidth, ...menuStyle }}
+        onContextMenu={(event) => event.preventDefault()}
+      >
       {mode === 'root' ? (
         <>
           <button
@@ -247,6 +298,50 @@ export function SongContextMenu({
             <ListPlus className="h-3.5 w-3.5 text-black/40" />
             <Trans>收藏到歌单</Trans>
           </button>
+
+          {artists.length || hasAlbum || onRemoveFromPlaylist ? (
+            <div className="my-1 h-px bg-black/6" />
+          ) : null}
+          {artists.map((artist) => (
+            <button
+              key={artist.id}
+              type="button"
+              role="menuitem"
+              onClick={() => openArtist(Number(artist.id))}
+              className="flex h-8 w-full items-center gap-2 rounded-[6px] px-2.5 text-left text-black/70 transition-colors hover:bg-black/6"
+            >
+              <UserRound className="h-3.5 w-3.5 shrink-0 text-black/40" />
+              <span className="min-w-0 truncate">
+                <Trans>查看歌手：{artist.name}</Trans>
+              </span>
+            </button>
+          ))}
+          {hasAlbum ? (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => openAlbum(Number(song.al.id))}
+              className="flex h-8 w-full items-center gap-2 rounded-[6px] px-2.5 text-left text-black/70 transition-colors hover:bg-black/6"
+            >
+              <Disc3 className="h-3.5 w-3.5 shrink-0 text-black/40" />
+              <span className="min-w-0 truncate">
+                <Trans>查看专辑：{song.al.name}</Trans>
+              </span>
+            </button>
+          ) : null}
+          {onRemoveFromPlaylist ? (
+            <button
+              type="button"
+              role="menuitem"
+              disabled={busy}
+              onClick={() => void removeFromPlaylist()}
+              className="flex h-8 w-full items-center gap-2 rounded-[6px] px-2.5 text-left text-[#ff2d55]/85 transition-colors hover:bg-[#ff2d55]/8 disabled:opacity-50"
+            >
+              <Trash2 className="h-3.5 w-3.5 shrink-0" />
+              <Trans>从歌单移除</Trans>
+            </button>
+          ) : null}
+
           <div className="my-1 h-px bg-black/6" />
           <button
             type="button"
@@ -350,6 +445,7 @@ export function SongContextMenu({
           </div>
         </>
       )}
+      </div>
     </div>,
     document.body,
   )

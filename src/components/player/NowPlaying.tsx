@@ -19,6 +19,7 @@ import { LyricStage } from './LyricStage'
 import AmbientBackground from './AmbientBackground'
 import { MvVideoPlayer } from '../mv/MvVideoPlayer'
 import { CommentSection, useCommentTotal } from '../comments/CommentSection'
+import { SongContextMenu } from '../songs/SongContextMenu'
 import { fetchMvUrl, fetchRelatedVideos } from '../../api'
 import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
@@ -30,11 +31,13 @@ import { seekAudio } from '../../lib/audio'
 import {
   FALLBACK_PALETTE,
   extractPalette,
+  withAlpha,
   type Palette,
 } from '../../lib/color'
 import { resizedImageUrl } from '../../lib/image'
 import { toast } from '../../lib/toast'
 import { cn, formatDuration } from '../../lib/format'
+import type { Song } from '../../types'
 
 type NowPlayingPanel = 'lyrics' | 'stage' | 'queue' | 'wall' | 'comments'
 
@@ -91,6 +94,11 @@ export function NowPlaying() {
     (state) => state.setNowPlayingMode,
   )
   const [panel, setPanel] = useState<NowPlayingPanel>('lyrics')
+  const [queueContext, setQueueContext] = useState<{
+    song: Song
+    x: number
+    y: number
+  } | null>(null)
   const queueScrollRef = useRef<HTMLDivElement>(null)
   const queueListRef = useRef<HTMLDivElement>(null)
   const [queueWidth, setQueueWidth] = useState(0)
@@ -790,12 +798,40 @@ export function NowPlaying() {
                         if (!song) return null
                         const active = row.index === currentIndex
                         return (
-                          <button
+                          <div
                             key={`${song.id}-${row.index}`}
-                            type="button"
+                            role="button"
+                            tabIndex={0}
                             aria-current={active ? 'true' : undefined}
                             onClick={() => {
                               if (!active) void playAt(row.index)
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.target !== event.currentTarget) return
+                              if (event.key !== 'Enter' && event.key !== ' ') {
+                                return
+                              }
+                              event.preventDefault()
+                              if (!active) void playAt(row.index)
+                            }}
+                            onPointerDown={(event) => {
+                              if (event.button !== 2) return
+                              event.preventDefault()
+                              event.stopPropagation()
+                              setQueueContext({
+                                song,
+                                x: event.clientX,
+                                y: event.clientY,
+                              })
+                            }}
+                            onContextMenu={(event) => {
+                              event.preventDefault()
+                              event.stopPropagation()
+                              setQueueContext({
+                                song,
+                                x: event.clientX,
+                                y: event.clientY,
+                              })
                             }}
                             className={cn(
                               'np-queue-row group',
@@ -828,16 +864,15 @@ export function NowPlaying() {
                               <span className="np-queue-row__name">
                                 {song.name}
                               </span>
-                              <span className="np-queue-row__artist">
-                                {song.ar
-                                  .map((artist) => artist.name)
-                                  .join(' / ')}
-                              </span>
+                              <ArtistLinks
+                                artists={song.ar}
+                                className="np-queue-row__artist"
+                              />
                             </span>
                             <span className="np-queue-row__time">
                               {formatDuration(song.dt)}
                             </span>
-                          </button>
+                          </div>
                         )
                       })}
                     </div>
@@ -937,6 +972,24 @@ export function NowPlaying() {
           </>
         )}
       </div>
+
+      {queueContext ? (
+        <SongContextMenu
+          song={queueContext.song}
+          liked={
+            isLogin
+              ? likedIds.includes(queueContext.song.id)
+              : localFavorites.some((song) => song.id === queueContext.song.id)
+          }
+          x={queueContext.x}
+          y={queueContext.y}
+          onClose={() => setQueueContext(null)}
+          dark
+          menuStyle={{
+            backgroundImage: `linear-gradient(155deg, ${withAlpha(palette.colors[0] ?? '#232325', 0.36)}, ${withAlpha(palette.colors[1] ?? palette.colors[0] ?? '#232325', 0.18)} 52%, transparent 100%)`,
+          }}
+        />
+      ) : null}
     </div>
   )
 }

@@ -15,7 +15,7 @@ export function ArtistLinks({ artists, className }: ArtistLinksProps) {
     <span className={className}>
       {artists.map((artist, index) => (
         <span key={`${artist.id}-${index}`}>
-          {index > 0 ? <span className="text-black/20"> / </span> : null}
+          {index > 0 ? <span className="opacity-40"> / </span> : null}
           <button
             type="button"
             onClick={(event) => {

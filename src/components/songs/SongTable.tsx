@@ -27,6 +27,8 @@ interface SongTableProps {
   showHeader?: boolean
   /** Local playlist page: remove a song from that playlist. */
   onRemoveSong?: (song: Song) => void
+  /** Playlist pages: expose "remove from playlist" in the row context menu. */
+  onRemoveFromPlaylist?: (song: Song) => void | Promise<void>
   /** Offset the sticky header when a tab bar is pinned above the table. */
   stickyTop?: number
 }
@@ -228,6 +230,7 @@ export function SongTable({
   className,
   showHeader = true,
   onRemoveSong,
+  onRemoveFromPlaylist,
   stickyTop,
 }: SongTableProps) {
   const { i18n } = useLingui()
@@ -293,6 +296,11 @@ export function SongTable({
       x={contextMenu.x}
       y={contextMenu.y}
       onClose={closeContextMenu}
+      onRemoveFromPlaylist={
+        onRemoveFromPlaylist
+          ? () => onRemoveFromPlaylist(contextMenu.song)
+          : undefined
+      }
     />
   ) : null
 
