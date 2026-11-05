@@ -54,6 +54,8 @@ interface SettingsState {
   lyricDisplayMode: LyricDisplayMode
   /** Karaoke word-by-word animation; off falls back to whole-line highlighting. */
   wordByWordLyrics: boolean
+  /** WebGL fog backdrop on the immersive player. */
+  fogBackdrop: boolean
   /** Visualizer used by the song detail "律动" tab. */
   lyricStageStyle: LyricStageStyle
   /** Preferred third-party source module; `auto` tries all in order. */
@@ -70,6 +72,7 @@ interface SettingsState {
   setPlayLevel: (value: PlayLevel) => void
   setLyricDisplayMode: (value: LyricDisplayMode) => void
   setWordByWordLyrics: (value: boolean) => void
+  setFogBackdrop: (value: boolean) => void
   setLyricStageStyle: (value: LyricStageStyle) => void
   setPreferredSource: (value: string) => void
   setNowPlayingMode: (value: NowPlayingMode) => void
@@ -85,6 +88,7 @@ export const useSettingsStore = create<SettingsState>()(
       playLevel: 'exhigh',
       lyricDisplayMode: 'both',
       wordByWordLyrics: true,
+      fogBackdrop: true,
       lyricStageStyle: 'flow',
       preferredSource: 'auto',
       nowPlayingMode: 'audio',
@@ -95,6 +99,7 @@ export const useSettingsStore = create<SettingsState>()(
       setPlayLevel: (playLevel) => set({ playLevel }),
       setLyricDisplayMode: (lyricDisplayMode) => set({ lyricDisplayMode }),
       setWordByWordLyrics: (wordByWordLyrics) => set({ wordByWordLyrics }),
+      setFogBackdrop: (fogBackdrop) => set({ fogBackdrop }),
       setLyricStageStyle: (lyricStageStyle) => set({ lyricStageStyle }),
       setPreferredSource: (preferredSource) => set({ preferredSource }),
       setNowPlayingMode: (nowPlayingMode) => set({ nowPlayingMode }),

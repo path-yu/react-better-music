@@ -17,6 +17,7 @@ import { ArtistLinks } from '../common/ArtistLinks'
 import { LyricsPanel } from './LyricsPanel'
 import { LyricStage } from './LyricStage'
 import AmbientBackground from './AmbientBackground'
+import { FogBackground } from './FogBackground'
 import { MvVideoPlayer } from '../mv/MvVideoPlayer'
 import { CommentSection, useCommentTotal } from '../comments/CommentSection'
 import { SongContextMenu } from '../songs/SongContextMenu'
@@ -93,6 +94,7 @@ export function NowPlaying() {
   const setNowPlayingMode = useSettingsStore(
     (state) => state.setNowPlayingMode,
   )
+  const fogBackdrop = useSettingsStore((state) => state.fogBackdrop)
   const [panel, setPanel] = useState<NowPlayingPanel>('lyrics')
   const [queueContext, setQueueContext] = useState<{
     song: Song
@@ -462,11 +464,25 @@ export function NowPlaying() {
       style={{ backgroundColor: 'var(--nowplaying-base, #0f0f12)' }}
       aria-hidden={!show}
     >
-      <AmbientBackground
-        artwork={ambientSource ?? ''}
-        palette={palette}
-        playing={playing}
-      />
+      {fogBackdrop ? (
+        <FogBackground
+          tint={palette.colors[0]}
+          playing={playing && show}
+          fallback={
+            <AmbientBackground
+              artwork={ambientSource ?? ''}
+              palette={palette}
+              playing={playing && show}
+            />
+          }
+        />
+      ) : (
+        <AmbientBackground
+          artwork={ambientSource ?? ''}
+          palette={palette}
+          playing={playing && show}
+        />
+      )}
 
       {/* The player bar floats over the bottom of the backdrop, so keep the
           immersive content clear of it. */}

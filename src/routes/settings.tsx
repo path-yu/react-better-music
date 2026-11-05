@@ -100,6 +100,8 @@ function SettingsPage() {
   const setTheme = useUiStore((state) => state.setTheme)
   const palette = useUiStore((state) => state.palette)
   const setPalette = useUiStore((state) => state.setPalette)
+  const fogBackdrop = useSettingsStore((state) => state.fogBackdrop)
+  const setFogBackdrop = useSettingsStore((state) => state.setFogBackdrop)
 
   useEffect(() => {
     if (!desktop) return
@@ -419,6 +421,23 @@ function SettingsPage() {
             })}
           </div>
 
+          <div className="mt-5 flex items-center justify-between gap-4 border-t border-[var(--app-border)] pt-4">
+            <div>
+              <p className="text-[13px] font-medium text-black/75">
+                <Trans>WebGL 雾化背景</Trans>
+              </p>
+              <p className="mt-1 max-w-[560px] text-[11px] leading-relaxed text-black/40">
+                <Trans>
+                  在歌曲详情页使用 GPU 绘制缓慢上升的封面色彩雾气；不支持 WebGL 时自动回退到轻量背景。
+                </Trans>
+              </p>
+            </div>
+            <Switch
+              checked={fogBackdrop}
+              onChange={setFogBackdrop}
+              aria-label={i18n._(msg`WebGL 雾化背景`)}
+            />
+          </div>
         </section>
 
         <section className="apple-card p-6">
