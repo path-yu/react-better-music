@@ -26,9 +26,9 @@ export function AlbumCard({ album, priority = false }: AlbumCardProps) {
         void navigate({ to: '/albums/$id', params: { id: String(album.id) } })
       }
       aria-label={i18n._(msg`打开专辑 ${album.name}`)}
-      className="apple-card group p-2.5 text-left transition-colors hover:bg-white/80"
+      className="apple-card group p-2.5 text-left"
     >
-      <div className="relative overflow-hidden rounded-[10px] shadow-[0_10px_30px_-20px_rgba(0,0,0,0.32)]">
+      <div className="album-card-cover relative rounded-[10px]">
         <ImageWithFallback
           src={album.picUrl ?? album.blurPicUrl}
           alt={album.name}
@@ -36,7 +36,6 @@ export function AlbumCard({ album, priority = false }: AlbumCardProps) {
           resize="300y300"
           priority={priority}
           className="aspect-square w-full"
-          imageClassName="transition-transform duration-500 group-hover:scale-[1.04]"
         />
       </div>
       <span className="mt-2 line-clamp-2 block min-h-[34px] text-[12px] leading-[1.4] text-black/75 transition-colors group-hover:text-accent">

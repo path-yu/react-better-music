@@ -298,15 +298,17 @@ function ArtistPage() {
                         params: { id: String(album.id) },
                       })
                     }
-                    className="apple-card group p-2.5 text-left transition-colors hover:bg-white/80"
+                    className="apple-card group p-2.5 text-left"
                   >
-                    <ImageWithFallback
-                      src={album.picUrl}
-                      alt={album.name}
-                      rounded="rounded-[10px]"
-                      className="aspect-square w-full"
-                      resize="240y240"
-                    />
+                    <div className="album-card-cover relative rounded-[10px]">
+                      <ImageWithFallback
+                        src={album.picUrl}
+                        alt={album.name}
+                        rounded="rounded-[10px]"
+                        className="aspect-square w-full"
+                        resize="240y240"
+                      />
+                    </div>
                     <span className="mt-2 line-clamp-2 block text-[12px] leading-[1.4] text-black/75 transition-colors group-hover:text-accent">
                       {album.name}
                     </span>

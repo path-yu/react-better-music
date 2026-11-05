@@ -767,6 +767,32 @@ html.desktop .app-window {
   box-shadow: var(--product-shadow);
 }
 
+/* Album cards lift under the pointer, as the native albumCard does: the cover
+   moves up 3px while its shadow deepens. Only the artwork moves, not the text. */
+.album-card-cover {
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.16);
+  transition:
+    transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.group:hover .album-card-cover,
+.group:focus-visible .album-card-cover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.28);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .album-card-cover {
+    transition: none;
+  }
+
+  .group:hover .album-card-cover,
+  .group:focus-visible .album-card-cover {
+    transform: none;
+  }
+}
+
 .pill {
   border-radius: 9999px;
 }

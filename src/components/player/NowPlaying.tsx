@@ -129,7 +129,7 @@ export function NowPlaying() {
     return () => observer.disconnect()
   }, [panel])
 
-  const queueInnerWidth = Math.max(0, queueWidth - 24)
+  const queueInnerWidth = Math.max(0, queueWidth - 16)
   const queueColumns = Math.max(
     1,
     Math.floor((queueInnerWidth + SONG_TILE_GAP) / (SONG_TILE_MIN + SONG_TILE_GAP)),
@@ -689,7 +689,7 @@ export function NowPlaying() {
             </div>
           </div>
           <div className="relative flex min-h-0 flex-col max-md:min-h-[420px]">
-            <div className="flex flex-none items-center px-2 py-2">
+            <div className="flex flex-none items-center px-2 pb-1 pt-6">
               <div
                 className="np-tabs"
                 role="tablist"
@@ -751,7 +751,7 @@ export function NowPlaying() {
               ) : panel === 'queue' ? (
                 <div
                   ref={queueScrollRef}
-                  className="h-[min(72vh,620px)] min-h-[360px] overflow-y-auto px-3 pb-8 pt-3 md:h-full [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                  className="h-[min(72vh,620px)] min-h-[360px] overflow-y-auto px-2 pb-8 pt-2 md:h-full [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                 >
                   {queue.length ? (
                     <div
@@ -773,7 +773,6 @@ export function NowPlaying() {
                               height: `${queueRowHeight}px`,
                               transform: `translateY(${virtualRow.start}px)`,
                               gridTemplateColumns: `repeat(${queueColumns}, ${queueTileWidth}px)`,
-                              justifyContent: 'center',
                             }}
                           >
                             {rowSongs.map((song, offset) => {
