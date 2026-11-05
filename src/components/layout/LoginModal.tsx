@@ -255,16 +255,16 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
         }}
         className="w-full"
       >
-        <TabsList>
+        {/* <TabsList>
           <TabsTrigger value="captcha" icon={<Smartphone className="h-3.5 w-3.5" />}>
             <Trans>验证码登录</Trans>
           </TabsTrigger>
           <TabsTrigger value="qr" icon={<QrCode className="h-3.5 w-3.5" />}>
             <Trans>扫码登录</Trans>
           </TabsTrigger>
-        </TabsList>
+        </TabsList> */}
 
-        <TabsContent value="captcha" className="mt-4">
+        {/* <TabsContent value="captcha" className="mt-4">
           <form
             className="flex flex-col gap-3.5 pb-1"
             onSubmit={(event) => {
@@ -348,7 +348,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
               <Trans>未注册的手机号登录后将自动创建账号</Trans>
             </p>
           </form>
-        </TabsContent>
+        </TabsContent> */}
 
         <TabsContent value="qr" className="mt-4">
           <div className="flex flex-col items-center pb-1">

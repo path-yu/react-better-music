@@ -107,7 +107,7 @@ function LatestMvPage() {
         </p>
       </div>
 
-      <div className="mt-5 space-y-2.5 rounded-[18px] border border-black/8 bg-[#fafafc] px-4 py-3.5">
+      <div className="mt-5 space-y-2.5 rounded-[18px] border border-[var(--app-border)] bg-[var(--app-card)] px-4 py-3.5">
         <FilterRow
           label={msg`地区`}
           options={AREAS}
@@ -169,7 +169,7 @@ function FilterRow({
   const { i18n } = useLingui()
   return (
     <div className="flex items-center gap-3">
-      <span className="w-8 shrink-0 text-[11px] font-medium text-black/30">
+      <span className="w-8 shrink-0 text-[11px] font-medium text-black/30 dark:text-white/35">
         {i18n._(label)}
       </span>
       <div className="flex flex-wrap gap-1.5">
@@ -182,7 +182,7 @@ function FilterRow({
               'rounded-full px-2.5 py-1 text-[11px] transition-colors',
               value === option
                 ? 'bg-accent text-white'
-                : 'text-black/45 hover:bg-black/5 hover:text-black/70',
+                : 'text-black/45 hover:bg-black/5 hover:text-black/70 dark:text-white/50 dark:hover:bg-white/8 dark:hover:text-white/80',
             )}
           >
             {FILTER_LABELS[option] ? i18n._(FILTER_LABELS[option]) : option}
