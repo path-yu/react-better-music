@@ -52,7 +52,7 @@ msgid "{0} 张专辑 · {1} 个 MV"
 msgstr "{0} 张专辑 · {1} 个 MV"
 
 #. placeholder {0}: data.total
-#: src/components/comments/CommentSection.tsx:452
+#: src/components/comments/CommentSection.tsx:512
 msgid "{0} 条"
 msgstr "{0} 条"
 
@@ -142,8 +142,8 @@ msgstr "MV"
 msgid "MV 不存在或无法访问"
 msgstr "MV 不存在或无法访问"
 
-#: src/components/player/NowPlaying.tsx:342
-#: src/components/player/NowPlaying.tsx:480
+#: src/components/player/NowPlaying.tsx:356
+#: src/components/player/NowPlaying.tsx:494
 #: src/routes/latest-mv.tsx:81
 #: src/routes/search.tsx:508
 msgid "MV 加载失败"
@@ -500,7 +500,7 @@ msgstr "最新 MV"
 msgid "最新MV"
 msgstr "最新MV"
 
-#: src/components/comments/CommentSection.tsx:498
+#: src/components/comments/CommentSection.tsx:558
 msgid "最新评论"
 msgstr "最新评论"
 
@@ -552,8 +552,8 @@ msgstr "切换到浅色模式"
 msgid "切换到深色模式"
 msgstr "切换到深色模式"
 
-#: src/components/player/NowPlaying.tsx:548
-#: src/components/player/NowPlaying.tsx:549
+#: src/components/player/NowPlaying.tsx:562
+#: src/components/player/NowPlaying.tsx:563
 msgid "切换到视频播放"
 msgstr "切换到视频播放"
 
@@ -610,7 +610,7 @@ msgstr "前进"
 msgid "加入于 {0}"
 msgstr "加入于 {0}"
 
-#: src/components/comments/CommentSection.tsx:514
+#: src/components/comments/CommentSection.tsx:574
 #: src/routes/songlists/index.tsx:283
 msgid "加载更多"
 msgstr "加载更多"
@@ -623,7 +623,7 @@ msgstr "加载更多专辑"
 msgid "加载更多失败"
 msgstr "加载更多失败"
 
-#: src/components/comments/CommentSection.tsx:206
+#: src/components/comments/CommentSection.tsx:266
 msgid "加载更多评论失败"
 msgstr "加载更多评论失败"
 
@@ -684,14 +684,14 @@ msgstr "发生未知错误"
 msgid "发送验证码"
 msgstr "发送验证码"
 
-#: src/components/comments/CommentSection.tsx:539
+#: src/components/comments/CommentSection.tsx:599
 #: src/components/layout/Sidebar.tsx:319
 #: src/routes/local/playlists/$id.tsx:126
 msgid "取消"
 msgstr "取消"
 
-#: src/components/player/NowPlaying.tsx:447
-#: src/components/player/NowPlaying.tsx:449
+#: src/components/player/NowPlaying.tsx:461
+#: src/components/player/NowPlaying.tsx:463
 #: src/components/player/PlayerBar.tsx:1097
 #: src/components/songs/SongContextMenu.tsx:262
 #: src/components/songs/SongTable.tsx:176
@@ -731,33 +731,33 @@ msgstr "向左浏览分类"
 msgid "听友评论"
 msgstr "听友评论"
 
-#: src/components/player/NowPlaying.tsx:447
-#: src/components/player/NowPlaying.tsx:449
+#: src/components/player/NowPlaying.tsx:461
+#: src/components/player/NowPlaying.tsx:463
 #: src/components/player/PlayerBar.tsx:1097
 #: src/components/songs/SongContextMenu.tsx:262
 #: src/components/songs/SongTable.tsx:176
 msgid "喜欢"
 msgstr "喜欢"
 
-#: src/components/comments/CommentSection.tsx:436
-#: src/components/comments/CommentSection.tsx:548
+#: src/components/comments/CommentSection.tsx:496
+#: src/components/comments/CommentSection.tsx:608
 msgid "回复"
 msgstr "回复"
 
 #. placeholder {0}: replyTarget?.user?.nickname ?? ''
-#: src/components/comments/CommentSection.tsx:524
+#: src/components/comments/CommentSection.tsx:584
 msgid "回复 {0}"
 msgstr "回复 {0}"
 
-#: src/components/comments/CommentSection.tsx:533
+#: src/components/comments/CommentSection.tsx:593
 msgid "回复内容"
 msgstr "回复内容"
 
-#: src/components/comments/CommentSection.tsx:266
+#: src/components/comments/CommentSection.tsx:326
 msgid "回复内容不能为空"
 msgstr "回复内容不能为空"
 
-#: src/components/comments/CommentSection.tsx:279
+#: src/components/comments/CommentSection.tsx:339
 msgid "回复失败"
 msgstr "回复失败"
 
@@ -1053,7 +1053,7 @@ msgstr "打开"
 #. placeholder {0}: album.name
 #. placeholder {0}: currentSong.al.name
 #: src/components/cards/AlbumCard.tsx:28
-#: src/components/player/NowPlaying.tsx:618
+#: src/components/player/NowPlaying.tsx:632
 msgid "打开专辑 {0}"
 msgstr "打开专辑 {0}"
 
@@ -1188,8 +1188,8 @@ msgstr "播放（空格）"
 msgid "播放全部"
 msgstr "播放全部"
 
-#: src/components/player/NowPlaying.tsx:465
-#: src/components/player/NowPlaying.tsx:466
+#: src/components/player/NowPlaying.tsx:479
+#: src/components/player/NowPlaying.tsx:480
 #: src/components/player/PlayerBar.tsx:1222
 #: src/components/player/QueuePanel.tsx:76
 #: src/components/player/QueuePanel.tsx:83
@@ -1228,6 +1228,10 @@ msgstr "播放进度"
 msgid "播放选项"
 msgstr "播放选项"
 
+#: src/components/player/NowPlaying.tsx:779
+msgid "播放队列为空"
+msgstr "播放队列为空"
+
 #: src/components/player/PlayerBar.tsx:1259
 #: src/components/player/PlayerBar.tsx:1260
 #: src/components/player/PlayerBar.tsx:1275
@@ -1242,8 +1246,8 @@ msgstr "播放音质已切换为{label}，正在重新加载"
 msgid "播放页背景"
 msgstr "播放页背景"
 
-#: src/components/comments/CommentSection.tsx:301
-#: src/components/comments/CommentSection.tsx:331
+#: src/components/comments/CommentSection.tsx:361
+#: src/components/comments/CommentSection.tsx:391
 #: src/routes/songlists/$id.tsx:263
 #: src/store/user.ts:242
 #: src/store/user.ts:254
@@ -1436,7 +1440,7 @@ msgstr "暂无热门单曲"
 msgid "暂无相关 MV"
 msgstr "暂无相关 MV"
 
-#: src/components/player/NowPlaying.tsx:364
+#: src/components/player/NowPlaying.tsx:378
 msgid "暂无相关视频"
 msgstr "暂无相关视频"
 
@@ -1519,11 +1523,11 @@ msgid "柔和播放页渐变"
 msgstr "柔和播放页渐变"
 
 #. placeholder {0}: comment.user?.nickname ?? ''
-#: src/components/comments/CommentSection.tsx:357
+#: src/components/comments/CommentSection.tsx:417
 msgid "查看 {0} 的主页"
 msgstr "查看 {0} 的主页"
 
-#: src/components/player/NowPlaying.tsx:634
+#: src/components/player/NowPlaying.tsx:648
 msgid "查看专辑"
 msgstr "查看专辑"
 
@@ -1680,7 +1684,7 @@ msgstr "歌曲已在播放列表中"
 msgid "歌曲操作"
 msgstr "歌曲操作"
 
-#: src/components/player/NowPlaying.tsx:703
+#: src/components/player/NowPlaying.tsx:788
 msgid "歌曲评论"
 msgstr "歌曲评论"
 
@@ -1688,13 +1692,17 @@ msgstr "歌曲评论"
 msgid "歌曲资源已失效"
 msgstr "歌曲资源已失效"
 
-#: src/components/player/NowPlaying.tsx:665
+#: src/components/player/NowPlaying.tsx:683
 msgid "歌词"
 msgstr "歌词"
 
+#: src/components/player/NowPlaying.tsx:668
+msgid "歌词、选歌与评论"
+msgstr "歌词、选歌与评论"
+
 #: src/components/player/NowPlaying.tsx:651
-msgid "歌词与评论"
-msgstr "歌词与评论"
+#~ msgid "歌词与评论"
+#~ msgstr "歌词与评论"
 
 #: src/components/player/PlayerBar.tsx:1361
 msgid "歌词显示"
@@ -1705,7 +1713,7 @@ msgstr "歌词显示"
 #~ msgid "歌词显示方式"
 #~ msgstr "歌词显示方式"
 
-#: src/components/player/NowPlaying.tsx:688
+#: src/components/player/NowPlaying.tsx:721
 msgid "正在加载歌词…"
 msgstr "正在加载歌词…"
 
@@ -1713,7 +1721,7 @@ msgstr "正在加载歌词…"
 msgid "正在加载音源"
 msgstr "正在加载音源"
 
-#: src/components/player/NowPlaying.tsx:597
+#: src/components/player/NowPlaying.tsx:611
 #: src/components/player/PlayerBar.tsx:1118
 msgid "正在加载音源…"
 msgstr "正在加载音源…"
@@ -1734,11 +1742,11 @@ msgstr "正在播放"
 msgid "正在缓冲"
 msgstr "正在缓冲"
 
-#: src/components/player/NowPlaying.tsx:597
+#: src/components/player/NowPlaying.tsx:611
 msgid "正在缓冲…"
 msgstr "正在缓冲…"
 
-#: src/components/player/NowPlaying.tsx:516
+#: src/components/player/NowPlaying.tsx:530
 msgid "正在获取 MV…"
 msgstr "正在获取 MV…"
 
@@ -1887,7 +1895,7 @@ msgstr "热搜榜"
 msgid "热议"
 msgstr "热议"
 
-#: src/components/comments/CommentSection.tsx:382
+#: src/components/comments/CommentSection.tsx:442
 msgid "热门"
 msgstr "热门"
 
@@ -1934,7 +1942,7 @@ msgstr "登录中…"
 msgid "登录二维码"
 msgstr "登录二维码"
 
-#: src/components/comments/CommentSection.tsx:464
+#: src/components/comments/CommentSection.tsx:524
 msgid "登录后参与评论"
 msgstr "登录后参与评论"
 
@@ -1988,13 +1996,13 @@ msgstr "登录状态已失效，请重新登录"
 msgid "相似歌手"
 msgstr "相似歌手"
 
-#: src/components/player/NowPlaying.tsx:559
-#: src/components/player/NowPlaying.tsx:560
+#: src/components/player/NowPlaying.tsx:573
+#: src/components/player/NowPlaying.tsx:574
 #: src/components/songs/SongContextMenu.tsx:229
 msgid "相关视频"
 msgstr "相关视频"
 
-#: src/components/player/NowPlaying.tsx:385
+#: src/components/player/NowPlaying.tsx:399
 #: src/components/songs/SongContextMenu.tsx:100
 msgid "相关视频加载失败"
 msgstr "相关视频加载失败"
@@ -2014,7 +2022,7 @@ msgstr "确认清除？"
 msgid "视频"
 msgstr "视频"
 
-#: src/components/player/NowPlaying.tsx:518
+#: src/components/player/NowPlaying.tsx:532
 msgid "视频加载中…"
 msgstr "视频加载中…"
 
@@ -2112,7 +2120,7 @@ msgstr "粤语"
 msgid "精品歌单"
 msgstr "精品歌单"
 
-#: src/components/comments/CommentSection.tsx:496
+#: src/components/comments/CommentSection.tsx:556
 msgid "精彩评论"
 msgstr "精彩评论"
 
@@ -2200,27 +2208,27 @@ msgstr "获取歌曲播放地址失败"
 msgid "设置"
 msgstr "设置"
 
-#: src/components/comments/CommentSection.tsx:94
-#: src/components/comments/CommentSection.tsx:481
-#: src/components/player/NowPlaying.tsx:675
+#: src/components/comments/CommentSection.tsx:154
+#: src/components/comments/CommentSection.tsx:541
+#: src/components/player/NowPlaying.tsx:703
 #: src/routes/songlists/$id.tsx:474
 msgid "评论"
 msgstr "评论"
 
-#: src/components/comments/CommentSection.tsx:249
+#: src/components/comments/CommentSection.tsx:309
 msgid "评论不能为空"
 msgstr "评论不能为空"
 
-#: src/components/comments/CommentSection.tsx:170
+#: src/components/comments/CommentSection.tsx:230
 msgid "评论加载失败"
 msgstr "评论加载失败"
 
-#: src/components/comments/CommentSection.tsx:229
-#: src/components/comments/CommentSection.tsx:257
+#: src/components/comments/CommentSection.tsx:289
+#: src/components/comments/CommentSection.tsx:317
 msgid "评论失败"
 msgstr "评论失败"
 
-#: src/components/comments/CommentSection.tsx:240
+#: src/components/comments/CommentSection.tsx:300
 msgid "评论成功"
 msgstr "评论成功"
 
@@ -2257,7 +2265,7 @@ msgstr "该用户还没有创建歌单"
 msgid "该用户还没有收藏歌单"
 msgstr "该用户还没有收藏歌单"
 
-#: src/components/comments/CommentSection.tsx:463
+#: src/components/comments/CommentSection.tsx:523
 msgid "说点什么…"
 msgstr "说点什么…"
 
@@ -2265,9 +2273,9 @@ msgstr "说点什么…"
 msgid "请先播放歌曲"
 msgstr "请先播放歌曲"
 
-#: src/components/comments/CommentSection.tsx:245
-#: src/components/comments/CommentSection.tsx:287
-#: src/components/comments/CommentSection.tsx:429
+#: src/components/comments/CommentSection.tsx:305
+#: src/components/comments/CommentSection.tsx:347
+#: src/components/comments/CommentSection.tsx:489
 #: src/store/user.ts:236
 msgid "请先登录"
 msgstr "请先登录"
@@ -2381,7 +2389,7 @@ msgstr "返回推荐歌单"
 msgid "返回本地收藏"
 msgstr "返回本地收藏"
 
-#: src/components/player/NowPlaying.tsx:487
+#: src/components/player/NowPlaying.tsx:501
 msgid "返回音乐"
 msgstr "返回音乐"
 
@@ -2400,7 +2408,7 @@ msgstr "还没有播放记录"
 msgid "还没有收藏专辑"
 msgstr "还没有收藏专辑"
 
-#: src/components/comments/CommentSection.tsx:501
+#: src/components/comments/CommentSection.tsx:561
 msgid "还没有评论，快来抢沙发～"
 msgstr "还没有评论，快来抢沙发～"
 
@@ -2451,6 +2459,10 @@ msgstr "选择界面明暗与主题配色，立即生效，并会记住你的选
 msgid "选择音源"
 msgstr "选择音源"
 
+#: src/components/player/NowPlaying.tsx:693
+msgid "选歌"
+msgstr "选歌"
+
 #: src/components/player/PlayerBar.tsx:1391
 #: src/components/player/PlayerBar.tsx:1400
 msgid "逐字播放"
@@ -2495,7 +2507,7 @@ msgstr "韩国"
 msgid "韩语"
 msgstr "韩语"
 
-#: src/components/player/NowPlaying.tsx:531
+#: src/components/player/NowPlaying.tsx:545
 msgid "音乐"
 msgstr "音乐"
 

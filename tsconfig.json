@@ -5,6 +5,7 @@
     "origin",
     "server",
     "dist",
+    "build",
     ".hutch",
     "src/bun",
     "electrobun.config.ts",

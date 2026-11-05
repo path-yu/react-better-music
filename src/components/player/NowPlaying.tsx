@@ -3,20 +3,20 @@ import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { useNavigate, useRouterState } from '@tanstack/react-router'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import {
   Disc3,
   Film,
   Heart,
   ListMusic,
   Loader2,
-  MessageSquareText,
 } from 'lucide-react'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
 import { LyricsPanel } from './LyricsPanel'
 import AmbientBackground from './AmbientBackground'
 import { MvVideoPlayer } from '../mv/MvVideoPlayer'
-import { CommentSection } from '../comments/CommentSection'
+import { CommentSection, useCommentTotal } from '../comments/CommentSection'
 import { fetchMvUrl, fetchRelatedVideos } from '../../api'
 import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
@@ -33,6 +33,19 @@ import {
 import { resizedImageUrl } from '../../lib/image'
 import { toast } from '../../lib/toast'
 import { cn } from '../../lib/format'
+
+type NowPlayingPanel = 'lyrics' | 'queue' | 'comments'
+
+function formatCommentCount(value: number, locale: string) {
+  if (value < 1000) return String(value)
+  return new Intl.NumberFormat(locale, {
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(value)
+}
+
+const SONG_TILE_MIN = 112
+const SONG_TILE_GAP = 14
 
 export function NowPlaying() {
   const { i18n } = useLingui()
@@ -56,7 +69,9 @@ export function NowPlaying() {
   const lyricLoading = usePlayerStore((state) => state.lyricLoading)
   const toggleNowPlaying = usePlayerStore((state) => state.toggleNowPlaying)
   const toggleQueue = usePlayerStore((state) => state.toggleQueue)
+  const playAt = usePlayerStore((state) => state.playAt)
   const ensureLyrics = usePlayerStore((state) => state.ensureLyrics)
+  const commentTotal = useCommentTotal(0, currentSong?.id ?? 0, show)
   const likedIds = useUserStore((state) => state.likedIds)
   const isLogin = useUserStore((state) => state.isLogin)
   const likeSong = useUserStore((state) => state.likeSong)
@@ -77,7 +92,9 @@ export function NowPlaying() {
   const setNowPlayingMode = useSettingsStore(
     (state) => state.setNowPlayingMode,
   )
-  const [panel, setPanel] = useState<'lyrics' | 'comments'>('lyrics')
+  const [panel, setPanel] = useState<NowPlayingPanel>('lyrics')
+  const queueScrollRef = useRef<HTMLDivElement>(null)
+  const [queueWidth, setQueueWidth] = useState(0)
   const [palette, setPalette] = useState<Palette>(FALLBACK_PALETTE)
   const [videoLoading, setVideoLoading] = useState(false)
   const [mvMode, setMvMode] = useState(false)
@@ -98,6 +115,39 @@ export function NowPlaying() {
     () => resizedImageUrl(artwork, '640y640') ?? artwork,
     [artwork],
   )
+
+  // Measure the picker once before laying out rows. Only visible rows are
+  // mounted below, so a 1000+ song queue does not create thousands of covers.
+  useEffect(() => {
+    if (panel !== 'queue') return
+    const element = queueScrollRef.current
+    if (!element) return
+    const updateWidth = () => setQueueWidth(element.clientWidth)
+    updateWidth()
+    const observer = new ResizeObserver(updateWidth)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [panel])
+
+  const queueInnerWidth = Math.max(0, queueWidth - 24)
+  const queueColumns = Math.max(
+    1,
+    Math.floor((queueInnerWidth + SONG_TILE_GAP) / (SONG_TILE_MIN + SONG_TILE_GAP)),
+  )
+  const queueTileWidth = Math.min(SONG_TILE_MIN, queueInnerWidth)
+  const queueRowHeight = Math.max(80, queueTileWidth + SONG_TILE_GAP)
+  const queueRowCount = Math.ceil(queue.length / queueColumns)
+  const queueVirtualizer = useVirtualizer({
+    count: panel === 'queue' && queueWidth > 0 ? queueRowCount : 0,
+    getScrollElement: () => queueScrollRef.current,
+    estimateSize: () => queueRowHeight,
+    overscan: 4,
+  })
+  const measureQueue = queueVirtualizer.measure
+  useEffect(() => {
+    if (panel !== 'queue') return
+    measureQueue()
+  }, [panel, queueColumns, queueRowHeight, measureQueue])
 
   // The overlay is lazy-mounted only while open, so the first effect run is the
   // mount itself — not a navigation. Only close on a real pathname change.
@@ -638,41 +688,44 @@ export function NowPlaying() {
               </div>
             </div>
           </div>
-          <div
-            className={cn(
-              'relative flex min-h-0 flex-col rounded-[22px] max-md:min-h-[420px]',
-              panel === 'comments' && 'border border-white/60 bg-white/45 backdrop-blur-xl',
-            )}
-          >
-            <div className="flex flex-none items-center px-3 py-2">
+          <div className="relative flex min-h-0 flex-col max-md:min-h-[420px]">
+            <div className="flex flex-none items-center px-2 py-2">
               <div
-                className="np-segmented"
+                className="np-tabs"
                 role="tablist"
-                aria-label={i18n._(msg`歌词与评论`)}
+                aria-label={i18n._(msg`歌词、选歌与评论`)}
               >
-                <span
-                  aria-hidden="true"
-                  className="np-segmented__pill"
-                  data-active={panel}
-                />
                 <button
                   type="button"
                   role="tab"
                   aria-selected={panel === 'lyrics'}
                   onClick={() => setPanel('lyrics')}
-                  className={cn('np-segmented__item', panel === 'lyrics' && 'is-active')}
+                  className={cn('np-tab', panel === 'lyrics' && 'is-active')}
                 >
                   <Trans>歌词</Trans>
                 </button>
                 <button
                   type="button"
                   role="tab"
+                  aria-selected={panel === 'queue'}
+                  onClick={() => setPanel('queue')}
+                  className={cn('np-tab', panel === 'queue' && 'is-active')}
+                >
+                  <Trans>选歌</Trans>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
                   aria-selected={panel === 'comments'}
                   onClick={() => setPanel('comments')}
-                  className={cn('np-segmented__item', panel === 'comments' && 'is-active')}
+                  className={cn('np-tab', panel === 'comments' && 'is-active')}
                 >
-                  <MessageSquareText className="h-3 w-3" />
                   <Trans>评论</Trans>
+                  {commentTotal !== null ? (
+                    <span className="np-tab__count">
+                      {formatCommentCount(commentTotal, i18n.locale)}
+                    </span>
+                  ) : null}
                 </button>
               </div>
             </div>
@@ -695,6 +748,81 @@ export function NowPlaying() {
                     className="h-full max-md:h-auto"
                   />
                 )
+              ) : panel === 'queue' ? (
+                <div
+                  ref={queueScrollRef}
+                  className="h-[min(72vh,620px)] min-h-[360px] overflow-y-auto px-3 pb-8 pt-3 md:h-full [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                >
+                  {queue.length ? (
+                    <div
+                      className="relative w-full"
+                      style={{ height: `${queueVirtualizer.getTotalSize()}px` }}
+                    >
+                      {queueVirtualizer.getVirtualItems().map((virtualRow) => {
+                        const start = virtualRow.index * queueColumns
+                        const rowSongs = queue.slice(start, start + queueColumns)
+                        return (
+                          <div
+                            key={virtualRow.key}
+                            className="np-song-row"
+                            style={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              height: `${queueRowHeight}px`,
+                              transform: `translateY(${virtualRow.start}px)`,
+                              gridTemplateColumns: `repeat(${queueColumns}, ${queueTileWidth}px)`,
+                              justifyContent: 'center',
+                            }}
+                          >
+                            {rowSongs.map((song, offset) => {
+                              const index = start + offset
+                              const active = index === currentIndex
+                              return (
+                                <button
+                                  key={`${song.id}-${index}`}
+                                  type="button"
+                                  title={song.name}
+                                  aria-current={active ? 'true' : undefined}
+                                  onClick={() => void playAt(index)}
+                                  className={cn(
+                                    'np-song-tile group',
+                                    active && 'is-current',
+                                  )}
+                                >
+                                  <span className="np-song-tile__cover">
+                                    <ImageWithFallback
+                                      src={song.al.picUrl}
+                                      alt={song.name}
+                                      rounded="rounded-[12px]"
+                                      className="h-full w-full"
+                                      resize="240y240"
+                                    />
+                                    <span className="np-song-tile__caption">
+                                      <span className="np-song-tile__name">
+                                        {song.name}
+                                      </span>
+                                      <span className="np-song-tile__artist">
+                                        {song.ar
+                                          .map((artist) => artist.name)
+                                          .join(' / ')}
+                                      </span>
+                                    </span>
+                                  </span>
+                                </button>
+                              )
+                            })}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <div className="flex h-full min-h-[180px] items-center justify-center text-[12px] text-white/45">
+                      <Trans>播放队列为空</Trans>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="h-full overflow-y-auto px-5 pb-8 pt-4 max-md:h-auto max-md:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   <CommentSection

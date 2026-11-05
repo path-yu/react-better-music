@@ -68,6 +68,9 @@ function commentCacheKey(type: CommentSectionProps['type'], resourceId: number) 
   return `${type}:${resourceId}`
 }
 
+const commentTotals = new Map<string, number>()
+const commentTotalRequests = new Map<string, Promise<number>>()
+
 function rememberComments(
   key: string,
   data: CommentResponse,
@@ -78,9 +81,66 @@ function rememberComments(
     serverCount,
     updatedAt: Date.now(),
   })
+  commentTotals.set(key, data.total ?? 0)
   if (commentCache.size > MAX_COMMENT_CACHES) {
     commentCache.delete(commentCache.keys().next().value as string)
   }
+}
+
+/** Lightweight total for tab badges; shared with the full comment list. */
+// eslint-disable-next-line react-refresh/only-export-components
+export function useCommentTotal(
+  type: CommentSectionProps['type'],
+  resourceId: number,
+  enabled = true,
+) {
+  const key = commentCacheKey(type, resourceId)
+  const [total, setTotal] = useState<number | null>(() => {
+    if (commentTotals.has(key)) return commentTotals.get(key) ?? null
+    return commentCache.get(key)?.data.total ?? null
+  })
+
+  useEffect(() => {
+    let active = true
+    if (!enabled || resourceId <= 0) return
+    const cached = commentTotals.get(key) ?? commentCache.get(key)?.data.total
+    if (cached !== undefined) {
+      setTotal(cached)
+      return () => {
+        active = false
+      }
+    }
+    setTotal(null)
+    const fetcher =
+      type === 0
+        ? fetchMusicComments
+        : type === 1
+          ? fetchMvComments
+          : fetchPlaylistComments
+    let request = commentTotalRequests.get(key)
+    if (!request) {
+      request = fetcher({ id: resourceId, limit: 1, offset: 0 })
+        .then((response) => {
+          const next = response.total ?? 0
+          commentTotals.set(key, next)
+          return next
+        })
+        .finally(() => {
+          commentTotalRequests.delete(key)
+        })
+      commentTotalRequests.set(key, request)
+    }
+    void request
+      .then((next) => {
+        if (active) setTotal(next)
+      })
+      .catch(() => undefined)
+    return () => {
+      active = false
+    }
+  }, [enabled, key, resourceId, type])
+
+  return total
 }
 
 export function CommentSection({

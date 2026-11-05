@@ -1074,80 +1074,141 @@ html.desktop .app-window {
   display: none;
 }
 
-/* Immersive segmented control: a thin frosted track with a sliding pill. */
-.np-segmented {
-  position: relative;
-  display: inline-grid;
-  /* Size to the labels: a fixed 132px track clips “Lyrics / Comments” and
-     leaves the active pill with no room around the text. */
-  width: max-content;
-  min-width: 132px;
-  grid-template-columns: repeat(2, minmax(64px, 1fr));
-  gap: 2px;
-  padding: 2px;
-  border-radius: 999px;
-  /*
-   * No backdrop-filter here: in WebView2, hovering the transparent native
-   * title bar makes the blur re-sample a light surface, which paints a grey
-   * rectangle over the segments. Layered translucency keeps the frosted look
-   * without the compositing artifact.
-   */
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.05));
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.05),
-    0 4px 18px rgba(0, 0, 0, 0.12);
-  isolation: isolate;
-}
-
-.np-segmented__pill {
-  position: absolute;
-  z-index: 0;
-  top: 2px;
-  bottom: 2px;
-  left: 2px;
-  width: calc(50% - 3px);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.16);
-  transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.np-segmented__pill[data-active='comments'] {
-  transform: translateX(calc(100% + 2px));
-}
-
-.np-segmented__item {
-  position: relative;
-  z-index: 1;
+/* Mirrors MyGO's tab row: 28px high, 6px gap, individual pills without a
+   surrounding track. The active pill is a translucent white fill. */
+.np-tabs {
   display: flex;
-  height: 26px;
+  height: 28px;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 0 12px;
+  gap: 6px;
+}
+
+.np-tab {
+  display: inline-flex;
+  height: 28px;
+  align-items: center;
+  padding: 0 14px;
   border-radius: 999px;
-  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 13px;
+  font-weight: 600;
   line-height: 1;
   white-space: nowrap;
-  color: rgba(255, 255, 255, 0.55);
-  transition: color 0.24s ease;
+  transition:
+    color 0.16s ease,
+    background-color 0.16s ease;
 }
 
-.np-segmented__item:hover {
-  color: rgba(255, 255, 255, 0.82);
+.np-tab:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.86);
 }
 
-.np-segmented__item.is-active {
+.np-tab.is-active {
+  background: rgba(255, 255, 255, 0.14);
   color: #fff;
-  font-weight: 500;
 }
 
-.np-segmented__item:focus-visible {
+.np-tab:focus-visible {
   outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+}
+
+.np-tab__count {
+  margin-left: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The queue wall mirrors the native player: square 112px covers, a 14px
+   pitch, a 2px white ring on the playing cover, and captions only on hover. */
+.np-song-row {
+  display: grid;
+  column-gap: 14px;
+  align-items: start;
+}
+
+.np-song-tile {
+  position: relative;
+  display: block;
+  min-width: 0;
+  border-radius: 12px;
+  text-align: left;
+  transform-origin: center;
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.np-song-tile:hover {
+  z-index: 2;
+  transform: scale(1.04);
+}
+
+.np-song-tile.is-current {
+  z-index: 1;
+  transform: scale(1.06);
+}
+
+.np-song-tile.is-current:hover {
+  transform: scale(1.08);
+}
+
+.np-song-tile__cover {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  transition: box-shadow 0.22s ease;
+}
+
+.np-song-tile.is-current .np-song-tile__cover {
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.9),
+    0 14px 30px -8px rgba(0, 0, 0, 0.6);
+}
+
+.np-song-tile__caption {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px;
+  border-radius: 0 0 12px 12px;
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.78), transparent);
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+.np-song-tile:hover .np-song-tile__caption {
+  opacity: 1;
+}
+
+.np-song-tile__name,
+.np-song-tile__artist {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.np-song-tile__name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.np-song-tile__artist {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.np-song-tile:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.6);
   outline-offset: 2px;
 }
 
@@ -2086,14 +2147,9 @@ html.desktop .app-window {
   .sidebar-glass,
   .pushbar-glass,
   .player-glass,
-  .np-segmented,
   .np-round-button {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-  }
-
-  .np-segmented {
-    background: rgba(28, 28, 30, 0.92);
   }
 
   .np-round-button {
