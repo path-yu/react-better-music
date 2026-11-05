@@ -16,6 +16,7 @@ const ROW_HEIGHT = 56
 export function QueuePanel() {
   const { i18n } = useLingui()
   const show = usePlayerStore((state) => state.showQueue)
+  const immersive = usePlayerStore((state) => state.showNowPlaying)
   const queue = usePlayerStore((state) => state.queue)
   const currentIndex = usePlayerStore((state) => state.currentIndex)
   const playing = usePlayerStore((state) => state.playing)
@@ -64,25 +65,53 @@ export function QueuePanel() {
   }
 
   return (
-    <div className="absolute inset-x-0 bottom-[76px] top-0 z-[70] flex justify-end">
+    <div className="absolute inset-x-0 bottom-[76px] top-[var(--titlebar-height,44px)] z-[70] flex justify-end">
       <button
         type="button"
         aria-label={i18n._(msg`关闭播放列表`)}
-        className="absolute inset-0 bg-black/20 backdrop-blur-[2px]"
+        className={cn(
+          'absolute inset-0 backdrop-blur-[2px]',
+          immersive ? 'bg-black/35' : 'bg-black/20',
+        )}
         onClick={() => toggleQueue(false)}
       />
       <aside
         role="dialog"
         aria-label={i18n._(msg`播放列表`)}
-        className="relative flex h-full w-[min(360px,100%)] flex-col border-l border-black/10 bg-[#fbfbfd]/95 shadow-[-20px_0_50px_-20px_rgba(0,0,0,0.3)] backdrop-blur-xl fade-up"
+        className={cn(
+          'fade-up relative flex h-full w-[min(360px,100%)] flex-col border-l',
+          immersive
+            ? 'queue-panel-immersive border-white/10 shadow-[-24px_0_70px_-24px_rgba(0,0,0,0.8)]'
+            : 'border-black/10 bg-[#fbfbfd]/95 shadow-[-20px_0_50px_-20px_rgba(0,0,0,0.3)] backdrop-blur-xl',
+        )}
+        style={
+          immersive
+            ? { borderLeftColor: 'rgba(255, 255, 255, 0.1)' }
+            : undefined
+        }
       >
-        <div className="flex items-center justify-between border-b border-black/8 px-4 py-3.5">
+        <div
+          className={cn(
+            'flex items-center justify-between px-4 py-3.5',
+            immersive ? 'border-b-0' : 'border-b border-black/8',
+          )}
+        >
           <div className="flex items-center gap-2">
             <ListMusic className="h-4 w-4 text-accent" />
-            <p className="text-[13px] font-semibold text-black/80">
+            <p
+              className={cn(
+                'text-[13px] font-semibold',
+                immersive ? 'text-white/85' : 'text-black/80',
+              )}
+            >
               <Trans>播放列表</Trans>
             </p>
-            <span className="text-[11px] text-black/35">
+            <span
+              className={cn(
+                'text-[11px]',
+                immersive ? 'text-white/40' : 'text-black/35',
+              )}
+            >
               <Trans>{queue.length} 首</Trans>
             </span>
           </div>
@@ -90,7 +119,12 @@ export function QueuePanel() {
             <Button
               size="sm"
               variant="ghost"
-              className="h-7 rounded-full px-2 text-[11px] text-black/40"
+              className={cn(
+                'h-7 rounded-full px-2 text-[11px]',
+                immersive
+                  ? 'text-white/45 hover:bg-white/8 hover:text-white/80'
+                  : 'text-black/40',
+              )}
               onClick={clearQueue}
             >
               <Trash2 className="mr-1 h-3 w-3" />
@@ -100,7 +134,12 @@ export function QueuePanel() {
               type="button"
               aria-label={i18n._(msg`关闭`)}
               onClick={() => toggleQueue(false)}
-              className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/40 hover:bg-black/5 hover:text-black/70 max-md:h-10 max-md:w-10"
+              className={cn(
+                'pressable flex h-7 w-7 items-center justify-center rounded-full max-md:h-10 max-md:w-10',
+                immersive
+                  ? 'text-white/45 hover:bg-white/8 hover:text-white/80'
+                  : 'text-black/40 hover:bg-black/5 hover:text-black/70',
+              )}
             >
               <X className="h-4 w-4" />
             </button>
@@ -139,7 +178,13 @@ export function QueuePanel() {
                     }}
                     className={cn(
                       'group flex h-full w-full cursor-pointer items-center gap-2.5 px-4 text-left transition-colors',
-                      active ? 'bg-accent/8' : 'hover:bg-black/4',
+                      active
+                        ? immersive
+                          ? 'bg-white/10'
+                          : 'bg-accent/8'
+                        : immersive
+                          ? 'hover:bg-white/6'
+                          : 'hover:bg-black/4',
                     )}
                   >
                     <span className="flex w-4 shrink-0 justify-center">
@@ -151,7 +196,12 @@ export function QueuePanel() {
                           )}
                         />
                       ) : (
-                        <span className="text-[11px] tabular-nums text-black/25">
+                        <span
+                          className={cn(
+                            'text-[11px] tabular-nums',
+                            immersive ? 'text-white/30' : 'text-black/25',
+                          )}
+                        >
                           {virtualRow.index + 1}
                         </span>
                       )}
@@ -161,7 +211,11 @@ export function QueuePanel() {
                         <span
                           className={cn(
                             'min-w-0 truncate text-[12px]',
-                            active ? 'font-medium text-accent' : 'text-black/75',
+                            active
+                              ? 'font-medium text-accent'
+                              : immersive
+                                ? 'text-white/85'
+                                : 'text-black/75',
                           )}
                         >
                           {song.name}
@@ -177,16 +231,33 @@ export function QueuePanel() {
                           </span>
                         ) : null}
                       </div>
-                      <p className="flex min-w-0 items-center gap-1.5 text-[11px] text-black/35">
+                      <p
+                        className={cn(
+                          'flex min-w-0 items-center gap-1.5 text-[11px]',
+                          immersive ? 'text-white/40' : 'text-black/35',
+                        )}
+                      >
                         <ArtistLinks artists={song.ar} className="min-w-0 truncate" />
                         {note ? (
-                          <span className="shrink-0 rounded-[6px] bg-black/6 px-1 text-[11px] text-black/35">
+                          <span
+                            className={cn(
+                              'shrink-0 rounded-[6px] px-1 text-[11px]',
+                              immersive
+                                ? 'bg-white/8 text-white/40'
+                                : 'bg-black/6 text-black/35',
+                            )}
+                          >
                             {note}
                           </span>
                         ) : null}
                       </p>
                     </div>
-                    <span className="shrink-0 text-[11px] tabular-nums text-black/25">
+                    <span
+                      className={cn(
+                        'shrink-0 text-[11px] tabular-nums',
+                        immersive ? 'text-white/30' : 'text-black/25',
+                      )}
+                    >
                       {formatDuration(song.dt)}
                     </span>
                   </div>
@@ -207,13 +278,25 @@ export function QueuePanel() {
                 behavior: 'smooth',
               })
             }
-            className="pressable absolute bottom-[58px] right-4 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-[var(--app-border-strong)] bg-[var(--app-glass)] text-accent shadow-[0_8px_24px_rgba(0,0,0,0.2)] backdrop-blur-xl transition-colors hover:bg-accent/15 max-md:h-11 max-md:w-11"
+            className={cn(
+              'pressable absolute bottom-[58px] right-4 z-10 flex h-9 w-9 items-center justify-center rounded-full text-accent shadow-[0_8px_24px_rgba(0,0,0,0.2)] backdrop-blur-xl transition-colors hover:bg-accent/15 max-md:h-11 max-md:w-11',
+              immersive
+                ? 'border-0 bg-white/10'
+                : 'border border-[var(--app-border-strong)] bg-[var(--app-glass)]',
+            )}
           >
             <LocateFixed className="h-4 w-4" strokeWidth={1.8} />
           </button>
         ) : null}
 
-        <div className="border-t border-black/8 px-4 py-3 text-center text-[11px] text-black/30">
+        <div
+          className={cn(
+            'px-4 py-3 text-center text-[11px]',
+            immersive
+              ? 'border-t-0 text-white/35'
+              : 'border-t border-black/8 text-black/30',
+          )}
+        >
           <Trans>点击歌曲开始播放</Trans>
         </div>
       </aside>

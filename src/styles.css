@@ -284,6 +284,7 @@ input[type='search']::-webkit-search-decoration {
 }
 
 .app-window {
+  --titlebar-height: 44px;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -305,6 +306,7 @@ html.desktop .app-shell {
 }
 
 html.desktop .app-window {
+  --titlebar-height: 38px;
   max-width: none;
   border-radius: 0;
   box-shadow: none;
@@ -526,6 +528,7 @@ html.desktop .app-window {
   }
 
   .app-window {
+    --titlebar-height: 0px;
     border-radius: 0;
   }
 
@@ -1151,6 +1154,24 @@ html.desktop .app-window {
 .np-tab__count {
   margin-left: 3px;
   font-variant-numeric: tabular-nums;
+}
+
+/* Song-detail queue sheet: a near-opaque palette wash instead of a flat white
+   card. The two radial layers keep it tied to the theme accent while the dark
+   base prevents the song table behind it from showing through as hairlines. */
+.queue-panel-immersive {
+  background:
+    radial-gradient(
+      120% 75% at 100% 0%,
+      rgb(var(--apple-blue-rgb, 41 151 255) / 0.32),
+      transparent 60%
+    ),
+    radial-gradient(
+      100% 70% at 0% 100%,
+      rgb(var(--apple-blue-rgb, 41 151 255) / 0.16),
+      transparent 62%
+    ),
+    linear-gradient(165deg, #272130 0%, #16131b 55%, #0b0b0e 100%);
 }
 
 /* Queue pane ("待播清单"): a compact, virtualized list of what plays next. */

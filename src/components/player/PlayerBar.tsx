@@ -1210,14 +1210,16 @@ export function PlayerBar() {
           >
             <SkipForward className="h-5 w-5 fill-current" />
           </button>
-          <button
-            type="button"
-            onClick={() => toggleQueue()}
-            className="pressable flex h-8 w-8 items-center justify-center text-black/35 transition-colors hover:text-black/70 max-md:hidden"
-            title={i18n._(msg`播放列表`)}
-          >
-            <ListMusic className="h-4 w-4" />
-          </button>
+          {!showNowPlaying ? (
+            <button
+              type="button"
+              onClick={() => toggleQueue()}
+              className="pressable flex h-8 w-8 items-center justify-center text-black/35 transition-colors hover:text-black/70 max-md:hidden"
+              title={i18n._(msg`播放列表`)}
+            >
+              <ListMusic className="h-4 w-4" />
+            </button>
+          ) : null}
         </div>
 
         <div className="mt-1.5 flex w-full items-center gap-2.5 max-md:absolute max-md:inset-x-0 max-md:top-0 max-md:mt-0 max-md:px-3">
