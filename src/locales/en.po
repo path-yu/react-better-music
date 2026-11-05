@@ -149,8 +149,8 @@ msgstr "MV"
 msgid "MV 不存在或无法访问"
 msgstr "MV not found or unavailable"
 
-#: src/components/player/NowPlaying.tsx:397
-#: src/components/player/NowPlaying.tsx:520
+#: src/components/player/NowPlaying.tsx:405
+#: src/components/player/NowPlaying.tsx:528
 #: src/routes/latest-mv.tsx:81
 #: src/routes/search.tsx:508
 msgid "MV 加载失败"
@@ -220,7 +220,7 @@ msgstr "Next page"
 msgid "下一首"
 msgstr "Next track"
 
-#: src/components/songs/SongContextMenu.tsx:283
+#: src/components/songs/SongContextMenu.tsx:290
 msgid "下一首播放"
 msgstr "Play next"
 
@@ -300,8 +300,8 @@ msgstr "Profile updated"
 msgid "中午好"
 msgstr "Good noon"
 
-#: src/components/layout/LoginModal.tsx:38
-#: src/components/layout/LoginModal.tsx:367
+#: src/components/layout/LoginModal.tsx:32
+#: src/components/layout/LoginModal.tsx:352
 msgid "二维码已失效"
 msgstr "QR code expired"
 
@@ -355,13 +355,13 @@ msgstr "Tell us about yourself"
 msgid "介绍一下这个歌单"
 msgstr "Describe this playlist"
 
-#: src/components/songs/SongContextMenu.tsx:334
+#: src/components/songs/SongContextMenu.tsx:341
 #: src/components/songs/SongTable.tsx:167
 #: src/components/songs/SongTable.tsx:168
 msgid "从歌单移除"
 msgstr "Remove from playlist"
 
-#: src/components/layout/LoginModal.tsx:380
+#: src/components/layout/LoginModal.tsx:365
 msgid "使用网易云音乐 App 扫码登录"
 msgstr "Scan with the NetEase Cloud Music app"
 
@@ -588,8 +588,8 @@ msgstr "Switch to light mode"
 msgid "切换到深色模式"
 msgstr "Switch to dark mode"
 
-#: src/components/player/NowPlaying.tsx:588
-#: src/components/player/NowPlaying.tsx:589
+#: src/components/player/NowPlaying.tsx:596
+#: src/components/player/NowPlaying.tsx:597
 msgid "切换到视频播放"
 msgstr "Switch to video"
 
@@ -628,7 +628,7 @@ msgstr "Delete playlist"
 msgid "删除歌单失败"
 msgstr "Failed to delete playlist"
 
-#: src/components/layout/LoginModal.tsx:371
+#: src/components/layout/LoginModal.tsx:356
 #: src/routes/settings.tsx:466
 msgid "刷新"
 msgstr "Refresh"
@@ -726,10 +726,10 @@ msgstr "An unknown error occurred"
 msgid "取消"
 msgstr "Cancel"
 
-#: src/components/player/NowPlaying.tsx:487
-#: src/components/player/NowPlaying.tsx:489
+#: src/components/player/NowPlaying.tsx:495
+#: src/components/player/NowPlaying.tsx:497
 #: src/components/player/PlayerBar.tsx:1092
-#: src/components/songs/SongContextMenu.tsx:350
+#: src/components/songs/SongContextMenu.tsx:357
 #: src/components/songs/SongTable.tsx:178
 msgid "取消喜欢"
 msgstr "Unlike"
@@ -767,10 +767,10 @@ msgstr "Browse categories to the left"
 msgid "听友评论"
 msgstr "Listener comments"
 
-#: src/components/player/NowPlaying.tsx:487
-#: src/components/player/NowPlaying.tsx:489
+#: src/components/player/NowPlaying.tsx:495
+#: src/components/player/NowPlaying.tsx:497
 #: src/components/player/PlayerBar.tsx:1092
-#: src/components/songs/SongContextMenu.tsx:350
+#: src/components/songs/SongContextMenu.tsx:357
 #: src/components/songs/SongTable.tsx:178
 msgid "喜欢"
 msgstr "Like"
@@ -922,7 +922,7 @@ msgstr "Show all"
 msgid "展开播放页"
 msgstr "Open Now Playing"
 
-#: src/components/songs/SongContextMenu.tsx:227
+#: src/components/songs/SongContextMenu.tsx:233
 msgid "已从歌单移除"
 msgstr "Removed from playlist"
 
@@ -990,8 +990,8 @@ msgstr "Saved"
 #. placeholder {0}: choice.name
 #. placeholder {0}: playlist.name
 #: src/components/player/PlaylistPicker.tsx:100
-#: src/components/songs/SongContextMenu.tsx:151
-#: src/components/songs/SongContextMenu.tsx:169
+#: src/components/songs/SongContextMenu.tsx:157
+#: src/components/songs/SongContextMenu.tsx:175
 msgid "已收藏到「{0}」"
 msgstr "Saved to \"{0}\""
 
@@ -1008,7 +1008,7 @@ msgstr "Added to Liked Songs"
 msgid "已禁用开发者工具，重启应用后完全生效"
 msgstr "Developer tools disabled. Restart the app to apply fully."
 
-#: src/components/songs/SongContextMenu.tsx:185
+#: src/components/songs/SongContextMenu.tsx:191
 msgid "已设为下一首播放"
 msgstr "Added to play next"
 
@@ -1059,11 +1059,11 @@ msgstr "Current cache"
 msgid "影视原声"
 msgstr "Soundtrack"
 
-#: src/components/player/NowPlaying.tsx:713
+#: src/components/player/NowPlaying.tsx:721
 msgid "待播清单"
 msgstr "Up next"
 
-#: src/components/player/NowPlaying.tsx:704
+#: src/components/player/NowPlaying.tsx:712
 msgid "律动"
 msgstr "Motion"
 
@@ -1117,7 +1117,7 @@ msgstr "Open"
 #. placeholder {0}: album.name
 #. placeholder {0}: currentSong.al.name
 #: src/components/cards/AlbumCard.tsx:28
-#: src/components/player/NowPlaying.tsx:658
+#: src/components/player/NowPlaying.tsx:666
 msgid "打开专辑 {0}"
 msgstr "Open album {0}"
 
@@ -1134,7 +1134,7 @@ msgstr "Open Now Playing"
 msgid "打开每日推荐"
 msgstr "Open Daily Mix"
 
-#: src/components/layout/LoginModal.tsx:40
+#: src/components/layout/LoginModal.tsx:34
 msgid "扫码成功，请在手机上确认"
 msgstr "Scanned. Confirm on your phone."
 
@@ -1150,7 +1150,7 @@ msgstr "Try all sources in built-in order"
 msgid "按地区、类型与热度浏览音乐视频"
 msgstr "Browse music videos by region, type and popularity"
 
-#: src/components/layout/LoginModal.tsx:41
+#: src/components/layout/LoginModal.tsx:35
 msgid "授权登录成功"
 msgstr "Authorized"
 
@@ -1259,8 +1259,8 @@ msgstr "Play (Space)"
 msgid "播放全部"
 msgstr "Play all"
 
-#: src/components/player/NowPlaying.tsx:505
-#: src/components/player/NowPlaying.tsx:506
+#: src/components/player/NowPlaying.tsx:513
+#: src/components/player/NowPlaying.tsx:514
 #: src/components/player/PlayerBar.tsx:1218
 #: src/components/player/QueuePanel.tsx:80
 #: src/components/player/QueuePanel.tsx:107
@@ -1299,8 +1299,8 @@ msgstr "Playback progress"
 msgid "播放选项"
 msgstr "Playback options"
 
-#: src/components/player/NowPlaying.tsx:846
-#: src/components/player/NowPlaying.tsx:920
+#: src/components/player/NowPlaying.tsx:881
+#: src/components/player/NowPlaying.tsx:955
 msgid "播放队列为空"
 msgstr "The queue is empty"
 
@@ -1335,22 +1335,22 @@ msgstr "Save"
 msgid "收藏专辑加载失败"
 msgstr "Failed to load saved albums"
 
-#: src/components/songs/SongContextMenu.tsx:365
+#: src/components/songs/SongContextMenu.tsx:372
 msgid "收藏到本地歌单"
 msgstr "Add to local playlist"
 
 #: src/components/player/PlaylistPicker.tsx:114
 #: src/components/player/PlaylistPicker.tsx:115
 #: src/components/player/PlaylistPicker.tsx:131
-#: src/components/songs/SongContextMenu.tsx:292
-#: src/components/songs/SongContextMenu.tsx:406
+#: src/components/songs/SongContextMenu.tsx:299
+#: src/components/songs/SongContextMenu.tsx:413
 msgid "收藏到歌单"
 msgstr "Add to playlist"
 
 #: src/components/player/PlaylistPicker.tsx:96
 #: src/components/player/PlaylistPicker.tsx:103
-#: src/components/songs/SongContextMenu.tsx:165
-#: src/components/songs/SongContextMenu.tsx:173
+#: src/components/songs/SongContextMenu.tsx:171
+#: src/components/songs/SongContextMenu.tsx:179
 #: src/routes/songlists/$id.tsx:253
 #: src/store/localLibrary.ts:127
 #: src/store/localLibrary.ts:158
@@ -1475,7 +1475,7 @@ msgid "暂无可播放歌曲"
 msgstr "No playable songs"
 
 #: src/components/player/PlaylistPicker.tsx:158
-#: src/components/songs/SongContextMenu.tsx:435
+#: src/components/songs/SongContextMenu.tsx:442
 msgid "暂无可用歌单"
 msgstr "No playlists available"
 
@@ -1497,7 +1497,7 @@ msgid "暂无本地歌单"
 msgstr "No local playlists"
 
 #: src/components/player/PlaylistPicker.tsx:160
-#: src/components/songs/SongContextMenu.tsx:389
+#: src/components/songs/SongContextMenu.tsx:396
 msgid "暂无本地歌单，请先在侧栏创建"
 msgstr "No local playlists yet. Create one in the sidebar first."
 
@@ -1522,7 +1522,7 @@ msgstr "No popular tracks yet"
 msgid "暂无相关 MV"
 msgstr "No related MVs yet"
 
-#: src/components/player/NowPlaying.tsx:419
+#: src/components/player/NowPlaying.tsx:427
 msgid "暂无相关视频"
 msgstr "No related videos"
 
@@ -1561,7 +1561,7 @@ msgstr "Change avatar"
 msgid "未找到其他可用音源"
 msgstr "No alternative source found"
 
-#: src/components/songs/SongContextMenu.tsx:86
+#: src/components/songs/SongContextMenu.tsx:92
 msgid "未找到相关视频"
 msgstr "No related videos found"
 
@@ -1609,12 +1609,12 @@ msgstr "Ultra"
 msgid "查看 {0} 的主页"
 msgstr "View {0}'s profile"
 
-#: src/components/player/NowPlaying.tsx:674
+#: src/components/player/NowPlaying.tsx:682
 msgid "查看专辑"
 msgstr "View album"
 
 #. placeholder {0}: song.al.name
-#: src/components/songs/SongContextMenu.tsx:321
+#: src/components/songs/SongContextMenu.tsx:328
 msgid "查看专辑：{0}"
 msgstr ""
 
@@ -1631,7 +1631,7 @@ msgid "查看歌手"
 msgstr "View artist"
 
 #. placeholder {0}: artist.name
-#: src/components/songs/SongContextMenu.tsx:308
+#: src/components/songs/SongContextMenu.tsx:315
 msgid "查看歌手：{0}"
 msgstr "View artist: {0}"
 
@@ -1722,7 +1722,7 @@ msgid "歌单信息已保存"
 msgstr "Playlist saved"
 
 #: src/components/player/PlaylistPicker.tsx:72
-#: src/components/songs/SongContextMenu.tsx:137
+#: src/components/songs/SongContextMenu.tsx:143
 #: src/routes/search.tsx:320
 #: src/routes/songlists/$id.edit.tsx:68
 #: src/routes/songlists/$id.tsx:112
@@ -1785,11 +1785,11 @@ msgstr "Failed to load track"
 msgid "歌曲已在播放列表中"
 msgstr "Track is already in the queue"
 
-#: src/components/songs/SongContextMenu.tsx:254
+#: src/components/songs/SongContextMenu.tsx:261
 msgid "歌曲操作"
 msgstr "Song actions"
 
-#: src/components/player/NowPlaying.tsx:929
+#: src/components/player/NowPlaying.tsx:964
 msgid "歌曲评论"
 msgstr "Song comments"
 
@@ -1802,11 +1802,11 @@ msgstr "Song comments"
 msgid "歌曲资源已失效"
 msgstr "Track source expired"
 
-#: src/components/player/NowPlaying.tsx:695
+#: src/components/player/NowPlaying.tsx:703
 msgid "歌词"
 msgstr "Lyrics"
 
-#: src/components/player/NowPlaying.tsx:686
+#: src/components/player/NowPlaying.tsx:694
 msgid "歌词、律动、待播清单、选歌与评论"
 msgstr "Lyrics, motion, queue, song picker and comments"
 
@@ -1827,8 +1827,8 @@ msgstr "Lyrics display"
 #~ msgid "歌词显示方式"
 #~ msgstr "Lyric display mode"
 
-#: src/components/player/NowPlaying.tsx:749
-#: src/components/player/NowPlaying.tsx:767
+#: src/components/player/NowPlaying.tsx:757
+#: src/components/player/NowPlaying.tsx:775
 msgid "正在加载歌词…"
 msgstr "Loading lyrics…"
 
@@ -1836,7 +1836,7 @@ msgstr "Loading lyrics…"
 msgid "正在加载音源"
 msgstr "Loading source"
 
-#: src/components/player/NowPlaying.tsx:637
+#: src/components/player/NowPlaying.tsx:645
 #: src/components/player/PlayerBar.tsx:1113
 msgid "正在加载音源…"
 msgstr "Loading source…"
@@ -1857,11 +1857,11 @@ msgstr "Now playing"
 msgid "正在缓冲"
 msgstr "Buffering"
 
-#: src/components/player/NowPlaying.tsx:637
+#: src/components/player/NowPlaying.tsx:645
 msgid "正在缓冲…"
 msgstr "Buffering…"
 
-#: src/components/player/NowPlaying.tsx:556
+#: src/components/player/NowPlaying.tsx:564
 msgid "正在获取 MV…"
 msgstr "Fetching MV…"
 
@@ -2058,7 +2058,7 @@ msgstr "Failed to load user info"
 msgid "用户加载失败"
 msgstr "Failed to load users"
 
-#: src/components/layout/LoginModal.tsx:246
+#: src/components/layout/LoginModal.tsx:231
 #: src/components/layout/Sidebar.tsx:409
 #: src/components/layout/UserMenu.tsx:44
 #: src/routes/index.tsx:240
@@ -2069,7 +2069,7 @@ msgstr "Sign in"
 #~ msgid "登录中…"
 #~ msgstr "Signing in…"
 
-#: src/components/layout/LoginModal.tsx:360
+#: src/components/layout/LoginModal.tsx:345
 msgid "登录二维码"
 msgstr "Sign-in QR code"
 
@@ -2102,19 +2102,18 @@ msgid "登录后编辑个人信息"
 msgstr "Sign in to edit your profile"
 
 #: src/components/layout/LoginModal.tsx:226
-msgid "登录失败，请检查手机号或验证码"
-msgstr "Sign-in failed. Check the phone number or code."
+#~ msgid "登录失败，请检查手机号或验证码"
+#~ msgstr "Sign-in failed. Check the phone number or code."
 
 #: src/components/layout/LoginModal.tsx:233
-msgid "登录失败，请稍后重试"
-msgstr "Sign-in failed. Try again later."
+#~ msgid "登录失败，请稍后重试"
+#~ msgstr "Sign-in failed. Try again later."
 
 #: src/store/user.ts:320
 msgid "登录已过期，请重新登录"
 msgstr "Session expired. Please sign in again."
 
-#: src/components/layout/LoginModal.tsx:109
-#: src/components/layout/LoginModal.tsx:219
+#: src/components/layout/LoginModal.tsx:100
 msgid "登录成功"
 msgstr "Signed in"
 
@@ -2131,14 +2130,14 @@ msgstr "Your session is no longer valid. Please sign in again."
 msgid "相似歌手"
 msgstr "Similar artists"
 
-#: src/components/player/NowPlaying.tsx:599
-#: src/components/player/NowPlaying.tsx:600
-#: src/components/songs/SongContextMenu.tsx:273
+#: src/components/player/NowPlaying.tsx:607
+#: src/components/player/NowPlaying.tsx:608
+#: src/components/songs/SongContextMenu.tsx:280
 msgid "相关视频"
 msgstr "Related videos"
 
-#: src/components/player/NowPlaying.tsx:440
-#: src/components/songs/SongContextMenu.tsx:106
+#: src/components/player/NowPlaying.tsx:448
+#: src/components/songs/SongContextMenu.tsx:112
 msgid "相关视频加载失败"
 msgstr "Failed to load related videos"
 
@@ -2157,7 +2156,7 @@ msgstr "Clear everything?"
 msgid "视频"
 msgstr "Videos"
 
-#: src/components/player/NowPlaying.tsx:558
+#: src/components/player/NowPlaying.tsx:566
 msgid "视频加载中…"
 msgstr "Loading video…"
 
@@ -2182,7 +2181,7 @@ msgstr "Disable developer tools"
 msgid "移除"
 msgstr "Remove"
 
-#: src/components/songs/SongContextMenu.tsx:230
+#: src/components/songs/SongContextMenu.tsx:236
 msgid "移除失败"
 msgstr "Failed to remove"
 
@@ -2214,7 +2213,7 @@ msgstr "Third-party aggregate"
 msgid "第三方音源"
 msgstr "Third-party source"
 
-#: src/components/layout/LoginModal.tsx:39
+#: src/components/layout/LoginModal.tsx:33
 msgid "等待扫码"
 msgstr "Waiting for scan"
 
@@ -2326,11 +2325,11 @@ msgstr "Network request failed. Try again later."
 msgid "自动匹配"
 msgstr "Auto match"
 
-#: src/components/layout/LoginModal.tsx:388
+#: src/components/layout/LoginModal.tsx:373
 msgid "若二维码无法刷新，请确认本地 API 服务已在 3000 端口运行"
 msgstr "If the QR code will not refresh, make sure the local API is running on port 3000."
 
-#: src/components/layout/LoginModal.tsx:127
+#: src/components/layout/LoginModal.tsx:118
 msgid "获取二维码失败，请检查本地 API 服务是否启动"
 msgstr "Failed to get the QR code. Check whether the local API is running."
 
@@ -2349,7 +2348,7 @@ msgstr "Settings"
 
 #: src/components/comments/CommentSection.tsx:154
 #: src/components/comments/CommentSection.tsx:541
-#: src/components/player/NowPlaying.tsx:731
+#: src/components/player/NowPlaying.tsx:739
 #: src/routes/songlists/$id.tsx:478
 msgid "评论"
 msgstr "Comments"
@@ -2480,12 +2479,12 @@ msgstr "Enter a playlist name"
 
 #: src/components/layout/LoginModal.tsx:171
 #: src/components/layout/LoginModal.tsx:201
-msgid "请输入正确的 11 位手机号"
-msgstr "Enter a valid 11-digit phone number"
+#~ msgid "请输入正确的 11 位手机号"
+#~ msgstr "Enter a valid 11-digit phone number"
 
 #: src/components/layout/LoginModal.tsx:205
-msgid "请输入验证码"
-msgstr "Enter the verification code"
+#~ msgid "请输入验证码"
+#~ msgstr "Enter the verification code"
 
 #: src/routes/profile.tsx:180
 #: src/routes/songlists/$id.edit.tsx:141
@@ -2512,8 +2511,8 @@ msgstr "Higher · 96kbps"
 msgid "运动"
 msgstr "Workout"
 
-#: src/components/songs/SongContextMenu.tsx:359
-#: src/components/songs/SongContextMenu.tsx:400
+#: src/components/songs/SongContextMenu.tsx:366
+#: src/components/songs/SongContextMenu.tsx:407
 #: src/routes/mv/$id.tsx:164
 #: src/routes/users/$id.tsx:203
 #: src/routes/video/$id.tsx:107
@@ -2532,7 +2531,7 @@ msgstr "Back to playlists"
 msgid "返回本地收藏"
 msgstr "Back to local favorites"
 
-#: src/components/player/NowPlaying.tsx:527
+#: src/components/player/NowPlaying.tsx:535
 msgid "返回音乐"
 msgstr "Back to music"
 
@@ -2563,7 +2562,7 @@ msgstr "This playlist has no tracks yet"
 msgid "这是你的「我喜欢的音乐」"
 msgstr "This is your Liked Songs"
 
-#: src/components/songs/SongContextMenu.tsx:187
+#: src/components/songs/SongContextMenu.tsx:193
 msgid "这首歌正在播放"
 msgstr "This song is already playing"
 
@@ -2602,7 +2601,7 @@ msgstr "Choose a light or dark appearance and theme color. Changes apply immedia
 msgid "选择音源"
 msgstr "Choose source"
 
-#: src/components/player/NowPlaying.tsx:722
+#: src/components/player/NowPlaying.tsx:730
 msgid "选歌"
 msgstr "Song picker"
 
@@ -2655,7 +2654,7 @@ msgstr "Korea"
 msgid "韩语"
 msgstr "Korean"
 
-#: src/components/player/NowPlaying.tsx:571
+#: src/components/player/NowPlaying.tsx:579
 msgid "音乐"
 msgstr "Music"
 
@@ -2716,16 +2715,16 @@ msgstr "Play in order"
 #~ msgstr "Code"
 
 #: src/components/layout/LoginModal.tsx:183
-msgid "验证码发送失败"
-msgstr "Failed to send the code"
+#~ msgid "验证码发送失败"
+#~ msgstr "Failed to send the code"
 
 #: src/components/layout/LoginModal.tsx:190
-msgid "验证码发送失败，请稍后重试"
-msgstr "Failed to send the code. Try again later."
+#~ msgid "验证码发送失败，请稍后重试"
+#~ msgstr "Failed to send the code. Try again later."
 
 #: src/components/layout/LoginModal.tsx:180
-msgid "验证码已发送，请查收短信"
-msgstr "Code sent. Check your messages."
+#~ msgid "验证码已发送，请查收短信"
+#~ msgstr "Code sent. Check your messages."
 
 #: src/components/layout/LoginModal.tsx:260
 #~ msgid "验证码登录"

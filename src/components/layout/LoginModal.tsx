@@ -3,26 +3,20 @@ import type { MessageDescriptor } from '@lingui/core'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { Loader2, QrCode, RefreshCw, Smartphone } from 'lucide-react'
+import { Loader2,  RefreshCw, Smartphone } from 'lucide-react'
 import {
   Button,
-  Input,
   Modal,
   Tabs,
   TabsContent,
-  TabsList,
-  TabsTrigger,
 } from '@pikoloo/darwin-ui'
 import {
   fetchQrImage,
   fetchQrKey,
   fetchQrStatus,
-  loginByCellphone,
-  sendCaptcha,
 } from '../../api'
 import { toast } from '../../lib/toast'
-import { apiErrorMessage } from '../../lib/apiErrors'
-import { ApiError, clearApiCache } from '../../lib/http'
+import {clearApiCache } from '../../lib/http'
 import { saveLoginCookie } from '../../lib/session'
 import { useUserStore } from '../../store/user'
 
@@ -41,32 +35,29 @@ const STATUS_TEXT: Record<number, MessageDescriptor> = {
   803: msg`授权登录成功`,
 }
 
-const PHONE_PATTERN = /^1[3-9]\d{9}$/
+// const PHONE_PATTERN = /^1[3-9]\d{9}$/
 
-function responseMessage(res: { code: number; [key: string]: unknown }) {
-  const message =
-    (typeof res.message === 'string' && res.message) ||
-    (typeof res.msg === 'string' && res.msg) ||
-    ''
-  if (!message) return undefined
-  return apiErrorMessage(new Error(message), '') || undefined
-}
+// function responseMessage(res: { code: number; [key: string]: unknown }) {
+//   const message =
+//     (typeof res.message === 'string' && res.message) ||
+//     (typeof res.msg === 'string' && res.msg) ||
+//     ''
+//   if (!message) return undefined
+//   return apiErrorMessage(new Error(message), '') || undefined
+// }
 
-function requestErrorMessage(error: unknown, fallback: string) {
-  return error instanceof ApiError
-    ? apiErrorMessage(error, fallback)
-    : fallback
-}
+// function requestErrorMessage(error: unknown, fallback: string) {
+//   return error instanceof ApiError
+//     ? apiErrorMessage(error, fallback)
+//     : fallback
+// }
 
 export function LoginModal({ open, onOpenChange }: LoginModalProps) {
   const { i18n } = useLingui()
   const [mode, setMode] = useState<LoginMode>('qr')
-  const [phone, setPhone] = useState('')
-  const [captcha, setCaptcha] = useState('')
+  // const [captcha, setCaptcha] = useState('')
   const [countdown, setCountdown] = useState(0)
-  const [sending, setSending] = useState(false)
-  const [loggingIn, setLoggingIn] = useState(false)
-  const [errorMessage, setErrorMessage] = useState('')
+  // const [loggingIn, setLoggingIn] = useState(false)
 
   const [qrImage, setQrImage] = useState('')
   const [status, setStatus] = useState<QrStatus>(0)
@@ -133,12 +124,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
   useEffect(() => {
     if (open) return
     setMode('qr')
-    setPhone('')
-    setCaptcha('')
     setCountdown(0)
-    setSending(false)
-    setLoggingIn(false)
-    setErrorMessage('')
     setQrImage('')
     setStatus(0)
     setLoading(false)
@@ -164,80 +150,79 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
     return () => window.clearTimeout(timer)
   }, [countdown])
 
-  const phoneValid = PHONE_PATTERN.test(phone)
 
-  const handleSendCaptcha = async () => {
-    if (!phoneValid) {
-      toast.warning(i18n._(msg`请输入正确的 11 位手机号`))
-      return
-    }
-    if (countdown > 0 || sending) return
-    setSending(true)
-    setErrorMessage('')
-    try {
-      const res = await sendCaptcha(phone)
-      if (res.code === 200) {
-        toast.success(i18n._(msg`验证码已发送，请查收短信`))
-        setCountdown(60)
-      } else {
-        const message = responseMessage(res) ?? i18n._(msg`验证码发送失败`)
-        setErrorMessage(message)
-        toast.error(message)
-      }
-    } catch (error) {
-      const message = requestErrorMessage(
-        error,
-        i18n._(msg`验证码发送失败，请稍后重试`),
-      )
-      setErrorMessage(message)
-      toast.error(message)
-    } finally {
-      setSending(false)
-    }
-  }
+  // const handleSendCaptcha = async () => {
+  //   if (!phoneValid) {
+  //     toast.warning(i18n._(msg`请输入正确的 11 位手机号`))
+  //     return
+  //   }
+  //   if (countdown > 0 || sending) return
+  //   setSending(true)
+  //   setErrorMessage('')
+  //   try {
+  //     const res = await sendCaptcha(phone)
+  //     if (res.code === 200) {
+  //       toast.success(i18n._(msg`验证码已发送，请查收短信`))
+  //       setCountdown(60)
+  //     } else {
+  //       const message = responseMessage(res) ?? i18n._(msg`验证码发送失败`)
+  //       setErrorMessage(message)
+  //       toast.error(message)
+  //     }
+  //   } catch (error) {
+  //     const message = requestErrorMessage(
+  //       error,
+  //       i18n._(msg`验证码发送失败，请稍后重试`),
+  //     )
+  //     setErrorMessage(message)
+  //     toast.error(message)
+  //   } finally {
+  //     setSending(false)
+  //   }
+  // }
 
-  const handleCellphoneLogin = async () => {
-    if (!phoneValid) {
-      toast.warning(i18n._(msg`请输入正确的 11 位手机号`))
-      return
-    }
-    if (!captcha.trim()) {
-      toast.warning(i18n._(msg`请输入验证码`))
-      return
-    }
-    if (loggingIn) return
-    setLoggingIn(true)
-    setErrorMessage('')
-    try {
-      const res = await loginByCellphone(phone, captcha.trim())
-      if (res.code === 200) {
-        if (typeof res.cookie === 'string' && res.cookie) {
-          saveLoginCookie(res.cookie)
-        }
-        clearApiCache()
-        onOpenChange(false)
-        toast.success(i18n._(msg`登录成功`))
-        void useUserStore
-          .getState()
-          .initSession()
-          .catch(() => {})
-      } else {
-        const message =
-          responseMessage(res) ?? i18n._(msg`登录失败，请检查手机号或验证码`)
-        setErrorMessage(message)
-        toast.error(message)
-      }
-    } catch (error) {
-      const message = requestErrorMessage(
-        error,
-        i18n._(msg`登录失败，请稍后重试`),
-      )
-      setErrorMessage(message)
-      toast.error(message)
-    } finally {
-      setLoggingIn(false)
-    }
-  }
+  // const handleCellphoneLogin = async () => {
+  //   if (!phoneValid) {
+  //     toast.warning(i18n._(msg`请输入正确的 11 位手机号`))
+  //     return
+  //   }
+  //   if (!captcha.trim()) {
+  //     toast.warning(i18n._(msg`请输入验证码`))
+  //     return
+  //   }
+  //   if (loggingIn) return
+  //   setLoggingIn(true)
+  //   setErrorMessage('')
+  //   try {
+  //     const res = await loginByCellphone(phone, captcha.trim())
+  //     if (res.code === 200) {
+  //       if (typeof res.cookie === 'string' && res.cookie) {
+  //         saveLoginCookie(res.cookie)
+  //       }
+  //       clearApiCache()
+  //       onOpenChange(false)
+  //       toast.success(i18n._(msg`登录成功`))
+  //       void useUserStore
+  //         .getState()
+  //         .initSession()
+  //         .catch(() => {})
+  //     } else {
+  //       const message =
+  //         responseMessage(res) ?? i18n._(msg`登录失败，请检查手机号或验证码`)
+  //       setErrorMessage(message)
+  //       toast.error(message)
+  //     }
+  //   } catch (error) {
+  //     const message = requestErrorMessage(
+  //       error,
+  //       i18n._(msg`登录失败，请稍后重试`),
+  //     )
+  //     setErrorMessage(message)
+  //     toast.error(message)
+  //   } finally {
+  //     setLoggingIn(false)
+  //   }
+  // }
 
   return (
     <Modal
@@ -251,7 +236,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
         value={mode}
         onValueChange={(value) => {
           setMode(value as LoginMode)
-          setErrorMessage('')
+          // setErrorMessage('')
         }}
         className="w-full"
       >
