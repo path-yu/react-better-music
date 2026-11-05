@@ -48,11 +48,20 @@ export async function fetchPersonalized(limit = 15) {
   return (res.result ?? []).map(normalizePlaylist)
 }
 
-export async function fetchDailyRecommendSongs() {
+async function fetchDailySongs() {
   const res = await get<{ data?: { dailySongs?: Parameters<typeof normalizeSongs>[0] } }>(
     '/recommend/songs',
   )
-  return normalizeSongs(res.data?.dailySongs).slice(0, 12)
+  return normalizeSongs(res.data?.dailySongs)
+}
+
+export async function fetchDailyRecommendSongs(limit = 12) {
+  return (await fetchDailySongs()).slice(0, limit)
+}
+
+/** The full daily playlist; the home card only shows the first twelve. */
+export async function fetchAllDailyRecommendSongs() {
+  return fetchDailySongs()
 }
 
 export async function fetchRecommendMv(limit = 4) {

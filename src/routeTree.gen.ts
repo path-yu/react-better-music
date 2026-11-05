@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DailyRouteImport } from './routes/daily'
 import { Route as LatestMusicRouteImport } from './routes/latest-music'
 import { Route as LatestMvRouteImport } from './routes/latest-mv'
 import { Route as ProfileRouteImport } from './routes/profile'
@@ -31,6 +32,11 @@ import { Route as SonglistsIdEditRouteImport } from './routes/songlists/$id.edit
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DailyRoute = DailyRouteImport.update({
+  id: '/daily',
+  path: '/daily',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LatestMusicRoute = LatestMusicRouteImport.update({
@@ -121,6 +127,7 @@ const SonglistsIdEditRoute = SonglistsIdEditRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/daily': typeof DailyRoute
   '/latest-music': typeof LatestMusicRoute
   '/latest-mv': typeof LatestMvRoute
   '/profile': typeof ProfileRoute
@@ -141,6 +148,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/daily': typeof DailyRoute
   '/latest-music': typeof LatestMusicRoute
   '/latest-mv': typeof LatestMvRoute
   '/profile': typeof ProfileRoute
@@ -162,6 +170,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/daily': typeof DailyRoute
   '/latest-music': typeof LatestMusicRoute
   '/latest-mv': typeof LatestMvRoute
   '/profile': typeof ProfileRoute
@@ -184,6 +193,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/daily'
     | '/latest-music'
     | '/latest-mv'
     | '/profile'
@@ -204,6 +214,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/daily'
     | '/latest-music'
     | '/latest-mv'
     | '/profile'
@@ -224,6 +235,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/daily'
     | '/latest-music'
     | '/latest-mv'
     | '/profile'
@@ -245,6 +257,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DailyRoute: typeof DailyRoute
   LatestMusicRoute: typeof LatestMusicRoute
   LatestMvRoute: typeof LatestMvRoute
   ProfileRoute: typeof ProfileRoute
@@ -270,6 +283,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/daily': {
+      id: '/daily'
+      path: '/daily'
+      fullPath: '/daily'
+      preLoaderRoute: typeof DailyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/latest-music': {
@@ -408,6 +428,7 @@ const SonglistsIdRouteWithChildren = SonglistsIdRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DailyRoute: DailyRoute,
   LatestMusicRoute: LatestMusicRoute,
   LatestMvRoute: LatestMvRoute,
   ProfileRoute: ProfileRoute,

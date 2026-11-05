@@ -1,36 +1,43 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
-import {
-  ChevronLeft,
-  ChevronRight,
-  Clock3,
-  Play,
-  Sparkles,
-} from 'lucide-react'
+import { Trans } from '@lingui/react/macro'
+import { LogIn, Play } from 'lucide-react'
 import { Button, Skeleton } from '@pikoloo/darwin-ui'
 import { PlaylistCard } from '../components/cards/PlaylistCard'
-import { MvCard } from '../components/cards/MvCard'
 import { ImageWithFallback } from '../components/common/ImageWithFallback'
-import { ArtistLinks } from '../components/common/ArtistLinks'
 import { EmptyState } from '../components/common/EmptyState'
 import {
-  fetchBanners,
-  fetchDailyRecommendSongs,
+  fetchAllDailyRecommendSongs,
   fetchPersonalized,
-  fetchRecommendMv,
+  fetchTopPlaylists,
+  fetchToplists,
 } from '../api'
 import { usePlayerStore } from '../store/player'
-import { formatDuration, cn } from '../lib/format'
+import { useUiStore } from '../store/ui'
+import { useUserStore } from '../store/user'
+import {
+  FALLBACK_PALETTE,
+  extractPalette,
+  withAlpha,
+  type Palette,
+} from '../lib/color'
+import { resizedImageUrl } from '../lib/image'
+import { formatArtists } from '../lib/format'
 import { useDocumentTitle } from '../lib/title'
-import type { Banner, Mv, Playlist, Song } from '../types'
+import type { Playlist, Song, Toplist } from '../types'
 
 export const Route = createFileRoute('/')({
   component: DiscoveryPage,
 })
 
-/** Loads one home section and exposes an error flag plus a retry action. */
 function useSection<T>(load: () => Promise<T>, initial: T) {
   const [data, setData] = useState<T>(initial)
   const [loading, setLoading] = useState(true)
@@ -61,7 +68,13 @@ function useSection<T>(load: () => Promise<T>, initial: T) {
   return { data, loading, failed, retry }
 }
 
-function SectionError({ title, onRetry }: { title: string; onRetry: () => void }) {
+function SectionError({
+  title,
+  onRetry,
+}: {
+  title: string
+  onRetry: () => void
+}) {
   return (
     <EmptyState
       title={title}
@@ -80,353 +93,405 @@ function SectionError({ title, onRetry }: { title: string; onRetry: () => void }
   )
 }
 
-function DiscoveryPage() {
+function loadPersonalized() {
+  return fetchPersonalized(15)
+}
+
+function loadFeatured() {
+  return fetchTopPlaylists({ limit: 15 }).then((result) => result.playlists)
+}
+
+function greeting(hour: number) {
+  if (hour < 5) return msg`夜深了`
+  if (hour < 11) return msg`早上好`
+  if (hour < 13) return msg`中午好`
+  if (hour < 18) return msg`下午好`
+  return msg`晚上好`
+}
+
+function DailyArtists({ songs }: { songs: Song[] }) {
+  const names: string[] = []
+  const seen = new Set<string>()
+  for (const song of songs) {
+    const name = song.ar[0]?.name
+    if (!name || seen.has(name)) continue
+    seen.add(name)
+    names.push(name)
+    if (names.length === 3) break
+  }
+  if (!names.length) {
+    return <Trans>今日 {songs.length} 首</Trans>
+  }
+  return (
+    <Trans>
+      {names.join('、')} 等 {songs.length} 首
+    </Trans>
+  )
+}
+
+function DailyHomeCard({ songs }: { songs: Song[] }) {
   const { i18n } = useLingui()
   const navigate = useNavigate()
-  useDocumentTitle(i18n._(msg`发现音乐`))
-  const [index, setIndex] = useState(0)
-  const [hovered, setHovered] = useState(false)
+  const initQueue = usePlayerStore((state) => state.initQueue)
+  const isLogin = useUserStore((state) => state.isLogin)
+  const openLogin = useUiStore((state) => state.openLogin)
+  const [palette, setPalette] = useState<Palette>(FALLBACK_PALETTE)
+  const now = useMemo(() => new Date(), [])
+  const month = now.getMonth() + 1
+  const day = now.getDate()
+  const weekday = useMemo(
+    () =>
+      new Intl.DateTimeFormat(i18n.locale, { weekday: 'long' }).format(now),
+    [i18n.locale, now],
+  )
+  const cover = resizedImageUrl(songs[0]?.al.picUrl, '640y640')
+  const colors = palette.colors.length ? palette.colors : FALLBACK_PALETTE.colors
 
-  const {
-    data: banners,
-    loading: bannerLoading,
-    failed: bannerFailed,
-    retry: retryBanners,
-  } = useSection(fetchBanners, [] as Banner[])
-  const {
-    data: playlists,
-    loading: playlistLoading,
-    failed: playlistFailed,
-    retry: retryPlaylists,
-  } = useSection(fetchPersonalized, [] as Playlist[])
+  useEffect(() => {
+    if (!cover) return
+    let active = true
+    void extractPalette(cover)
+      .then((next) => {
+        if (active) setPalette(next)
+      })
+      .catch(() => undefined)
+    return () => {
+      active = false
+    }
+  }, [cover])
+
+  const opensDaily = () => {
+    void navigate({ to: '/daily' })
+  }
+
+  const play = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation()
+    if (songs.length) void initQueue(songs, 0, 'daily-home')
+  }
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label={i18n._(msg`打开每日推荐`)}
+      onClick={opensDaily}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return
+        if (event.key === 'Enter' || event.key === ' ') opensDaily()
+      }}
+      className="group relative mt-5 flex h-[212px] w-full cursor-pointer overflow-hidden rounded-[24px] text-white shadow-[0_14px_34px_-14px_rgba(0,0,0,0.35)]"
+      style={{
+        background: `linear-gradient(105deg, ${withAlpha(colors[0], 0.96)}, ${withAlpha(colors[1], 0.88)} 58%, ${withAlpha(colors[2], 0.82)})`,
+      }}
+    >
+      {cover ? (
+        <img
+          src={cover}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full scale-110 object-cover opacity-20 blur-[34px]"
+        />
+      ) : null}
+      <div className="absolute inset-0 bg-gradient-to-r from-black/45 via-black/10 to-black/25" />
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -bottom-14 right-[250px] hidden text-[210px] font-extrabold leading-none tracking-[-18px] text-white/[0.055] lg:block"
+      >
+        {day}
+      </span>
+
+      <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-center px-8">
+        <p className="truncate text-[12px] font-semibold text-white/65">
+          {month}月{day}日 {weekday} ·{' '}
+          {isLogin ? (
+            <Trans>每天 6:00 更新</Trans>
+          ) : (
+            <Trans>登录后为你专属生成</Trans>
+          )}
+        </p>
+        <h2 className="mt-1 text-[32px] font-extrabold leading-[1.15] tracking-[-0.8px]">
+          <Trans>每日推荐</Trans>
+        </h2>
+        <p className="mt-1 truncate text-[13px] text-white/80">
+          <DailyArtists songs={songs} />
+        </p>
+        <div className="mt-3 flex items-center gap-2.5">
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={play}
+            className="h-[38px] rounded-full px-5 text-[13px]"
+          >
+            <Play className="h-3.5 w-3.5 fill-current" />
+            <Trans>播放</Trans>
+          </Button>
+          {!isLogin ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={(event) => {
+                event.stopPropagation()
+                openLogin()
+              }}
+              className="h-[38px] rounded-full px-4 text-[13px] text-white/85 hover:bg-white/10 hover:text-white"
+            >
+              <LogIn className="h-3.5 w-3.5" />
+              <Trans>登录</Trans>
+            </Button>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="daily-cover-stack relative z-10 mr-8 h-[156px] w-[300px] shrink-0 items-center justify-center">
+        {songs.slice(0, 3).map((song, index) => {
+          const front = index === 0
+          return (
+            <div
+              key={song.id}
+              className={
+                front
+                  ? 'absolute left-[92px] z-30 h-[156px] w-[156px] overflow-hidden rounded-[16px] shadow-[0_18px_40px_-10px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:-translate-y-1'
+                  : index === 1
+                    ? 'absolute left-[52px] top-2 z-20 h-[140px] w-[140px] -rotate-[5deg] overflow-hidden rounded-[14px] opacity-90 shadow-[0_18px_40px_-10px_rgba(0,0,0,0.45)] transition-transform duration-500 group-hover:-translate-x-8 group-hover:-rotate-[10deg]'
+                    : 'absolute left-[12px] top-4 z-10 h-[124px] w-[124px] -rotate-[10deg] overflow-hidden rounded-[14px] opacity-75 shadow-[0_18px_40px_-10px_rgba(0,0,0,0.45)] transition-transform duration-500 group-hover:-translate-x-16 group-hover:-rotate-[16deg]'
+              }
+            >
+              <ImageWithFallback
+                src={song.al.picUrl}
+                alt={song.name}
+                rounded="rounded-[16px]"
+                resize="300y300"
+                priority={front}
+                className="h-full w-full"
+              />
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function HomeSection({
+  title,
+  children,
+}: {
+  title: ReactNode
+  children: ReactNode
+}) {
+  return (
+    <section className="mt-[34px]">
+      <h2 className="mb-3.5 text-[19px] font-bold tracking-[-0.3px]">
+        {title}
+      </h2>
+      {children}
+    </section>
+  )
+}
+
+function ChartCard({ list }: { list: Toplist }) {
+  const navigate = useNavigate()
+  const preview = list.tracks?.slice(0, 3) ?? []
+  return (
+    <button
+      type="button"
+      onClick={() =>
+        void navigate({
+          to: '/songlists/$id',
+          params: { id: String(list.id) },
+        })
+      }
+      className="group flex min-w-0 items-center gap-3.5 rounded-[14px] p-3 text-left transition-colors hover:bg-black/[0.04]"
+    >
+      <div className="h-[84px] w-[84px] shrink-0 overflow-hidden rounded-[9px] shadow-[0_3px_10px_-2px_rgba(0,0,0,0.25)]">
+        <ImageWithFallback
+          src={list.coverImgUrl}
+          alt={list.name}
+          rounded="rounded-[9px]"
+          resize="200y200"
+          className="h-full w-full"
+          imageClassName="transition-transform duration-500 group-hover:scale-[1.04]"
+        />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 items-baseline gap-1.5">
+          <span className="truncate text-[14px] font-bold text-black/80">
+            {list.name}
+          </span>
+          {list.updateFrequency ? (
+            <span className="shrink-0 truncate text-[11px] text-black/30">
+              {list.updateFrequency}
+            </span>
+          ) : null}
+        </div>
+        <div className="mt-1 space-y-0.5">
+          {preview.map((track, index) => (
+            <p
+              key={`${track.id ?? index}-${track.first ?? track.name ?? ''}`}
+              className="flex min-w-0 items-baseline gap-1.5 text-[11.5px]"
+            >
+              <span className="w-2.5 shrink-0 font-bold tabular-nums text-black/35">
+                {index + 1}
+              </span>
+              <span className="truncate font-medium text-black/70">
+                {track.first ?? track.name}
+              </span>
+              <span className="truncate text-black/30">
+                {track.second ?? formatArtists(track.ar)}
+              </span>
+            </p>
+          ))}
+        </div>
+      </div>
+    </button>
+  )
+}
+
+function DiscoveryPage() {
+  const { i18n } = useLingui()
+  useDocumentTitle(i18n._(msg`发现音乐`))
+  const profile = useUserStore((state) => state.profile)
+  const now = useMemo(() => new Date(), [])
+  const weekday = useMemo(
+    () =>
+      new Intl.DateTimeFormat(i18n.locale, { weekday: 'long' }).format(now),
+    [i18n.locale, now],
+  )
+  const greetingText = i18n._(greeting(now.getHours()))
+  const hello = profile?.nickname
+    ? `${greetingText}，${profile.nickname}`
+    : greetingText
+
   const {
     data: songs,
     loading: songLoading,
     failed: songFailed,
     retry: retrySongs,
-  } = useSection(fetchDailyRecommendSongs, [] as Song[])
+  } = useSection(fetchAllDailyRecommendSongs, [] as Song[])
   const {
-    data: mvs,
-    loading: mvLoading,
-    failed: mvFailed,
-    retry: retryMvs,
-  } = useSection(fetchRecommendMv, [] as Mv[])
-
-  useEffect(() => {
-    if (hovered || banners.length <= 1) return
-    const timer = window.setInterval(() => {
-      setIndex((value) => (value + 1) % banners.length)
-    }, 6000)
-    return () => window.clearInterval(timer)
-  }, [banners.length, hovered])
-
-  const currentBanner = banners[index]
-
-  const step = (direction: 1 | -1) => {
-    if (!banners.length) return
-    setIndex((value) => (value + direction + banners.length) % banners.length)
-  }
-
-  const handleBannerClick = (banner: Banner) => {
-    if (banner.targetType === 1000 && banner.targetId) {
-      void navigate({ to: '/songlists/$id', params: { id: String(banner.targetId) } })
-      return
-    }
-    if (banner.url) window.open(banner.url, '_blank', 'noopener')
-  }
+    data: playlists,
+    loading: playlistLoading,
+    failed: playlistFailed,
+    retry: retryPlaylists,
+  } = useSection(loadPersonalized, [] as Playlist[])
+  const {
+    data: charts,
+    loading: chartLoading,
+    failed: chartFailed,
+    retry: retryCharts,
+  } = useSection(fetchToplists, [] as Toplist[])
+  const {
+    data: featured,
+    loading: featuredLoading,
+    failed: featuredFailed,
+    retry: retryFeatured,
+  } = useSection(loadFeatured, [] as Playlist[])
 
   return (
-    <div className="px-8 pb-14 pt-6">
-      <section
-        className="relative"
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-      >
-        {bannerLoading ? (
-          <Skeleton className="h-[280px] w-full rounded-[22px]" />
-        ) : bannerFailed ? (
-          <SectionError title={i18n._(msg`轮播加载失败`)} onRetry={retryBanners} />
-        ) : currentBanner ? (
-          <div
-            role="button"
-            tabIndex={0}
-            aria-label={
-              currentBanner.typeTitle ?? i18n._(msg`推荐轮播`)
-            }
-            onClick={() => handleBannerClick(currentBanner)}
-            onKeyDown={(event) => event.key === 'Enter' && handleBannerClick(currentBanner)}
-            className="group relative block h-[clamp(190px,24vw,300px)] w-full cursor-pointer overflow-hidden rounded-[22px] bg-[#f0f0f2]"
-          >
-            <ImageWithFallback
-              src={currentBanner.imageUrl}
-              alt=""
-              rounded="rounded-[22px]"
-              className="h-full w-full"
-              // The banner is at most ~900 CSS px wide; 1200×600 wasted ~200 KB
-              // on the LCP image. The CDN accepts a smaller 2:1 crop.
-              resize="900y450"
-              priority
-              imageClassName="transition-transform duration-[900ms] group-hover:scale-[1.02]"
-            />
-            {currentBanner.typeTitle ? (
-              <span className="absolute left-4 top-4 rounded-full bg-black/30 px-2.5 py-1 text-[11px] text-white backdrop-blur-md">
-                {currentBanner.typeTitle}
-              </span>
-            ) : null}
-          </div>
-        ) : (
-          <EmptyState title={i18n._(msg`暂无轮播内容`)} />
-        )}
+    <div className="px-10 pb-16 pt-8 max-md:px-5">
+      <header>
+        <p className="text-[12px] font-semibold tracking-[0.4px] text-black/35">
+          {now.getMonth() + 1}月{now.getDate()}日 {weekday}
+        </p>
+        <h1 className="mt-1 text-[30px] font-bold leading-tight tracking-[-0.6px]">
+          {hello}
+        </h1>
+      </header>
 
-        {banners.length > 1 && (
-          <>
-            <button
-              type="button"
-              aria-label={i18n._(msg`上一张`)}
-              onClick={() => step(-1)}
-              className={cn(
-                'absolute left-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-black/60 shadow-md backdrop-blur-md transition-all hover:bg-white hover:text-black max-md:h-10 max-md:w-10',
-                hovered ? 'opacity-100' : 'opacity-0',
-              )}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              aria-label={i18n._(msg`下一张`)}
-              onClick={() => step(1)}
-              className={cn(
-                'absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-black/60 shadow-md backdrop-blur-md transition-all hover:bg-white hover:text-black max-md:h-10 max-md:w-10',
-                hovered ? 'opacity-100' : 'opacity-0',
-              )}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-            <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5">
-              {banners.map((banner, dotIndex) => (
-                <button
-                  key={banner.imageUrl}
-                  type="button"
-                  aria-label={`第 ${dotIndex + 1} 张`}
-                  aria-current={dotIndex === index ? 'true' : undefined}
-                  onClick={() => setIndex(dotIndex)}
-                  className="flex h-6 w-6 items-center justify-center"
-                >
-                  <span
-                    className={cn(
-                      'block h-[3px] rounded-full transition-all',
-                      dotIndex === index ? 'w-5 bg-white' : 'w-[7px] bg-white/45',
-                    )}
-                  />
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-      </section>
+      {songFailed ? (
+        <div className="mt-5">
+          <SectionError
+            title={i18n._(msg`每日推荐加载失败`)}
+            onRetry={retrySongs}
+          />
+        </div>
+      ) : songLoading ? (
+        <Skeleton className="mt-5 h-[212px] w-full rounded-[24px]" />
+      ) : (
+        <DailyHomeCard songs={songs} />
+      )}
 
-      <section className="mt-9">
-        <SectionTitle
-          title={i18n._(msg`推荐歌单`)}
-          subtitle={i18n._(msg`根据你的口味精选`)}
-        />
-        {playlistLoading ? (
+      <HomeSection title={i18n._(msg`今日为你推荐`)}>
+        {playlistFailed ? (
+          <SectionError
+            title={i18n._(msg`推荐歌单加载失败`)}
+            onRetry={retryPlaylists}
+          />
+        ) : playlistLoading ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {Array.from({ length: 10 }).map((_, item) => (
-              <div key={item} className="apple-card p-2.5">
+            {Array.from({ length: 10 }).map((_, index) => (
+              <div key={index}>
                 <Skeleton className="aspect-square w-full rounded-[10px]" />
                 <Skeleton className="mt-2 h-3 w-4/5 rounded-full" />
               </div>
             ))}
           </div>
-        ) : playlistFailed ? (
-          <SectionError title={i18n._(msg`推荐歌单加载失败`)} onRetry={retryPlaylists} />
         ) : playlists.length ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {playlists.map((playlist, index) => (
+          <div className="grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {playlists.slice(0, 10).map((playlist, index) => (
               <PlaylistCard
                 key={playlist.id}
                 playlist={playlist}
-                priority={index < 4}
+                priority={index < 5}
               />
             ))}
           </div>
         ) : (
           <EmptyState title={i18n._(msg`暂无推荐歌单`)} />
         )}
-        <div className="mt-4 flex justify-end">
-          <Button
-            variant="link"
-            size="sm"
-            className="text-[11.5px] text-accent"
-            onClick={() => void navigate({ to: '/songlists' })}
-          >
-            {i18n._(msg`查看全部歌单`)}
-            <ChevronRight className="ml-0.5 h-3 w-3" />
-          </Button>
-        </div>
-      </section>
+      </HomeSection>
 
-      <section className="mt-7">
-        <SectionTitle
-          title={i18n._(msg`每日推荐`)}
-          subtitle={
-            new Date().toLocaleDateString(i18n.locale, {
-              month: 'long',
-              day: 'numeric',
-            })
-          }
-          icon={<Sparkles className="h-4 w-4 text-accent" />}
-        />
-        {songLoading ? (
-          <div className="grid gap-2 md:grid-cols-2">
-            {Array.from({ length: 8 }).map((_, item) => (
-              <Skeleton key={item} className="h-[56px] w-full rounded-[14px]" />
+      <HomeSection title={i18n._(msg`官方榜单`)}>
+        {chartFailed ? (
+          <SectionError
+            title={i18n._(msg`榜单加载失败`)}
+            onRetry={retryCharts}
+          />
+        ) : chartLoading ? (
+          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <Skeleton key={index} className="h-[108px] w-full rounded-[14px]" />
             ))}
           </div>
-        ) : songFailed ? (
-          <SectionError title={i18n._(msg`每日推荐加载失败`)} onRetry={retrySongs} />
         ) : (
-          <DailySongGrid songs={songs} />
+          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+            {charts.slice(0, 4).map((list) => (
+              <ChartCard key={list.id} list={list} />
+            ))}
+          </div>
         )}
-      </section>
+      </HomeSection>
 
-      <section className="mt-9">
-        <SectionTitle
-          title={i18n._(msg`最新 MV`)}
-          subtitle={i18n._(msg`精选音乐视频`)}
-        />
-        {mvLoading ? (
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, item) => (
-              <div key={item}>
-                <Skeleton className="aspect-video w-full rounded-[14px]" />
-                <Skeleton className="mt-2 h-3 w-3/5 rounded-full" />
+      <HomeSection title={i18n._(msg`推荐歌单`)}>
+        {featuredFailed ? (
+          <SectionError
+            title={i18n._(msg`推荐歌单加载失败`)}
+            onRetry={retryFeatured}
+          />
+        ) : featuredLoading ? (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {Array.from({ length: 15 }).map((_, index) => (
+              <div key={index}>
+                <Skeleton className="aspect-square w-full rounded-[10px]" />
+                <Skeleton className="mt-2 h-3 w-4/5 rounded-full" />
               </div>
             ))}
           </div>
-        ) : mvFailed ? (
-          <SectionError title={i18n._(msg`MV 推荐加载失败`)} onRetry={retryMvs} />
-        ) : mvs.length ? (
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            {/* The MV section sits below the first screen; keep these lazy so
-                they don't compete with the banner (the LCP element). */}
-            {mvs.map((mv) => (
-              <MvCard key={mv.id} mv={mv} />
-            ))}
-          </div>
-        ) : (
-          <EmptyState title={i18n._(msg`暂无 MV 推荐`)} />
-        )}
-        <div className="mt-4 flex justify-end">
-          <Button
-            variant="link"
-            size="sm"
-            className="text-[11.5px] text-accent"
-            onClick={() => void navigate({ to: '/latest-mv' })}
-          >
-            {i18n._(msg`查看全部 MV`)}
-            <ChevronRight className="ml-0.5 h-3 w-3" />
-          </Button>
-        </div>
-      </section>
-    </div>
-  )
-}
-
-function SectionTitle({
-  title,
-  subtitle,
-  icon,
-}: {
-  title: string
-  subtitle?: string
-  icon?: ReactNode
-}) {
-  return (
-    <div className="mb-4 flex items-end justify-between">
-      <div>
-        <h2 className="section-title flex items-center gap-2">
-          {icon}
-          {title}
-        </h2>
-        {subtitle ? <p className="mt-1 text-[11px] text-black/55">{subtitle}</p> : null}
-      </div>
-    </div>
-  )
-}
-
-function DailySongGrid({ songs }: { songs: Song[] }) {
-  const { i18n } = useLingui()
-  const initQueue = usePlayerStore((state) => state.initQueue)
-  const currentSong = usePlayerStore((state) => state.queue[state.currentIndex])
-  const playing = usePlayerStore((state) => state.playing)
-  const listId = useMemo(() => `daily-${new Date().toDateString()}`, [])
-
-  if (!songs.length)
-    return <EmptyState title={i18n._(msg`暂无推荐歌曲`)} />
-
-  return (
-    <div className="grid gap-1.5 md:grid-cols-2">
-      {songs.map((song, index) => {
-        const active = currentSong?.id === song.id
-        return (
-          <div
-            key={song.id}
-            role="button"
-            tabIndex={0}
-            onClick={() => void initQueue(songs, index, listId)}
-            onKeyDown={(event) => {
-              if (event.target !== event.currentTarget) return
-              if (event.key === 'Enter') void initQueue(songs, index, listId)
-            }}
-            className={cn(
-              'daily-song-row group relative flex cursor-pointer items-center gap-3 rounded-[14px] px-2.5 py-2 text-left transition-colors',
-              active ? 'is-active bg-accent/6' : 'hover:bg-black/4',
-            )}
-          >
-            <span className="relative shrink-0">
-              <ImageWithFallback
-                src={song.al.picUrl}
-                alt={song.name}
-                rounded="rounded-[6px]"
-                className="h-10 w-10"
-                resize="96y96"
+        ) : featured.length ? (
+          <div className="grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {featured.map((playlist, index) => (
+              <PlaylistCard
+                key={playlist.id}
+                playlist={playlist}
+                priority={index < 5}
               />
-              <span className="absolute inset-0 flex items-center justify-center rounded-[6px] bg-black/30 text-white opacity-0 transition-opacity group-hover:opacity-100">
-                <Play className="h-3 w-3 fill-current" />
-              </span>
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <span
-                  className={cn(
-                    'truncate text-[12px]',
-                    active ? 'font-medium text-accent' : 'text-black/78',
-                  )}
-                >
-                  {song.name}
-                </span>
-                {song.fee === 1 ? (
-                  <span className="rounded-[6px] bg-[#ff2d55]/10 px-1 text-[11px] text-[#ff2d55]">
-                    VIP
-                  </span>
-                ) : null}
-              </div>
-              <p className="mt-0.5 truncate text-[11px] text-black/35">
-                <ArtistLinks artists={song.ar} />
-              </p>
-            </div>
-            <span className="flex shrink-0 items-center gap-1 text-[11px] tabular-nums text-black/25">
-              <Clock3 className="h-3 w-3" />
-              {formatDuration(song.dt)}
-            </span>
-            {playing && active ? (
-              <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-accent" />
-            ) : null}
+            ))}
           </div>
-        )
-      })}
+        ) : (
+          <EmptyState title={i18n._(msg`暂无推荐歌单`)} />
+        )}
+      </HomeSection>
     </div>
   )
 }

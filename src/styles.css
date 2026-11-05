@@ -770,6 +770,18 @@ html.desktop .app-window {
   box-shadow: var(--product-shadow);
 }
 
+/* Home daily hero: the cover stack is hidden when the content column is too
+   narrow for it, rather than shrinking both halves into each other. */
+.daily-cover-stack {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .daily-cover-stack {
+    display: flex;
+  }
+}
+
 /* Album cards lift under the pointer, as the native albumCard does: the cover
    moves up 3px while its shadow deepens. Only the artwork moves, not the text. */
 .album-card-cover {
