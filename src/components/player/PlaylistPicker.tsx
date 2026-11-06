@@ -3,10 +3,13 @@ import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { ListMusic, ListPlus, Loader2 } from 'lucide-react'
-import { Popover, PopoverContent, PopoverTrigger } from '@pikoloo/darwin-ui'
+import { Popover, PopoverTrigger } from '@pikoloo/darwin-ui'
 import { addSongToPlaylist } from '../../api'
+import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
 import { useLocalLibraryStore } from '../../store/localLibrary'
+import { PlayerMenuContent } from './PlayerMenuContent'
+import { cn } from '../../lib/format'
 import { toast } from '../../lib/toast'
 import type { Song } from '../../types'
 
@@ -21,8 +24,15 @@ interface PlaylistChoice {
  * Add the current track to an account playlist when signed in, or to a local
  * playlist on desktop guest mode. Kept next to the like button for both paths.
  */
-export function PlaylistPicker({ song }: { song: Song }) {
+export function PlaylistPicker({
+  song,
+  tint,
+}: {
+  song: Song
+  tint?: string
+}) {
   const { i18n } = useLingui()
+  const immersive = usePlayerStore((state) => state.showNowPlaying)
   const isLogin = useUserStore((state) => state.isLogin)
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -117,23 +127,43 @@ export function PlaylistPicker({ song }: { song: Song }) {
           onPointerDown={(event) => event.stopPropagation()}
           className="pressable shrink-0 max-md:hidden"
         >
-          <ListPlus className="h-4 w-4 text-black/30 transition-colors hover:text-black/60" />
+          <ListPlus
+            className={
+              immersive
+                ? 'h-4 w-4 text-white/40 transition-colors hover:text-white/80'
+                : 'h-4 w-4 text-black/30 transition-colors hover:text-black/60'
+            }
+          />
         </button>
       </PopoverTrigger>
-      <PopoverContent
-        side="top"
+      <PlayerMenuContent
+        immersive={immersive}
+        tint={tint}
         align="start"
-        sideOffset={10}
-        glass
-        className="w-[min(240px,calc(100vw-24px))] p-1.5"
+        className="w-[min(240px,calc(100vw-24px))]"
       >
-        <p className="px-2 py-1 text-[11px] text-black/35">
+        <p
+          className={cn(
+            'px-2 py-1 text-[11px]',
+            immersive ? 'text-white/45' : 'text-black/35',
+          )}
+        >
           <Trans>收藏到歌单</Trans>
         </p>
-        <div className="max-h-[280px] overflow-y-auto rounded-[8px] bg-black/4 p-0.5">
+        <div
+          className={cn(
+            'max-h-[280px] overflow-y-auto rounded-[8px] p-0.5',
+            immersive ? 'bg-white/5' : 'bg-black/4',
+          )}
+        >
           {loading ? (
             <div className="flex items-center justify-center py-5">
-              <Loader2 className="h-4 w-4 animate-spin text-black/30" />
+              <Loader2
+                className={cn(
+                  'h-4 w-4 animate-spin',
+                  immersive ? 'text-white/40' : 'text-black/30',
+                )}
+              />
             </div>
           ) : choices.length ? (
             choices.map((choice) => (
@@ -145,15 +175,30 @@ export function PlaylistPicker({ song }: { song: Song }) {
                   event.stopPropagation()
                   void save(choice)
                 }}
-                className="flex h-9 w-full items-center gap-2 rounded-[6px] px-2 text-left text-[12px] text-black/65 transition-colors hover:bg-black/5 disabled:opacity-50"
+                className={cn(
+                  'flex h-9 w-full items-center gap-2 rounded-[6px] px-2 text-left text-[12px] transition-colors disabled:opacity-50',
+                  immersive
+                    ? 'text-white/70 hover:bg-white/8'
+                    : 'text-black/65 hover:bg-black/5',
+                )}
               >
-                <ListMusic className="h-3.5 w-3.5 shrink-0 text-black/35" />
+                <ListMusic
+                  className={cn(
+                    'h-3.5 w-3.5 shrink-0',
+                    immersive ? 'text-white/40' : 'text-black/35',
+                  )}
+                />
                 <span className="min-w-0 flex-1 truncate">{choice.name}</span>
                 {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
               </button>
             ))
           ) : (
-            <p className="px-2 py-4 text-center text-[11px] text-black/35">
+            <p
+              className={cn(
+                'px-2 py-4 text-center text-[11px]',
+                immersive ? 'text-white/40' : 'text-black/35',
+              )}
+            >
               {isLogin ? (
                 <Trans>暂无可用歌单</Trans>
               ) : (
@@ -162,7 +207,7 @@ export function PlaylistPicker({ song }: { song: Song }) {
             </p>
           )}
         </div>
-      </PopoverContent>
+      </PlayerMenuContent>
     </Popover>
   )
 }

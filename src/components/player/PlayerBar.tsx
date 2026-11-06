@@ -33,6 +33,7 @@ import { PlaylistPicker } from './PlaylistPicker'
 import { ProgressSlider } from './ProgressSlider'
 import { SourcePicker } from './SourcePicker'
 import { VolumeSlider } from './VolumeSlider'
+import { PlayerMenuContent } from './PlayerMenuContent'
 import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
 import { useLocalLibraryStore } from '../../store/localLibrary'
@@ -43,6 +44,7 @@ import {
   useSettingsStore,
 } from '../../store/settings'
 import { cn, formatArtists, formatDuration } from '../../lib/format'
+import { usePlayerMenuTint } from '../../lib/menuSurface'
 import { getAudio, registerAudio, seekAudio } from '../../lib/audio'
 import {
   attachAudioAnalyser,
@@ -147,6 +149,10 @@ export function PlayerBar() {
   const prefetchNext = usePlayerStore((state) => state.prefetchNext)
   const invalidateUrls = usePlayerStore((state) => state.invalidateUrls)
   const showNowPlaying = usePlayerStore((state) => state.showNowPlaying)
+  const playerMenuTint = usePlayerMenuTint(
+    showNowPlaying,
+    currentSong?.al.picUrl,
+  )
   const showQueue = usePlayerStore((state) => state.showQueue)
   const resumeAt = usePlayerStore((state) => state.resumeAt)
   const consumeResumeAt = usePlayerStore((state) => state.consumeResumeAt)
@@ -1133,7 +1139,7 @@ export function PlayerBar() {
                 )}
               />
             </button>
-            <PlaylistPicker song={currentSong} />
+            <PlaylistPicker song={currentSong} tint={playerMenuTint} />
           </div>
           <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-black/40">
             {loadingSource ? (
@@ -1290,14 +1296,17 @@ export function PlayerBar() {
               {qualityLabel}
             </button>
           </PopoverTrigger>
-          <PopoverContent
-            side="top"
-            align="end"
-            sideOffset={10}
-            glass
-            className="w-[min(190px,calc(100vw-24px))] max-w-[calc(100vw-24px)] p-1.5"
+          <PlayerMenuContent
+            immersive={showNowPlaying}
+            tint={playerMenuTint}
+            className="w-[min(190px,calc(100vw-24px))] max-w-[calc(100vw-24px)]"
           >
-            <p className="px-2 py-1 text-[11px] text-black/35">
+            <p
+              className={cn(
+                'px-2 py-1 text-[11px]',
+                showNowPlaying ? 'text-white/45' : 'text-black/35',
+              )}
+            >
               <Trans>播放音质</Trans>
             </p>
             {PLAY_QUALITY_OPTIONS.map((option) => (
@@ -1308,25 +1317,39 @@ export function PlayerBar() {
                 className={cn(
                   'flex w-full items-center justify-between rounded-[6px] px-2 py-1.5 text-left text-[12px] transition-colors',
                   playLevel === option.value
-                    ? 'bg-accent/10 text-accent'
-                    : 'text-black/65 hover:bg-black/5',
+                    ? showNowPlaying
+                      ? 'bg-white/12 text-white'
+                      : 'bg-accent/10 text-accent'
+                    : showNowPlaying
+                      ? 'text-white/65 hover:bg-white/8'
+                      : 'text-black/65 hover:bg-black/5',
                 )}
               >
                 <span>{i18n._(option.label)}</span>
                 {playLevel === option.value ? <Check className="h-3.5 w-3.5" /> : null}
               </button>
             ))}
-            <p className="px-2 pb-1 pt-1 text-[11px] leading-relaxed text-black/30">
+            <p
+              className={cn(
+                'px-2 pb-1 pt-1 text-[11px] leading-relaxed',
+                showNowPlaying ? 'text-white/35' : 'text-black/30',
+              )}
+            >
               <Trans>无损 / Hi-Res 需要对应会员权益；已缓存歌曲按设置中的缓存品质播放。</Trans>
             </p>
-          </PopoverContent>
+          </PlayerMenuContent>
         </Popover>
 
         <Popover>
           <PopoverTrigger asChild>
             <button
               type="button"
-              className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/45 transition-colors hover:bg-black/5 hover:text-black/75 max-md:h-10 max-md:w-10"
+              className={cn(
+                'pressable flex h-7 w-7 items-center justify-center rounded-full transition-colors max-md:h-10 max-md:w-10',
+                showNowPlaying
+                  ? 'text-white/55 hover:bg-white/10 hover:text-white'
+                  : 'text-black/45 hover:bg-black/5 hover:text-black/75',
+              )}
               aria-label={i18n._(msg`音量`)}
               title={i18n._(msg`音量（Alt + ↑ / ↓）`)}
             >
@@ -1339,24 +1362,45 @@ export function PlayerBar() {
               )}
             </button>
           </PopoverTrigger>
-          <PopoverContent
-            side="top"
-            align="center"
-            sideOffset={10}
-            glass
-            className="w-[52px] px-0 py-3"
-          >
-            <div className="flex flex-col items-center gap-2">
-              <VolumeSlider
-                value={videoActive ? videoVolume : volume}
-                onChange={videoActive ? setVideoVolume : setVolume}
-              />
-              <span className="text-[11px] tabular-nums text-black/35">{volume}</span>
-            </div>
-          </PopoverContent>
+          {showNowPlaying ? (
+            <PlayerMenuContent
+              immersive
+              tint={playerMenuTint}
+              align="center"
+              className="w-[52px]"
+            >
+              <div className="flex flex-col items-center gap-2 py-2">
+                <VolumeSlider
+                  value={videoActive ? videoVolume : volume}
+                  onChange={videoActive ? setVideoVolume : setVolume}
+                />
+                <span className="text-[11px] tabular-nums text-white/45">
+                  {volume}
+                </span>
+              </div>
+            </PlayerMenuContent>
+          ) : (
+            <PopoverContent
+              side="top"
+              align="center"
+              sideOffset={10}
+              glass
+              className="w-[52px] px-0 py-3"
+            >
+              <div className="flex flex-col items-center gap-2">
+                <VolumeSlider
+                  value={videoActive ? videoVolume : volume}
+                  onChange={videoActive ? setVideoVolume : setVolume}
+                />
+                <span className="text-[11px] tabular-nums text-black/35">
+                  {volume}
+                </span>
+              </div>
+            </PopoverContent>
+          )}
         </Popover>
 
-        <SourcePicker />
+        <SourcePicker tint={playerMenuTint} />
 
         <Popover>
           <PopoverTrigger asChild>
@@ -1369,24 +1413,37 @@ export function PlayerBar() {
               <Ellipsis className="h-4 w-4" />
             </button>
           </PopoverTrigger>
-          <PopoverContent
-            side="top"
-            align="end"
-            sideOffset={10}
-            glass
-            className="max-h-[min(70vh,460px)] w-[min(236px,calc(100vw-24px))] overflow-y-auto p-1.5"
+          <PlayerMenuContent
+            immersive={showNowPlaying}
+            tint={playerMenuTint}
+            className="max-h-[min(70vh,460px)] w-[min(236px,calc(100vw-24px))] overflow-y-auto"
           >
-            <p className="px-2 py-1 text-[11px] text-black/35">
+            <p
+              className={cn(
+                'px-2 py-1 text-[11px]',
+                showNowPlaying ? 'text-white/45' : 'text-black/35',
+              )}
+            >
               <Trans>播放选项</Trans>
             </p>
 
             {hasTranslation ? (
               <div className="px-2 pb-1.5 pt-1">
-                <p className="mb-1 flex items-center gap-1.5 text-[11px] text-black/40">
+                <p
+                  className={cn(
+                    'mb-1 flex items-center gap-1.5 text-[11px]',
+                    showNowPlaying ? 'text-white/50' : 'text-black/40',
+                  )}
+                >
                   <Languages className="h-3.5 w-3.5" />
                   <Trans>歌词显示</Trans>
                 </p>
-                <div className="space-y-0.5 rounded-[8px] bg-black/4 p-0.5">
+                <div
+                  className={cn(
+                    'space-y-0.5 rounded-[8px] p-0.5',
+                    showNowPlaying ? 'bg-white/5' : 'bg-black/4',
+                  )}
+                >
                   {LYRIC_DISPLAY_OPTIONS.map((option) => {
                     const active = lyricDisplayMode === option.value
                     return (
@@ -1398,8 +1455,12 @@ export function PlayerBar() {
                         className={cn(
                           'flex w-full items-center justify-between gap-2 rounded-[6px] px-2 py-1.5 text-left text-[11px] transition-colors',
                           active
-                            ? 'bg-white text-accent shadow-sm dark:bg-white/15 dark:text-white'
-                            : 'text-black/55 hover:text-black/75 dark:text-white/50 dark:hover:text-white/80',
+                            ? showNowPlaying
+                              ? 'bg-white/14 text-white shadow-sm'
+                              : 'bg-white text-accent shadow-sm dark:bg-white/15 dark:text-white'
+                            : showNowPlaying
+                              ? 'text-white/60 hover:bg-white/8 hover:text-white/85'
+                              : 'text-black/55 hover:text-black/75 dark:text-white/50 dark:hover:text-white/80',
                         )}
                       >
                         <span>{i18n._(option.label)}</span>
@@ -1413,10 +1474,24 @@ export function PlayerBar() {
 
             <div className="flex items-center justify-between gap-3 px-2 pb-1.5 pt-2">
               <div>
-                <p className="text-[11.5px] font-medium text-black/70 dark:text-white/80">
+                <p
+                  className={cn(
+                    'text-[11.5px] font-medium',
+                    showNowPlaying
+                      ? 'text-white/80'
+                      : 'text-black/70 dark:text-white/80',
+                  )}
+                >
                   <Trans>逐字播放</Trans>
                 </p>
-                <p className="mt-0.5 text-[10px] leading-relaxed text-black/35 dark:text-white/40">
+                <p
+                  className={cn(
+                    'mt-0.5 text-[10px] leading-relaxed',
+                    showNowPlaying
+                      ? 'text-white/40'
+                      : 'text-black/35 dark:text-white/40',
+                  )}
+                >
                   <Trans>关闭后只高亮整行，不做逐字动画</Trans>
                 </p>
               </div>
@@ -1432,7 +1507,12 @@ export function PlayerBar() {
                 <button
                   type="button"
                   onClick={handleToggleDesktopLyrics}
-                  className="flex w-full items-center gap-2 rounded-[7px] px-2 py-1.5 text-left text-[12px] text-black/65 transition-colors hover:bg-black/5"
+                  className={cn(
+                    'flex w-full items-center gap-2 rounded-[7px] px-2 py-1.5 text-left text-[12px] transition-colors',
+                    showNowPlaying
+                      ? 'text-white/65 hover:bg-white/8'
+                      : 'text-black/65 hover:bg-black/5',
+                  )}
                 >
                   <Subtitles className="h-4 w-4" />
                   <span className="flex-1">
@@ -1441,7 +1521,11 @@ export function PlayerBar() {
                   <span
                     className={cn(
                       'text-[10.5px]',
-                      lyricsWindowOpen ? 'text-accent' : 'text-black/30',
+                      lyricsWindowOpen
+                        ? 'text-accent'
+                        : showNowPlaying
+                          ? 'text-white/35'
+                          : 'text-black/30',
                     )}
                   >
                     {lyricsWindowOpen ? i18n._(msg`已开启`) : i18n._(msg`已关闭`)}
@@ -1450,7 +1534,12 @@ export function PlayerBar() {
                 <button
                   type="button"
                   onClick={handleToggleMiniPlayer}
-                  className="flex w-full items-center gap-2 rounded-[7px] px-2 py-1.5 text-left text-[12px] text-black/65 transition-colors hover:bg-black/5"
+                  className={cn(
+                    'flex w-full items-center gap-2 rounded-[7px] px-2 py-1.5 text-left text-[12px] transition-colors',
+                    showNowPlaying
+                      ? 'text-white/65 hover:bg-white/8'
+                      : 'text-black/65 hover:bg-black/5',
+                  )}
                 >
                   <PictureInPicture2 className="h-4 w-4" />
                   <span className="flex-1">
@@ -1459,7 +1548,11 @@ export function PlayerBar() {
                   <span
                     className={cn(
                       'text-[10.5px]',
-                      miniWindowOpen ? 'text-accent' : 'text-black/30',
+                      miniWindowOpen
+                        ? 'text-accent'
+                        : showNowPlaying
+                          ? 'text-white/35'
+                          : 'text-black/30',
                     )}
                   >
                     {miniWindowOpen ? i18n._(msg`已开启`) : i18n._(msg`已关闭`)}
@@ -1468,7 +1561,7 @@ export function PlayerBar() {
               </>
             ) : null}
 
-          </PopoverContent>
+          </PlayerMenuContent>
         </Popover>
 
         <button

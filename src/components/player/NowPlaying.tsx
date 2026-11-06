@@ -10,10 +10,12 @@ import {
   Heart,
   ListMusic,
   Loader2,
+  LocateFixed,
   Volume2,
 } from 'lucide-react'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
+import { menuSurfaceStyle } from '../../lib/menuSurface'
 import { LyricsPanel } from './LyricsPanel'
 import { LyricStage } from './LyricStage'
 import AmbientBackground from './AmbientBackground'
@@ -32,7 +34,6 @@ import { seekAudio } from '../../lib/audio'
 import {
   FALLBACK_PALETTE,
   extractPalette,
-  withAlpha,
   type Palette,
 } from '../../lib/color'
 import { resizedImageUrl } from '../../lib/image'
@@ -800,10 +801,11 @@ export function NowPlaying() {
                   />
                 )
               ) : panel === 'queue' ? (
-                <div
-                  ref={queueListRef}
-                  className="h-[min(72vh,620px)] min-h-[360px] overflow-y-auto px-2 pb-8 pt-2 md:h-full [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-                >
+                <div className="relative h-[min(72vh,620px)] min-h-[360px] md:h-full">
+                  <div
+                    ref={queueListRef}
+                    className="h-full overflow-y-auto px-2 pb-16 pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                  >
                   {queue.length ? (
                     <div
                       className="relative w-full"
@@ -897,6 +899,22 @@ export function NowPlaying() {
                       <Trans>播放队列为空</Trans>
                     </div>
                   )}
+                  </div>
+                  {currentIndex >= 0 ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        queueListVirtualizer.scrollToIndex(currentIndex, {
+                          align: 'center',
+                        })
+                      }
+                      aria-label={i18n._(msg`定位到当前播放`)}
+                      title={i18n._(msg`定位到当前播放`)}
+                      className="pressable absolute bottom-1.5 right-1.5 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-black/30 text-white/75 shadow-[0_6px_18px_rgba(0,0,0,0.28)] backdrop-blur-xl transition-colors hover:bg-white/15 hover:text-white"
+                    >
+                      <LocateFixed className="h-3.5 w-3.5" strokeWidth={1.8} />
+                    </button>
+                  ) : null}
                 </div>
               ) : panel === 'wall' ? (
                 <div
@@ -1001,9 +1019,10 @@ export function NowPlaying() {
           y={queueContext.y}
           onClose={() => setQueueContext(null)}
           dark
-          menuStyle={{
-            backgroundImage: `linear-gradient(155deg, ${withAlpha(palette.colors[0] ?? '#232325', 0.36)}, ${withAlpha(palette.colors[1] ?? palette.colors[0] ?? '#232325', 0.18)} 52%, transparent 100%)`,
-          }}
+          menuStyle={menuSurfaceStyle([
+            palette.colors[0] ?? '#232325',
+            palette.colors[1] ?? palette.colors[0] ?? '#232325',
+          ])}
         />
       ) : null}
     </div>

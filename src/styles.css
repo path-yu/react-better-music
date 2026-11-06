@@ -1186,6 +1186,23 @@ html.desktop .app-window {
     linear-gradient(165deg, #272130 0%, #16131b 55%, #0b0b0e 100%);
 }
 
+/* Shared dark surface for floating menus over the immersive player. The
+   inline cover-coloured gradient is layered on top by MenuSurface. */
+.menu-surface {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background-color: rgba(28, 28, 30, 0.94);
+  background-image: radial-gradient(
+    120% 90% at 100% 0%,
+    rgb(var(--nowplaying-accent-rgb, 41 151 255) / 0.18),
+    transparent 60%
+  );
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.45);
+  color: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
 /* Queue pane ("待播清单"): a compact, virtualized list of what plays next. */
 .np-queue-row {
   display: flex;
