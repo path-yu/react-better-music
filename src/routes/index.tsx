@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -29,6 +30,7 @@ import {
   withAlpha,
   type Palette,
 } from '../lib/color'
+import { useDailyRefreshKey } from '../lib/daily'
 import { resizedImageUrl } from '../lib/image'
 import { formatArtists } from '../lib/format'
 import { useDocumentTitle } from '../lib/title'
@@ -38,22 +40,27 @@ export const Route = createFileRoute('/')({
   component: DiscoveryPage,
 })
 
-function useSection<T>(load: () => Promise<T>, initial: T) {
+function useSection<T>(load: () => Promise<T>, initial: T, refreshKey = 0) {
   const [data, setData] = useState<T>(initial)
   const [loading, setLoading] = useState(true)
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
+  const loadedRef = useRef(false)
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
+    // Revalidation (e.g. the 06:00 daily refresh) keeps the existing section
+    // visible and only shows a skeleton for the first successful load.
+    setLoading(!loadedRef.current)
     setFailed(false)
     load()
       .then((value) => {
-        if (!cancelled) setData(value)
+        if (cancelled) return
+        loadedRef.current = true
+        setData(value)
       })
       .catch(() => {
-        if (!cancelled) setFailed(true)
+        if (!cancelled && !loadedRef.current) setFailed(true)
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -61,7 +68,7 @@ function useSection<T>(load: () => Promise<T>, initial: T) {
     return () => {
       cancelled = true
     }
-  }, [load, attempt])
+  }, [load, attempt, refreshKey])
 
   const retry = useCallback(() => setAttempt((value) => value + 1), [])
 
@@ -129,14 +136,13 @@ function DailyArtists({ songs }: { songs: Song[] }) {
   )
 }
 
-function DailyHomeCard({ songs }: { songs: Song[] }) {
+function DailyHomeCard({ songs, now }: { songs: Song[]; now: Date }) {
   const { i18n } = useLingui()
   const navigate = useNavigate()
   const initQueue = usePlayerStore((state) => state.initQueue)
   const isLogin = useUserStore((state) => state.isLogin)
   const openLogin = useUiStore((state) => state.openLogin)
   const [palette, setPalette] = useState<Palette>(FALLBACK_PALETTE)
-  const now = useMemo(() => new Date(), [])
   const month = now.getMonth() + 1
   const day = now.getDate()
   const weekday = useMemo(
@@ -352,7 +358,11 @@ function DiscoveryPage() {
   const { i18n } = useLingui()
   useDocumentTitle(i18n._(msg`发现音乐`))
   const profile = useUserStore((state) => state.profile)
-  const now = useMemo(() => new Date(), [])
+  const dailyRefreshKey = useDailyRefreshKey()
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    setNow(new Date())
+  }, [dailyRefreshKey])
   const weekday = useMemo(
     () =>
       new Intl.DateTimeFormat(i18n.locale, { weekday: 'long' }).format(now),
@@ -368,7 +378,7 @@ function DiscoveryPage() {
     loading: songLoading,
     failed: songFailed,
     retry: retrySongs,
-  } = useSection(fetchAllDailyRecommendSongs, [] as Song[])
+  } = useSection(fetchAllDailyRecommendSongs, [] as Song[], dailyRefreshKey)
   const {
     data: playlists,
     loading: playlistLoading,
@@ -409,7 +419,7 @@ function DiscoveryPage() {
       ) : songLoading ? (
         <Skeleton className="mt-5 h-[212px] w-full rounded-[24px]" />
       ) : (
-        <DailyHomeCard songs={songs} />
+        <DailyHomeCard songs={songs} now={now} />
       )}
 
       <HomeSection title={i18n._(msg`今日为你推荐`)}>

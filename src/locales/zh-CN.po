@@ -63,7 +63,7 @@ msgstr "{0} 次播放"
 
 #. placeholder {0}: names.join('、')
 #. placeholder {1}: songs.length
-#: src/routes/index.tsx:126
+#: src/routes/index.tsx:133
 msgid "{0} 等 {1} 首"
 msgstr "{0} 等 {1} 首"
 
@@ -77,7 +77,7 @@ msgstr "{0} 粉丝"
 #. placeholder {0}: playlist.trackCount
 #: src/components/layout/SearchBox.tsx:433
 #: src/components/player/QueuePanel.tsx:115
-#: src/routes/daily.tsx:137
+#: src/routes/daily.tsx:148
 #: src/routes/search.tsx:357
 #: src/routes/settings.tsx:518
 #: src/routes/toplist.tsx:137
@@ -229,7 +229,7 @@ msgstr "下一首"
 msgid "下一首播放"
 msgstr "下一首播放"
 
-#: src/routes/index.tsx:108
+#: src/routes/index.tsx:115
 msgid "下午好"
 msgstr "下午好"
 
@@ -301,7 +301,7 @@ msgstr "个人信息设置"
 msgid "个人资料已更新"
 msgstr "个人资料已更新"
 
-#: src/routes/index.tsx:107
+#: src/routes/index.tsx:114
 msgid "中午好"
 msgstr "中午好"
 
@@ -336,11 +336,11 @@ msgid "今天已经签到过了"
 msgstr "今天已经签到过了"
 
 #. placeholder {0}: songs.length
-#: src/routes/index.tsx:123
+#: src/routes/index.tsx:130
 msgid "今日 {0} 首"
 msgstr "今日 {0} 首"
 
-#: src/routes/index.tsx:415
+#: src/routes/index.tsx:425
 msgid "今日为你推荐"
 msgstr "今日为你推荐"
 
@@ -348,7 +348,7 @@ msgstr "今日为你推荐"
 msgid "今日已签到"
 msgstr "今日已签到"
 
-#: src/routes/daily.tsx:185
+#: src/routes/daily.tsx:196
 msgid "今日暂无推荐歌曲"
 msgstr "今日暂无推荐歌曲"
 
@@ -711,7 +711,7 @@ msgstr "双语对照"
 
 #: src/components/layout/Sidebar.tsx:29
 #: src/components/layout/TitleBar.tsx:29
-#: src/routes/index.tsx:353
+#: src/routes/index.tsx:359
 #: src/routes/toplist.tsx:63
 msgid "发现音乐"
 msgstr "发现音乐"
@@ -843,11 +843,11 @@ msgstr "外观"
 msgid "夜晚"
 msgstr "夜晚"
 
-#: src/routes/index.tsx:105
+#: src/routes/index.tsx:112
 msgid "夜深了"
 msgstr "夜深了"
 
-#: src/routes/daily.tsx:53
+#: src/routes/daily.tsx:61
 msgid "大家都在听的好歌，登录后为你专属生成"
 msgstr "大家都在听的好歌，登录后为你专属生成"
 
@@ -872,7 +872,7 @@ msgstr "学习"
 msgid "它可能已被删除，或保存在另一个安装目录。"
 msgstr "它可能已被删除，或保存在另一个安装目录。"
 
-#: src/routes/index.tsx:445
+#: src/routes/index.tsx:455
 msgid "官方榜单"
 msgstr "官方榜单"
 
@@ -1139,7 +1139,7 @@ msgstr "打开导航"
 msgid "打开播放页"
 msgstr "打开播放页"
 
-#: src/routes/index.tsx:176
+#: src/routes/index.tsx:182
 msgid "打开每日推荐"
 msgstr "打开每日推荐"
 
@@ -1176,14 +1176,14 @@ msgstr "排行榜"
 
 #: src/components/layout/Sidebar.tsx:31
 #: src/components/layout/TitleBar.tsx:22
-#: src/routes/index.tsx:466
+#: src/routes/index.tsx:476
 #: src/routes/songlists/index.tsx:29
 #: src/routes/songlists/index.tsx:129
 msgid "推荐歌单"
 msgstr "推荐歌单"
 
-#: src/routes/index.tsx:418
-#: src/routes/index.tsx:469
+#: src/routes/index.tsx:428
+#: src/routes/index.tsx:479
 msgid "推荐歌单加载失败"
 msgstr "推荐歌单加载失败"
 
@@ -1250,7 +1250,7 @@ msgstr "搜索音乐、歌单、专辑、歌手、用户、MV 或视频"
 #: src/components/player/PlayerBar.tsx:1177
 #: src/components/player/PlayerBar.tsx:1184
 #: src/components/songs/SongTable.tsx:112
-#: src/routes/index.tsx:226
+#: src/routes/index.tsx:232
 msgid "播放"
 msgstr "播放"
 
@@ -1263,7 +1263,7 @@ msgid "播放（空格）"
 msgstr "播放（空格）"
 
 #: src/components/songs/PlayAllButton.tsx:17
-#: src/routes/daily.tsx:150
+#: src/routes/daily.tsx:161
 #: src/routes/settings.tsx:663
 msgid "播放全部"
 msgstr "播放全部"
@@ -1441,7 +1441,7 @@ msgstr "日本"
 msgid "日语"
 msgstr "日语"
 
-#: src/routes/index.tsx:106
+#: src/routes/index.tsx:113
 msgid "早上好"
 msgstr "早上好"
 
@@ -1453,7 +1453,7 @@ msgstr "时长"
 msgid "昵称不能为空"
 msgstr "昵称不能为空"
 
-#: src/routes/index.tsx:109
+#: src/routes/index.tsx:116
 msgid "晚上好"
 msgstr "晚上好"
 
@@ -1488,8 +1488,8 @@ msgstr "暂无可播放歌曲"
 msgid "暂无可用歌单"
 msgstr "暂无可用歌单"
 
-#: src/routes/index.tsx:441
-#: src/routes/index.tsx:492
+#: src/routes/index.tsx:451
+#: src/routes/index.tsx:502
 msgid "暂无推荐歌单"
 msgstr "暂无推荐歌单"
 
@@ -1664,7 +1664,7 @@ msgstr "标题"
 #~ msgid "根据你的口味精选"
 #~ msgstr "根据你的口味精选"
 
-#: src/routes/daily.tsx:52
+#: src/routes/daily.tsx:60
 msgid "根据你的音乐口味生成，每天 6:00 更新"
 msgstr "根据你的音乐口味生成，每天 6:00 更新"
 
@@ -1701,7 +1701,7 @@ msgstr "桌面歌词窗口暂不可用"
 msgid "桌面端"
 msgstr "桌面端"
 
-#: src/routes/index.tsx:448
+#: src/routes/index.tsx:458
 #: src/routes/toplist.tsx:41
 #: src/routes/toplist.tsx:83
 msgid "榜单加载失败"
@@ -1892,19 +1892,19 @@ msgstr "正在读取本地歌单…"
 msgid "正在读取缓存…"
 msgstr "正在读取缓存…"
 
-#: src/routes/index.tsx:207
+#: src/routes/index.tsx:213
 msgid "每天 6:00 更新"
 msgstr "每天 6:00 更新"
 
 #: src/components/layout/Sidebar.tsx:30
-#: src/routes/daily.tsx:32
-#: src/routes/daily.tsx:131
-#: src/routes/index.tsx:213
+#: src/routes/daily.tsx:33
+#: src/routes/daily.tsx:142
+#: src/routes/index.tsx:219
 msgid "每日推荐"
 msgstr "每日推荐"
 
-#: src/routes/daily.tsx:169
-#: src/routes/index.tsx:405
+#: src/routes/daily.tsx:180
+#: src/routes/index.tsx:415
 msgid "每日推荐加载失败"
 msgstr "每日推荐加载失败"
 
@@ -1912,7 +1912,7 @@ msgstr "每日推荐加载失败"
 msgid "每日更新的华语与全球新歌速递"
 msgstr "每日更新的华语与全球新歌速递"
 
-#: src/routes/daily.tsx:134
+#: src/routes/daily.tsx:145
 msgid "每日歌曲推荐"
 msgstr "每日歌曲推荐"
 
@@ -2070,7 +2070,7 @@ msgstr "用户加载失败"
 #: src/components/layout/LoginModal.tsx:231
 #: src/components/layout/Sidebar.tsx:409
 #: src/components/layout/UserMenu.tsx:44
-#: src/routes/index.tsx:240
+#: src/routes/index.tsx:246
 msgid "登录"
 msgstr "登录"
 
@@ -2082,7 +2082,7 @@ msgstr "登录"
 msgid "登录二维码"
 msgstr "登录二维码"
 
-#: src/routes/index.tsx:209
+#: src/routes/index.tsx:215
 msgid "登录后为你专属生成"
 msgstr "登录后为你专属生成"
 
@@ -2631,7 +2631,7 @@ msgstr "重命名歌单"
 msgid "重命名歌单失败"
 msgstr "重命名歌单失败"
 
-#: src/routes/daily.tsx:177
+#: src/routes/daily.tsx:188
 msgid "重新加载"
 msgstr "重新加载"
 
@@ -2648,7 +2648,7 @@ msgstr "链接已复制"
 #~ msgstr "降低动态渐变背景的亮度和饱和度，夜间长时间播放时更护眼；关闭后恢复鲜艳模式。"
 
 #: src/components/player/PlayerBar.tsx:1152
-#: src/routes/daily.tsx:160
+#: src/routes/daily.tsx:171
 #: src/store/player.ts:979
 msgid "随机播放"
 msgstr "随机播放"

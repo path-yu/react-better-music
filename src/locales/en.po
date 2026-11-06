@@ -63,7 +63,7 @@ msgstr "{0} plays"
 
 #. placeholder {0}: names.join('、')
 #. placeholder {1}: songs.length
-#: src/routes/index.tsx:126
+#: src/routes/index.tsx:133
 msgid "{0} 等 {1} 首"
 msgstr "{0} and more · {1} tracks"
 
@@ -77,7 +77,7 @@ msgstr "{0} fans"
 #. placeholder {0}: playlist.trackCount
 #: src/components/layout/SearchBox.tsx:433
 #: src/components/player/QueuePanel.tsx:115
-#: src/routes/daily.tsx:137
+#: src/routes/daily.tsx:148
 #: src/routes/search.tsx:357
 #: src/routes/settings.tsx:518
 #: src/routes/toplist.tsx:137
@@ -229,7 +229,7 @@ msgstr "Next track"
 msgid "下一首播放"
 msgstr "Play next"
 
-#: src/routes/index.tsx:108
+#: src/routes/index.tsx:115
 msgid "下午好"
 msgstr "Good afternoon"
 
@@ -301,7 +301,7 @@ msgstr "Profile settings"
 msgid "个人资料已更新"
 msgstr "Profile updated"
 
-#: src/routes/index.tsx:107
+#: src/routes/index.tsx:114
 msgid "中午好"
 msgstr "Good noon"
 
@@ -336,11 +336,11 @@ msgid "今天已经签到过了"
 msgstr "Already checked in today"
 
 #. placeholder {0}: songs.length
-#: src/routes/index.tsx:123
+#: src/routes/index.tsx:130
 msgid "今日 {0} 首"
 msgstr "Today · {0} tracks"
 
-#: src/routes/index.tsx:415
+#: src/routes/index.tsx:425
 msgid "今日为你推荐"
 msgstr ""
 
@@ -348,7 +348,7 @@ msgstr ""
 msgid "今日已签到"
 msgstr "Checked in today"
 
-#: src/routes/daily.tsx:185
+#: src/routes/daily.tsx:196
 msgid "今日暂无推荐歌曲"
 msgstr "No recommendations today"
 
@@ -711,7 +711,7 @@ msgstr "Bilingual"
 
 #: src/components/layout/Sidebar.tsx:29
 #: src/components/layout/TitleBar.tsx:29
-#: src/routes/index.tsx:353
+#: src/routes/index.tsx:359
 #: src/routes/toplist.tsx:63
 msgid "发现音乐"
 msgstr "Discover"
@@ -843,11 +843,11 @@ msgstr "Appearance"
 msgid "夜晚"
 msgstr "Night"
 
-#: src/routes/index.tsx:105
+#: src/routes/index.tsx:112
 msgid "夜深了"
 msgstr "Late night"
 
-#: src/routes/daily.tsx:53
+#: src/routes/daily.tsx:61
 msgid "大家都在听的好歌，登录后为你专属生成"
 msgstr "Popular tracks everyone is enjoying. Sign in for a mix made for you."
 
@@ -872,7 +872,7 @@ msgstr "Study"
 msgid "它可能已被删除，或保存在另一个安装目录。"
 msgstr "It may have been deleted or saved in another install directory."
 
-#: src/routes/index.tsx:445
+#: src/routes/index.tsx:455
 msgid "官方榜单"
 msgstr ""
 
@@ -1139,7 +1139,7 @@ msgstr "Open navigation"
 msgid "打开播放页"
 msgstr "Open Now Playing"
 
-#: src/routes/index.tsx:176
+#: src/routes/index.tsx:182
 msgid "打开每日推荐"
 msgstr "Open Daily Mix"
 
@@ -1176,14 +1176,14 @@ msgstr "Charts"
 
 #: src/components/layout/Sidebar.tsx:31
 #: src/components/layout/TitleBar.tsx:22
-#: src/routes/index.tsx:466
+#: src/routes/index.tsx:476
 #: src/routes/songlists/index.tsx:29
 #: src/routes/songlists/index.tsx:129
 msgid "推荐歌单"
 msgstr "Playlists"
 
-#: src/routes/index.tsx:418
-#: src/routes/index.tsx:469
+#: src/routes/index.tsx:428
+#: src/routes/index.tsx:479
 msgid "推荐歌单加载失败"
 msgstr "Failed to load playlists"
 
@@ -1250,7 +1250,7 @@ msgstr "Search songs, playlists, albums, artists, users, MVs or videos"
 #: src/components/player/PlayerBar.tsx:1177
 #: src/components/player/PlayerBar.tsx:1184
 #: src/components/songs/SongTable.tsx:112
-#: src/routes/index.tsx:226
+#: src/routes/index.tsx:232
 msgid "播放"
 msgstr "Play"
 
@@ -1263,7 +1263,7 @@ msgid "播放（空格）"
 msgstr "Play (Space)"
 
 #: src/components/songs/PlayAllButton.tsx:17
-#: src/routes/daily.tsx:150
+#: src/routes/daily.tsx:161
 #: src/routes/settings.tsx:663
 msgid "播放全部"
 msgstr "Play all"
@@ -1441,7 +1441,7 @@ msgstr "Japan"
 msgid "日语"
 msgstr "Japanese"
 
-#: src/routes/index.tsx:106
+#: src/routes/index.tsx:113
 msgid "早上好"
 msgstr "Good morning"
 
@@ -1453,7 +1453,7 @@ msgstr "Duration"
 msgid "昵称不能为空"
 msgstr "Nickname cannot be empty"
 
-#: src/routes/index.tsx:109
+#: src/routes/index.tsx:116
 msgid "晚上好"
 msgstr "Good evening"
 
@@ -1488,8 +1488,8 @@ msgstr "No playable songs"
 msgid "暂无可用歌单"
 msgstr "No playlists available"
 
-#: src/routes/index.tsx:441
-#: src/routes/index.tsx:492
+#: src/routes/index.tsx:451
+#: src/routes/index.tsx:502
 msgid "暂无推荐歌单"
 msgstr "No playlist recommendations"
 
@@ -1664,7 +1664,7 @@ msgstr "Title"
 #~ msgid "根据你的口味精选"
 #~ msgstr "Picked for your taste"
 
-#: src/routes/daily.tsx:52
+#: src/routes/daily.tsx:60
 msgid "根据你的音乐口味生成，每天 6:00 更新"
 msgstr "Generated from your listening taste, refreshed daily at 6:00."
 
@@ -1701,7 +1701,7 @@ msgstr "Desktop lyrics are unavailable"
 msgid "桌面端"
 msgstr "Desktop"
 
-#: src/routes/index.tsx:448
+#: src/routes/index.tsx:458
 #: src/routes/toplist.tsx:41
 #: src/routes/toplist.tsx:83
 msgid "榜单加载失败"
@@ -1892,19 +1892,19 @@ msgstr "Loading local playlist…"
 msgid "正在读取缓存…"
 msgstr "Loading cache…"
 
-#: src/routes/index.tsx:207
+#: src/routes/index.tsx:213
 msgid "每天 6:00 更新"
 msgstr ""
 
 #: src/components/layout/Sidebar.tsx:30
-#: src/routes/daily.tsx:32
-#: src/routes/daily.tsx:131
-#: src/routes/index.tsx:213
+#: src/routes/daily.tsx:33
+#: src/routes/daily.tsx:142
+#: src/routes/index.tsx:219
 msgid "每日推荐"
 msgstr "Daily Mix"
 
-#: src/routes/daily.tsx:169
-#: src/routes/index.tsx:405
+#: src/routes/daily.tsx:180
+#: src/routes/index.tsx:415
 msgid "每日推荐加载失败"
 msgstr "Failed to load Daily Mix"
 
@@ -1912,7 +1912,7 @@ msgstr "Failed to load Daily Mix"
 msgid "每日更新的华语与全球新歌速递"
 msgstr "Daily Chinese and global new releases"
 
-#: src/routes/daily.tsx:134
+#: src/routes/daily.tsx:145
 msgid "每日歌曲推荐"
 msgstr "Daily song recommendations"
 
@@ -2070,7 +2070,7 @@ msgstr "Failed to load users"
 #: src/components/layout/LoginModal.tsx:231
 #: src/components/layout/Sidebar.tsx:409
 #: src/components/layout/UserMenu.tsx:44
-#: src/routes/index.tsx:240
+#: src/routes/index.tsx:246
 msgid "登录"
 msgstr "Sign in"
 
@@ -2082,7 +2082,7 @@ msgstr "Sign in"
 msgid "登录二维码"
 msgstr "Sign-in QR code"
 
-#: src/routes/index.tsx:209
+#: src/routes/index.tsx:215
 msgid "登录后为你专属生成"
 msgstr "Sign in for a mix made for you"
 
@@ -2631,7 +2631,7 @@ msgstr "Rename playlist"
 msgid "重命名歌单失败"
 msgstr "Failed to rename playlist"
 
-#: src/routes/daily.tsx:177
+#: src/routes/daily.tsx:188
 msgid "重新加载"
 msgstr "Reload"
 
@@ -2648,7 +2648,7 @@ msgstr "Link copied"
 #~ msgstr "Lowers the animated gradient's brightness and saturation for comfortable night listening; turn off to restore the vivid look."
 
 #: src/components/player/PlayerBar.tsx:1152
-#: src/routes/daily.tsx:160
+#: src/routes/daily.tsx:171
 #: src/store/player.ts:979
 msgid "随机播放"
 msgstr "Shuffle"

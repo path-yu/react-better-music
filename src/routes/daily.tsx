@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
@@ -10,6 +10,7 @@ import { EmptyState } from '../components/common/EmptyState'
 import { fetchAllDailyRecommendSongs } from '../api'
 import { usePlayerStore } from '../store/player'
 import { useUserStore } from '../store/user'
+import { useDailyRefreshKey } from '../lib/daily'
 import { resizedImageUrl } from '../lib/image'
 import { useDocumentTitle } from '../lib/title'
 import type { Song } from '../types'
@@ -36,8 +37,15 @@ function DailyPage() {
   const [loading, setLoading] = useState(true)
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
+  const refreshKey = useDailyRefreshKey()
+  const songsRef = useRef(songs)
+  songsRef.current = songs
 
-  const now = useMemo(() => new Date(), [])
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    setNow(new Date())
+  }, [refreshKey])
+
   const dateKey = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`
   const month = now.getMonth() + 1
   const day = now.getDate()
@@ -54,14 +62,17 @@ function DailyPage() {
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
+    const firstLoad = songsRef.current.length === 0
+    // A 06:00 refresh should update the list in place instead of flashing the
+    // page skeleton over songs that are already on screen.
+    if (firstLoad) setLoading(true)
     setFailed(false)
     fetchAllDailyRecommendSongs()
       .then((list) => {
         if (!cancelled) setSongs(list)
       })
       .catch(() => {
-        if (!cancelled) setFailed(true)
+        if (!cancelled && firstLoad) setFailed(true)
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -69,7 +80,7 @@ function DailyPage() {
     return () => {
       cancelled = true
     }
-  }, [attempt])
+  }, [attempt, refreshKey])
 
   const playAll = () => {
     if (!songs.length) return
