@@ -19,7 +19,9 @@ export type Palette = {
 };
 
 export const FALLBACK_PALETTE: Palette = {
-  colors: ['#b31b22', '#1e3d68', '#c8432a', '#7a2439', '#2a1b3d'],
+  // Neutral fallback: a failed cover sample should not paint an unrelated
+  // red/purple wash behind a black-and-white cover.
+  colors: ['#77777f', '#3b3b43', '#8b8992', '#575762', '#292930'],
   dark: true,
   source: 'fallback',
 };
@@ -187,12 +189,32 @@ function paletteFromPixels(pts: Vec[], source: Palette['source']): Palette {
     })
     .sort((a, b) => b.weight - a.weight);
 
+  const maxSaturation = scored.reduce(
+    (max, color) => Math.max(max, color.s),
+    0,
+  );
+  const avgL = scored.reduce((acc, c) => acc + c.l, 0) / Math.max(1, scored.length);
+
+  // A black-and-white / strongly desaturated cover has no meaningful hue.
+  // Forcing saturation would turn it red (hue 0) and produce an unrelated
+  // magenta fog. Keep these covers neutral instead.
+  if (maxSaturation < 0.08) {
+    const colors = scored.slice(0, 5).map(({ l }) =>
+      hslToHex(0, 0, clamp(l * 0.95 + 0.04, 0.18, 0.62)),
+    );
+    return { colors, dark: avgL < 0.5, source };
+  }
+
   const colors = scored.slice(0, 5).map(({ h, s, l }) =>
-    // 关键一步：把封面的颜色"提纯"，Apple Music 的背景比封面本身鲜艳得多
-    hslToHex(h, clamp(s * 1.5 + 0.12, 0.42, 0.95), clamp(l * 0.95 + 0.04, 0.2, 0.6)),
+    // Colored covers are slightly lifted for the Apple Music-style wash, but
+    // near-neutral clusters keep their low saturation instead of becoming red.
+    hslToHex(
+      h,
+      s < 0.12 ? s : clamp(s * 1.5 + 0.12, 0.42, 0.95),
+      clamp(l * 0.95 + 0.04, 0.2, 0.6),
+    ),
   );
 
-  const avgL = scored.reduce((acc, c) => acc + c.l, 0) / Math.max(1, scored.length);
   return { colors, dark: avgL < 0.5, source };
 }
 

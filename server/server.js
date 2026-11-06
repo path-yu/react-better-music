@@ -14,6 +14,7 @@ const decode = require('safe-decode-uri-component')
 const logger = require('./util/logger.js')
 const { APP_CONF } = require('./util/config.json')
 const { createHttpAgent, createHttpsAgent } = require('./util/ipv4Agent')
+const { installRemoteControl } = require('./remoteControl')
 
 // Media proxy requests also force IPv4 with Happy Eyeballs disabled, otherwise
 // the first request can wait ~10s for an unreachable IPv6 connection.
@@ -204,6 +205,27 @@ async function constructServer(moduleDefs) {
   app.use(compression())
 
   /**
+   * The embedded desktop API has to bind 0.0.0.0 so a phone can reach the
+   * remote page. Do not expose the rest of the NetEase/local-library API to
+   * the LAN at the same time: non-loopback clients may only use /remote.
+   * Standalone API deployments do not set this flag and keep their old rules.
+   */
+  if (process.env.QIMIAO_REMOTE_ONLY === '1') {
+    app.use((req, res, next) => {
+      const address = req.socket.remoteAddress || ''
+      const loopback =
+        address === '127.0.0.1' ||
+        address === '::1' ||
+        address === '::ffff:127.0.0.1'
+      if (loopback || req.path === '/remote' || req.path.startsWith('/remote/')) {
+        next()
+        return
+      }
+      res.status(403).json({ code: 403, msg: 'Remote control only' })
+    })
+  }
+
+  /**
    * Serving static files
    */
   app.use(express.static(path.join(__dirname, 'public')))
@@ -270,6 +292,11 @@ async function constructServer(moduleDefs) {
       parseNested: true,
     }),
   )
+
+  // Phone remote control: serves /remote and keeps a tiny command/state relay
+  // for the desktop renderer. Installed before the API cache so commands never
+  // get cached.
+  installRemoteControl(app)
 
   /**
    * Audio proxy for local IndexedDB caching. The music CDN does not send

@@ -97,7 +97,7 @@ function safeTint(value?: string) {
 function fogColors(tint?: string) {
   const { r, g, b } = hexToRgb(safeTint(tint))
   const { h, s } = rgbToHsl(r, g, b)
-  const saturation = s > 0.12 ? clamp(s * 1.3, 0.6, 0.85) : s
+  const saturation = s > 0.12 ? clamp(s * 1.15, 0.5, 0.8) : s
   return {
     deep: hslToHex(h, saturation, 0.16),
     fog: hslToHex(h, saturation * 0.6, 0.56),
@@ -215,11 +215,19 @@ export function FogBackground({
     let smoothedBass = 0
     let width = 1
     let height = 1
+    // Parsing the cover colour every frame creates avoidable garbage; the
+    // palette only changes when the track/tint changes.
+    let deepColor: [number, number, number] = [0, 0, 0]
+    let fogColor: [number, number, number] = [0, 0, 0]
 
-    const setColors = () => {
+    const updateColors = () => {
       const colors = fogColors(tintRef.current)
-      gl.uniform3fv(deep, vec3(colors.deep))
-      gl.uniform3fv(fog, vec3(colors.fog))
+      const nextDeep = vec3(colors.deep)
+      const nextFog = vec3(colors.fog)
+      deepColor = [nextDeep[0], nextDeep[1], nextDeep[2]]
+      fogColor = [nextFog[0], nextFog[1], nextFog[2]]
+      gl.uniform3fv(deep, deepColor)
+      gl.uniform3fv(fog, fogColor)
     }
 
     const resize = () => {
@@ -238,7 +246,6 @@ export function FogBackground({
     }
 
     const draw = (now: number) => {
-      setColors()
       gl.uniform1f(time, drift)
       const measured = playingRef.current ? getAudioBassLevel() : 0
       const fallback = 0.35 + 0.25 * (0.5 + 0.5 * Math.sin(now * 0.0018))
@@ -267,7 +274,7 @@ export function FogBackground({
     const kick = () => {
       if (disposed) return
       last = performance.now()
-      setColors()
+      updateColors()
       gl.uniform1f(time, drift)
       gl.uniform1f(bass, playingRef.current ? smoothedBass : 0)
       gl.drawArrays(gl.TRIANGLES, 0, 3)
@@ -281,7 +288,7 @@ export function FogBackground({
     }
 
     kickRef.current = kick
-    setColors()
+    updateColors()
     gl.uniform2f(resolution, 1, 1)
     gl.uniform1f(bass, 0)
     gl.clearColor(0.08, 0.07, 0.1, 1)

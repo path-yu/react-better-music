@@ -14,6 +14,7 @@ import { useSettingsStore } from '../../store/settings'
 import { useLocalLibraryStore } from '../../store/localLibrary'
 import { isDesktopShell } from '../../lib/desktop'
 import { useDesktopCommands } from '../../lib/desktopCommands'
+import { useRemoteBridge } from '../../lib/remoteBridge'
 import { useDesktopLyricsPublisher } from '../../lib/desktopLyrics'
 import { applyTheme } from '../../lib/theme'
 import { getLastLoginRefreshAt, getLoginCookie, refreshLogin } from '../../lib/session'
@@ -59,6 +60,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   useDesktopLyricsPublisher()
   useDesktopCommands()
+  useRemoteBridge()
 
   useEffect(() => {
     applyTheme(theme, palette)

@@ -158,6 +158,10 @@ function startApiServer() {
       env: {
         ...process.env,
         QIMIAO_API_PORT: String(API_PORT),
+        // The LAN remote page needs the API listener on the network, but the
+        // server only exposes /remote to non-loopback clients.
+        QIMIAO_API_HOST: process.env.QIMIAO_API_HOST || '0.0.0.0',
+        QIMIAO_REMOTE_ONLY: process.env.QIMIAO_REMOTE_ONLY || '1',
         QIMIAO_API_PARENT_PID: String(process.pid),
         // Never derive user data from the API child's working directory. Dev
         // rebuilds replace build/dev-*/bin, which used to wipe playlists.

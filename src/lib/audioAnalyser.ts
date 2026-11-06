@@ -12,6 +12,7 @@ const attached = new Map<
   { stream: MediaStream; source: MediaStreamAudioSourceNode }
 >()
 const waiting = new WeakSet<HTMLAudioElement>()
+const failed = new WeakSet<HTMLAudioElement>()
 
 function ensureAnalyser() {
   if (analyser && audioContext) return analyser
@@ -47,7 +48,11 @@ function ensureAnalyser() {
 export function attachAudioAnalyser(element: HTMLAudioElement | null) {
   if (!element) return
   const capturable = element as CapturableAudio
-  if (!capturable.captureStream || attached.has(element)) {
+  if (
+    !capturable.captureStream ||
+    attached.has(element) ||
+    failed.has(element)
+  ) {
     void audioContext?.resume().catch(() => undefined)
     return
   }
@@ -79,6 +84,7 @@ export function attachAudioAnalyser(element: HTMLAudioElement | null) {
   } catch {
     // Cross-origin media without CORS cannot expose a stream. The caller still
     // gets the element's normal playback and the fog falls back to its pulse.
+    failed.add(element)
   }
 }
 
@@ -93,7 +99,12 @@ export function getAudioBassLevel() {
   // Fog frames call this continuously. If the initial attach ran before the
   // media had a source, retry here once playback is under way.
   const audio = getAudio()
-  if (audio && !attached.has(audio) && !waiting.has(audio)) {
+  if (
+    audio &&
+    !attached.has(audio) &&
+    !waiting.has(audio) &&
+    !failed.has(audio)
+  ) {
     attachAudioAnalyser(audio)
   }
   if (!analyser || !frequencyData) return null

@@ -205,7 +205,7 @@ msgstr "WebGL 雾化背景"
 msgid "上一页"
 msgstr "上一页"
 
-#: src/components/player/PlayerBar.tsx:1194
+#: src/components/player/PlayerBar.tsx:1200
 msgid "上一首"
 msgstr "上一首"
 
@@ -221,7 +221,7 @@ msgstr "上升最快"
 msgid "下一页"
 msgstr "下一页"
 
-#: src/components/player/PlayerBar.tsx:1236
+#: src/components/player/PlayerBar.tsx:1242
 msgid "下一首"
 msgstr "下一首"
 
@@ -466,15 +466,15 @@ msgstr "关闭"
 msgid "关闭到托盘"
 msgstr "关闭到托盘"
 
-#: src/components/player/PlayerBar.tsx:1420
+#: src/components/player/PlayerBar.tsx:1495
 msgid "关闭后只高亮整行，不做逐字动画"
 msgstr "关闭后只高亮整行，不做逐字动画"
 
-#: src/components/layout/AppShell.tsx:292
+#: src/components/layout/AppShell.tsx:294
 msgid "关闭导航"
 msgstr "关闭导航"
 
-#: src/components/player/PlayerBar.tsx:1157
+#: src/components/player/PlayerBar.tsx:1163
 msgid "关闭心动模式"
 msgstr "关闭心动模式"
 
@@ -495,8 +495,8 @@ msgstr "关闭播放页、播放列表、侧栏或搜索建议"
 #~ msgid "关闭迷你播放器"
 #~ msgstr "关闭迷你播放器"
 
-#: src/components/player/PlayerBar.tsx:1116
-#: src/components/player/SourcePicker.tsx:37
+#: src/components/player/PlayerBar.tsx:1122
+#: src/components/player/SourcePicker.tsx:39
 msgid "其他音源"
 msgstr "其他音源"
 
@@ -686,7 +686,7 @@ msgstr "华语"
 msgid "单曲"
 msgstr "单曲"
 
-#: src/components/player/PlayerBar.tsx:1182
+#: src/components/player/PlayerBar.tsx:1188
 #: src/store/player.ts:980
 msgid "单曲循环"
 msgstr "单曲循环"
@@ -733,7 +733,7 @@ msgstr "取消"
 
 #: src/components/player/NowPlaying.tsx:512
 #: src/components/player/NowPlaying.tsx:514
-#: src/components/player/PlayerBar.tsx:1121
+#: src/components/player/PlayerBar.tsx:1127
 #: src/components/songs/SongContextMenu.tsx:357
 #: src/components/songs/SongTable.tsx:178
 msgid "取消喜欢"
@@ -774,7 +774,7 @@ msgstr "听友评论"
 
 #: src/components/player/NowPlaying.tsx:512
 #: src/components/player/NowPlaying.tsx:514
-#: src/components/player/PlayerBar.tsx:1121
+#: src/components/player/PlayerBar.tsx:1127
 #: src/components/songs/SongContextMenu.tsx:357
 #: src/components/songs/SongTable.tsx:178
 msgid "喜欢"
@@ -932,7 +932,7 @@ msgstr "展开侧栏"
 msgid "展开全部"
 msgstr "展开全部"
 
-#: src/components/player/PlayerBar.tsx:1481
+#: src/components/player/PlayerBar.tsx:1574
 msgid "展开播放页"
 msgstr "展开播放页"
 
@@ -949,8 +949,8 @@ msgstr "已保存「{0}」到下载目录"
 msgid "已允许开发者工具，重启应用后完全生效"
 msgstr "已允许开发者工具，重启应用后完全生效"
 
-#: src/components/player/PlayerBar.tsx:1447
-#: src/components/player/PlayerBar.tsx:1465
+#: src/components/player/PlayerBar.tsx:1531
+#: src/components/player/PlayerBar.tsx:1558
 msgid "已关闭"
 msgstr "已关闭"
 
@@ -987,8 +987,8 @@ msgstr "已导出 {count} 首缓存音乐到 {downloadDir}"
 msgid "已导出 {count} 首缓存音乐到下载目录"
 msgstr "已导出 {count} 首缓存音乐到下载目录"
 
-#: src/components/player/PlayerBar.tsx:1447
-#: src/components/player/PlayerBar.tsx:1465
+#: src/components/player/PlayerBar.tsx:1531
+#: src/components/player/PlayerBar.tsx:1558
 msgid "已开启"
 msgstr "已开启"
 
@@ -1003,7 +1003,7 @@ msgstr "已收藏"
 
 #. placeholder {0}: choice.name
 #. placeholder {0}: playlist.name
-#: src/components/player/PlaylistPicker.tsx:100
+#: src/components/player/PlaylistPicker.tsx:110
 #: src/components/songs/SongContextMenu.tsx:157
 #: src/components/songs/SongContextMenu.tsx:175
 msgid "已收藏到「{0}」"
@@ -1048,7 +1048,7 @@ msgstr "已选 {0} 首"
 msgid "开始播放缓存音乐"
 msgstr "开始播放缓存音乐"
 
-#: src/components/player/SourcePicker.tsx:86
+#: src/components/player/SourcePicker.tsx:99
 msgid "当前：{currentLabel}"
 msgstr "当前：{currentLabel}"
 
@@ -1085,8 +1085,8 @@ msgstr "律动"
 msgid "律动效果"
 msgstr "律动效果"
 
-#: src/components/player/PlayerBar.tsx:1158
-#: src/components/player/PlayerBar.tsx:1160
+#: src/components/player/PlayerBar.tsx:1164
+#: src/components/player/PlayerBar.tsx:1166
 msgid "心动模式"
 msgstr "心动模式"
 
@@ -1139,8 +1139,8 @@ msgstr "打开专辑 {0}"
 msgid "打开导航"
 msgstr "打开导航"
 
-#: src/components/player/PlayerBar.tsx:1059
-#: src/components/player/PlayerBar.tsx:1099
+#: src/components/player/PlayerBar.tsx:1065
+#: src/components/player/PlayerBar.tsx:1105
 msgid "打开播放页"
 msgstr "打开播放页"
 
@@ -1252,8 +1252,8 @@ msgstr "搜索音乐、歌单、专辑、歌手、用户、MV 或视频"
 #~ msgid "搜索音乐、歌单、歌手、用户、MV 或视频"
 #~ msgstr "搜索音乐、歌单、歌手、用户、MV 或视频"
 
-#: src/components/player/PlayerBar.tsx:1206
-#: src/components/player/PlayerBar.tsx:1213
+#: src/components/player/PlayerBar.tsx:1212
+#: src/components/player/PlayerBar.tsx:1219
 #: src/components/songs/SongTable.tsx:112
 #: src/routes/index.tsx:232
 msgid "播放"
@@ -1263,7 +1263,7 @@ msgstr "播放"
 msgid "播放 / 暂停"
 msgstr "播放 / 暂停"
 
-#: src/components/player/PlayerBar.tsx:1222
+#: src/components/player/PlayerBar.tsx:1228
 msgid "播放（空格）"
 msgstr "播放（空格）"
 
@@ -1275,7 +1275,7 @@ msgstr "播放全部"
 
 #: src/components/player/NowPlaying.tsx:530
 #: src/components/player/NowPlaying.tsx:531
-#: src/components/player/PlayerBar.tsx:1247
+#: src/components/player/PlayerBar.tsx:1253
 #: src/components/player/QueuePanel.tsx:80
 #: src/components/player/QueuePanel.tsx:107
 msgid "播放列表"
@@ -1309,7 +1309,7 @@ msgstr "播放过的歌曲会转码为 Opus 并缓存到本地，用于加速之
 msgid "播放进度"
 msgstr "播放进度"
 
-#: src/components/player/PlayerBar.tsx:1380
+#: src/components/player/PlayerBar.tsx:1427
 msgid "播放选项"
 msgstr "播放选项"
 
@@ -1318,13 +1318,13 @@ msgstr "播放选项"
 msgid "播放队列为空"
 msgstr "播放队列为空"
 
-#: src/components/player/PlayerBar.tsx:1285
-#: src/components/player/PlayerBar.tsx:1286
-#: src/components/player/PlayerBar.tsx:1301
+#: src/components/player/PlayerBar.tsx:1291
+#: src/components/player/PlayerBar.tsx:1292
+#: src/components/player/PlayerBar.tsx:1310
 msgid "播放音质"
 msgstr "播放音质"
 
-#: src/components/player/PlayerBar.tsx:848
+#: src/components/player/PlayerBar.tsx:854
 msgid "播放音质已切换为{label}，正在重新加载"
 msgstr "播放音质已切换为{label}，正在重新加载"
 
@@ -1353,16 +1353,16 @@ msgstr "收藏专辑加载失败"
 msgid "收藏到本地歌单"
 msgstr "收藏到本地歌单"
 
-#: src/components/player/PlaylistPicker.tsx:114
-#: src/components/player/PlaylistPicker.tsx:115
-#: src/components/player/PlaylistPicker.tsx:131
+#: src/components/player/PlaylistPicker.tsx:124
+#: src/components/player/PlaylistPicker.tsx:125
+#: src/components/player/PlaylistPicker.tsx:151
 #: src/components/songs/SongContextMenu.tsx:299
 #: src/components/songs/SongContextMenu.tsx:413
 msgid "收藏到歌单"
 msgstr "收藏到歌单"
 
-#: src/components/player/PlaylistPicker.tsx:96
-#: src/components/player/PlaylistPicker.tsx:103
+#: src/components/player/PlaylistPicker.tsx:106
+#: src/components/player/PlaylistPicker.tsx:113
 #: src/components/songs/SongContextMenu.tsx:171
 #: src/components/songs/SongContextMenu.tsx:179
 #: src/routes/songlists/$id.tsx:253
@@ -1398,9 +1398,9 @@ msgstr "收起"
 msgid "收起侧栏"
 msgstr "收起侧栏"
 
-#: src/components/player/PlayerBar.tsx:1058
-#: src/components/player/PlayerBar.tsx:1098
-#: src/components/player/PlayerBar.tsx:1480
+#: src/components/player/PlayerBar.tsx:1064
+#: src/components/player/PlayerBar.tsx:1104
+#: src/components/player/PlayerBar.tsx:1573
 msgid "收起播放页"
 msgstr "收起播放页"
 
@@ -1412,7 +1412,7 @@ msgstr "新歌加载失败"
 msgid "无损"
 msgstr "无损"
 
-#: src/components/player/PlayerBar.tsx:1320
+#: src/components/player/PlayerBar.tsx:1338
 msgid "无损 / Hi-Res 需要对应会员权益；已缓存歌曲按设置中的缓存品质播放。"
 msgstr "无损 / Hi-Res 需要对应会员权益；已缓存歌曲按设置中的缓存品质播放。"
 
@@ -1462,13 +1462,13 @@ msgstr "昵称不能为空"
 msgid "晚上好"
 msgstr "晚上好"
 
-#: src/components/player/PlayerBar.tsx:1205
-#: src/components/player/PlayerBar.tsx:1212
+#: src/components/player/PlayerBar.tsx:1211
+#: src/components/player/PlayerBar.tsx:1218
 #: src/components/songs/SongTable.tsx:112
 msgid "暂停"
 msgstr "暂停"
 
-#: src/components/player/PlayerBar.tsx:1221
+#: src/components/player/PlayerBar.tsx:1227
 msgid "暂停（空格）"
 msgstr "暂停（空格）"
 
@@ -1488,7 +1488,7 @@ msgstr "暂无专辑"
 msgid "暂无可播放歌曲"
 msgstr "暂无可播放歌曲"
 
-#: src/components/player/PlaylistPicker.tsx:158
+#: src/components/player/PlaylistPicker.tsx:203
 #: src/components/songs/SongContextMenu.tsx:442
 msgid "暂无可用歌单"
 msgstr "暂无可用歌单"
@@ -1510,7 +1510,7 @@ msgstr "暂无新歌"
 msgid "暂无本地歌单"
 msgstr "暂无本地歌单"
 
-#: src/components/player/PlaylistPicker.tsx:160
+#: src/components/player/PlaylistPicker.tsx:205
 #: src/components/songs/SongContextMenu.tsx:396
 msgid "暂无本地歌单，请先在侧栏创建"
 msgstr "暂无本地歌单，请先在侧栏创建"
@@ -1562,8 +1562,8 @@ msgstr "暂无缓存音乐，播放歌曲后会自动缓存"
 msgid "更多"
 msgstr "更多"
 
-#: src/components/player/PlayerBar.tsx:1365
-#: src/components/player/PlayerBar.tsx:1366
+#: src/components/player/PlayerBar.tsx:1409
+#: src/components/player/PlayerBar.tsx:1410
 msgid "更多播放选项"
 msgstr "更多播放选项"
 
@@ -1690,7 +1690,7 @@ msgstr "桌面服务响应超时"
 msgid "桌面服务请求失败 ({0})"
 msgstr "桌面服务请求失败 ({0})"
 
-#: src/components/player/PlayerBar.tsx:1439
+#: src/components/player/PlayerBar.tsx:1519
 msgid "桌面歌词"
 msgstr "桌面歌词"
 
@@ -1698,7 +1698,7 @@ msgstr "桌面歌词"
 msgid "桌面歌词：Ctrl / ⌘ + Shift + L 显示或隐藏，窗口始终置顶，可拖动到任意位置。"
 msgstr "桌面歌词：Ctrl / ⌘ + Shift + L 显示或隐藏，窗口始终置顶，可拖动到任意位置。"
 
-#: src/components/player/PlayerBar.tsx:832
+#: src/components/player/PlayerBar.tsx:838
 msgid "桌面歌词窗口暂不可用"
 msgstr "桌面歌词窗口暂不可用"
 
@@ -1735,7 +1735,7 @@ msgstr "歌单不存在或无法访问"
 msgid "歌单信息已保存"
 msgstr "歌单信息已保存"
 
-#: src/components/player/PlaylistPicker.tsx:72
+#: src/components/player/PlaylistPicker.tsx:82
 #: src/components/songs/SongContextMenu.tsx:143
 #: src/routes/search.tsx:320
 #: src/routes/songlists/$id.edit.tsx:68
@@ -1832,7 +1832,7 @@ msgstr "歌词、律动、待播清单、选歌与评论"
 #~ msgid "歌词与评论"
 #~ msgstr "歌词与评论"
 
-#: src/components/player/PlayerBar.tsx:1387
+#: src/components/player/PlayerBar.tsx:1439
 msgid "歌词显示"
 msgstr "歌词显示"
 
@@ -1846,12 +1846,12 @@ msgstr "歌词显示"
 msgid "正在加载歌词…"
 msgstr "正在加载歌词…"
 
-#: src/components/player/PlayerBar.tsx:1208
+#: src/components/player/PlayerBar.tsx:1214
 msgid "正在加载音源"
 msgstr "正在加载音源"
 
 #: src/components/player/NowPlaying.tsx:662
-#: src/components/player/PlayerBar.tsx:1142
+#: src/components/player/PlayerBar.tsx:1148
 msgid "正在加载音源…"
 msgstr "正在加载音源…"
 
@@ -1867,7 +1867,7 @@ msgstr "正在同步最近播放…"
 msgid "正在播放"
 msgstr "正在播放"
 
-#: src/components/player/PlayerBar.tsx:1210
+#: src/components/player/PlayerBar.tsx:1216
 msgid "正在缓冲"
 msgstr "正在缓冲"
 
@@ -2318,7 +2318,7 @@ msgstr "编辑歌单"
 msgid "编辑精选的华语、欧美与器乐歌单"
 msgstr "编辑精选的华语、欧美与器乐歌单"
 
-#: src/components/player/SourcePicker.tsx:38
+#: src/components/player/SourcePicker.tsx:40
 msgid "网易云官方"
 msgstr "网易云官方"
 
@@ -2384,11 +2384,11 @@ msgstr "评论失败"
 msgid "评论成功"
 msgstr "评论成功"
 
-#: src/components/player/PlayerBar.tsx:1108
+#: src/components/player/PlayerBar.tsx:1114
 msgid "试听"
 msgstr "试听"
 
-#: src/components/player/PlayerBar.tsx:987
+#: src/components/player/PlayerBar.tsx:993
 msgid "试听结束，登录或开通会员可播放完整版"
 msgstr "试听结束，登录或开通会员可播放完整版"
 
@@ -2400,7 +2400,7 @@ msgstr "该列表暂无可播放歌曲"
 msgid "该歌曲暂不可用"
 msgstr "该歌曲暂不可用"
 
-#: src/components/player/PlayerBar.tsx:1114
+#: src/components/player/PlayerBar.tsx:1120
 msgid "该歌曲没有官方音源，当前使用匹配到的其他音源"
 msgstr "该歌曲没有官方音源，当前使用匹配到的其他音源"
 
@@ -2580,11 +2580,11 @@ msgstr "这是你的「我喜欢的音乐」"
 msgid "这首歌正在播放"
 msgstr "这首歌正在播放"
 
-#: src/components/player/PlayerBar.tsx:1457
+#: src/components/player/PlayerBar.tsx:1546
 msgid "迷你播放器"
 msgstr "迷你播放器"
 
-#: src/components/player/PlayerBar.tsx:838
+#: src/components/player/PlayerBar.tsx:844
 msgid "迷你播放器暂不可用"
 msgstr "迷你播放器暂不可用"
 
@@ -2592,11 +2592,11 @@ msgstr "迷你播放器暂不可用"
 msgid "退出登录"
 msgstr "退出登录"
 
-#: src/components/player/PlayerBar.tsx:722
+#: src/components/player/PlayerBar.tsx:728
 msgid "选择一首歌曲开始播放"
 msgstr "选择一首歌曲开始播放"
 
-#: src/components/player/SourcePicker.tsx:122
+#: src/components/player/SourcePicker.tsx:156
 msgid "选择后立即重新获取当前歌曲；自动匹配会按内置顺序尝试。"
 msgstr "选择后立即重新获取当前歌曲；自动匹配会按内置顺序尝试。"
 
@@ -2609,9 +2609,9 @@ msgstr "选择文件夹"
 msgid "选择界面明暗与主题配色，立即生效，并会记住你的选择。"
 msgstr "选择界面明暗与主题配色，立即生效，并会记住你的选择。"
 
-#: src/components/player/SourcePicker.tsx:58
-#: src/components/player/SourcePicker.tsx:59
-#: src/components/player/SourcePicker.tsx:83
+#: src/components/player/SourcePicker.tsx:60
+#: src/components/player/SourcePicker.tsx:61
+#: src/components/player/SourcePicker.tsx:90
 msgid "选择音源"
 msgstr "选择音源"
 
@@ -2619,8 +2619,8 @@ msgstr "选择音源"
 msgid "选歌"
 msgstr "选歌"
 
-#: src/components/player/PlayerBar.tsx:1417
-#: src/components/player/PlayerBar.tsx:1426
+#: src/components/player/PlayerBar.tsx:1485
+#: src/components/player/PlayerBar.tsx:1501
 msgid "逐字播放"
 msgstr "逐字播放"
 
@@ -2652,7 +2652,7 @@ msgstr "链接已复制"
 #~ msgid "降低动态渐变背景的亮度和饱和度，夜间长时间播放时更护眼；关闭后恢复鲜艳模式。"
 #~ msgstr "降低动态渐变背景的亮度和饱和度，夜间长时间播放时更护眼；关闭后恢复鲜艳模式。"
 
-#: src/components/player/PlayerBar.tsx:1181
+#: src/components/player/PlayerBar.tsx:1187
 #: src/routes/daily.tsx:171
 #: src/store/player.ts:979
 msgid "随机播放"
@@ -2680,7 +2680,7 @@ msgstr "音乐缓存"
 msgid "音源匹配"
 msgstr "音源匹配"
 
-#: src/components/player/PlayerBar.tsx:1330
+#: src/components/player/PlayerBar.tsx:1353
 #: src/components/player/VolumeSlider.tsx:81
 msgid "音量"
 msgstr "音量"
@@ -2693,7 +2693,7 @@ msgstr "音量 +1 / -1"
 msgid "音量 +5 / -5"
 msgstr "音量 +5 / -5"
 
-#: src/components/player/PlayerBar.tsx:1331
+#: src/components/player/PlayerBar.tsx:1354
 msgid "音量（Alt + ↑ / ↓）"
 msgstr "音量（Alt + ↑ / ↓）"
 
@@ -2719,7 +2719,7 @@ msgstr "音频解码失败"
 msgid "页面不存在"
 msgstr "页面不存在"
 
-#: src/components/player/PlayerBar.tsx:1179
+#: src/components/player/PlayerBar.tsx:1185
 #: src/store/player.ts:977
 msgid "顺序播放"
 msgstr "顺序播放"
