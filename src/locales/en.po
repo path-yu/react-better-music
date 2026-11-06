@@ -1081,7 +1081,7 @@ msgstr "Up next"
 msgid "律动"
 msgstr "Motion"
 
-#: src/components/player/LyricStage.tsx:318
+#: src/components/player/LyricStage.tsx:325
 msgid "律动效果"
 msgstr ""
 
@@ -1524,7 +1524,7 @@ msgid "暂无歌单"
 msgstr "No playlists yet"
 
 #: src/components/player/LyricsPanel.tsx:175
-#: src/components/player/LyricStage.tsx:297
+#: src/components/player/LyricStage.tsx:304
 msgid "暂无歌词，请欣赏"
 msgstr "No lyrics. Enjoy the music."
 
