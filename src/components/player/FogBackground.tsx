@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { getAudioBassLevel } from '../../lib/audioAnalyser'
 import { clamp, hexToRgb, hslToHex, rgbToHsl } from '../../lib/color'
 import { cn } from '../../lib/format'
 
@@ -211,6 +212,7 @@ export function FogBackground({
     let lastDraw = 0
     let drift = 0
     let speed = 0
+    let smoothedBass = 0
     let width = 1
     let height = 1
 
@@ -238,12 +240,11 @@ export function FogBackground({
     const draw = (now: number) => {
       setColors()
       gl.uniform1f(time, drift)
-      gl.uniform1f(
-        bass,
-        playingRef.current
-          ? 0.35 + 0.25 * (0.5 + 0.5 * Math.sin(now * 0.0018))
-          : 0,
-      )
+      const measured = playingRef.current ? getAudioBassLevel() : 0
+      const fallback = 0.35 + 0.25 * (0.5 + 0.5 * Math.sin(now * 0.0018))
+      const target = playingRef.current ? (measured ?? fallback) : 0
+      smoothedBass += (target - smoothedBass) * 0.2
+      gl.uniform1f(bass, smoothedBass)
       gl.drawArrays(gl.TRIANGLES, 0, 3)
     }
 
@@ -268,7 +269,7 @@ export function FogBackground({
       last = performance.now()
       setColors()
       gl.uniform1f(time, drift)
-      gl.uniform1f(bass, 0)
+      gl.uniform1f(bass, playingRef.current ? smoothedBass : 0)
       gl.drawArrays(gl.TRIANGLES, 0, 3)
       if (
         (playingRef.current || speed > 0.003) &&

@@ -44,6 +44,10 @@ import {
 } from '../../store/settings'
 import { cn, formatArtists, formatDuration } from '../../lib/format'
 import { getAudio, registerAudio, seekAudio } from '../../lib/audio'
+import {
+  attachAudioAnalyser,
+  resumeAudioAnalyser,
+} from '../../lib/audioAnalyser'
 import { isDesktopShell } from '../../lib/desktop'
 import {
   getDesktopLyricsVisible,
@@ -57,6 +61,25 @@ import type { PlayLevel } from '../../types'
 
 /** Crossfade length for track changes; inside the 200–400ms sweet spot. */
 const CROSSFADE_MS = 320
+
+/** NetEase's audio CDN sends CORS headers, so captureStream can read it. */
+function canAnalyseAudio(url: string) {
+  if (url.startsWith('blob:')) return true
+  try {
+    const host = new URL(url, window.location.href).hostname
+    return (
+      host === '127.0.0.1' ||
+      host === 'localhost' ||
+      host === '::1' ||
+      host.endsWith('.music.126.net') ||
+      host === 'music.126.net' ||
+      host.endsWith('.music.163.com') ||
+      host === 'music.163.com'
+    )
+  } catch {
+    return false
+  }
+}
 
 export function PlayerBar() {
   const { i18n } = useLingui()
@@ -427,6 +450,7 @@ export function PlayerBar() {
     const current = audioRef.current
     if (!current) return
     if (current.getAttribute('src') === audioUrl) {
+      attachAudioAnalyser(current)
       if (usePlayerStore.getState().playing && current.paused) {
         void current.play().catch(() => undefined)
       }
@@ -468,10 +492,13 @@ export function PlayerBar() {
     target.pause()
     target.currentTime = 0
     const previousSrc = target.getAttribute('src')
-    // No Web Audio capture anymore, so avoid requesting CORS for media.
-    target.crossOrigin = null
+    // Official CDN requests opt into CORS for the analyser; blob and
+    // third-party URLs keep the old no-CORS path and simply fall back to the
+    // simulated pulse when captureStream cannot expose them.
+    target.crossOrigin = canAnalyseAudio(audioUrl) ? 'anonymous' : null
     target.src = audioUrl
     target.load()
+    attachAudioAnalyser(target)
     if (previousSrc?.startsWith('blob:')) URL.revokeObjectURL(previousSrc)
 
     if (usePlayerStore.getState().playing) {
@@ -481,12 +508,14 @@ export function PlayerBar() {
 
   useEffect(() => {
     if (playing) {
+      resumeAudioAnalyser()
       if (!sourceReady || !audioUrl) return
       const incoming = incomingRef.current
       const target =
         incoming && incoming.getAttribute('src') === audioUrl ? incoming : audioRef.current
-      if (target && target.getAttribute('src') === audioUrl && target.paused) {
-        void target.play().catch(() => undefined)
+      if (target && target.getAttribute('src') === audioUrl) {
+        attachAudioAnalyser(target)
+        if (target.paused) void target.play().catch(() => undefined)
       }
       return
     }
