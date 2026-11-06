@@ -1384,7 +1384,7 @@ html.desktop .app-window {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.02em 0.06em;
+  gap: 0.4em 0.14em;
   border: 0;
   background: transparent;
   color: rgba(255, 255, 255, 0.34);
@@ -1483,7 +1483,7 @@ html.desktop .app-window {
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 0.08em 0.12em;
+  gap: 0.4em 0.14em;
   margin: 0 auto;
   border: 0;
   background: transparent;

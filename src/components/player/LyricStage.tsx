@@ -31,10 +31,13 @@ function wordState(word: LyricWord, currentTime: number) {
 }
 
 function wordStyle(index: number, seed: number): CSSProperties {
+  // Transforms do not affect flex layout. Keep the scatter smaller than the
+  // gap between glyphs, otherwise adjacent words visually collide even though
+  // their layout boxes do not overlap.
   return {
-    '--stage-x': `${(scatter(seed + index, 1) - 0.5) * 26}px`,
-    '--stage-y': `${(scatter(seed + index, 2) - 0.5) * 24}px`,
-    '--stage-rotate': `${(scatter(seed + index, 3) - 0.5) * 7}deg`,
+    '--stage-x': `${(scatter(seed + index, 1) - 0.5) * 10}px`,
+    '--stage-y': `${(scatter(seed + index, 2) - 0.5) * 10}px`,
+    '--stage-rotate': `${(scatter(seed + index, 3) - 0.5) * 3}deg`,
     '--stage-delay': `${index * 22}ms`,
   } as CSSProperties
 }
@@ -285,8 +288,12 @@ export function LyricStage({
   const { i18n } = useLingui()
   const stageStyle = useSettingsStore((state) => state.lyricStageStyle)
   const setStageStyle = useSettingsStore((state) => state.setLyricStageStyle)
-  const line = lines[activeIndex]
-  if (!line) {
+  // Before the first timestamp, findLyricIndex returns -1. Lyrics do exist in
+  // that intro window; show the upcoming first line instead of claiming there
+  // are no lyrics at all.
+  const displayIndex = activeIndex >= 0 ? activeIndex : 0
+  const line = lines[displayIndex]
+  if (!lines.length || !line) {
     return (
       <div
         className={cn(
@@ -307,11 +314,11 @@ export function LyricStage({
           startTime: line.time,
           duration: Math.max(
             1,
-            (lines[activeIndex + 1]?.time ?? line.time + 5000) - line.time,
+            (lines[displayIndex + 1]?.time ?? line.time + 5000) - line.time,
           ),
         },
       ]
-  const next = lines[activeIndex + 1]
+  const next = lines[displayIndex + 1]
 
   return (
     <div className={cn('np-stage', className)}>
