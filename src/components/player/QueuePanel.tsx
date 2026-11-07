@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type CSSProperties } from 'react'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
@@ -7,6 +7,8 @@ import { ListMusic, LocateFixed, Trash2, Volume2, X } from 'lucide-react'
 import { Button } from '@pikoloo/darwin-ui'
 import { ArtistLinks } from '../common/ArtistLinks'
 import { usePlayerStore } from '../../store/player'
+import { usePlayerMenuTint } from '../../lib/menuSurface'
+import { hexToRgb } from '../../lib/color'
 import { formatDuration } from '../../lib/format'
 import { cn } from '../../lib/format'
 import { copyrightHint } from '../../lib/songs'
@@ -19,12 +21,17 @@ export function QueuePanel() {
   const immersive = usePlayerStore((state) => state.showNowPlaying)
   const queue = usePlayerStore((state) => state.queue)
   const currentIndex = usePlayerStore((state) => state.currentIndex)
+  const currentSong = queue[currentIndex]
   const playing = usePlayerStore((state) => state.playing)
   const toggleQueue = usePlayerStore((state) => state.toggleQueue)
   const playAt = usePlayerStore((state) => state.playAt)
   const togglePlay = usePlayerStore((state) => state.togglePlay)
   const clearQueue = usePlayerStore((state) => state.clearQueue)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const queueTint = usePlayerMenuTint(
+    immersive && show,
+    currentSong?.al.picUrl,
+  )
 
   // Long queues used to render every row; virtualise so opening the panel with
   // a thousand tracks stays cheap.
@@ -54,6 +61,23 @@ export function QueuePanel() {
   if (!show) return null
 
   const virtualItems = virtualizer.getVirtualItems()
+  const tintRgb = queueTint ? hexToRgb(queueTint) : null
+  const activeRowStyle =
+    immersive && tintRgb
+      ? {
+          backgroundColor: `rgba(${tintRgb.r}, ${tintRgb.g}, ${tintRgb.b}, 0.16)`,
+        }
+      : undefined
+  const panelStyle = immersive
+    ? ({
+        borderLeftColor: 'rgba(255, 255, 255, 0.1)',
+        ...(tintRgb
+          ? {
+              '--queue-tint-rgb': `${tintRgb.r} ${tintRgb.g} ${tintRgb.b}`,
+            }
+          : {}),
+      } as CSSProperties)
+    : undefined
 
   const handleRowPlay = (index: number) => {
     // Clicking the active row should pause/resume, not restart from zero.
@@ -84,11 +108,7 @@ export function QueuePanel() {
             ? 'queue-panel-immersive border-white/10 shadow-[-24px_0_70px_-24px_rgba(0,0,0,0.8)]'
             : 'border-black/10 bg-[#fbfbfd]/95 shadow-[-20px_0_50px_-20px_rgba(0,0,0,0.3)] backdrop-blur-xl',
         )}
-        style={
-          immersive
-            ? { borderLeftColor: 'rgba(255, 255, 255, 0.1)' }
-            : undefined
-        }
+        style={panelStyle}
       >
         <div
           className={cn(
@@ -97,7 +117,10 @@ export function QueuePanel() {
           )}
         >
           <div className="flex items-center gap-2">
-            <ListMusic className="h-4 w-4 text-accent" />
+            <ListMusic
+              className={cn('h-4 w-4', !immersive && 'text-accent')}
+              style={immersive && queueTint ? { color: queueTint } : undefined}
+            />
             <p
               className={cn(
                 'text-[13px] font-semibold',
@@ -186,6 +209,7 @@ export function QueuePanel() {
                           ? 'hover:bg-white/6'
                           : 'hover:bg-black/4',
                     )}
+                    style={active ? activeRowStyle : undefined}
                   >
                     <span className="flex w-4 shrink-0 justify-center">
                       {active ? (
@@ -194,6 +218,7 @@ export function QueuePanel() {
                             'h-3.5 w-3.5 text-accent',
                             playing ? 'animate-pulse' : 'opacity-60',
                           )}
+                          style={immersive && queueTint ? { color: queueTint } : undefined}
                         />
                       ) : (
                         <span
@@ -212,7 +237,9 @@ export function QueuePanel() {
                           className={cn(
                             'min-w-0 truncate text-[12px]',
                             active
-                              ? 'font-medium text-accent'
+                              ? immersive
+                                ? 'font-medium text-white'
+                                : 'font-medium text-accent'
                               : immersive
                                 ? 'text-white/85'
                                 : 'text-black/75',

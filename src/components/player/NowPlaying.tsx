@@ -34,6 +34,7 @@ import { seekAudio } from '../../lib/audio'
 import {
   FALLBACK_PALETTE,
   extractPalette,
+  withAlpha,
   type Palette,
 } from '../../lib/color'
 import { resizedImageUrl } from '../../lib/image'
@@ -862,11 +863,22 @@ export function NowPlaying() {
                               left: 0,
                               height: `${row.size}px`,
                               transform: `translateY(${row.start}px)`,
+                              backgroundColor:
+                                active && palette.colors[0]
+                                  ? withAlpha(palette.colors[0], 0.16)
+                                  : undefined,
                             }}
                           >
                             <span className="np-queue-row__index">
                               {active ? (
-                                <Volume2 className="h-3.5 w-3.5" />
+                                <Volume2
+                                  className="h-3.5 w-3.5"
+                                  style={
+                                    palette.colors[0]
+                                      ? { color: palette.colors[0] }
+                                      : undefined
+                                  }
+                                />
                               ) : (
                                 String(row.index + 1).padStart(2, '0')
                               )}

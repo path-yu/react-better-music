@@ -1172,18 +1172,25 @@ html.desktop .app-window {
    card. The two radial layers keep it tied to the theme accent while the dark
    base prevents the song table behind it from showing through as hairlines. */
 .queue-panel-immersive {
+  /* Neutral charcoal, not a second brown wash. The cover colour stays a
+     restrained top-right accent; a soft vertical shade supplies the depth. */
   background:
-    radial-gradient(
-      120% 75% at 100% 0%,
-      rgb(var(--apple-blue-rgb, 41 151 255) / 0.32),
-      transparent 60%
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.04) 0%,
+      transparent 22%
+    ),
+    linear-gradient(
+      180deg,
+      transparent 34%,
+      rgba(0, 0, 0, 0.3) 100%
     ),
     radial-gradient(
-      100% 70% at 0% 100%,
-      rgb(var(--apple-blue-rgb, 41 151 255) / 0.16),
-      transparent 62%
+      120% 70% at 100% 0%,
+      rgb(var(--queue-tint-rgb, 255 255 255) / 0.3),
+      transparent 64%
     ),
-    linear-gradient(165deg, #272130 0%, #16131b 55%, #0b0b0e 100%);
+    rgba(31, 30, 34, 0.94);
 }
 
 /* Shared dark surface for floating menus over the immersive player. The
@@ -2647,6 +2654,7 @@ html.desktop .app-window {
   --slider-track: rgba(0, 0, 0, 0.12);
   --slider-buffer: rgba(0, 0, 0, 0.2);
   --slider-fill: var(--apple-blue);
+  --slider-fill-end: color-mix(in srgb, var(--slider-fill) 55%, #38bdf8);
   --slider-thumb-shadow:
     0 0 0 0.5px rgba(0, 0, 0, 0.16), 0 1px 3px rgba(0, 0, 0, 0.28);
   --slider-focus-ring: 0 0 0 3px rgb(var(--apple-blue-rgb) / 0.35);
@@ -2658,6 +2666,7 @@ html.desktop .app-window {
   --slider-buffer: rgba(255, 255, 255, 0.3);
   /* Brighter system blue: the light accent is too dim on #1c1c1e chrome. */
   --slider-fill: var(--apple-blue-focus);
+  --slider-fill-end: color-mix(in srgb, var(--slider-fill) 52%, #22d3ee);
   --slider-thumb-shadow:
     0 0 0 0.5px rgba(0, 0, 0, 0.4), 0 1px 4px rgba(0, 0, 0, 0.5);
   --slider-focus-ring: 0 0 0 3px rgb(var(--apple-blue-rgb) / 0.45);
@@ -2686,7 +2695,13 @@ html.desktop .app-window {
 
 .seek-slider__fill {
   left: 0;
-  background: var(--slider-fill);
+  background: linear-gradient(
+    90deg,
+    var(--slider-fill) 0%,
+    var(--slider-fill) 38%,
+    var(--slider-fill-end) 100%
+  );
+  box-shadow: 0 0 10px color-mix(in srgb, var(--slider-fill) 28%, transparent);
 }
 
 .seek-slider__thumb,
@@ -2706,6 +2721,111 @@ html.desktop .app-window {
 .seek-slider__thumb {
   top: 50%;
   margin-top: -6.5px;
+}
+
+/* The player bar's seek line hugs its top edge, edge to edge, in both the
+   normal and immersive layouts. */
+.player-glass .seek-slider {
+  /* Keep a comfortable hover/click target while the visible line stays 3px. */
+  height: 14px;
+}
+
+.player-glass--immersive .seek-slider {
+  --slider-fill: var(--player-progress-tint, var(--apple-blue-focus));
+  --slider-fill-end: color-mix(in srgb, var(--slider-fill) 52%, #22d3ee);
+}
+
+.player-glass .seek-slider__track,
+.player-glass .seek-slider__buffer,
+.player-glass .seek-slider__fill {
+  top: 0;
+  height: 3px;
+  margin-top: 0;
+  border-radius: 0;
+  transition:
+    height 0.18s ease,
+    background 0.18s ease;
+}
+
+.player-glass .seek-slider:hover .seek-slider__track,
+.player-glass .seek-slider:hover .seek-slider__buffer,
+.player-glass .seek-slider:hover .seek-slider__fill {
+  height: 6px;
+}
+
+.player-glass--immersive .seek-slider:hover .seek-slider__track {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--player-progress-tint, #ffffff) 28%, transparent),
+    rgba(255, 255, 255, 0.2) 55%,
+    rgba(255, 255, 255, 0.12)
+  );
+}
+
+.player-glass:not(.player-glass--immersive) .seek-slider {
+  --slider-fill: var(--player-progress-tint, var(--apple-blue-focus));
+  --slider-fill-end: color-mix(in srgb, var(--slider-fill) 52%, #38bdf8);
+}
+
+.player-glass:not(.player-glass--immersive) .seek-slider__track {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--player-progress-tint, var(--apple-blue, #3b82f6)) 10%, transparent),
+    rgba(0, 0, 0, 0.08) 55%,
+    rgba(0, 0, 0, 0.04)
+  );
+}
+
+.player-glass:not(.player-glass--immersive)
+  .seek-slider:hover
+  .seek-slider__track {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--player-progress-tint, var(--apple-blue, #3b82f6)) 22%, transparent),
+    rgba(0, 0, 0, 0.16) 55%,
+    rgba(0, 0, 0, 0.08)
+  );
+}
+
+.player-glass--immersive .seek-slider:hover .seek-slider__fill {
+  filter: brightness(1.12);
+}
+
+.player-glass--immersive .seek-slider__track {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--player-progress-tint, #ffffff) 16%, transparent),
+    rgba(255, 255, 255, 0.1) 55%,
+    rgba(255, 255, 255, 0.04)
+  );
+}
+
+.player-glass--immersive .seek-slider__buffer {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.player-glass .seek-slider__thumb {
+  top: 1.5px;
+  width: 9px;
+  height: 9px;
+  margin-top: -4.5px;
+  opacity: 0;
+  transform: scale(0.4);
+  transition:
+    top 0.18s ease,
+    transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.16s ease,
+    box-shadow 0.18s ease;
+}
+
+.player-glass .seek-slider:hover .seek-slider__thumb,
+.player-glass .seek-slider__thumb.is-dragging,
+.player-glass
+  .seek-slider:has(.seek-slider__input:focus-visible)
+  .seek-slider__thumb {
+  top: 3px;
+  opacity: 1;
+  transform: scale(1.5);
 }
 
 /* The knob is always visible; it only grows under the pointer/while scrubbing. */
