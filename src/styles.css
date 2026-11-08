@@ -174,8 +174,10 @@ svg.lucide.brand-mark {
    glass header. Only the border/ring carries the palette accent. */
 .app-search-input,
 .app-search-input:hover,
-.app-search-input:focus {
+.app-search-input:focus,
+.app-search-input:focus-visible {
   background-color: transparent !important;
+  box-shadow: none !important;
 }
 
 .app-search-input:hover,

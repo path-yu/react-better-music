@@ -6,6 +6,28 @@
 
 > 仅用于学习与个人使用，音乐版权归网易云音乐及版权方所有，请勿用于商业用途。
 
+## 目录
+
+- [应用截图](#应用截图)
+- [功能](#功能)
+- [技术栈](#技术栈)
+- [架构](#架构)
+- [环境要求](#环境要求)
+- [快速开始（Web）](#快速开始web)
+- [桌面端](#桌面端)
+- [构建、发布与更新](#构建发布与更新)
+- [手机遥控与 PWA](#手机遥控与-pwa)
+- [国际化（Lingui）](#国际化lingui)
+- [音频缓存](#音频缓存)
+- [设置项](#设置项)
+- [快捷键](#快捷键)
+- [项目结构](#项目结构)
+- [常用命令](#常用命令)
+- [首屏性能测量](#首屏性能测量)
+- [环境变量](#环境变量)
+- [常见问题](#常见问题)
+- [版权与致谢](#版权与致谢)
+
 ## 应用截图
 
 | 发现音乐 | 全屏播放 |
@@ -23,6 +45,12 @@
 | 歌手详情 | 设置与缓存管理 |
 | --- | --- |
 | ![歌手详情](assets/screenshots/05-artist.png) | ![设置](assets/screenshots/07-settings.png) |
+
+| 手机遥控 / PWA |
+| :---: |
+| <img src="assets/screenshots/09-remote.png" alt="手机遥控" width="360" /> |
+
+> 截图来自当前开发版本；实际界面会随主题、字号、窗口宽度和歌曲封面而变化。
 
 ## 功能
 
@@ -47,7 +75,11 @@
 ### 歌词与播放页
 
 - 逐字歌词（YRC）渐变高亮，无逐字数据时回退普通 LRC
-- 沉浸播放页：CD 唱片、专辑色渐变背景、歌词 / 评论切换
+- 沉浸播放页：透明标题栏、透明播放条、封面主题渐变、CD 唱片
+- 律动模式：流光、云阶、倾诉三种逐字舞台，长句自动换行且避免字/行重叠
+- 待播清单：虚拟列表、当前曲目高亮、定位当前播放、右键菜单
+- 歌词 / 律动 / 待播清单 / 歌曲墙 / 评论标签切换
+- 顶部沉浸式进度线：贴边、无侧边距、随封面色渐变，Hover 增高并显示圆点
 - 桌面歌词窗口、迷你播放器窗口
 - 歌词在刷新后自动加载，无需先点播放
 
@@ -79,8 +111,18 @@
 - Electrobun 原生窗口，自定义标题栏与窗口控制
 - 托盘常驻、桌面歌词、迷你播放器
 - 本地 API 以独立 Bun 子进程运行，安装版无需安装 Node.js
-- 可选禁用右键 / F12 / DevTools
+- 打包版强制禁用右键菜单、F12、Ctrl+Shift+I/J/C 和 Ctrl+U，忽略旧 `devtools.json`
+- 开发版可在设置中切换 DevTools；生产版不显示该选项
 - 窗口首帧前保持隐藏，避免启动白屏
+
+### 手机遥控与 PWA
+
+- 桌面 API 提供 `/remote/` 手机控制页
+- 播放 / 暂停、上一首 / 下一首、进度拖动、音量滑杆与 ±5% 按钮
+- 当前歌曲封面、歌名、歌手、专辑、连接状态和队列数量
+- 手机页面可通过 PWA Manifest 添加到主屏幕
+- 手机发出的命令经 API 队列由桌面渲染层轮询执行
+- 默认只向局域网开放 `/remote`，其他 API 仍仅限本机访问
 
 ## 技术栈
 
@@ -95,26 +137,34 @@
 | 音频缓存 | WebCodecs + mediabunny + IndexedDB |
 | 后端 | NetEaseCloudMusicApiEnhanced（`server/`） |
 | 桌面端 | Electrobun + Hutch + Bun |
-| 测试 | Vitest（63 项单测） |
+| 手机遥控 | Node HTTP、PWA Manifest、Service Worker |
+| 测试 | Vitest（76 项单测） |
 
 ## 架构
 
 ```text
-┌────────────────────────────── 桌面端 ──────────────────────────────┐
-│  launcher (bin/launcher.exe)                                        │
-│    └─ Bun 主进程  Resources/app/bun/index.js                        │
-│         ├─ BrowserWindow（WebView2）                                │
-│         │    └─ 渲染层：views:// 或 Vite dev URL                    │
-│         ├─ Bridge HTTP 127.0.0.1:13002（窗口控制 / 歌词 / 下载 / 日志）│
-│         └─ 子进程：bin/bun.exe Resources/app/bun/api.cjs            │
-│              └─ NetEaseCloudMusicApiEnhanced 127.0.0.1:13000        │
-└─────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────── 桌面端 ────────────────────────────────┐
+│  launcher (bin/launcher.exe)                                          │
+│    └─ Bun 主进程  Resources/app/bun/index.js                          │
+│         ├─ BrowserWindow（WebView2）                                  │
+│         │    └─ 渲染层：views:// 或 Vite dev URL                      │
+│         ├─ Bridge HTTP 127.0.0.1:13002（窗口 / 歌词 / 下载 / 日志）    │
+│         └─ 子进程：bin/bun.exe Resources/app/bun/api.cjs              │
+│              ├─ NetEaseCloudMusicApiEnhanced 127.0.0.1:13000          │
+│              └─ /remote/ 手机遥控页 + 命令/状态中继                   │
+└───────────────────────────────────────────────────────────────────────┘
+
+手机浏览器 ──局域网──> http://<PC-IP>:13000/remote/
+                          │
+                          └─ 命令队列 ← 桌面渲染层每秒轮询
 ```
 
 - **主进程**只负责窗口、托盘、bridge 和进程生命周期，不再内联 12 MB API bundle。
 - **API bundle** 由 `scripts/prepare-electrobun-api.mjs` 用 esbuild 打包为单文件 CJS，启动时由 Bun 子进程加载。
 - **渲染层**通过 `VITE_API_BASE` 访问 API：Web 端为 `/api`（Vite 代理），桌面端为 `http://127.0.0.1:13000`。
+- **手机遥控**由 API 子进程提供 `/remote/` 和 `/remote/api/*`，桌面渲染层的 `useRemoteBridge()` 负责发布状态与执行命令。
 - 子进程带父进程看门狗，主进程退出 / 被强杀后会自行结束，避免孤儿进程占用端口。
+- 打包版 API 默认监听 `0.0.0.0`，启用 `QIMIAO_REMOTE_ONLY=1`：非本机请求只能访问 `/remote`，其他网易云接口仍返回 403。
 
 ### 端口
 
@@ -257,6 +307,145 @@ pnpm desktop:release
 
 Web 构建使用 `dist/`，桌面端构建使用 `dist-electrobun/`，互不覆盖。
 
+## 构建、发布与更新
+
+推荐流程：
+
+```powershell
+# 1. 退出正在运行的开发版 / 正式版
+# 2. 构建并生成自定义安装包
+pnpm desktop:release
+
+# 3. 运行生成的安装器
+Start-Process .\build\installer\声屿-Setup-Custom.exe
+
+# 4. 从开始菜单或桌面快捷方式启动正式版
+```
+
+`desktop:release` 只负责构建和生成安装包，不会自动替换正在运行的开发版，也不会自动执行安装器。
+
+### 开发版与正式版的区别
+
+```text
+pnpm desktop:dev    → build/dev-win-x64/声屿-dev
+pnpm desktop:release → build/installer/声屿-Setup-Custom.exe + build/stable-win-x64
+安装器               → %LOCALAPPDATA%\Programs\声屿 或用户选择的目录
+```
+
+如果安装后仍看到旧界面，先检查当前进程路径：
+
+```powershell
+Get-CimInstance Win32_Process |
+  Where-Object { $_.Name -eq 'bun.exe' } |
+  Select-Object ProcessId,CommandLine
+```
+
+正式版应显示：
+
+```text
+...\Programs\声屿\bin\bun.exe ...\Resources\main.js
+```
+
+而不是：
+
+```text
+...\build\dev-win-x64\声屿-dev\bin\bun.exe
+```
+
+### 覆盖安装
+
+当前 Inno Setup 安装器使用固定 `AppId` 和 `UsePreviousAppDir=yes`。再次运行新的 `声屿-Setup-Custom.exe` 会：
+
+- 沿用之前选择的安装目录；
+- 覆盖旧程序文件；
+- 更新卸载项；
+- 保留用户数据、缓存和登录状态。
+
+安装前必须完全退出正式版、开发版和托盘进程。安装器不会自动删除新版本中已经移除的旧资源；遇到旧 CSS / JS 残留时可以卸载后重新安装。
+
+### 构建锁
+
+Electrobun 不允许 dev 和 release 同时写 `build/`：
+
+```text
+[electrobun] Waiting for the project build lock...
+```
+
+看到这条信息时，先停止 `pnpm desktop:dev`，并结束残留的 `hutch electrobun dev --watch`、`desktop-dev.mjs` 和 `build/dev-win-x64` 进程，再重新运行 release。锁文件位于：
+
+```text
+.hutch/locks/electrobun-build.lock
+```
+
+只有在确认没有 Electrobun 进程后，才应删除这个锁文件。
+
+### 生产环境的 DevTools
+
+打包版强制关闭 DevTools：
+
+- 主进程不读取旧的 `devtools.json`，直接返回 `disabled = true`；
+- Windows WebView2 启动时带 `--disable-dev-tools`；
+- 渲染层屏蔽右键、F12、Ctrl+Shift+I/J/C 和 Ctrl+U；
+- 设置页不显示 DevTools 开关。
+
+开发版仍可在设置中调整开发者工具策略，方便调试。
+
+## 手机遥控与 PWA
+
+桌面端启动后，API 子进程会同时提供手机控制页：
+
+```text
+http://<电脑局域网 IP>:13000/remote/
+```
+
+例如：
+
+```text
+http://192.168.1.20:13000/remote/
+```
+
+要求：
+
+- 手机和电脑在同一局域网；
+- Windows 防火墙允许 Node / Bun 或 `13000` 端口通过专用网络；
+- 使用当前安装的桌面 API 端口（默认 `13000`）。
+
+### 控制能力
+
+| 功能 | 说明 |
+| --- | --- |
+| 播放 / 暂停 | 与桌面播放状态同步 |
+| 上一首 / 下一首 | 控制当前队列 |
+| 进度 | 拖动进度条，松开后发送 seek |
+| 音量 | 滑杆与 ±5% 按钮，实时显示百分比 |
+| 状态 | 当前歌曲、歌手、专辑、封面、队列数量 |
+| 连接状态 | 桌面 API 与渲染层是否在线 |
+
+### PWA
+
+页面提供：
+
+```text
+/remote/manifest.webmanifest
+/remote/sw.js
+/remote/icon-192.png
+/remote/icon-512.png
+```
+
+支持 Android Chrome 的安装提示、iOS Safari 的「添加到主屏幕」，以及独立窗口模式。
+
+> 局域网 HTTP 地址不属于安全上下文。部分浏览器会禁用 Service Worker 或原生安装提示；仍可通过浏览器菜单创建快捷方式。要实现完整离线 PWA，需要给遥控页配置 HTTPS。
+
+### 安全
+
+手机遥控目前没有配对码或登录鉴权：
+
+- 同一局域网内知道地址的人可以控制播放；
+- 不要将 `13000` 直接暴露到公网；
+- 建议只在家庭或可信局域网使用。
+
+桌面端只会向非本机客户端开放 `/remote`；其他 API 路径仍使用本机回环访问限制。
+
 ## 国际化（Lingui）
 
 - 源语言：简体中文；目标语言：英文
@@ -321,18 +510,20 @@ pnpm i18n:extract
 | 缓存品质 | 64 / 96 / 128kbps，只影响后续缓存 |
 | 下载目录 | 桌面端缓存导出目录 |
 | VIP 歌曲自动替换音源 | 开启后 VIP 歌曲优先尝试其他音源 |
-| 禁用开发者工具 | 屏蔽右键 / F12 / Ctrl+Shift+I，重启后 WebView2 层生效 |
+| 禁用开发者工具 | 仅开发版显示；打包版强制启用 WebView2 DevTools 禁用 |
 
 ## 快捷键
 
 | 按键 | 功能 |
 | --- | --- |
-| `Space` | 播放 / 暂停 |
+| `Space` | 播放 / 暂停；输入框、弹窗和菜单内保留原生空格 |
 | `Alt` + `↑ / ↓` | 音量 +5 / -5 |
 | `Shift` + `Alt` + `↑ / ↓` | 音量 +1 / -1 |
 | `↑ / ↓` + `Enter` | 在搜索建议中选择并进入 |
 | `Esc` | 关闭播放页、播放列表、侧栏或搜索建议 |
 | `Ctrl / ⌘` + `Shift` + `L` | 显示 / 隐藏桌面歌词 |
+
+播放条标题区域获得焦点后，`Space` 仍然控制播放；`Enter` 才会打开歌曲详情页。长按 Space 产生的重复按键会被忽略。
 
 ## 项目结构
 
@@ -348,10 +539,21 @@ src/
   i18n.ts        Lingui 运行时与 locale 切换
   styles.css     Tailwind + 全局样式
 server/          NetEaseCloudMusicApiEnhanced 本地 API
+  remoteControl.js  /remote 页面、Manifest、Service Worker、命令中继
+  remoteIcons.js    内嵌 PWA 图标
 scripts/         桌面 API 打包、安装器、首屏性能测量
 assets/          图标与 README 截图
 lingui.config.ts Lingui 配置
 electrobun.config.ts / hutch.config.ts  桌面构建配置
+```
+
+其他关键文件：
+
+```text
+src/lib/remoteBridge.ts       桌面端遥控状态发布与命令轮询
+src/components/common/MenuSurface.tsx  歌曲详情页浮动菜单表面
+src/components/player/PlayerMenuContent.tsx  播放条弹层适配
+src/components/common/ToastBridge.tsx  Toast 渲染桥接
 ```
 
 ## 常用命令
@@ -414,7 +616,8 @@ node scripts/measure-fpp.mjs --desktop
 | `PORT` | 本地 API 端口，默认 `3000` |
 | `QIMIAO_DEV_URL` | 桌面开发时覆盖渲染层地址（默认由 Hutch 指向 Vite） |
 | `QIMIAO_API_PORT` | 桌面 API 子进程端口，默认 `13000` |
-| `QIMIAO_API_HOST` | 桌面 API 绑定地址，默认 `127.0.0.1` |
+| `QIMIAO_API_HOST` | 桌面 API 绑定地址；打包版默认 `0.0.0.0`，便于手机访问 |
+| `QIMIAO_REMOTE_ONLY` | `1` 时非本机客户端只能访问 `/remote`，其他 API 返回 403 |
 | `PROXY_URL` / `ENABLE_PROXY` | 解灰音源代理（可选） |
 
 ## 常见问题
@@ -456,6 +659,52 @@ Get-Content "$env:LOCALAPPDATA\com.qimiao.music\startup.log" -Tail 20
 ### 桌面端接口全部失败
 
 确认 `Resources/app/bun/api.cjs` 与 `Resources/bin/bun.exe` 存在，并检查端口 `13000` 是否被占用。应用会带父进程看门狗，正常退出不会留下孤儿进程。
+
+### 卡在 `Waiting for the project build lock...`
+
+说明还有 Electrobun dev / build 进程在运行。先退出：
+
+```powershell
+Get-CimInstance Win32_Process |
+  Where-Object {
+    $_.CommandLine -match 'desktop:dev|hutch.*run dev|electrobun dev|desktop-dev\.mjs|dev-win-x64.*bun\.exe'
+  } |
+  ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
+```
+
+确认进程退出后再重新运行 `pnpm desktop:release`。不要只删除 `.hutch/locks/electrobun-build.lock` 而不结束占用进程。
+
+### Release 后前台界面没变化
+
+`pnpm desktop:release` 只生成安装包：
+
+```text
+build/installer/声屿-Setup-Custom.exe
+```
+
+需要关闭旧应用，运行安装器，再从正式版快捷方式启动。若前台进程仍指向：
+
+```text
+build\dev-win-x64\声屿-dev\bin\bun.exe
+```
+
+说明看到的是开发版，而不是刚安装的正式版。
+
+### 手机打不开 `/remote`
+
+按顺序检查：
+
+1. 电脑和手机是否在同一局域网；
+2. 使用的 IP 是否为电脑当前局域网 IP；
+3. Windows 防火墙是否允许 `13000` 端口；
+4. 桌面 API 是否已重启（旧进程可能仍绑定 `127.0.0.1`）；
+5. 手机上访问的是否是 `/remote/`（建议带结尾斜杠）。
+
+非本机访问其他 API 返回 `403` 是预期行为，不是故障。
+
+### 标题栏 / 播放条背景没有变成沉浸式渐变
+
+确认当前运行的是最新构建，并完全退出旧版进程。歌曲详情页的标题栏和播放条由状态驱动透明化；开发版和打包版需要使用同一次构建产物。重新执行 release、安装器并启动正式版即可。
 
 ## 版权与致谢
 

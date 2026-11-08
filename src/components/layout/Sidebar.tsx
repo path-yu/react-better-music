@@ -488,12 +488,6 @@ export function Sidebar() {
         )}
       </div>
 
-      <div className="border-t border-black/8 px-3 py-3">
-        <div className="flex items-center gap-2 text-[11px] text-black/35">
-          <Plus className="h-3.5 w-3.5" />
-          <Trans>本地接口 · 网易云音乐</Trans>
-        </div>
-      </div>
     </aside>
   )
 }

@@ -24,6 +24,12 @@ A macOS-style third-party NetEase Cloud Music client rewritten with React 19 + T
 | --- | --- |
 | ![Artist](assets/screenshots/05-artist.png) | ![Settings](assets/screenshots/07-settings.png) |
 
+| Phone remote / PWA |
+| :---: |
+| <img src="assets/screenshots/09-remote.png" alt="Phone remote" width="360" /> |
+
+> Screenshots reflect the current development build; the actual UI follows the selected theme, font size, window width and album artwork.
+
 ## Features
 
 ### Browse & search
@@ -47,7 +53,11 @@ A macOS-style third-party NetEase Cloud Music client rewritten with React 19 + T
 ### Lyrics & player
 
 - Word-by-word (YRC) gradient highlighting, falling back to plain LRC
-- Immersive player with spinning CD, album-color gradient background and lyrics/comments tabs
+- Immersive player with a transparent title bar/player bar, cover-tinted gradient and spinning CD
+- 律动 stage with Flow / Partita / Tilt layouts and safe long-line wrapping
+- Queue: virtualized list, current-track highlight, locate-current button and context menu
+- Lyrics / stage / queue / song wall / comments tabs
+- Top-edge progress line with no side gutter, cover gradient, hover expansion and a thumb that appears on hover
 - Desktop lyrics window and mini player window
 - Lyrics load automatically after a refresh, without pressing play first
 
@@ -79,8 +89,18 @@ A macOS-style third-party NetEase Cloud Music client rewritten with React 19 + T
 - Electrobun native window with custom title bar and window controls
 - Tray resident, desktop lyrics, mini player
 - Local API runs in a separate Bun child process; the installer does not require Node.js
-- Optional blocking of context menu / F12 / DevTools
+- Packaged builds always disable DevTools and ignore a stale `devtools.json`
+- Dev builds expose the DevTools setting; production hides it
 - Window stays hidden until the first frame to avoid a white flash
+
+### Phone remote & PWA
+
+- The desktop API serves a mobile control page at `/remote/`
+- Play/pause, previous/next, seek, volume slider and ±5% buttons
+- Current cover, title, artist, album, connection status and queue size
+- Installable via Web App Manifest on Android/iOS
+- Commands are relayed through a small API queue and polled by the renderer
+- Only `/remote` is exposed to LAN clients; the rest of the API stays loopback-only
 
 ## Tech stack
 
@@ -95,7 +115,8 @@ A macOS-style third-party NetEase Cloud Music client rewritten with React 19 + T
 | Audio cache | WebCodecs + mediabunny + IndexedDB |
 | Backend | NetEaseCloudMusicApiEnhanced (`server/`) |
 | Desktop | Electrobun + Hutch + Bun |
-| Tests | Vitest (63 unit tests) |
+| Phone remote | Node HTTP, Web App Manifest, Service Worker |
+| Tests | Vitest (76 unit tests) |
 
 ## Architecture
 
@@ -107,14 +128,20 @@ A macOS-style third-party NetEase Cloud Music client rewritten with React 19 + T
 │         │    └─ Renderer: views:// or Vite dev URL                 │
 │         ├─ Bridge HTTP 127.0.0.1:13002 (window / lyrics / download)│
 │         └─ Child: bin/bun.exe Resources/app/bun/api.cjs            │
-│              └─ NetEaseCloudMusicApiEnhanced 127.0.0.1:13000       │
+│              ├─ NetEaseCloudMusicApiEnhanced 127.0.0.1:13000       │
+│              └─ /remote/ phone remote + command/state relay        │
 └────────────────────────────────────────────────────────────────────┘
+
+Phone ──LAN──> http://<PC-IP>:13000/remote/
+                  └─ command queue ← renderer polls every second
 ```
 
 - **Main process** only owns the window, tray, bridge and process lifecycle; the 12 MB API bundle is no longer inlined.
 - **API bundle** is built by `scripts/prepare-electrobun-api.mjs` with esbuild into a single CJS file, loaded by a Bun child process at startup.
 - **Renderer** uses `VITE_API_BASE`: `/api` on the web (Vite proxy) and `http://127.0.0.1:13000` on desktop.
+- **Phone remote** is served by the API child; `useRemoteBridge()` publishes state and executes queued commands.
 - The child process watches its parent and exits if the main process quits or is killed, avoiding orphaned port holders.
+- Packaged builds bind the API to `0.0.0.0` with `QIMIAO_REMOTE_ONLY=1`; non-loopback clients can only access `/remote`.
 
 ### Ports
 
@@ -257,6 +284,115 @@ Note: do not install `Setup.exe` and `Setup-Custom.exe` for the same version sid
 
 Web builds use `dist/`; desktop builds use `dist-electrobun/`.
 
+## Build, release and updates
+
+```powershell
+# 1. Quit the running dev app and installed app/tray
+# 2. Build + generate the custom installer
+pnpm desktop:release
+
+# 3. Run the installer
+Start-Process .\build\installer\声屿-Setup-Custom.exe
+
+# 4. Launch the installed app from the Start Menu / shortcut
+```
+
+`desktop:release` only builds and packages; it does **not** replace the running dev app or run the installer automatically.
+
+### Dev vs release process
+
+```text
+pnpm desktop:dev     → build/dev-win-x64/声屿-dev
+pnpm desktop:release → build/installer/声屿-Setup-Custom.exe
+installer            → %LOCALAPPDATA%\Programs\声屿 or a custom directory
+```
+
+Verify the running process:
+
+```powershell
+Get-CimInstance Win32_Process |
+  Where-Object { $_.Name -eq 'bun.exe' } |
+  Select-Object ProcessId,CommandLine
+```
+
+The installed app should use `...\Programs\声屿\bin\bun.exe` (or the chosen directory), not `build\dev-win-x64`.
+
+### Upgrade behavior
+
+The current Inno Setup installer uses the same `AppId` with `UsePreviousAppDir=yes`. Re-running a newer installer:
+
+- reuses the previous install directory;
+- overwrites app files;
+- updates the uninstaller;
+- keeps user data, cache and login state.
+
+Close the app and tray process before installing. Stale assets removed from newer builds are not automatically deleted; uninstall/reinstall if old CSS/JS survives.
+
+### Build lock
+
+Electrobun serializes dev and release builds:
+
+```text
+[electrobun] Waiting for the project build lock...
+```
+
+Stop `pnpm desktop:dev` and any leftover `hutch electrobun dev --watch`, `desktop-dev.mjs` or `build/dev-win-x64` processes before retrying. The lock lives at:
+
+```text
+.hutch/locks/electrobun-build.lock
+```
+
+Only delete it after confirming no Electrobun process is alive.
+
+### Production DevTools
+
+Packaged builds always disable DevTools regardless of an old `devtools.json`:
+
+- main process returns `disabled = true`;
+- WebView2 starts with `--disable-dev-tools`;
+- renderer blocks context menu, F12, Ctrl+Shift+I/J/C and Ctrl+U;
+- the settings switch is hidden.
+
+Dev builds keep the switch for debugging.
+
+## Phone remote & PWA
+
+After the desktop app starts, the API child serves:
+
+```text
+http://<PC-LAN-IP>:13000/remote/
+```
+
+Example:
+
+```text
+http://192.168.1.20:13000/remote/
+```
+
+Requirements: same LAN, firewall access to the API port, and the desktop API running on that port.
+
+| Feature | Description |
+| --- | --- |
+| Play / pause | Synced with the desktop player |
+| Previous / next | Changes the current queue |
+| Seek | Drag the progress bar and release to seek |
+| Volume | Slider and ±5% buttons with live percentage |
+| State | Cover, title, artist, album and queue size |
+| Connection | Whether the desktop API/renderer is online |
+
+PWA assets:
+
+```text
+/remote/manifest.webmanifest
+/remote/sw.js
+/remote/icon-192.png
+/remote/icon-512.png
+```
+
+Android Chrome can show the native install prompt; iOS uses Share → Add to Home Screen. LAN HTTP is not a secure context, so some browsers may disable Service Worker or the native prompt. HTTPS is required for a fully offline PWA.
+
+The remote has no pairing code/token yet. Do not expose port `13000` to the public internet.
+
 ## Internationalization (Lingui)
 
 - Source locale: Simplified Chinese; target: English
@@ -321,18 +457,20 @@ Common causes: WebCodecs unavailable, audio decode failure, IndexedDB quota exha
 | Cache quality | 64 / 96 / 128 kbps, affecting only future cache entries |
 | Download folder | Desktop cache export directory |
 | Auto-replace VIP sources | Prefer matched sources for VIP tracks |
-| Disable DevTools | Blocks context menu / F12 / Ctrl+Shift+I; WebView2 layer applies after restart |
+| Disable DevTools | Shown in dev builds only; packaged builds force DevTools off |
 
 ## Keyboard shortcuts
 
 | Shortcut | Action |
 | --- | --- |
-| `Space` | Play / pause |
+| `Space` | Play / pause outside text fields, dialogs and menus |
 | `Alt` + `↑ / ↓` | Volume +5 / -5 |
 | `Shift` + `Alt` + `↑ / ↓` | Volume +1 / -1 |
 | `↑ / ↓` + `Enter` | Select and open a search suggestion |
 | `Esc` | Close the player, queue, sidebar or search suggestions |
 | `Ctrl / ⌘` + `Shift` + `L` | Show / hide desktop lyrics |
+
+When the track-info region has focus, `Space` still toggles playback; `Enter` opens the song detail page. Repeated Space keydown events are ignored.
 
 ## Project structure
 
@@ -348,10 +486,21 @@ src/
   i18n.ts        Lingui runtime and locale switching
   styles.css     Tailwind + global styles
 server/          NetEaseCloudMusicApiEnhanced local API
+  remoteControl.js  /remote page, manifest, service worker, command relay
+  remoteIcons.js    Embedded PWA icons
 scripts/          Desktop API bundling, installers, first-paint measurement
 assets/           Icons and README screenshots
 lingui.config.ts  Lingui configuration
 electrobun.config.ts / hutch.config.ts  Desktop build configuration
+```
+
+Other important files:
+
+```text
+src/lib/remoteBridge.ts                 Phone state publishing / command polling
+src/components/common/MenuSurface.tsx   Shared menu surface for the immersive player
+src/components/player/PlayerMenuContent.tsx  Player-bar popover adapter
+src/components/common/ToastBridge.tsx   Toast rendering bridge
 ```
 
 ## Commands
@@ -414,7 +563,8 @@ Including `window-created`, `api-child-spawned`, `api-ready`, `renderer-first-pa
 | `PORT` | Local API port, default `3000` |
 | `QIMIAO_DEV_URL` | Overrides the renderer URL in desktop development (Hutch points it at Vite) |
 | `QIMIAO_API_PORT` | Desktop API child port, default `13000` |
-| `QIMIAO_API_HOST` | Desktop API bind host, default `127.0.0.1` |
+| `QIMIAO_API_HOST` | Desktop API bind host; packaged builds default to `0.0.0.0` |
+| `QIMIAO_REMOTE_ONLY` | `1` restricts LAN clients to `/remote`; other API paths return 403 |
 | `PROXY_URL` / `ENABLE_PROXY` | Unblock source proxy (optional) |
 
 ## Troubleshooting
@@ -456,6 +606,32 @@ Get-Content "$env:LOCALAPPDATA\com.qimiao.music\startup.log" -Tail 20
 ### All desktop API calls fail
 
 Make sure `Resources/app/bun/api.cjs` and `Resources/bin/bun.exe` exist, and that port `13000` is free. The child process watches its parent and exits cleanly, so normal quits should not leave orphans.
+
+### Stuck at `Waiting for the project build lock...`
+
+An Electrobun dev/build process is still running. Stop `pnpm desktop:dev` first, plus any leftover processes:
+
+```powershell
+Get-CimInstance Win32_Process |
+  Where-Object {
+    $_.CommandLine -match 'desktop:dev|hutch.*run dev|electrobun dev|desktop-dev\.mjs|dev-win-x64.*bun\.exe'
+  } |
+  ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
+```
+
+Then retry `pnpm desktop:release`. Do not delete `.hutch/locks/electrobun-build.lock` while a process still owns it.
+
+### The app did not change after `desktop:release`
+
+`desktop:release` only creates `build/installer/声屿-Setup-Custom.exe`. Quit the old app, run the installer, and launch the installed shortcut. If the process path is still `build\dev-win-x64\声屿-dev\bin\bun.exe`, you are looking at the dev app.
+
+### Phone cannot open `/remote`
+
+Check the same LAN, the current PC IP, Windows firewall for port `13000`, and whether the desktop API was restarted after changing its bind host. Use `/remote/` with the trailing slash. A 403 from a non-loopback client for other API paths is intentional.
+
+### Immersive title bar / player bar is not transparent
+
+Make sure the installed build is current and all old processes were closed. The bars are state-driven transparent in the song-detail overlay. Re-run release, the installer, and launch the installed app rather than the dev build.
 
 ## Credits
 
