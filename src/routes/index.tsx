@@ -183,7 +183,7 @@ function DailyHomeCard({ songs, now }: { songs: Song[]; now: Date }) {
       onClick={opensDaily}
       onKeyDown={(event) => {
         if (event.target !== event.currentTarget) return
-        if (event.key === 'Enter' || event.key === ' ') opensDaily()
+        if (event.key === 'Enter') opensDaily()
       }}
       className="group relative mt-5 flex h-[212px] w-full cursor-pointer overflow-hidden rounded-[24px] text-white shadow-[0_14px_34px_-14px_rgba(0,0,0,0.35)]"
       style={{

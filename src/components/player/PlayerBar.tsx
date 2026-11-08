@@ -554,13 +554,20 @@ export function PlayerBar() {
       ) {
         return
       }
-      const interactive = Boolean(
-        target?.closest('button, a, [role="button"], [role="slider"]'),
+      const inDialog = Boolean(
+        target?.closest('[role="dialog"], [role="menu"], [role="listbox"]'),
       )
-      if (event.code === 'Space') {
-        // Space activates a focused button/link; only control playback when
-        // the page itself has focus.
-        if (interactive) return
+      if (
+        event.code === 'Space' &&
+        !event.repeat &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.altKey
+      ) {
+        // The player owns Space outside text fields and menus. Letting a
+        // focused track-info button handle it opened/closes the song detail
+        // page instead of toggling playback.
+        if (inDialog) return
         event.preventDefault()
         void usePlayerStore.getState().togglePlay()
         return
@@ -1094,7 +1101,7 @@ export function PlayerBar() {
           }}
           onKeyDown={(event) => {
             if (event.target !== event.currentTarget) return
-            if (event.key === 'Enter' || event.key === ' ') {
+            if (event.key === 'Enter') {
               event.preventDefault()
               toggleNowPlaying()
             }

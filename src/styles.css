@@ -139,6 +139,14 @@ select {
   font-family: inherit;
 }
 
+/* Chromium's default focus ring is a hard black rectangle that looks wrong on
+   the frosted player and artwork surfaces. Remove only the user-agent default;
+   component-specific focus-visible styles still win because of :where(). */
+:where(button, [role='button']):focus,
+:where(button, [role='button']):focus-visible {
+  outline: none;
+}
+
 /*
  * Optical stroke scale: derive Lucide's stroke from its rendered size so a
  * 12px glyph is not as heavy as a 24px one. The CSS property intentionally
@@ -2021,6 +2029,17 @@ html.desktop .app-window {
     opacity 0.34s cubic-bezier(0.16, 1, 0.3, 1),
     filter 0.34s cubic-bezier(0.16, 1, 0.3, 1),
     transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Browser default focus rings are a hard black rectangle over the artwork.
+   Keep keyboard focus visible with a soft white keyboard-only ring instead. */
+.lyric-line:focus {
+  outline: none;
+}
+
+.lyric-line:focus-visible {
+  outline: none;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
 }
 
 /* Apple nudges the current line up a touch; more than this fights the scroll. */
