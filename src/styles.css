@@ -439,10 +439,12 @@ html.desktop .app-window {
  */
 .app-window:has(.nowplaying-overlay:not(.opacity-0)) .desktop-titlebar,
 .app-window:has(.nowplaying-overlay:not(.opacity-0)) .titlebar {
-  background: transparent;
-  /* The glass bar border is a light hairline in the default palette; over the
-     immersive artwork it reads as a stray white line. Let the artwork run under
-     the transparent bar instead. */
+  background: transparent !important;
+  /* A backdrop blur here creates a visible dark strip over the artwork and
+     breaks the full-bleed gradient. The window controls stay above it; the bar
+     itself must be completely invisible. */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border-bottom-color: transparent;
 }
 
@@ -1738,16 +1740,12 @@ html.desktop .app-window {
    layer rather than a solid strip — no seam with the lyrics screen above. */
 .player-glass--immersive,
 .dark .player-glass.player-glass--immersive {
-  /* Same recipe as the view above it: a thin dark frosted layer so the bar is a
-     continuation of the artwork surface rather than its own strip. */
-  background: linear-gradient(
-    180deg,
-    rgba(8, 8, 10, 0.12) 0%,
-    rgba(8, 8, 10, 0.36) 100%
-  );
-  border-top-color: rgba(255, 255, 255, 0.06);
-  backdrop-filter: saturate(170%) blur(32px);
-  -webkit-backdrop-filter: saturate(170%) blur(32px);
+  /* The now-playing backdrop owns the whole surface; the bar must not add a
+     second tinted strip over the artwork. */
+  background: transparent;
+  border-top-color: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 /* ---------- immersive now-playing backdrop ---------- */

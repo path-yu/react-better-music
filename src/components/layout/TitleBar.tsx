@@ -49,7 +49,9 @@ export function TitleBar() {
       : undefined
 
   if (isTauriApp() || isDesktopShell()) {
-    return <DesktopTitleBar subtitle={subtitle} />
+    return (
+      <DesktopTitleBar subtitle={subtitle} hideTitle={showNowPlaying} />
+    )
   }
 
   return (
@@ -59,13 +61,15 @@ export function TitleBar() {
         <span className="traffic-dot yellow" />
         <span className="traffic-dot green" />
       </div>
-      <div className="titlebar-title flex items-center gap-1.5">
-        <Music2 className="brand-mark h-3.5 w-3.5 text-accent" strokeWidth={1.9} />
-        声屿
-        {subtitle ? (
-          <span className="titlebar-subtitle font-normal">— {subtitle}</span>
-        ) : null}
-      </div>
+      {showNowPlaying ? null : (
+        <div className="titlebar-title flex items-center gap-1.5">
+          <Music2 className="brand-mark h-3.5 w-3.5 text-accent" strokeWidth={1.9} />
+          声屿
+          {subtitle ? (
+            <span className="titlebar-subtitle font-normal">— {subtitle}</span>
+          ) : null}
+        </div>
+      )}
       <div className="ml-auto flex items-center gap-1.5 text-[11px] text-black/30">
         <span className="hidden sm:inline">macOS Edition</span>
       </div>
@@ -79,7 +83,13 @@ export function TitleBar() {
  * local bridge. macOS keeps its native traffic lights, so only Windows and
  * Linux get the in-app buttons.
  */
-function DesktopTitleBar({ subtitle }: { subtitle?: string }) {
+function DesktopTitleBar({
+  subtitle,
+  hideTitle,
+}: {
+  subtitle?: string
+  hideTitle?: boolean
+}) {
   const { i18n } = useLingui()
   const nativeControls = desktopPlatform() === 'macos'
   const tauri = isTauriApp()
@@ -135,16 +145,18 @@ function DesktopTitleBar({ subtitle }: { subtitle?: string }) {
       className={`desktop-titlebar ${DRAG_CLASS}${nativeControls ? ' desktop-titlebar--mac' : ''}`}
       onDoubleClick={nativeControls || tauri ? undefined : handleBarDoubleClick}
     >
-      <div
-        className="titlebar-title flex items-center gap-1.5"
-        data-tauri-drag-region={tauri ? '' : undefined}
-      >
-        <Music2 className="brand-mark h-3.5 w-3.5 text-accent" strokeWidth={1.9} />
-        声屿
-        {subtitle ? (
-          <span className="titlebar-subtitle font-normal">— {subtitle}</span>
-        ) : null}
-      </div>
+      {hideTitle ? null : (
+        <div
+          className="titlebar-title flex items-center gap-1.5"
+          data-tauri-drag-region={tauri ? '' : undefined}
+        >
+          <Music2 className="brand-mark h-3.5 w-3.5 text-accent" strokeWidth={1.9} />
+          声屿
+          {subtitle ? (
+            <span className="titlebar-subtitle font-normal">— {subtitle}</span>
+          ) : null}
+        </div>
+      )}
 
       {/* Tauri treats descendants of a drag region as draggable, which makes
           the window buttons below ignore clicks. Keep the drag surface in the
