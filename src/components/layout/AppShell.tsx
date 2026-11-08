@@ -14,6 +14,7 @@ import { useSettingsStore } from '../../store/settings'
 import { useLocalLibraryStore } from '../../store/localLibrary'
 import { isDesktopShell } from '../../lib/desktop'
 import { useDesktopCommands } from '../../lib/desktopCommands'
+import { reportRendererHeartbeat } from '../../lib/desktopBridge'
 import { useRemoteBridge } from '../../lib/remoteBridge'
 import { useDesktopLyricsPublisher } from '../../lib/desktopLyrics'
 import { applyTheme } from '../../lib/theme'
@@ -61,6 +62,31 @@ export function AppShell({ children }: { children: ReactNode }) {
   useDesktopLyricsPublisher()
   useDesktopCommands()
   useRemoteBridge()
+
+  // The native watchdog reloads a renderer whose process died or whose main
+  // thread has been blocked for too long. Focus/visibility pings make recovery
+  // immediate when the user returns to a black window.
+  useEffect(() => {
+    if (!isDesktopShell()) return
+    let active = true
+    const ping = () => {
+      if (active) reportRendererHeartbeat()
+    }
+    ping()
+    const timer = window.setInterval(ping, 4_000)
+    const onFocus = () => ping()
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') ping()
+    }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      active = false
+      window.clearInterval(timer)
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [])
 
   useEffect(() => {
     applyTheme(theme, palette)
