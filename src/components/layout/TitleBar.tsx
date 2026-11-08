@@ -55,7 +55,19 @@ export function TitleBar() {
   }
 
   return (
-    <div className="titlebar">
+    <div
+      className="titlebar"
+      style={
+        showNowPlaying
+          ? {
+              background: 'transparent',
+              backdropFilter: 'none',
+              WebkitBackdropFilter: 'none',
+              borderBottomColor: 'transparent',
+            }
+          : undefined
+      }
+    >
       <div className="traffic-lights">
         <span className="traffic-dot red" />
         <span className="traffic-dot yellow" />
@@ -143,6 +155,16 @@ function DesktopTitleBar({
   return (
     <div
       className={`desktop-titlebar ${DRAG_CLASS}${nativeControls ? ' desktop-titlebar--mac' : ''}`}
+      style={
+        hideTitle
+          ? {
+              background: 'transparent',
+              backdropFilter: 'none',
+              WebkitBackdropFilter: 'none',
+              borderBottomColor: 'transparent',
+            }
+          : undefined
+      }
       onDoubleClick={nativeControls || tauri ? undefined : handleBarDoubleClick}
     >
       {hideTitle ? null : (

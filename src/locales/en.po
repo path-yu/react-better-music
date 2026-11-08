@@ -205,7 +205,7 @@ msgstr "WebGL fog backdrop"
 msgid "上一页"
 msgstr "Previous page"
 
-#: src/components/player/PlayerBar.tsx:1207
+#: src/components/player/PlayerBar.tsx:1217
 msgid "上一首"
 msgstr "Previous track"
 
@@ -221,7 +221,7 @@ msgstr "Rising"
 msgid "下一页"
 msgstr "Next page"
 
-#: src/components/player/PlayerBar.tsx:1249
+#: src/components/player/PlayerBar.tsx:1259
 msgid "下一首"
 msgstr "Next track"
 
@@ -457,16 +457,16 @@ msgstr "Found {videoTotal} videos"
 msgid "关注"
 msgstr "Following"
 
-#: src/components/layout/TitleBar.tsx:195
+#: src/components/layout/TitleBar.tsx:217
 #: src/components/player/QueuePanel.tsx:158
 msgid "关闭"
 msgstr "Close"
 
-#: src/components/layout/TitleBar.tsx:196
+#: src/components/layout/TitleBar.tsx:218
 msgid "关闭到托盘"
 msgstr "Close to tray"
 
-#: src/components/player/PlayerBar.tsx:1500
+#: src/components/player/PlayerBar.tsx:1510
 msgid "关闭后只高亮整行，不做逐字动画"
 msgstr "When off, only the whole line is highlighted; no word-by-word animation"
 
@@ -474,7 +474,7 @@ msgstr "When off, only the whole line is highlighted; no word-by-word animation"
 msgid "关闭导航"
 msgstr "Close navigation"
 
-#: src/components/player/PlayerBar.tsx:1170
+#: src/components/player/PlayerBar.tsx:1180
 msgid "关闭心动模式"
 msgstr "Turn off Heart Mode"
 
@@ -495,7 +495,7 @@ msgstr "Close the immersive player, queue, sidebar or search suggestions"
 #~ msgid "关闭迷你播放器"
 #~ msgstr "Close mini player"
 
-#: src/components/player/PlayerBar.tsx:1129
+#: src/components/player/PlayerBar.tsx:1139
 #: src/components/player/SourcePicker.tsx:39
 msgid "其他音源"
 msgstr "Other source"
@@ -517,13 +517,13 @@ msgstr "Last page"
 msgid "最多可选三个标签"
 msgstr "Select up to three tags"
 
-#: src/components/layout/TitleBar.tsx:182
-#: src/components/layout/TitleBar.tsx:183
+#: src/components/layout/TitleBar.tsx:204
+#: src/components/layout/TitleBar.tsx:205
 msgid "最大化"
 msgstr "Maximize"
 
-#: src/components/layout/TitleBar.tsx:173
-#: src/components/layout/TitleBar.tsx:174
+#: src/components/layout/TitleBar.tsx:195
+#: src/components/layout/TitleBar.tsx:196
 msgid "最小化"
 msgstr "Minimize"
 
@@ -686,7 +686,7 @@ msgstr "Chinese"
 msgid "单曲"
 msgstr "Songs"
 
-#: src/components/player/PlayerBar.tsx:1195
+#: src/components/player/PlayerBar.tsx:1205
 #: src/store/player.ts:980
 msgid "单曲循环"
 msgstr "Repeat one"
@@ -733,7 +733,7 @@ msgstr "Cancel"
 
 #: src/components/player/NowPlaying.tsx:513
 #: src/components/player/NowPlaying.tsx:515
-#: src/components/player/PlayerBar.tsx:1134
+#: src/components/player/PlayerBar.tsx:1144
 #: src/components/songs/SongContextMenu.tsx:357
 #: src/components/songs/SongTable.tsx:178
 msgid "取消喜欢"
@@ -755,8 +755,8 @@ msgstr "You can only edit playlists you created"
 msgid "后退"
 msgstr "Back"
 
-#: src/components/layout/TitleBar.tsx:182
-#: src/components/layout/TitleBar.tsx:183
+#: src/components/layout/TitleBar.tsx:204
+#: src/components/layout/TitleBar.tsx:205
 msgid "向下还原"
 msgstr "Restore Down"
 
@@ -774,7 +774,7 @@ msgstr "Listener comments"
 
 #: src/components/player/NowPlaying.tsx:513
 #: src/components/player/NowPlaying.tsx:515
-#: src/components/player/PlayerBar.tsx:1134
+#: src/components/player/PlayerBar.tsx:1144
 #: src/components/songs/SongContextMenu.tsx:357
 #: src/components/songs/SongTable.tsx:178
 msgid "喜欢"
@@ -932,7 +932,7 @@ msgstr "Expand sidebar"
 msgid "展开全部"
 msgstr "Show all"
 
-#: src/components/player/PlayerBar.tsx:1579
+#: src/components/player/PlayerBar.tsx:1589
 msgid "展开播放页"
 msgstr "Open Now Playing"
 
@@ -949,8 +949,8 @@ msgstr "Saved 「{0}」 to Downloads"
 msgid "已允许开发者工具，重启应用后完全生效"
 msgstr "Developer tools enabled. Restart the app to apply fully."
 
-#: src/components/player/PlayerBar.tsx:1536
-#: src/components/player/PlayerBar.tsx:1563
+#: src/components/player/PlayerBar.tsx:1546
+#: src/components/player/PlayerBar.tsx:1573
 msgid "已关闭"
 msgstr "Off"
 
@@ -987,8 +987,8 @@ msgstr "Exported {count} cached tracks to {downloadDir}"
 msgid "已导出 {count} 首缓存音乐到下载目录"
 msgstr "Exported {count} cached tracks to Downloads"
 
-#: src/components/player/PlayerBar.tsx:1536
-#: src/components/player/PlayerBar.tsx:1563
+#: src/components/player/PlayerBar.tsx:1546
+#: src/components/player/PlayerBar.tsx:1573
 msgid "已开启"
 msgstr "On"
 
@@ -1085,8 +1085,8 @@ msgstr "Motion"
 msgid "律动效果"
 msgstr ""
 
-#: src/components/player/PlayerBar.tsx:1171
-#: src/components/player/PlayerBar.tsx:1173
+#: src/components/player/PlayerBar.tsx:1181
+#: src/components/player/PlayerBar.tsx:1183
 msgid "心动模式"
 msgstr "Heart Mode"
 
@@ -1139,8 +1139,8 @@ msgstr "Open album {0}"
 msgid "打开导航"
 msgstr "Open navigation"
 
-#: src/components/player/PlayerBar.tsx:1072
-#: src/components/player/PlayerBar.tsx:1112
+#: src/components/player/PlayerBar.tsx:1082
+#: src/components/player/PlayerBar.tsx:1122
 msgid "打开播放页"
 msgstr "Open Now Playing"
 
@@ -1252,8 +1252,8 @@ msgstr "Search songs, playlists, albums, artists, users, MVs or videos"
 #~ msgid "搜索音乐、歌单、歌手、用户、MV 或视频"
 #~ msgstr "Search songs, playlists, artists, users, MVs or videos"
 
-#: src/components/player/PlayerBar.tsx:1219
-#: src/components/player/PlayerBar.tsx:1226
+#: src/components/player/PlayerBar.tsx:1229
+#: src/components/player/PlayerBar.tsx:1236
 #: src/components/songs/SongTable.tsx:112
 #: src/routes/index.tsx:232
 msgid "播放"
@@ -1263,7 +1263,7 @@ msgstr "Play"
 msgid "播放 / 暂停"
 msgstr "Play / Pause"
 
-#: src/components/player/PlayerBar.tsx:1235
+#: src/components/player/PlayerBar.tsx:1245
 msgid "播放（空格）"
 msgstr "Play (Space)"
 
@@ -1275,7 +1275,7 @@ msgstr "Play all"
 
 #: src/components/player/NowPlaying.tsx:531
 #: src/components/player/NowPlaying.tsx:532
-#: src/components/player/PlayerBar.tsx:1259
+#: src/components/player/PlayerBar.tsx:1269
 #: src/components/player/QueuePanel.tsx:104
 #: src/components/player/QueuePanel.tsx:130
 msgid "播放列表"
@@ -1309,7 +1309,7 @@ msgstr "Played songs are transcoded to Opus and cached locally to speed up futur
 msgid "播放进度"
 msgstr "Playback progress"
 
-#: src/components/player/PlayerBar.tsx:1432
+#: src/components/player/PlayerBar.tsx:1442
 msgid "播放选项"
 msgstr "Playback options"
 
@@ -1318,9 +1318,9 @@ msgstr "Playback options"
 msgid "播放队列为空"
 msgstr "The queue is empty"
 
-#: src/components/player/PlayerBar.tsx:1296
-#: src/components/player/PlayerBar.tsx:1297
-#: src/components/player/PlayerBar.tsx:1315
+#: src/components/player/PlayerBar.tsx:1306
+#: src/components/player/PlayerBar.tsx:1307
+#: src/components/player/PlayerBar.tsx:1325
 msgid "播放音质"
 msgstr "Playback quality"
 
@@ -1398,9 +1398,9 @@ msgstr "Collapse"
 msgid "收起侧栏"
 msgstr "Collapse sidebar"
 
-#: src/components/player/PlayerBar.tsx:1071
-#: src/components/player/PlayerBar.tsx:1111
-#: src/components/player/PlayerBar.tsx:1578
+#: src/components/player/PlayerBar.tsx:1081
+#: src/components/player/PlayerBar.tsx:1121
+#: src/components/player/PlayerBar.tsx:1588
 msgid "收起播放页"
 msgstr "Close Now Playing"
 
@@ -1412,7 +1412,7 @@ msgstr "Failed to load new songs"
 msgid "无损"
 msgstr "Lossless"
 
-#: src/components/player/PlayerBar.tsx:1343
+#: src/components/player/PlayerBar.tsx:1353
 msgid "无损 / Hi-Res 需要对应会员权益；已缓存歌曲按设置中的缓存品质播放。"
 msgstr "Lossless / Hi-Res requires the matching membership tier; cached songs play at the cache quality chosen in Settings."
 
@@ -1462,13 +1462,13 @@ msgstr "Nickname cannot be empty"
 msgid "晚上好"
 msgstr "Good evening"
 
-#: src/components/player/PlayerBar.tsx:1218
-#: src/components/player/PlayerBar.tsx:1225
+#: src/components/player/PlayerBar.tsx:1228
+#: src/components/player/PlayerBar.tsx:1235
 #: src/components/songs/SongTable.tsx:112
 msgid "暂停"
 msgstr "Pause"
 
-#: src/components/player/PlayerBar.tsx:1234
+#: src/components/player/PlayerBar.tsx:1244
 msgid "暂停（空格）"
 msgstr "Pause (Space)"
 
@@ -1562,8 +1562,8 @@ msgstr "No cached music yet. Songs are cached automatically after playback."
 msgid "更多"
 msgstr "More"
 
-#: src/components/player/PlayerBar.tsx:1414
-#: src/components/player/PlayerBar.tsx:1415
+#: src/components/player/PlayerBar.tsx:1424
+#: src/components/player/PlayerBar.tsx:1425
 msgid "更多播放选项"
 msgstr "More playback options"
 
@@ -1690,7 +1690,7 @@ msgstr "Desktop service timed out"
 msgid "桌面服务请求失败 ({0})"
 msgstr "Desktop service request failed ({0})"
 
-#: src/components/player/PlayerBar.tsx:1524
+#: src/components/player/PlayerBar.tsx:1534
 msgid "桌面歌词"
 msgstr "Desktop lyrics"
 
@@ -1832,7 +1832,7 @@ msgstr "Lyrics, motion, queue, song picker and comments"
 #~ msgid "歌词与评论"
 #~ msgstr "Lyrics and comments"
 
-#: src/components/player/PlayerBar.tsx:1444
+#: src/components/player/PlayerBar.tsx:1454
 msgid "歌词显示"
 msgstr "Lyrics display"
 
@@ -1846,12 +1846,12 @@ msgstr "Lyrics display"
 msgid "正在加载歌词…"
 msgstr "Loading lyrics…"
 
-#: src/components/player/PlayerBar.tsx:1221
+#: src/components/player/PlayerBar.tsx:1231
 msgid "正在加载音源"
 msgstr "Loading source"
 
 #: src/components/player/NowPlaying.tsx:663
-#: src/components/player/PlayerBar.tsx:1155
+#: src/components/player/PlayerBar.tsx:1165
 msgid "正在加载音源…"
 msgstr "Loading source…"
 
@@ -1867,7 +1867,7 @@ msgstr "Syncing recent plays…"
 msgid "正在播放"
 msgstr "Now playing"
 
-#: src/components/player/PlayerBar.tsx:1223
+#: src/components/player/PlayerBar.tsx:1233
 msgid "正在缓冲"
 msgstr "Buffering"
 
@@ -2384,7 +2384,7 @@ msgstr "Failed to post the comment"
 msgid "评论成功"
 msgstr "Comment posted"
 
-#: src/components/player/PlayerBar.tsx:1121
+#: src/components/player/PlayerBar.tsx:1131
 msgid "试听"
 msgstr "Preview"
 
@@ -2400,7 +2400,7 @@ msgstr "No playable tracks in this list"
 msgid "该歌曲暂不可用"
 msgstr "This track is currently unavailable"
 
-#: src/components/player/PlayerBar.tsx:1127
+#: src/components/player/PlayerBar.tsx:1137
 msgid "该歌曲没有官方音源，当前使用匹配到的其他音源"
 msgstr "No official source; using a matched source"
 
@@ -2580,7 +2580,7 @@ msgstr "This is your Liked Songs"
 msgid "这首歌正在播放"
 msgstr "This song is already playing"
 
-#: src/components/player/PlayerBar.tsx:1551
+#: src/components/player/PlayerBar.tsx:1561
 msgid "迷你播放器"
 msgstr "Mini player"
 
@@ -2619,8 +2619,8 @@ msgstr "Choose source"
 msgid "选歌"
 msgstr "Song picker"
 
-#: src/components/player/PlayerBar.tsx:1490
-#: src/components/player/PlayerBar.tsx:1506
+#: src/components/player/PlayerBar.tsx:1500
+#: src/components/player/PlayerBar.tsx:1516
 msgid "逐字播放"
 msgstr "Word-by-word playback"
 
@@ -2652,7 +2652,7 @@ msgstr "Link copied"
 #~ msgid "降低动态渐变背景的亮度和饱和度，夜间长时间播放时更护眼；关闭后恢复鲜艳模式。"
 #~ msgstr "Lowers the animated gradient's brightness and saturation for comfortable night listening; turn off to restore the vivid look."
 
-#: src/components/player/PlayerBar.tsx:1194
+#: src/components/player/PlayerBar.tsx:1204
 #: src/routes/daily.tsx:171
 #: src/store/player.ts:979
 msgid "随机播放"
@@ -2680,7 +2680,7 @@ msgstr "Audio cache"
 msgid "音源匹配"
 msgstr "Source matching"
 
-#: src/components/player/PlayerBar.tsx:1358
+#: src/components/player/PlayerBar.tsx:1368
 #: src/components/player/VolumeSlider.tsx:81
 msgid "音量"
 msgstr "Volume"
@@ -2693,7 +2693,7 @@ msgstr "Volume +1 / -1"
 msgid "音量 +5 / -5"
 msgstr "Volume +5 / -5"
 
-#: src/components/player/PlayerBar.tsx:1359
+#: src/components/player/PlayerBar.tsx:1369
 msgid "音量（Alt + ↑ / ↓）"
 msgstr "Volume (Alt + ↑ / ↓)"
 
@@ -2719,7 +2719,7 @@ msgstr "Audio decoding failed"
 msgid "页面不存在"
 msgstr "Page not found"
 
-#: src/components/player/PlayerBar.tsx:1192
+#: src/components/player/PlayerBar.tsx:1202
 #: src/store/player.ts:977
 msgid "顺序播放"
 msgstr "Play in order"

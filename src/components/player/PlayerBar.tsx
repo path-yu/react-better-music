@@ -1055,6 +1055,16 @@ export function PlayerBar() {
         // backdrop as frosted glass instead of sitting in its own strip.
         showNowPlaying ? 'dark player-glass--immersive z-[70]' : 'z-30',
       )}
+      style={
+        showNowPlaying
+          ? {
+              background: 'transparent',
+              backdropFilter: 'none',
+              WebkitBackdropFilter: 'none',
+              borderTopColor: 'transparent',
+            }
+          : undefined
+      }
       onClick={() => {
         // The queue backdrop stops above the player bar so controls stay
         // usable; clicking the bar itself is still an outside click.
