@@ -63,7 +63,7 @@ msgstr "{0} plays"
 
 #. placeholder {0}: names.join('、')
 #. placeholder {1}: songs.length
-#: src/routes/index.tsx:133
+#: src/routes/index.tsx:132
 msgid "{0} 等 {1} 首"
 msgstr "{0} and more · {1} tracks"
 
@@ -229,7 +229,7 @@ msgstr "Next track"
 msgid "下一首播放"
 msgstr "Play next"
 
-#: src/routes/index.tsx:115
+#: src/routes/index.tsx:114
 msgid "下午好"
 msgstr "Good afternoon"
 
@@ -301,7 +301,7 @@ msgstr "Profile settings"
 msgid "个人资料已更新"
 msgstr "Profile updated"
 
-#: src/routes/index.tsx:114
+#: src/routes/index.tsx:113
 msgid "中午好"
 msgstr "Good noon"
 
@@ -336,11 +336,11 @@ msgid "今天已经签到过了"
 msgstr "Already checked in today"
 
 #. placeholder {0}: songs.length
-#: src/routes/index.tsx:130
+#: src/routes/index.tsx:129
 msgid "今日 {0} 首"
 msgstr "Today · {0} tracks"
 
-#: src/routes/index.tsx:425
+#: src/routes/index.tsx:408
 msgid "今日为你推荐"
 msgstr ""
 
@@ -470,7 +470,7 @@ msgstr "Close to tray"
 msgid "关闭后只高亮整行，不做逐字动画"
 msgstr "When off, only the whole line is highlighted; no word-by-word animation"
 
-#: src/components/layout/AppShell.tsx:294
+#: src/components/layout/AppShell.tsx:320
 msgid "关闭导航"
 msgstr "Close navigation"
 
@@ -585,16 +585,16 @@ msgstr "Share"
 #~ msgid "切换其他音源"
 #~ msgstr "Switch source"
 
-#: src/components/layout/TopBar.tsx:90
+#: src/components/layout/TopBar.tsx:83
 msgid "切换到浅色模式"
 msgstr "Switch to light mode"
 
-#: src/components/layout/TopBar.tsx:91
+#: src/components/layout/TopBar.tsx:84
 msgid "切换到深色模式"
 msgstr "Switch to dark mode"
 
-#: src/components/player/NowPlaying.tsx:614
 #: src/components/player/NowPlaying.tsx:615
+#: src/components/player/NowPlaying.tsx:616
 msgid "切换到视频播放"
 msgstr "Switch to video"
 
@@ -642,7 +642,7 @@ msgstr "Refresh"
 msgid "刷新缓存信息"
 msgstr "Refresh cache info"
 
-#: src/components/layout/TopBar.tsx:73
+#: src/components/layout/TopBar.tsx:66
 msgid "前进"
 msgstr "Forward"
 
@@ -711,7 +711,7 @@ msgstr "Bilingual"
 
 #: src/components/layout/Sidebar.tsx:29
 #: src/components/layout/TitleBar.tsx:29
-#: src/routes/index.tsx:359
+#: src/routes/index.tsx:342
 #: src/routes/toplist.tsx:63
 msgid "发现音乐"
 msgstr "Discover"
@@ -751,7 +751,7 @@ msgstr "Alternative / Indie"
 msgid "只能编辑自己创建的歌单"
 msgstr "You can only edit playlists you created"
 
-#: src/components/layout/TopBar.tsx:65
+#: src/components/layout/TopBar.tsx:58
 msgid "后退"
 msgstr "Back"
 
@@ -843,7 +843,7 @@ msgstr "Appearance"
 msgid "夜晚"
 msgstr "Night"
 
-#: src/routes/index.tsx:112
+#: src/routes/index.tsx:111
 msgid "夜深了"
 msgstr "Late night"
 
@@ -872,7 +872,7 @@ msgstr "Study"
 msgid "它可能已被删除，或保存在另一个安装目录。"
 msgstr "It may have been deleted or saved in another install directory."
 
-#: src/routes/index.tsx:455
+#: src/routes/index.tsx:438
 msgid "官方榜单"
 msgstr ""
 
@@ -881,8 +881,8 @@ msgstr ""
 msgid "官方版"
 msgstr "Official"
 
-#: src/components/player/NowPlaying.tsx:923
 #: src/components/player/NowPlaying.tsx:924
+#: src/components/player/NowPlaying.tsx:925
 msgid "定位到当前播放"
 msgstr "Locate current track"
 
@@ -923,8 +923,8 @@ msgstr "World"
 msgid "展开"
 msgstr "Expand"
 
-#: src/components/layout/TopBar.tsx:48
-#: src/components/layout/TopBar.tsx:51
+#: src/components/layout/TopBar.tsx:41
+#: src/components/layout/TopBar.tsx:44
 msgid "展开侧栏"
 msgstr "Expand sidebar"
 
@@ -1073,11 +1073,11 @@ msgstr "Current cache"
 msgid "影视原声"
 msgstr "Soundtrack"
 
-#: src/components/player/NowPlaying.tsx:739
+#: src/components/player/NowPlaying.tsx:740
 msgid "待播清单"
 msgstr "Up next"
 
-#: src/components/player/NowPlaying.tsx:730
+#: src/components/player/NowPlaying.tsx:731
 msgid "律动"
 msgstr "Motion"
 
@@ -1131,11 +1131,11 @@ msgstr "Open"
 #. placeholder {0}: album.name
 #. placeholder {0}: currentSong.al.name
 #: src/components/cards/AlbumCard.tsx:28
-#: src/components/player/NowPlaying.tsx:684
+#: src/components/player/NowPlaying.tsx:685
 msgid "打开专辑 {0}"
 msgstr "Open album {0}"
 
-#: src/components/layout/TopBar.tsx:39
+#: src/components/layout/TopBar.tsx:32
 msgid "打开导航"
 msgstr "Open navigation"
 
@@ -1144,7 +1144,7 @@ msgstr "Open navigation"
 msgid "打开播放页"
 msgstr "Open Now Playing"
 
-#: src/routes/index.tsx:182
+#: src/routes/index.tsx:180
 msgid "打开每日推荐"
 msgstr "Open Daily Mix"
 
@@ -1181,14 +1181,14 @@ msgstr "Charts"
 
 #: src/components/layout/Sidebar.tsx:31
 #: src/components/layout/TitleBar.tsx:22
-#: src/routes/index.tsx:476
+#: src/routes/index.tsx:459
 #: src/routes/songlists/index.tsx:29
 #: src/routes/songlists/index.tsx:129
 msgid "推荐歌单"
 msgstr "Playlists"
 
-#: src/routes/index.tsx:428
-#: src/routes/index.tsx:479
+#: src/routes/index.tsx:411
+#: src/routes/index.tsx:462
 msgid "推荐歌单加载失败"
 msgstr "Failed to load playlists"
 
@@ -1255,7 +1255,7 @@ msgstr "Search songs, playlists, albums, artists, users, MVs or videos"
 #: src/components/player/PlayerBar.tsx:1229
 #: src/components/player/PlayerBar.tsx:1236
 #: src/components/songs/SongTable.tsx:112
-#: src/routes/index.tsx:232
+#: src/routes/index.tsx:230
 msgid "播放"
 msgstr "Play"
 
@@ -1313,8 +1313,8 @@ msgstr "Playback progress"
 msgid "播放选项"
 msgstr "Playback options"
 
-#: src/components/player/NowPlaying.tsx:911
-#: src/components/player/NowPlaying.tsx:1001
+#: src/components/player/NowPlaying.tsx:912
+#: src/components/player/NowPlaying.tsx:1002
 msgid "播放队列为空"
 msgstr "The queue is empty"
 
@@ -1393,8 +1393,8 @@ msgstr "Saved playlists"
 msgid "收起"
 msgstr "Collapse"
 
-#: src/components/layout/TopBar.tsx:48
-#: src/components/layout/TopBar.tsx:51
+#: src/components/layout/TopBar.tsx:41
+#: src/components/layout/TopBar.tsx:44
 msgid "收起侧栏"
 msgstr "Collapse sidebar"
 
@@ -1446,7 +1446,7 @@ msgstr "Japan"
 msgid "日语"
 msgstr "Japanese"
 
-#: src/routes/index.tsx:113
+#: src/routes/index.tsx:112
 msgid "早上好"
 msgstr "Good morning"
 
@@ -1458,7 +1458,7 @@ msgstr "Duration"
 msgid "昵称不能为空"
 msgstr "Nickname cannot be empty"
 
-#: src/routes/index.tsx:116
+#: src/routes/index.tsx:115
 msgid "晚上好"
 msgstr "Good evening"
 
@@ -1493,8 +1493,8 @@ msgstr "No playable songs"
 msgid "暂无可用歌单"
 msgstr "No playlists available"
 
-#: src/routes/index.tsx:451
-#: src/routes/index.tsx:502
+#: src/routes/index.tsx:434
+#: src/routes/index.tsx:485
 msgid "暂无推荐歌单"
 msgstr "No playlist recommendations"
 
@@ -1588,8 +1588,8 @@ msgid "未知歌手"
 msgstr "Unknown artist"
 
 #: src/components/layout/Sidebar.tsx:494
-msgid "本地接口 · 网易云音乐"
-msgstr "Local API · NetEase Cloud Music"
+#~ msgid "本地接口 · 网易云音乐"
+#~ msgstr "Local API · NetEase Cloud Music"
 
 #: src/routes/local/playlists/$id.tsx:91
 msgid "本地收藏"
@@ -1623,7 +1623,7 @@ msgstr "Ultra"
 msgid "查看 {0} 的主页"
 msgstr "View {0}'s profile"
 
-#: src/components/player/NowPlaying.tsx:700
+#: src/components/player/NowPlaying.tsx:701
 msgid "查看专辑"
 msgstr "View album"
 
@@ -1706,7 +1706,7 @@ msgstr "Desktop lyrics are unavailable"
 msgid "桌面端"
 msgstr "Desktop"
 
-#: src/routes/index.tsx:458
+#: src/routes/index.tsx:441
 #: src/routes/toplist.tsx:41
 #: src/routes/toplist.tsx:83
 msgid "榜单加载失败"
@@ -1803,7 +1803,7 @@ msgstr "Track is already in the queue"
 msgid "歌曲操作"
 msgstr "Song actions"
 
-#: src/components/player/NowPlaying.tsx:1010
+#: src/components/player/NowPlaying.tsx:1011
 msgid "歌曲评论"
 msgstr "Song comments"
 
@@ -1816,11 +1816,11 @@ msgstr "Song comments"
 msgid "歌曲资源已失效"
 msgstr "Track source expired"
 
-#: src/components/player/NowPlaying.tsx:721
+#: src/components/player/NowPlaying.tsx:722
 msgid "歌词"
 msgstr "Lyrics"
 
-#: src/components/player/NowPlaying.tsx:712
+#: src/components/player/NowPlaying.tsx:713
 msgid "歌词、律动、待播清单、选歌与评论"
 msgstr "Lyrics, motion, queue, song picker and comments"
 
@@ -1841,8 +1841,8 @@ msgstr "Lyrics display"
 #~ msgid "歌词显示方式"
 #~ msgstr "Lyric display mode"
 
-#: src/components/player/NowPlaying.tsx:775
-#: src/components/player/NowPlaying.tsx:793
+#: src/components/player/NowPlaying.tsx:776
+#: src/components/player/NowPlaying.tsx:794
 msgid "正在加载歌词…"
 msgstr "Loading lyrics…"
 
@@ -1850,7 +1850,7 @@ msgstr "Loading lyrics…"
 msgid "正在加载音源"
 msgstr "Loading source"
 
-#: src/components/player/NowPlaying.tsx:663
+#: src/components/player/NowPlaying.tsx:664
 #: src/components/player/PlayerBar.tsx:1165
 msgid "正在加载音源…"
 msgstr "Loading source…"
@@ -1863,7 +1863,6 @@ msgstr "Syncing recent plays…"
 #: src/components/layout/Sidebar.tsx:126
 #: src/components/layout/Sidebar.tsx:227
 #: src/components/layout/TitleBar.tsx:46
-#: src/components/layout/TopBar.tsx:112
 msgid "正在播放"
 msgstr "Now playing"
 
@@ -1871,7 +1870,7 @@ msgstr "Now playing"
 msgid "正在缓冲"
 msgstr "Buffering"
 
-#: src/components/player/NowPlaying.tsx:663
+#: src/components/player/NowPlaying.tsx:664
 msgid "正在缓冲…"
 msgstr "Buffering…"
 
@@ -1897,19 +1896,19 @@ msgstr "Loading local playlist…"
 msgid "正在读取缓存…"
 msgstr "Loading cache…"
 
-#: src/routes/index.tsx:213
+#: src/routes/index.tsx:211
 msgid "每天 6:00 更新"
 msgstr ""
 
 #: src/components/layout/Sidebar.tsx:30
 #: src/routes/daily.tsx:33
 #: src/routes/daily.tsx:142
-#: src/routes/index.tsx:219
+#: src/routes/index.tsx:217
 msgid "每日推荐"
 msgstr "Daily Mix"
 
 #: src/routes/daily.tsx:180
-#: src/routes/index.tsx:415
+#: src/routes/index.tsx:398
 msgid "每日推荐加载失败"
 msgstr "Failed to load Daily Mix"
 
@@ -1970,7 +1969,7 @@ msgstr "Pop"
 msgid "浅色"
 msgstr "Light"
 
-#: src/components/layout/TopBar.tsx:94
+#: src/components/layout/TopBar.tsx:87
 msgid "浅色模式"
 msgstr "Light mode"
 
@@ -1982,7 +1981,7 @@ msgstr "Browse"
 msgid "深色"
 msgstr "Dark"
 
-#: src/components/layout/TopBar.tsx:94
+#: src/components/layout/TopBar.tsx:87
 msgid "深色模式"
 msgstr "Dark mode"
 
@@ -2075,7 +2074,6 @@ msgstr "Failed to load users"
 #: src/components/layout/LoginModal.tsx:231
 #: src/components/layout/Sidebar.tsx:409
 #: src/components/layout/UserMenu.tsx:44
-#: src/routes/index.tsx:246
 msgid "登录"
 msgstr "Sign in"
 
@@ -2087,7 +2085,7 @@ msgstr "Sign in"
 msgid "登录二维码"
 msgstr "Sign-in QR code"
 
-#: src/routes/index.tsx:215
+#: src/routes/index.tsx:213
 msgid "登录后为你专属生成"
 msgstr "Sign in for a mix made for you"
 
@@ -2144,8 +2142,8 @@ msgstr "Your session is no longer valid. Please sign in again."
 msgid "相似歌手"
 msgstr "Similar artists"
 
-#: src/components/player/NowPlaying.tsx:625
 #: src/components/player/NowPlaying.tsx:626
+#: src/components/player/NowPlaying.tsx:627
 #: src/components/songs/SongContextMenu.tsx:280
 msgid "相关视频"
 msgstr "Related videos"
@@ -2353,8 +2351,8 @@ msgid "获取歌曲播放地址失败"
 msgstr "Failed to get the playback URL"
 
 #: src/components/layout/TitleBar.tsx:28
-#: src/components/layout/TopBar.tsx:117
-#: src/components/layout/TopBar.tsx:118
+#: src/components/layout/TopBar.tsx:96
+#: src/components/layout/TopBar.tsx:97
 #: src/routes/settings.tsx:74
 #: src/routes/settings.tsx:336
 msgid "设置"
@@ -2362,7 +2360,7 @@ msgstr "Settings"
 
 #: src/components/comments/CommentSection.tsx:154
 #: src/components/comments/CommentSection.tsx:541
-#: src/components/player/NowPlaying.tsx:757
+#: src/components/player/NowPlaying.tsx:758
 #: src/routes/songlists/$id.tsx:478
 msgid "评论"
 msgstr "Comments"
@@ -2615,7 +2613,7 @@ msgstr "Choose a light or dark appearance and theme color. Changes apply immedia
 msgid "选择音源"
 msgstr "Choose source"
 
-#: src/components/player/NowPlaying.tsx:748
+#: src/components/player/NowPlaying.tsx:749
 msgid "选歌"
 msgstr "Song picker"
 
@@ -2668,7 +2666,7 @@ msgstr "Korea"
 msgid "韩语"
 msgstr "Korean"
 
-#: src/components/player/NowPlaying.tsx:597
+#: src/components/player/NowPlaying.tsx:598
 msgid "音乐"
 msgstr "Music"
 
