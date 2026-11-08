@@ -118,26 +118,6 @@ export function useDesktopLyricsPublisher() {
     }
   }, [])
 
-  // Tauri/Electrobun may be started with an aux window already visible, or a
-  // bridge event can race the initial render. Poll only while publishing is
-  // disabled; the normal path is fully event-driven.
-  useEffect(() => {
-    if (!isDesktopApp() || enabled) return
-    let active = true
-    const sync = () => {
-      void getAuxWindowsState()
-        .then((state) => {
-          if (active && (state.lyrics || state.mini)) setEnabled(true)
-        })
-        .catch(() => undefined)
-    }
-    const timer = window.setInterval(sync, 3000)
-    return () => {
-      active = false
-      window.clearInterval(timer)
-    }
-  }, [enabled])
-
   useEffect(() => {
     if (!isDesktopApp() || !enabled) return
 

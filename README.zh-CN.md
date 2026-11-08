@@ -121,7 +121,7 @@
 - 播放 / 暂停、上一首 / 下一首、进度拖动、音量滑杆与 ±5% 按钮
 - 当前歌曲封面、歌名、歌手、专辑、连接状态和队列数量
 - 手机页面可通过 PWA Manifest 添加到主屏幕
-- 手机发出的命令经 API 队列由桌面渲染层轮询执行
+- 手机命令和连接活动通过 Server-Sent Events 推送给桌面渲染层
 - 默认只向局域网开放 `/remote`，其他 API 仍仅限本机访问
 
 ## 技术栈
@@ -156,7 +156,7 @@
 
 手机浏览器 ──局域网──> http://<PC-IP>:13000/remote/
                           │
-                          └─ 命令队列 ← 桌面渲染层每秒轮询
+                          └─ SSE 事件流 ⇄ 桌面渲染层（单条持久连接）
 ```
 
 - **主进程**只负责窗口、托盘、bridge 和进程生命周期，不再内联 12 MB API bundle。
@@ -550,7 +550,7 @@ electrobun.config.ts / hutch.config.ts  桌面构建配置
 其他关键文件：
 
 ```text
-src/lib/remoteBridge.ts       桌面端遥控状态发布与命令轮询
+src/lib/remoteBridge.ts       桌面端遥控状态发布与 SSE 命令接收
 src/components/common/MenuSurface.tsx  歌曲详情页浮动菜单表面
 src/components/player/PlayerMenuContent.tsx  播放条弹层适配
 src/components/common/ToastBridge.tsx  Toast 渲染桥接

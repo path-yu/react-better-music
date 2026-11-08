@@ -2,10 +2,86 @@ const { icon192, icon512 } = require('./remoteIcons')
 
 const REMOTE_COMMAND_TTL = 20_000
 const REMOTE_COMMAND_LIMIT = 24
+const REMOTE_ACTIVE_WINDOW = 12_000
 
 let commandSequence = 0
 let commands = []
 let remoteState = null
+let lastRemoteClientAt = 0
+let remoteActive = false
+let activeResetTimer = null
+const phoneClients = new Set()
+const desktopClients = new Set()
+
+function isLoopbackRequest(req) {
+  const address = req.socket?.remoteAddress || ''
+  return (
+    address === '127.0.0.1' ||
+    address === '::1' ||
+    address === '::ffff:127.0.0.1'
+  )
+}
+
+/** Only real LAN clients count; the desktop bridge is loopback traffic. */
+function noteRemoteClient(req) {
+  if (isLoopbackRequest(req)) return
+  lastRemoteClientAt = Date.now()
+  setRemoteActive(true)
+  scheduleRemoteInactive()
+}
+
+function hasActiveRemoteClient() {
+  return remoteActive || phoneClients.size > 0
+}
+
+function sendSse(res, event, data) {
+  try {
+    res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
+    res.flush?.()
+  } catch {
+    // The client disappeared between the heartbeat and this write.
+  }
+}
+
+function broadcastSse(clients, event, data) {
+  for (const client of clients) sendSse(client, event, data)
+}
+
+function setRemoteActive(next) {
+  if (remoteActive === next) return
+  remoteActive = next
+  broadcastSse(desktopClients, 'active', { active: next })
+}
+
+function scheduleRemoteInactive() {
+  if (activeResetTimer) clearTimeout(activeResetTimer)
+  activeResetTimer = setTimeout(() => {
+    if (phoneClients.size === 0) setRemoteActive(false)
+  }, REMOTE_ACTIVE_WINDOW)
+}
+
+function openSse(req, res, clients) {
+  res.status(200)
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8')
+  res.setHeader('Cache-Control', 'no-cache, no-transform')
+  res.setHeader('Connection', 'keep-alive')
+  res.setHeader('X-Accel-Buffering', 'no')
+  res.flushHeaders?.()
+  clients.add(res)
+  const heartbeat = setInterval(() => {
+    try {
+      res.write(': keepalive\n\n')
+      res.flush?.()
+    } catch {
+      // The close handler removes the client.
+    }
+  }, 15_000)
+  req.on('close', () => {
+    clearInterval(heartbeat)
+    clients.delete(res)
+    if (clients === phoneClients) scheduleRemoteInactive()
+  })
+}
 
 function noStore(res) {
   res.setHeader('Cache-Control', 'no-store, max-age=0')
@@ -62,7 +138,8 @@ function installRemoteControl(app) {
     res.redirect(308, '/remote/')
   })
 
-  app.get('/remote/', (_req, res) => {
+  app.get('/remote/', (req, res) => {
+    noteRemoteClient(req)
     noStore(res)
     res.type('html').send(REMOTE_PAGE_HTML)
   })
@@ -87,7 +164,31 @@ function installRemoteControl(app) {
     res.type('image/png').send(Buffer.from(icon512, 'base64'))
   })
 
-  app.get('/remote/api/state', (_req, res) => {
+  // Phone -> state stream. The phone page opens one EventSource and receives
+  // snapshots as soon as the desktop publishes them.
+  app.get('/remote/api/events', (req, res) => {
+    noteRemoteClient(req)
+    openSse(req, res, phoneClients)
+    sendSse(res, 'state', {
+      code: 200,
+      data: remoteState,
+      now: Date.now(),
+    })
+  })
+
+  // Desktop -> command stream. It is loopback-only because it exposes
+  // phone-originated commands and active-state transitions.
+  app.get('/remote/api/desktop-events', (req, res) => {
+    if (!isLoopbackRequest(req)) {
+      res.status(403).end()
+      return
+    }
+    openSse(req, res, desktopClients)
+    sendSse(res, 'active', { active: hasActiveRemoteClient() })
+  })
+
+  app.get('/remote/api/state', (req, res) => {
+    noteRemoteClient(req)
     noStore(res)
     res.json({ code: 200, data: remoteState, now: Date.now() })
   })
@@ -100,6 +201,11 @@ function installRemoteControl(app) {
       return
     }
     remoteState = next
+    broadcastSse(phoneClients, 'state', {
+      code: 200,
+      data: remoteState,
+      now: Date.now(),
+    })
     res.json({ code: 200 })
   })
 
@@ -115,10 +221,12 @@ function installRemoteControl(app) {
       data,
       reset,
       next: commandSequence,
+      active: hasActiveRemoteClient(),
     })
   })
 
   app.post('/remote/api/command', (req, res) => {
+    noteRemoteClient(req)
     noStore(res)
     const action = typeof req.body?.action === 'string' ? req.body.action : ''
     if (!validAction(action)) {
@@ -143,6 +251,7 @@ function installRemoteControl(app) {
     if (commands.length > REMOTE_COMMAND_LIMIT) {
       commands = commands.slice(-REMOTE_COMMAND_LIMIT)
     }
+    broadcastSse(desktopClients, 'command', command)
     res.json({ code: 200, data: command })
   })
 }
@@ -175,7 +284,7 @@ const REMOTE_MANIFEST = {
 }
 
 const REMOTE_SW = `
-const CACHE = 'qimiao-remote-v4'
+const CACHE = 'qimiao-remote-v5'
 const SHELL = [
   '/remote/',
   '/remote/manifest.webmanifest',
@@ -322,7 +431,7 @@ const REMOTE_PAGE_HTML = `<!doctype html>
       var draggingVolume = false;
       var seekHoldUntil = 0;
       var volumeHoldUntil = 0;
-      var pollTimer = 0;
+      var eventSource = null;
       var serverNow = 0;
       var cover = document.getElementById('cover');
       var title = document.getElementById('title');
@@ -398,23 +507,23 @@ const REMOTE_PAGE_HTML = `<!doctype html>
         }
       }
 
-      async function poll() {
-        var controller = new AbortController();
-        var timer = window.setTimeout(function () {
-          controller.abort();
-        }, 3000);
-        try {
-          var response = await fetch('/remote/api/state', {
-            cache: 'no-store',
-            signal: controller.signal,
-          });
-          var payload = await response.json();
-          render(payload.data, payload.now);
-        } catch (error) {
-          render(null);
-        } finally {
-          window.clearTimeout(timer);
-        }
+      function connectEvents() {
+        if (eventSource) eventSource.close();
+        eventSource = new EventSource('/remote/api/events');
+        eventSource.addEventListener('state', function (event) {
+          try {
+            var payload = JSON.parse(event.data);
+            render(payload.data, payload.now);
+          } catch (error) {}
+        });
+        eventSource.onopen = function () {
+          status.textContent = '已连接';
+          status.classList.add('is-live');
+        };
+        eventSource.onerror = function () {
+          status.textContent = '等待桌面播放器';
+          status.classList.remove('is-live');
+        };
       }
 
       async function command(action, value) {
@@ -427,7 +536,6 @@ const REMOTE_PAGE_HTML = `<!doctype html>
             body: JSON.stringify(body),
           });
           await response.text();
-          setTimeout(poll, 180);
         } catch (error) {}
       }
 
@@ -480,14 +588,19 @@ const REMOTE_PAGE_HTML = `<!doctype html>
         cover.hidden = true;
       });
       document.addEventListener('visibilitychange', function () {
-        if (document.visibilityState === 'visible') poll();
+        if (
+          document.visibilityState === 'visible' &&
+          eventSource &&
+          eventSource.readyState === 2
+        ) {
+          connectEvents();
+        }
       });
       setRangeFill(seek);
       setRangeFill(volume);
-      poll();
-      pollTimer = window.setInterval(poll, 1000);
+      connectEvents();
       window.addEventListener('pagehide', function () {
-        window.clearInterval(pollTimer);
+        if (eventSource) eventSource.close();
       });
 
       var installButton = document.getElementById('install');

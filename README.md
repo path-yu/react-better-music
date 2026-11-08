@@ -99,7 +99,8 @@ A macOS-style third-party NetEase Cloud Music client rewritten with React 19 + T
 - Play/pause, previous/next, seek, volume slider and ±5% buttons
 - Current cover, title, artist, album, connection status and queue size
 - Installable via Web App Manifest on Android/iOS
-- Commands are relayed through a small API queue and polled by the renderer
+- Commands and state transitions are pushed over Server-Sent Events
+- The renderer keeps one loopback EventSource; state is published only while a phone is connected
 - Only `/remote` is exposed to LAN clients; the rest of the API stays loopback-only
 
 ## Tech stack
@@ -133,13 +134,13 @@ A macOS-style third-party NetEase Cloud Music client rewritten with React 19 + T
 └────────────────────────────────────────────────────────────────────┘
 
 Phone ──LAN──> http://<PC-IP>:13000/remote/
-                  └─ command queue ← renderer polls every second
+                  └─ SSE events ⇄ desktop renderer (one persistent stream)
 ```
 
 - **Main process** only owns the window, tray, bridge and process lifecycle; the 12 MB API bundle is no longer inlined.
 - **API bundle** is built by `scripts/prepare-electrobun-api.mjs` with esbuild into a single CJS file, loaded by a Bun child process at startup.
 - **Renderer** uses `VITE_API_BASE`: `/api` on the web (Vite proxy) and `http://127.0.0.1:13000` on desktop.
-- **Phone remote** is served by the API child; `useRemoteBridge()` publishes state and executes queued commands.
+- **Phone remote** is served by the API child; `useRemoteBridge()` keeps a loopback SSE stream for commands and publishes state only while the phone is connected.
 - The child process watches its parent and exits if the main process quits or is killed, avoiding orphaned port holders.
 - Packaged builds bind the API to `0.0.0.0` with `QIMIAO_REMOTE_ONLY=1`; non-loopback clients can only access `/remote`.
 
@@ -497,7 +498,7 @@ electrobun.config.ts / hutch.config.ts  Desktop build configuration
 Other important files:
 
 ```text
-src/lib/remoteBridge.ts                 Phone state publishing / command polling
+src/lib/remoteBridge.ts                 Phone state publishing / SSE command stream
 src/components/common/MenuSurface.tsx   Shared menu surface for the immersive player
 src/components/player/PlayerMenuContent.tsx  Player-bar popover adapter
 src/components/common/ToastBridge.tsx   Toast rendering bridge

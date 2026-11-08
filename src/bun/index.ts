@@ -242,11 +242,43 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
  * Dev runs point the window at Vite so renderer edits hot-reload; packaged
  * builds keep loading the bundled views.
  */
+function bundledViewUrl() {
+  return `views://mainview/index.html?bridgeToken=${encodeURIComponent(BRIDGE_TOKEN)}`
+}
+
 function mainViewUrl() {
   const query = `bridgeToken=${encodeURIComponent(BRIDGE_TOKEN)}`
   const devUrl = process.env.QIMIAO_DEV_URL?.trim()
   if (devUrl) return `${devUrl.replace(/\/+$/, '')}/?${query}`
-  return `views://mainview/index.html?${query}`
+  return bundledViewUrl()
+}
+
+/**
+ * A dev build normally loads Vite. If that process was stopped while the app
+ * stayed open, a reload would otherwise land on Chromium's "page unavailable"
+ * error. Fall back to the bundled views build so the player remains usable.
+ */
+function ensureDevRendererAvailable(
+  win: BrowserWindow,
+  url: string,
+) {
+  if (!url.startsWith('http://') && !url.startsWith('https://')) return
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 3_000)
+  void fetch(url, { method: 'HEAD', signal: controller.signal })
+    .then((response) => {
+      if (response.ok) return
+      throw new Error(`status ${response.status}`)
+    })
+    .catch(() => {
+      markStartup('dev-url-unreachable fallback to bundled views')
+      try {
+        win.webview.loadURL(bundledViewUrl())
+      } catch (error) {
+        console.error('[desktop] failed to load bundled views fallback:', error)
+      }
+    })
+    .finally(() => clearTimeout(timer))
 }
 
 /** Reveals the current window; replaced whenever a window is created. */
@@ -299,6 +331,7 @@ function createMainWindow() {
     noteRendererHeartbeat()
     // Re-sync auxiliary-window visibility after a renderer reload.
     broadcastAuxWindows()
+    void ensureDevRendererAvailable(window, url)
     setTimeout(reveal, 40)
   })
   window.on('focus', () => {

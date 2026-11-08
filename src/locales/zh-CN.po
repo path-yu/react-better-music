@@ -470,7 +470,7 @@ msgstr "关闭到托盘"
 msgid "关闭后只高亮整行，不做逐字动画"
 msgstr "关闭后只高亮整行，不做逐字动画"
 
-#: src/components/layout/AppShell.tsx:320
+#: src/components/layout/AppShell.tsx:336
 msgid "关闭导航"
 msgstr "关闭导航"
 

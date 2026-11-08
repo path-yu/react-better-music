@@ -63,27 +63,43 @@ export function AppShell({ children }: { children: ReactNode }) {
   useDesktopCommands()
   useRemoteBridge()
 
-  // The native watchdog reloads a renderer whose process died or whose main
-  // thread has been blocked for too long. Focus/visibility pings make recovery
-  // immediate when the user returns to a black window.
+  // The native watchdog only inspects a focused window, so heartbeats are only
+  // needed while focused. Focus/resume sends one immediately; blur stops the
+  // timer instead of leaving a once-every-4s request running all day.
   useEffect(() => {
     if (!isDesktopShell()) return
     let active = true
+    let timer: number | null = null
     const ping = () => {
       if (active) reportRendererHeartbeat()
     }
-    ping()
-    const timer = window.setInterval(ping, 4_000)
-    const onFocus = () => ping()
+    const stop = () => {
+      if (timer !== null) {
+        window.clearInterval(timer)
+        timer = null
+      }
+    }
+    const start = () => {
+      ping()
+      if (timer === null) {
+        timer = window.setInterval(ping, 4_000)
+      }
+    }
+    const onFocus = () => start()
+    const onBlur = () => stop()
     const onVisibility = () => {
-      if (document.visibilityState === 'visible') ping()
+      if (document.visibilityState === 'visible') start()
+      else stop()
     }
     window.addEventListener('focus', onFocus)
+    window.addEventListener('blur', onBlur)
     document.addEventListener('visibilitychange', onVisibility)
+    if (document.hasFocus()) start()
     return () => {
       active = false
-      window.clearInterval(timer)
+      stop()
       window.removeEventListener('focus', onFocus)
+      window.removeEventListener('blur', onBlur)
       document.removeEventListener('visibilitychange', onVisibility)
     }
   }, [])

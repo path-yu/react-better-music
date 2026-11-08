@@ -470,7 +470,7 @@ msgstr "Close to tray"
 msgid "关闭后只高亮整行，不做逐字动画"
 msgstr "When off, only the whole line is highlighted; no word-by-word animation"
 
-#: src/components/layout/AppShell.tsx:320
+#: src/components/layout/AppShell.tsx:336
 msgid "关闭导航"
 msgstr "Close navigation"
 
