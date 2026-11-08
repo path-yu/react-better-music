@@ -10,7 +10,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { LogIn, Play } from 'lucide-react'
+import { Play } from 'lucide-react'
 import { Button, Skeleton } from '@pikoloo/darwin-ui'
 import { PlaylistCard } from '../components/cards/PlaylistCard'
 import { ImageWithFallback } from '../components/common/ImageWithFallback'
@@ -22,7 +22,6 @@ import {
   fetchToplists,
 } from '../api'
 import { usePlayerStore } from '../store/player'
-import { useUiStore } from '../store/ui'
 import { useUserStore } from '../store/user'
 import {
   FALLBACK_PALETTE,
@@ -141,7 +140,6 @@ function DailyHomeCard({ songs, now }: { songs: Song[]; now: Date }) {
   const navigate = useNavigate()
   const initQueue = usePlayerStore((state) => state.initQueue)
   const isLogin = useUserStore((state) => state.isLogin)
-  const openLogin = useUiStore((state) => state.openLogin)
   const [palette, setPalette] = useState<Palette>(FALLBACK_PALETTE)
   const month = now.getMonth() + 1
   const day = now.getDate()
@@ -231,21 +229,6 @@ function DailyHomeCard({ songs, now }: { songs: Song[]; now: Date }) {
             <Play className="h-3.5 w-3.5 fill-current" />
             <Trans>播放</Trans>
           </Button>
-          {!isLogin ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={(event) => {
-                event.stopPropagation()
-                openLogin()
-              }}
-              className="h-[38px] rounded-full px-4 text-[13px] text-white/85 hover:bg-white/10 hover:text-white"
-            >
-              <LogIn className="h-3.5 w-3.5" />
-              <Trans>登录</Trans>
-            </Button>
-          ) : null}
         </div>
       </div>
 
