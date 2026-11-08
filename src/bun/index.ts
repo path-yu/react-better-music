@@ -49,15 +49,17 @@ function markStartup(label: string) {
 
 const DEVTOOLS_POLICY_FILE = join(APP_DATA_DIR, 'devtools.json')
 
-/** Missing policy: keep DevTools in dev builds, disable them when packaged. */
+/** Packaged builds always disable DevTools; dev builds use the saved policy. */
 function readDevToolsDisabled() {
+  // Never let a dev-era devtools.json turn DevTools back on in a release build.
+  if (BuildConfig.getSync().isPackaged) return true
   try {
     const parsed = JSON.parse(readFileSync(DEVTOOLS_POLICY_FILE, 'utf8')) as {
       disabled?: boolean
     }
     return parsed.disabled !== false
   } catch {
-    return BuildConfig.getSync().isPackaged
+    return false
   }
 }
 
