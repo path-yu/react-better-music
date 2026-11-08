@@ -587,7 +587,8 @@ export function NowPlaying() {
               </div>
             ) : null}
 
-            <div className="pointer-events-none absolute inset-x-0 top-10 z-20 flex justify-end bg-gradient-to-b from-black/50 via-black/15 to-transparent px-5 pb-10 pt-2">
+            <div className="pointer-events-none absolute inset-x-0 top-10 z-20 flex justify-end px-5">
+
               <button
                 type="button"
                 onClick={() => closeMvMode()}

@@ -1,7 +1,9 @@
-import type { CSSProperties } from 'react'
+import { useEffect, useRef, type CSSProperties } from 'react'
 import { I18nProvider } from '@videojs/react/i18n'
 import { Video, VideoPlayer, VideoSkin } from '@videojs/react/video'
 import '@videojs/react/video/skin.css'
+import { usePlayerStore } from '../../store/player'
+import { useVideoPlaybackStore } from '../../store/videoPlayback'
 
 interface MvVideoPlayerProps {
   src: string
@@ -48,6 +50,20 @@ export function MvVideoPlayer({
   onReady,
   onError,
 }: MvVideoPlayerProps) {
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+
+  // Audio is the other transport. If the playlist starts playing while this
+  // MV is playing, stop the video and hand the player bar back to audio.
+  useEffect(
+    () =>
+      usePlayerStore.subscribe((state, previous) => {
+        if (!state.playing || previous.playing) return
+        videoRef.current?.pause()
+        useVideoPlaybackStore.getState().setActive(false)
+      }),
+    [],
+  )
+
   return (
     <VideoPlayer>
       <I18nProvider locale="zh-CN">
@@ -70,7 +86,14 @@ export function MvVideoPlayer({
             autoPlay={autoPlay}
             playsInline
             preload="metadata"
-            onPlay={onPlay}
+            onPlay={(event) => {
+              videoRef.current = event.currentTarget
+              // Any MV start (including autoplay and playback from the MV
+              // detail page) must stop the playlist audio. Call the caller
+              // first so its resume/ended bookkeeping still sees `playing`.
+              onPlay?.()
+              usePlayerStore.getState().setPlaying(false)
+            }}
             onEnded={onEnded}
             onCanPlay={onReady}
             onError={onError}
