@@ -101,6 +101,7 @@ export function PlayerBar() {
   const retriedRef = useRef<number | null>(null)
   const lastPlayTokenRef = useRef<number | null>(null)
   const lastSongIdRef = useRef<number | null>(null)
+  const autoNextTriggeredRef = useRef(false)
   const switchingRef = useRef(false)
   const trialNotifiedRef = useRef(false)
   // A seek that arrives before the media is seekable (restored queue after a
@@ -245,6 +246,9 @@ export function PlayerBar() {
     registerAudio(incoming)
     switchingRef.current = false
     setAudioReady(true)
+    // The incoming element's loadeddata event fired before it became the active
+    // element, so kick off the *next* track's prefetch now.
+    prefetchNext()
 
     if (!outgoing || outgoing === incoming || outgoing.paused) {
       incoming.volume = masterVolumeRef.current
@@ -389,6 +393,7 @@ export function PlayerBar() {
   useEffect(() => {
     if (lastPlayTokenRef.current === playToken) return
     lastPlayTokenRef.current = playToken
+    autoNextTriggeredRef.current = false
     trialNotifiedRef.current = false
     const restartingSameSong = lastSongIdRef.current === currentSong?.id
     lastSongIdRef.current = currentSong?.id ?? null
@@ -422,10 +427,34 @@ export function PlayerBar() {
       return
     }
 
-    // Stop the outgoing track immediately. Waiting for the new URL used to be
-    // masked by a crossfade, but that let two tracks play at once and made the
-    // previous song audible after switching. The source effect below starts the
-    // new track as soon as its URL/blob is ready.
+    // Keep the outgoing element running until the incoming source is actually
+    // ready. This is the hand-off that removes the silence at track changes.
+    const canCrossfade =
+      !restartingSameSong &&
+      !audio.paused &&
+      !audio.ended &&
+      usePlayerStore.getState().playing
+    if (canCrossfade) {
+      const previousIncoming = incomingRef.current
+      if (previousIncoming && previousIncoming !== audio) {
+        settleElement(previousIncoming)
+      }
+      incomingRef.current = null
+      const previousOutgoing = outgoingRef.current
+      if (previousOutgoing && previousOutgoing !== audio) {
+        settleElement(previousOutgoing)
+      }
+      clearCrossfadeTimer()
+      clearFadeEndTimer()
+      clearFade()
+      crossfadePendingRef.current = true
+      outgoingRef.current = audio
+      switchingRef.current = true
+      return
+    }
+
+    // No active audio to overlap (first play, paused transition, or replay):
+    // stop immediately and let the source effect start the next track.
     crossfadePendingRef.current = false
     clearCrossfadeTimer()
     clearFadeEndTimer()
@@ -998,6 +1027,25 @@ export function PlayerBar() {
         if (!trialNotifiedRef.current) {
           trialNotifiedRef.current = true
           toast.warning(i18n._(msg`试听结束，登录或开通会员可播放完整版`))
+        }
+        return
+      }
+
+      // Start the next track just before the current one ends so the two
+      // elements can overlap. Without this, `ended` only fires after the audio
+      // has stopped, which guarantees a gap even with a crossfade configured.
+      if (
+        mode !== 'singleLoop' &&
+        usePlayerStore.getState().playing &&
+        !switchingRef.current &&
+        !autoNextTriggeredRef.current &&
+        Number.isFinite(audio.duration) &&
+        audio.duration > 0
+      ) {
+        const remainingMs = (audio.duration - audio.currentTime) * 1000
+        if (remainingMs > 0 && remainingMs <= CROSSFADE_MS + 80) {
+          autoNextTriggeredRef.current = true
+          void next({ auto: true })
         }
       }
     },

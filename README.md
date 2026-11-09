@@ -43,7 +43,7 @@ A macOS-style third-party NetEase Cloud Music client rewritten with React 19 + T
 ### Playback
 
 - Standard / higher / ex-high / lossless / Hi-Res quality switching
-- Next-track URL prefetch to reduce switching latency
+- Next-track URL/blob prefetch plus a 320 ms dual-player crossfade, including natural track ends
 - Queue: sequential / shuffle / repeat-one, clear queue, current-track highlight
 - Volume control with persistence
 - Heartbeat mode powered by NetEase recommendations
