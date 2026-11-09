@@ -460,6 +460,7 @@ Common causes: WebCodecs unavailable, audio decode failure, IndexedDB quota exha
 | Cache quality | 64 / 96 / 128 kbps, affecting only future cache entries |
 | Download folder | Desktop cache export directory |
 | Auto-replace VIP sources | Prefer matched sources for VIP tracks |
+| Listening report | Off by default; reports one real listen after 50% or 4 minutes. Uses a third-party client protocol and may be ignored or trigger risk controls |
 | Disable DevTools | Shown in dev builds only; packaged builds force DevTools off |
 
 ## Keyboard shortcuts

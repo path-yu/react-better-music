@@ -102,6 +102,8 @@ function SettingsPage() {
   const setPalette = useUiStore((state) => state.setPalette)
   const fogBackdrop = useSettingsStore((state) => state.fogBackdrop)
   const setFogBackdrop = useSettingsStore((state) => state.setFogBackdrop)
+  const autoScrobble = useSettingsStore((state) => state.autoScrobble)
+  const setAutoScrobble = useSettingsStore((state) => state.setAutoScrobble)
 
   useEffect(() => {
     if (!desktop) return
@@ -604,6 +606,32 @@ function SettingsPage() {
               aria-label={i18n._(msg`VIP 歌曲自动替换音源`)}
             />
           </div>
+        </section>
+
+        <section className="apple-card p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
+                <ListMusic className="h-4 w-4 text-accent" />
+                <Trans>听歌打卡</Trans>
+              </h2>
+              <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-black/40">
+                <Trans>
+                  开启后，真实播放达到歌曲的 50% 或 4 分钟后，向网易云上报一次听歌记录。默认关闭。
+                </Trans>
+              </p>
+            </div>
+            <Switch
+              checked={autoScrobble}
+              onChange={setAutoScrobble}
+              aria-label={i18n._(msg`听歌打卡`)}
+            />
+          </div>
+          <p className="mt-4 rounded-[10px] bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-700/80 dark:text-amber-200/70">
+            <Trans>
+              此功能使用第三方客户端上报协议，记录可能被忽略，也可能触发账号风控。仅在本人账号、真实播放时使用，失败不会自动重试。
+            </Trans>
+          </p>
         </section>
 
         {desktop ? (

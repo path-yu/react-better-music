@@ -341,6 +341,28 @@ export async function fetchMatchedSongUrl(id: number | string, source?: string) 
  * `noCopyrightRcmd` hint). Normal tracks never need it. `br` defaults to
  * 999000 (highest bitrate) server-side.
  */
+/**
+ * Report a completed listen. The desktop API implements the PC-client PLV/PLD
+ * upload; callers should only invoke this once per real playback session.
+ */
+export async function scrobbleSong(params: {
+  id: number
+  time: number
+  total: number
+  name: string
+  artist: string
+  bitrate?: number
+  level?: string
+  vip?: boolean
+  sourceid?: string
+  source?: string
+}) {
+  return get<{ code?: number; msg?: string; data?: unknown }>(
+    '/scrobble_v1',
+    params,
+  )
+}
+
 export async function checkMusicAvailable(id: number | string, br?: number) {
   const res = await get<{ success?: boolean; musicSuccess?: boolean; message?: string }>(
     '/check/music',

@@ -66,6 +66,8 @@ interface SettingsState {
   disableDevTools: boolean
   /** Prefer a matched provider for VIP tracks (manual switch is always available). */
   autoReplaceVipSource: boolean
+  /** Opt-in: report one completed listen to NetEase after real playback. */
+  autoScrobble: boolean
   /** UI language; the source catalog is Simplified Chinese. */
   locale: Locale
   setCacheBitrate: (value: number) => void
@@ -78,6 +80,7 @@ interface SettingsState {
   setNowPlayingMode: (value: NowPlayingMode) => void
   setDisableDevTools: (value: boolean) => void
   setAutoReplaceVipSource: (value: boolean) => void
+  setAutoScrobble: (value: boolean) => void
   setLocale: (value: Locale) => void
 }
 
@@ -96,6 +99,8 @@ export const useSettingsStore = create<SettingsState>()(
       nowPlayingMode: 'audio',
       disableDevTools: false,
       autoReplaceVipSource: false,
+      // Reporting private listening logs is opt-in and never automatic.
+      autoScrobble: false,
       locale: defaultLocale,
       setCacheBitrate: (cacheBitrate) => set({ cacheBitrate }),
       setPlayLevel: (playLevel) => set({ playLevel }),
@@ -107,6 +112,7 @@ export const useSettingsStore = create<SettingsState>()(
       setNowPlayingMode: (nowPlayingMode) => set({ nowPlayingMode }),
       setDisableDevTools: (disableDevTools) => set({ disableDevTools }),
       setAutoReplaceVipSource: (autoReplaceVipSource) => set({ autoReplaceVipSource }),
+      setAutoScrobble: (autoScrobble) => set({ autoScrobble }),
       setLocale: (locale) => {
         activateLocale(locale)
         set({ locale })

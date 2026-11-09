@@ -58,6 +58,7 @@ import {
   setMiniPlayerVisible,
 } from '../../lib/desktopBridge'
 import { cacheSong, cacheSongFromBlob } from '../../lib/songCache'
+import { useScrobble } from '../../lib/scrobble'
 import { toast } from '../../lib/toast'
 import type { PlayLevel } from '../../types'
 
@@ -85,6 +86,7 @@ function canAnalyseAudio(url: string) {
 
 export function PlayerBar() {
   const { i18n } = useLingui()
+  useScrobble()
   // Two media elements alternate so a new track can start while the previous
   // one is still playing; `audioRef` always points at the element that owns the
   // current source, and `registerAudio` follows it for lyrics/seek helpers.
