@@ -139,10 +139,19 @@ export function useScrobble() {
         vip: song.fee === 1,
         sourceid: state.playlistId || undefined,
         source: 'list',
-      }).catch(() => {
-        // A failed report is intentionally not retried: retry storms are more
-        // likely to be treated as abnormal traffic.
       })
+        .then((result) => {
+          if (result.code !== 200) return
+          window.dispatchEvent(
+            new CustomEvent('qimiao:scrobble', {
+              detail: { songId: song.id },
+            }),
+          )
+        })
+        .catch(() => {
+          // A failed report is intentionally not retried: retry storms are more
+          // likely to be treated as abnormal traffic.
+        })
     }, TICK_MS)
 
     return () => window.clearInterval(timer)

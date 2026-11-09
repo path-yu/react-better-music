@@ -3,7 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { History, Loader2, Trash2 } from 'lucide-react'
+import { History, Loader2, RefreshCw, Trash2 } from 'lucide-react'
 import { SongTable } from '../components/songs/SongTable'
 import { PlayAllButton } from '../components/songs/PlayAllButton'
 import { EmptyState } from '../components/common/EmptyState'
@@ -28,6 +28,21 @@ function RecentSongsPage() {
   const [loading, setLoading] = useState(false)
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
+
+  // A successful scrobble reaches the API first; NetEase may expose the recent
+  // list a moment later. Refresh after a short delay when this page is open.
+  useEffect(() => {
+    let timer = 0
+    const refresh = () => {
+      window.clearTimeout(timer)
+      timer = window.setTimeout(() => setAttempt((value) => value + 1), 1_200)
+    }
+    window.addEventListener('qimiao:scrobble', refresh)
+    return () => {
+      window.clearTimeout(timer)
+      window.removeEventListener('qimiao:scrobble', refresh)
+    }
+  }, [])
 
   useEffect(() => {
     if (!isLogin) {
@@ -76,6 +91,17 @@ function RecentSongsPage() {
         </div>
         <div className="flex items-center gap-2">
           <PlayAllButton songs={displaySongs} playlistId="recent-songs" />
+          {isLogin ? (
+            <button
+              type="button"
+              onClick={() => setAttempt((value) => value + 1)}
+              aria-label={i18n._(msg`刷新最近播放`)}
+              title={i18n._(msg`刷新最近播放`)}
+              className="pressable flex h-8 w-8 items-center justify-center rounded-full border border-black/8 text-black/35 hover:border-accent/30 hover:text-accent"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+            </button>
+          ) : null}
           {!isLogin && localRecent.length ? (
             <button
               type="button"
