@@ -371,6 +371,23 @@ try {
   // Keep the process (and tray) alive; the tray can retry window creation.
   console.error('[desktop] failed to create the main window:', error)
 }
+// Do not resume audio blindly after a long system sleep. The Bun timer stops
+// while Windows suspends, so an unusually large gap identifies a resume.
+let lastMainProcessTick = Date.now()
+setInterval(() => {
+  const now = Date.now()
+  const gap = now - lastMainProcessTick
+  lastMainProcessTick = now
+  if (gap < 90_000) return
+  markStartup(`resume-after-sleep gap=${gap}ms pause-audio`)
+  try {
+    mainWindow?.webview.executeJavascript(
+      "window.__qimiaoDesktopCommand&&window.__qimiaoDesktopCommand('pause')",
+    )
+  } catch (error) {
+    console.warn('[desktop] failed to pause after resume:', error)
+  }
+}, 10_000)
 // The API runs in its own Bun process, so spawn it right away: it no longer
 // competes with the WebView for the main thread.
 startApiServer()
@@ -462,6 +479,7 @@ if (process.platform === 'win32') {
     { type: 'normal', label: '迷你播放器', action: 'mini' },
     { type: 'divider' },
     { type: 'normal', label: '显示主窗口', action: 'show-main' },
+    { type: 'normal', label: '重新加载界面', action: 'reload-main' },
     { type: 'normal', label: '退出声屿', action: 'quit' },
   ])
 
@@ -825,6 +843,23 @@ function applyCommand(action: string | null, value?: number) {
   if (action === 'mini') return applyMiniAction('toggle')
   if (action === 'show-main') {
     showMainWindow()
+    return true
+  }
+  if (action === 'reload-main') {
+    // Explicit tray action only. Never reload automatically: doing so tears
+    // down the audio element and interrupts playback.
+    showMainWindow()
+    const win = mainWindow
+    if (!win) return false
+    const url = win.webview.url || mainViewUrl()
+    markStartup('manual-reload requested from tray')
+    setTimeout(() => {
+      try {
+        win.webview.loadURL(url)
+      } catch (error) {
+        console.error('[desktop] failed to reload the renderer:', error)
+      }
+    }, 80)
     return true
   }
   if (action === 'seek') {

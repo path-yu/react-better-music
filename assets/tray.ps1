@@ -74,6 +74,8 @@ $miniItem.add_Click({ Invoke-AppCommand 'mini' })
 [void]$menu.Items.Add((New-Object System.Windows.Forms.ToolStripSeparator))
 $showItem = $menu.Items.Add('显示主窗口')
 $showItem.add_Click({ Show-AppWindow })
+$reloadItem = $menu.Items.Add('重新加载界面')
+$reloadItem.add_Click({ Invoke-AppCommand 'reload-main' })
 [void]$menu.Items.Add((New-Object System.Windows.Forms.ToolStripSeparator))
 $quitItem = $menu.Items.Add('退出声屿')
 $quitItem.add_Click({

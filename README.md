@@ -244,6 +244,8 @@ The installer is about **35 MB**, bundles the Bun runtime, and does not require 
 ### Window and taskbar behavior
 
 - Closing the window hides it to the tray instead of quitting; use **Quit** in the tray menu to exit.
+- **Reload UI** in the tray menu is a manual recovery action for a black/unresponsive WebView. It restarts the renderer and therefore interrupts current playback; there is no automatic reload.
+- After a system sleep/resume gap longer than 90 seconds, playback is paused once instead of resuming automatically.
 - Clicking the pinned taskbar icon while the window is hidden starts a second process, which calls the running bridge's local `/activate` endpoint and reveals the existing window.
 - If that activation arrives while the window is visible, it minimizes the window; activating a minimized window restores it, so repeated clicks toggle minimize/restore.
 

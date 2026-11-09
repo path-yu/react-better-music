@@ -12,6 +12,7 @@ import { useLocalLibraryStore } from '../store/localLibrary'
  */
 export type DesktopCommand =
   | 'play-pause'
+  | 'pause'
   | 'next'
   | 'previous'
   | 'like-current'
@@ -35,6 +36,9 @@ export function useDesktopCommands() {
           break
         case 'play-pause':
           void player.togglePlay()
+          break
+        case 'pause':
+          player.setPlaying(false)
           break
         case 'next':
           void player.next()
