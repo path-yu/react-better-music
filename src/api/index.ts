@@ -21,7 +21,7 @@ import type {
   VideoItem,
   VideoSearchItem,
 } from '../types'
-import { get, invalidateApiCache, uploadFile } from '../lib/http'
+import { get, invalidateApiCache, postJson, uploadFile } from '../lib/http'
 import { normalizeMv, normalizePlaylist, normalizeSongs, type RawSong } from '../lib/songs'
 import {
   relatedVideoFromFeed,
@@ -357,8 +357,8 @@ export async function scrobbleSong(params: {
   sourceid?: string
   source?: string
 }) {
-  return get<{ code?: number; msg?: string; data?: unknown }>(
-    '/scrobble_v1',
+  return postJson<{ code?: number; msg?: string; data?: unknown }>(
+    '/scrobble/v1',
     params,
   )
 }

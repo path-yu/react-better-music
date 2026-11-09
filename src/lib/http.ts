@@ -379,6 +379,30 @@ export function post<T>(path: string, body?: BodyInit | null, params?: Query, si
   })
 }
 
+/**
+ * JSON POST that carries the session cookie in the request body instead of
+ * appending the (potentially very large) cookie to the URL. Listening reports
+ * include MUSIC_U in the cookie, and a GET query can exceed server URL limits.
+ */
+export function postJson<T>(path: string, body: Query, signal?: AbortSignal) {
+  const cookie = getActiveCookie()
+  const payload = { ...body, ...(cookie ? { cookie } : {}) }
+  return runWithSession<T>(path, async () => {
+    const timeout = withTimeout(signal, REQUEST_TIMEOUT)
+    try {
+      return await fetch(buildUrl(path), {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: timeout.signal,
+      })
+    } finally {
+      timeout.cleanup()
+    }
+  })
+}
+
 export function uploadFile<T>(path: string, file: File, params?: Query) {
   return runWithSession<T>(path, async () => {
     const timeout = withTimeout(undefined, UPLOAD_TIMEOUT)
