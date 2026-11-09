@@ -328,20 +328,10 @@ function createMainWindow() {
     const url = (event as { data?: { detail?: string } })?.data?.detail ?? ''
     // BrowserWindow may emit dom-ready for its initial about:blank first.
     if (!url || url === 'about:blank') return
-    noteRendererHeartbeat()
     // Re-sync auxiliary-window visibility after a renderer reload.
     broadcastAuxWindows()
     void ensureDevRendererAvailable(window, url)
     setTimeout(reveal, 40)
-  })
-  window.on('focus', () => {
-    mainWindowFocused = true
-    // The renderer pings immediately on focus. If it is dead, the absence of a
-    // fresh heartbeat triggers a reload shortly after the window is clicked.
-    setTimeout(checkRendererHealth, 2_800)
-  })
-  window.on('blur', () => {
-    mainWindowFocused = false
   })
   // Safety net: never leave a hidden window if dom-ready is missed.
   setTimeout(reveal, 2500)
@@ -374,63 +364,13 @@ function createMainWindow() {
 }
 
 let mainWindow: BrowserWindow | null = null
-let lastRendererHeartbeat = Date.now()
-let mainWindowFocused = false
-let lastRendererRecoveryAt = 0
-let rendererRecoveryAttempts = 0
-const RENDERER_HEARTBEAT_TIMEOUT = 12_000
-const RENDERER_RECOVERY_COOLDOWN = 20_000
-const RENDERER_RECOVERY_LIMIT = 3
-
-/** Called by the renderer bridge every few seconds. */
-function noteRendererHeartbeat() {
-  lastRendererHeartbeat = Date.now()
-  rendererRecoveryAttempts = 0
-}
-
-/**
- * The native window can outlive a crashed WebView2 process. There is no
- * render-process-gone event exposed by Electrobun, so use the renderer
- * heartbeat as the liveness signal and reload the view when it disappears.
- */
-function recoverMainRenderer(reason: string) {
-  const win = mainWindow
-  if (!win) return
-  const now = Date.now()
-  if (now - lastRendererRecoveryAt < RENDERER_RECOVERY_COOLDOWN) return
-  if (rendererRecoveryAttempts >= RENDERER_RECOVERY_LIMIT) {
-    console.error('[desktop] renderer recovery limit reached')
-    return
-  }
-  lastRendererRecoveryAt = now
-  lastRendererHeartbeat = now
-  rendererRecoveryAttempts += 1
-  const url = win.webview.url || mainViewUrl()
-  markStartup(`renderer-heartbeat-timeout reload attempt=${rendererRecoveryAttempts} reason=${reason}`)
-  try {
-    win.webview.loadURL(url)
-  } catch (error) {
-    console.error('[desktop] failed to reload the renderer:', error)
-  }
-}
-
-function checkRendererHealth() {
-  const win = mainWindow
-  if (!win || !mainWindowFocused || !win.isVisible() || win.isMinimized()) return
-  if (Date.now() - lastRendererHeartbeat < RENDERER_HEARTBEAT_TIMEOUT) return
-  recoverMainRenderer('focused-heartbeat-timeout')
-}
-
 try {
   mainWindow = createMainWindow()
-  lastRendererHeartbeat = Date.now()
   markStartup('window-created')
 } catch (error) {
   // Keep the process (and tray) alive; the tray can retry window creation.
   console.error('[desktop] failed to create the main window:', error)
 }
-// Runs once for the process; checks whichever mainWindow is current.
-setInterval(checkRendererHealth, 4_000)
 // The API runs in its own Bun process, so spawn it right away: it no longer
 // competes with the WebView for the main thread.
 startApiServer()
@@ -1239,10 +1179,6 @@ try {
         return new Response('Unauthorized', { status: 401, headers })
       }
       try {
-        if (url.pathname === '/renderer-heartbeat' && request.method === 'POST') {
-          noteRendererHeartbeat()
-          return Response.json({ ok: true }, { headers })
-        }
         if (url.pathname === '/startup-report' && request.method === 'POST') {
           const body = (await request.json().catch(() => null)) as {
             paint?: number
@@ -1359,7 +1295,9 @@ try {
           }
           const item = readAudioCacheIndex().find((entry) => entry.id === id)
           if (!item || !existsSync(audioCachePath(item))) {
-            return Response.json({ error: 'not found' }, { status: 404, headers })
+            // A normal cache miss: 404 would show up as a red console error on
+            // every uncached track even though the caller handles it.
+            return new Response(null, { status: 204, headers })
           }
           return Response.json(item, { headers })
         }
@@ -1371,7 +1309,7 @@ try {
           const item = readAudioCacheIndex().find((entry) => entry.id === id)
           const target = item ? audioCachePath(item) : audioCachePath(id)
           if (!existsSync(target)) {
-            return Response.json({ error: 'not found' }, { status: 404, headers })
+            return new Response(null, { status: 204, headers })
           }
           return new Response(Bun.file(target), {
             headers: {

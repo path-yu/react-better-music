@@ -307,7 +307,7 @@ export function Sidebar() {
                   onChange={(event) => setPlaylistName(event.target.value)}
                   maxLength={60}
                   placeholder={i18n._(msg`歌单名称`)}
-                  className="h-7 w-full rounded-[7px] border border-black/10 bg-white/70 px-2 text-[11px] outline-none focus:border-accent/50"
+                  className="h-7 w-full rounded-[7px] border border-black/10 bg-white/70 px-2 text-[11px] text-black/80 outline-none placeholder:text-black/30 focus:border-accent/50 dark:border-white/10 dark:bg-white/10 dark:text-white/85 dark:placeholder:text-white/30"
                 />
                 <div className="mt-1 flex justify-end gap-1">
                   <button
@@ -316,7 +316,7 @@ export function Sidebar() {
                       setCreatingPlaylist(false)
                       setPlaylistName('')
                     }}
-                    className="rounded-full px-2 py-1 text-[10px] text-black/35 hover:bg-black/5"
+                    className="rounded-full px-2 py-1 text-[10px] text-black/35 hover:bg-black/5 dark:text-white/40 dark:hover:bg-white/10"
                   >
                     <Trans>取消</Trans>
                   </button>

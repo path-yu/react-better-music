@@ -113,11 +113,27 @@ type SongSource = {
  * `/check/music`, and a copyright-less verdict falls back to the local
  * UnblockNeteaseMusic matcher.
  */
+/**
+ * A logged-in music VIP already has the right to the official VIP stream.
+ * Resolve lazily to avoid the user/player store circular import at module load.
+ */
+async function hasVipPlaybackAccess(song: Song) {
+  if (song.fee !== 1) return false
+  try {
+    const { useUserStore } = await import('./user')
+    const { isLogin, profile } = useUserStore.getState()
+    return isLogin && Number(profile?.vipType) > 0
+  } catch {
+    return false
+  }
+}
+
 async function resolveSongSource(song: Song): Promise<SongSource> {
   const level = useSettingsStore.getState().playLevel
   const autoReplace = useSettingsStore.getState().autoReplaceVipSource
   const preferredSource = useSettingsStore.getState().preferredSource
   const requestedSource = preferredSource === 'auto' ? undefined : preferredSource
+  const vipAccess = await hasVipPlaybackAccess(song)
 
   // Cache the match attempt so a VIP-first lookup and a trial fallback don't
   // request the same matcher twice in one resolution.
@@ -148,7 +164,7 @@ async function resolveSongSource(song: Song): Promise<SongSource> {
   // is a bitmask, not a boolean: common free/low-quality tracks use fee=8
   // and already have a normal CDN URL, so treating every non-zero fee as VIP
   // made `/song/url/match` run for songs that did not need it.
-  if (song.fee === 1 && autoReplace) {
+  if (!vipAccess && song.fee === 1 && autoReplace) {
     const matched = await autoMatchedSource()
     if (matched) return matched
   }
@@ -160,7 +176,7 @@ async function resolveSongSource(song: Song): Promise<SongSource> {
       // A 30-second trial is still "a URL", but the user asked to replace
       // VIP/trial playback whenever possible. Try the matcher before returning
       // the trial so the official endpoint isn't the only request made.
-      if (autoReplace && info.trialEnd && info.trialEnd > 0) {
+      if (!vipAccess && autoReplace && info.trialEnd && info.trialEnd > 0) {
         const matched = await autoMatchedSource()
         if (matched) return matched
       }
@@ -173,7 +189,7 @@ async function resolveSongSource(song: Song): Promise<SongSource> {
 
   // No official URL at all: if auto matching is on, try it before deciding the
   // track is unavailable.
-  if (autoReplace) {
+  if (!vipAccess && autoReplace) {
     const matched = await autoMatchedSource()
     if (matched) return matched
   }
@@ -188,6 +204,12 @@ async function resolveSongSource(song: Song): Promise<SongSource> {
     // A failed check is "unknown", not "no copyright".
     const available = await checkMusicAvailable(song.id).catch(() => true)
     if (available) return { url: null, trialEnd: null, unblocked: false, available: true }
+  }
+
+  // A VIP user must never fall back to the gray-track matcher.
+  if (vipAccess) {
+    if (urlError) throw urlError
+    return { url: null, trialEnd: null, unblocked: false, available: true }
   }
 
   // Reuse the cached matcher attempt. When auto matching was already enabled

@@ -24,14 +24,14 @@ export async function desktopAudioCacheMeta(
   id: number,
 ): Promise<DesktopAudioCacheItem | null> {
   const response = await bridgeFetch(`/audio-cache/meta?id=${id}`)
-  if (response.status === 404) return null
+  if (response.status === 204 || response.status === 404) return null
   if (!response.ok) throw new Error(`audio cache metadata failed: ${response.status}`)
   return (await response.json()) as DesktopAudioCacheItem
 }
 
 export async function desktopAudioCacheGet(id: number): Promise<Blob | null> {
   const response = await bridgeFetch(`/audio-cache/file?id=${id}`)
-  if (response.status === 404) return null
+  if (response.status === 204 || response.status === 404) return null
   if (!response.ok) throw new Error(`audio cache read failed: ${response.status}`)
   return response.blob()
 }

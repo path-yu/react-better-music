@@ -88,7 +88,9 @@ export const useSettingsStore = create<SettingsState>()(
       playLevel: 'exhigh',
       lyricDisplayMode: 'both',
       wordByWordLyrics: true,
-      fogBackdrop: true,
+      // CSS ambient gradients are cheaper and do not keep a WebGL context alive.
+      // Users can opt into the WebGL fog in Settings.
+      fogBackdrop: false,
       lyricStageStyle: 'flow',
       preferredSource: 'auto',
       nowPlayingMode: 'audio',
@@ -112,20 +114,23 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'react-music-settings',
-      version: 3,
+      version: 4,
       // v1 stored a boolean translation switch; keep "off" users in original mode.
       migrate: (persisted, version) => {
         const previous = persisted as Partial<SettingsState> & {
           showLyricTranslation?: boolean
         }
-        if (version < 2) {
-          return {
-            ...previous,
-            lyricDisplayMode:
-              previous.showLyricTranslation === false ? 'original' : 'both',
-          }
-        }
-        return previous
+        const next =
+          version < 2
+            ? {
+                ...previous,
+                lyricDisplayMode:
+                  previous.showLyricTranslation === false ? 'original' : 'both',
+              }
+            : previous
+        // v4 moves the WebGL fog behind an explicit opt-in. Reset old persisted
+        // true values once so existing installs also get the safer default.
+        return version < 4 ? { ...next, fogBackdrop: false } : next
       },
     },
   ),

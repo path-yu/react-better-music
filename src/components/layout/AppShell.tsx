@@ -14,7 +14,7 @@ import { useSettingsStore } from '../../store/settings'
 import { useLocalLibraryStore } from '../../store/localLibrary'
 import { isDesktopShell } from '../../lib/desktop'
 import { useDesktopCommands } from '../../lib/desktopCommands'
-import { reportRendererHeartbeat } from '../../lib/desktopBridge'
+import { reportDesktopLog } from '../../lib/desktopBridge'
 import { useRemoteBridge } from '../../lib/remoteBridge'
 import { useDesktopLyricsPublisher } from '../../lib/desktopLyrics'
 import { applyTheme } from '../../lib/theme'
@@ -63,44 +63,17 @@ export function AppShell({ children }: { children: ReactNode }) {
   useDesktopCommands()
   useRemoteBridge()
 
-  // The native watchdog only inspects a focused window, so heartbeats are only
-  // needed while focused. Focus/resume sends one immediately; blur stops the
-  // timer instead of leaving a once-every-4s request running all day.
+  // Diagnostics only: no heartbeat/reload watchdog here. A renderer reload
+  // interrupts audio, so page lifetime is logged for investigation instead.
   useEffect(() => {
     if (!isDesktopShell()) return
-    let active = true
-    let timer: number | null = null
-    const ping = () => {
-      if (active) reportRendererHeartbeat()
-    }
-    const stop = () => {
-      if (timer !== null) {
-        window.clearInterval(timer)
-        timer = null
-      }
-    }
-    const start = () => {
-      ping()
-      if (timer === null) {
-        timer = window.setInterval(ping, 4_000)
-      }
-    }
-    const onFocus = () => start()
-    const onBlur = () => stop()
-    const onVisibility = () => {
-      if (document.visibilityState === 'visible') start()
-      else stop()
-    }
-    window.addEventListener('focus', onFocus)
-    window.addEventListener('blur', onBlur)
-    document.addEventListener('visibilitychange', onVisibility)
-    if (document.hasFocus()) start()
+    const onPageHide = () => reportDesktopLog('renderer-pagehide')
+    const onBeforeUnload = () => reportDesktopLog('renderer-beforeunload')
+    window.addEventListener('pagehide', onPageHide)
+    window.addEventListener('beforeunload', onBeforeUnload)
     return () => {
-      active = false
-      stop()
-      window.removeEventListener('focus', onFocus)
-      window.removeEventListener('blur', onBlur)
-      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('pagehide', onPageHide)
+      window.removeEventListener('beforeunload', onBeforeUnload)
     }
   }, [])
 

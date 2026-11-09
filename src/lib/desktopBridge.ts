@@ -85,16 +85,11 @@ export function reportDesktopLog(message: string) {
   void bridgeFetch('/log', {
     method: 'POST',
     body: message.slice(0, 500),
+    keepalive: true,
   }).catch(() => undefined)
 }
 
-/** Lets the native process detect a dead/hung WebView and reload it. */
-export function reportRendererHeartbeat() {
-  if (!isDesktopApp()) return
-  void bridgeFetch('/renderer-heartbeat', { method: 'POST' }).catch(
-    () => undefined,
-  )
-}
+
 
 /** Whether the next launch should create WebView2 with DevTools disabled. */
 export async function getDevToolsPolicy() {

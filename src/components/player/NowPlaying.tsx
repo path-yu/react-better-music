@@ -90,7 +90,6 @@ export function NowPlaying() {
       ? likedIds.includes(currentSong.id)
       : localFavorites.some((song) => song.id === currentSong.id)
     : false
-  const setVideoActive = useVideoPlaybackStore((state) => state.setActive)
   const bindVideo = useVideoPlaybackStore((state) => state.bind)
   const nowPlayingMode = useSettingsStore((state) => state.nowPlayingMode)
   const setNowPlayingMode = useSettingsStore(
@@ -203,11 +202,18 @@ export function NowPlaying() {
 
   useEffect(() => {
     if (show) return
-    // Closing the play page must not interrupt a running MV. Keep the video
-    // element mounted in the hidden overlay and keep it as the active player;
-    // only clear that state when we are actually back in audio mode.
-    if (!mvMode) setVideoActive(false)
-  }, [show, mvMode, setVideoActive])
+    // Closing the detail page releases the MV/video decoder instead of leaving
+    // a hidden <video> running for the rest of the session.
+    setMvMode(false)
+    setMvUrl('')
+    setMvFailed(false)
+    setMvLoading(false)
+    setMvVideoReady(false)
+    useVideoPlaybackStore.getState().setActive(false)
+    bindVideo(null)
+    mvWasPlayingRef.current = false
+    videoEndedSongRef.current = null
+  }, [show, bindVideo])
 
   // If the user last chose video mode, keep that preference for every
   // following track that has an MV. This also restores the video view when the
@@ -330,9 +336,8 @@ export function NowPlaying() {
     seekAudio(timeMs / 1000)
   }, [])
 
-  // Keep the MV mounted while the overlay is closed so video keeps playing in
-  // the background. Audio-only mode can unmount as before.
-  if (!currentSong || (!show && !mvMode)) return null
+  // The overlay owns the MV decoder and WebGL fog; closing it must release both.
+  if (!currentSong || !show) return null
 
   const loadingSource = playing && !sourceReady
   const buffering = playing && sourceReady && !audioReady
@@ -466,15 +471,20 @@ export function NowPlaying() {
       style={{ backgroundColor: 'var(--nowplaying-base, #0f0f12)' }}
       aria-hidden={!show}
     >
-      {fogBackdrop ? (
+      {/*
+        Keep the WebGL canvas alive only while the detail page is actually
+        visible. Keeping a full-screen WebGL context around for the whole
+        session wastes GPU resources and makes a renderer/GPU crash more likely.
+      */}
+      {!show ? null : fogBackdrop ? (
         <FogBackground
           tint={palette.colors[0]}
-          playing={playing && show}
+          playing={playing}
           fallback={
             <AmbientBackground
               artwork={ambientSource ?? ''}
               palette={palette}
-              playing={playing && show}
+              playing={playing}
             />
           }
         />
@@ -482,7 +492,7 @@ export function NowPlaying() {
         <AmbientBackground
           artwork={ambientSource ?? ''}
           palette={palette}
-          playing={playing && show}
+          playing={playing}
         />
       )}
 

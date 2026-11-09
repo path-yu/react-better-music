@@ -258,17 +258,34 @@ export function FogBackground({
     const frame = (now: number) => {
       raf = 0
       if (disposed) return
+      // rAF timestamps can be the same as, or slightly older than, the
+      // performance.now() captured by kick() just before the callback runs.
+      // A negative dt used to drive speed below zero and permanently stop the
+      // loop, which is why the fog sometimes became a still image after
+      // opening the player or returning from a paused/occluded window.
+      if (now <= last) {
+        if (playingRef.current) raf = window.requestAnimationFrame(frame)
+        return
+      }
       const target = playingRef.current && !reducedMotion.matches ? 1 : 0
       const dt = Math.min((now - last) / 1000, 0.1)
       last = now
-      speed += (target - speed) * Math.min(1, 2.5 * dt)
+      speed = Math.max(
+        0,
+        speed + (target - speed) * Math.min(1, 2.5 * dt),
+      )
       if (Math.abs(target - speed) < 0.005) speed = target
       drift += speed * dt
       if (now - lastDraw >= 33) {
         draw(now)
         lastDraw = now
       }
-      if (speed > 0.003) raf = window.requestAnimationFrame(frame)
+      // Keep the loop alive while playing even if this frame's dt was too
+      // small to accelerate yet. Without this guard, a zero-dt first frame
+      // stopped the loop forever.
+      if (playingRef.current || speed > 0.003) {
+        raf = window.requestAnimationFrame(frame)
+      }
     }
 
     const kick = () => {
@@ -304,7 +321,17 @@ export function FogBackground({
       event.preventDefault()
       setFailed(true)
     }
+    // WebView2 may suspend rAF while the window is unfocused or occluded.
+    // Re-kick when it becomes active again so a stopped/decayed loop resumes.
+    const onResume = () => {
+      if (playingRef.current) kick()
+    }
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') onResume()
+    }
     canvas.addEventListener('webglcontextlost', onContextLost)
+    window.addEventListener('focus', onResume)
+    document.addEventListener('visibilitychange', onVisibility)
 
     return () => {
       disposed = true
@@ -313,6 +340,8 @@ export function FogBackground({
       observer.disconnect()
       reducedMotion.removeEventListener('change', onReducedMotion)
       canvas.removeEventListener('webglcontextlost', onContextLost)
+      window.removeEventListener('focus', onResume)
+      document.removeEventListener('visibilitychange', onVisibility)
     }
   }, [])
 

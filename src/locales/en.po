@@ -107,12 +107,12 @@ msgstr "{0} songs"
 #~ msgstr "Resend in {countdown}s"
 
 #. placeholder {0}: song.name
-#: src/store/player.ts:633
+#: src/store/player.ts:655
 msgid "「{0}」VIP 歌曲已为你匹配其他音源播放"
 msgstr "「{0}」VIP track matched to another source"
 
 #. placeholder {0}: song.name
-#: src/store/player.ts:632
+#: src/store/player.ts:654
 msgid "「{0}」暂无官方音源，已为你匹配其他音源播放"
 msgstr "「{0}」has no official source; matched another source"
 
@@ -149,8 +149,8 @@ msgstr "MV"
 msgid "MV 不存在或无法访问"
 msgstr "MV not found or unavailable"
 
-#: src/components/player/NowPlaying.tsx:409
-#: src/components/player/NowPlaying.tsx:546
+#: src/components/player/NowPlaying.tsx:414
+#: src/components/player/NowPlaying.tsx:556
 #: src/routes/latest-mv.tsx:81
 #: src/routes/search.tsx:508
 msgid "MV 加载失败"
@@ -318,8 +318,8 @@ msgstr "Cloud steps"
 msgid "云音乐官方榜单，实时更新"
 msgstr "Official NetEase Cloud Music charts, updated in real time"
 
-#: src/store/player.ts:227
-#: src/store/player.ts:620
+#: src/store/player.ts:249
+#: src/store/player.ts:642
 msgid "亲爱的，暂无版权，已为你跳过"
 msgstr "Sorry, this track is unavailable due to copyright; skipping"
 
@@ -470,7 +470,7 @@ msgstr "Close to tray"
 msgid "关闭后只高亮整行，不做逐字动画"
 msgstr "When off, only the whole line is highlighted; no word-by-word animation"
 
-#: src/components/layout/AppShell.tsx:336
+#: src/components/layout/AppShell.tsx:309
 msgid "关闭导航"
 msgstr "Close navigation"
 
@@ -593,8 +593,8 @@ msgstr "Switch to light mode"
 msgid "切换到深色模式"
 msgstr "Switch to dark mode"
 
-#: src/components/player/NowPlaying.tsx:615
-#: src/components/player/NowPlaying.tsx:616
+#: src/components/player/NowPlaying.tsx:625
+#: src/components/player/NowPlaying.tsx:626
 msgid "切换到视频播放"
 msgstr "Switch to video"
 
@@ -602,7 +602,7 @@ msgstr "Switch to video"
 msgid "切换界面语言，立即生效。当前翻译覆盖导航、播放器与设置等主要界面，其余页面会逐步补齐。"
 msgstr "Changes take effect immediately. Navigation, player and settings are translated first; remaining pages will follow."
 
-#: src/store/player.ts:1157
+#: src/store/player.ts:1179
 msgid "切换音源失败，请稍后再试"
 msgstr "Failed to switch sources. Try again later."
 
@@ -687,7 +687,7 @@ msgid "单曲"
 msgstr "Songs"
 
 #: src/components/player/PlayerBar.tsx:1205
-#: src/store/player.ts:980
+#: src/store/player.ts:1002
 msgid "单曲循环"
 msgstr "Repeat one"
 
@@ -731,8 +731,8 @@ msgstr "An unknown error occurred"
 msgid "取消"
 msgstr "Cancel"
 
-#: src/components/player/NowPlaying.tsx:513
-#: src/components/player/NowPlaying.tsx:515
+#: src/components/player/NowPlaying.tsx:523
+#: src/components/player/NowPlaying.tsx:525
 #: src/components/player/PlayerBar.tsx:1144
 #: src/components/songs/SongContextMenu.tsx:357
 #: src/components/songs/SongTable.tsx:178
@@ -772,8 +772,8 @@ msgstr "Browse categories to the left"
 msgid "听友评论"
 msgstr "Listener comments"
 
-#: src/components/player/NowPlaying.tsx:513
-#: src/components/player/NowPlaying.tsx:515
+#: src/components/player/NowPlaying.tsx:523
+#: src/components/player/NowPlaying.tsx:525
 #: src/components/player/PlayerBar.tsx:1144
 #: src/components/songs/SongContextMenu.tsx:357
 #: src/components/songs/SongTable.tsx:178
@@ -816,8 +816,8 @@ msgid "在歌曲右侧点击心形，收藏会写入本地曲库。"
 msgstr "Click the heart beside a song; favorites are saved to the local library."
 
 #: src/routes/settings.tsx:430
-msgid "在歌曲详情页使用 GPU 绘制缓慢上升的封面色彩雾气；不支持 WebGL 时自动回退到轻量背景。"
-msgstr "Draws slowly rising cover-coloured fog on the song detail page with the GPU; falls back to the lightweight backdrop when WebGL is unavailable."
+#~ msgid "在歌曲详情页使用 GPU 绘制缓慢上升的封面色彩雾气；不支持 WebGL 时自动回退到轻量背景。"
+#~ msgstr "Draws slowly rising cover-coloured fog on the song detail page with the GPU; falls back to the lightweight backdrop when WebGL is unavailable."
 
 #: src/routes/settings.tsx:785
 msgid "在页面任意位置可用（输入框内保留系统默认行为）。"
@@ -881,8 +881,8 @@ msgstr ""
 msgid "官方版"
 msgstr "Official"
 
-#: src/components/player/NowPlaying.tsx:924
-#: src/components/player/NowPlaying.tsx:925
+#: src/components/player/NowPlaying.tsx:934
+#: src/components/player/NowPlaying.tsx:935
 msgid "定位到当前播放"
 msgstr "Locate current track"
 
@@ -954,11 +954,11 @@ msgstr "Developer tools enabled. Restart the app to apply fully."
 msgid "已关闭"
 msgstr "Off"
 
-#: src/store/player.ts:988
+#: src/store/player.ts:1010
 msgid "已关闭心动模式"
 msgstr "Heart Mode turned off"
 
-#: src/store/player.ts:1155
+#: src/store/player.ts:1177
 msgid "已切换到其他音源"
 msgstr "Switched to another source"
 
@@ -1010,7 +1010,7 @@ msgid "已收藏到「{0}」"
 msgstr "Saved to \"{0}\""
 
 #. placeholder {0}: additions.length
-#: src/store/player.ts:935
+#: src/store/player.ts:957
 msgid "已添加 {0} 首歌曲到播放列表"
 msgstr "Added {0} tracks to the queue"
 
@@ -1053,11 +1053,11 @@ msgid "当前：{currentLabel}"
 msgstr "Current: {currentLabel}"
 
 #. placeholder {0}: prefetched.trialEnd
-#: src/store/player.ts:581
+#: src/store/player.ts:603
 msgid "当前仅可试听 {0} 秒，登录或开通会员后可播放完整版"
 msgstr "Preview only ({0}s). Sign in or get VIP for the full track."
 
-#: src/store/player.ts:643
+#: src/store/player.ts:665
 msgid "当前仅可试听 {trialEnd} 秒，登录或开通会员后可播放完整版"
 msgstr "Preview only ({trialEnd}s). Sign in or get VIP for the full track."
 
@@ -1073,11 +1073,11 @@ msgstr "Current cache"
 msgid "影视原声"
 msgstr "Soundtrack"
 
-#: src/components/player/NowPlaying.tsx:740
+#: src/components/player/NowPlaying.tsx:750
 msgid "待播清单"
 msgstr "Up next"
 
-#: src/components/player/NowPlaying.tsx:731
+#: src/components/player/NowPlaying.tsx:741
 msgid "律动"
 msgstr "Motion"
 
@@ -1090,11 +1090,11 @@ msgstr ""
 msgid "心动模式"
 msgstr "Heart Mode"
 
-#: src/store/player.ts:1002
+#: src/store/player.ts:1024
 msgid "心动模式已开启，将为你推荐歌曲"
 msgstr "Heart Mode is on; recommendations will be added"
 
-#: src/store/player.ts:707
+#: src/store/player.ts:729
 msgid "心动模式暂不可用，请先登录"
 msgstr "Heart Mode is unavailable. Please sign in."
 
@@ -1131,7 +1131,7 @@ msgstr "Open"
 #. placeholder {0}: album.name
 #. placeholder {0}: currentSong.al.name
 #: src/components/cards/AlbumCard.tsx:28
-#: src/components/player/NowPlaying.tsx:685
+#: src/components/player/NowPlaying.tsx:695
 msgid "打开专辑 {0}"
 msgstr "Open album {0}"
 
@@ -1273,15 +1273,15 @@ msgstr "Play (Space)"
 msgid "播放全部"
 msgstr "Play all"
 
-#: src/components/player/NowPlaying.tsx:531
-#: src/components/player/NowPlaying.tsx:532
+#: src/components/player/NowPlaying.tsx:541
+#: src/components/player/NowPlaying.tsx:542
 #: src/components/player/PlayerBar.tsx:1269
 #: src/components/player/QueuePanel.tsx:104
 #: src/components/player/QueuePanel.tsx:130
 msgid "播放列表"
 msgstr "Queue"
 
-#: src/store/player.ts:1055
+#: src/store/player.ts:1077
 msgid "播放列表已清空"
 msgstr "Queue cleared"
 
@@ -1313,8 +1313,8 @@ msgstr "Playback progress"
 msgid "播放选项"
 msgstr "Playback options"
 
-#: src/components/player/NowPlaying.tsx:912
-#: src/components/player/NowPlaying.tsx:1002
+#: src/components/player/NowPlaying.tsx:922
+#: src/components/player/NowPlaying.tsx:1012
 msgid "播放队列为空"
 msgstr "The queue is empty"
 
@@ -1536,7 +1536,7 @@ msgstr "No popular tracks yet"
 msgid "暂无相关 MV"
 msgstr "No related MVs yet"
 
-#: src/components/player/NowPlaying.tsx:431
+#: src/components/player/NowPlaying.tsx:436
 msgid "暂无相关视频"
 msgstr "No related videos"
 
@@ -1571,7 +1571,7 @@ msgstr "More playback options"
 msgid "更换头像"
 msgstr "Change avatar"
 
-#: src/store/player.ts:1134
+#: src/store/player.ts:1156
 msgid "未找到其他可用音源"
 msgstr "No alternative source found"
 
@@ -1623,7 +1623,7 @@ msgstr "Ultra"
 msgid "查看 {0} 的主页"
 msgstr "View {0}'s profile"
 
-#: src/components/player/NowPlaying.tsx:701
+#: src/components/player/NowPlaying.tsx:711
 msgid "查看专辑"
 msgstr "View album"
 
@@ -1791,11 +1791,11 @@ msgstr "Artist bio"
 msgid "歌曲列表"
 msgstr "Tracks"
 
-#: src/store/player.ts:660
+#: src/store/player.ts:682
 msgid "歌曲加载失败"
 msgstr "Failed to load track"
 
-#: src/store/player.ts:930
+#: src/store/player.ts:952
 msgid "歌曲已在播放列表中"
 msgstr "Track is already in the queue"
 
@@ -1803,7 +1803,7 @@ msgstr "Track is already in the queue"
 msgid "歌曲操作"
 msgstr "Song actions"
 
-#: src/components/player/NowPlaying.tsx:1011
+#: src/components/player/NowPlaying.tsx:1021
 msgid "歌曲评论"
 msgstr "Song comments"
 
@@ -1812,15 +1812,15 @@ msgstr "Song comments"
 #~ msgid "歌曲详情页动态渐变"
 #~ msgstr "Dynamic song-detail gradient"
 
-#: src/store/player.ts:1083
+#: src/store/player.ts:1105
 msgid "歌曲资源已失效"
 msgstr "Track source expired"
 
-#: src/components/player/NowPlaying.tsx:722
+#: src/components/player/NowPlaying.tsx:732
 msgid "歌词"
 msgstr "Lyrics"
 
-#: src/components/player/NowPlaying.tsx:713
+#: src/components/player/NowPlaying.tsx:723
 msgid "歌词、律动、待播清单、选歌与评论"
 msgstr "Lyrics, motion, queue, song picker and comments"
 
@@ -1841,8 +1841,8 @@ msgstr "Lyrics display"
 #~ msgid "歌词显示方式"
 #~ msgstr "Lyric display mode"
 
-#: src/components/player/NowPlaying.tsx:776
-#: src/components/player/NowPlaying.tsx:794
+#: src/components/player/NowPlaying.tsx:786
+#: src/components/player/NowPlaying.tsx:804
 msgid "正在加载歌词…"
 msgstr "Loading lyrics…"
 
@@ -1850,7 +1850,7 @@ msgstr "Loading lyrics…"
 msgid "正在加载音源"
 msgstr "Loading source"
 
-#: src/components/player/NowPlaying.tsx:664
+#: src/components/player/NowPlaying.tsx:674
 #: src/components/player/PlayerBar.tsx:1165
 msgid "正在加载音源…"
 msgstr "Loading source…"
@@ -1870,11 +1870,11 @@ msgstr "Now playing"
 msgid "正在缓冲"
 msgstr "Buffering"
 
-#: src/components/player/NowPlaying.tsx:664
+#: src/components/player/NowPlaying.tsx:674
 msgid "正在缓冲…"
 msgstr "Buffering…"
 
-#: src/components/player/NowPlaying.tsx:582
+#: src/components/player/NowPlaying.tsx:592
 msgid "正在获取 MV…"
 msgstr "Fetching MV…"
 
@@ -2142,13 +2142,13 @@ msgstr "Your session is no longer valid. Please sign in again."
 msgid "相似歌手"
 msgstr "Similar artists"
 
-#: src/components/player/NowPlaying.tsx:626
-#: src/components/player/NowPlaying.tsx:627
+#: src/components/player/NowPlaying.tsx:636
+#: src/components/player/NowPlaying.tsx:637
 #: src/components/songs/SongContextMenu.tsx:280
 msgid "相关视频"
 msgstr "Related videos"
 
-#: src/components/player/NowPlaying.tsx:452
+#: src/components/player/NowPlaying.tsx:457
 #: src/components/songs/SongContextMenu.tsx:112
 msgid "相关视频加载失败"
 msgstr "Failed to load related videos"
@@ -2168,7 +2168,7 @@ msgstr "Clear everything?"
 msgid "视频"
 msgstr "Videos"
 
-#: src/components/player/NowPlaying.tsx:584
+#: src/components/player/NowPlaying.tsx:594
 msgid "视频加载中…"
 msgstr "Loading video…"
 
@@ -2345,8 +2345,8 @@ msgstr "If the QR code will not refresh, make sure the local API is running on p
 msgid "获取二维码失败，请检查本地 API 服务是否启动"
 msgstr "Failed to get the QR code. Check whether the local API is running."
 
-#: src/store/player.ts:226
-#: src/store/player.ts:619
+#: src/store/player.ts:248
+#: src/store/player.ts:641
 msgid "获取歌曲播放地址失败"
 msgstr "Failed to get the playback URL"
 
@@ -2360,7 +2360,7 @@ msgstr "Settings"
 
 #: src/components/comments/CommentSection.tsx:154
 #: src/components/comments/CommentSection.tsx:541
-#: src/components/player/NowPlaying.tsx:758
+#: src/components/player/NowPlaying.tsx:768
 #: src/routes/songlists/$id.tsx:478
 msgid "评论"
 msgstr "Comments"
@@ -2390,7 +2390,7 @@ msgstr "Preview"
 msgid "试听结束，登录或开通会员可播放完整版"
 msgstr "Preview ended. Sign in or get VIP to play the full track."
 
-#: src/store/player.ts:833
+#: src/store/player.ts:855
 msgid "该列表暂无可播放歌曲"
 msgstr "No playable tracks in this list"
 
@@ -2424,7 +2424,7 @@ msgstr "This user hasn't saved any playlists"
 msgid "说点什么…"
 msgstr "Say something…"
 
-#: src/store/player.ts:993
+#: src/store/player.ts:1015
 msgid "请先播放歌曲"
 msgstr "Play a track first"
 
@@ -2543,7 +2543,7 @@ msgstr "Back to playlists"
 msgid "返回本地收藏"
 msgstr "Back to local favorites"
 
-#: src/components/player/NowPlaying.tsx:553
+#: src/components/player/NowPlaying.tsx:563
 msgid "返回音乐"
 msgstr "Back to music"
 
@@ -2613,7 +2613,7 @@ msgstr "Choose a light or dark appearance and theme color. Changes apply immedia
 msgid "选择音源"
 msgstr "Choose source"
 
-#: src/components/player/NowPlaying.tsx:749
+#: src/components/player/NowPlaying.tsx:759
 msgid "选歌"
 msgstr "Song picker"
 
@@ -2652,7 +2652,7 @@ msgstr "Link copied"
 
 #: src/components/player/PlayerBar.tsx:1204
 #: src/routes/daily.tsx:171
-#: src/store/player.ts:979
+#: src/store/player.ts:1001
 msgid "随机播放"
 msgstr "Shuffle"
 
@@ -2666,7 +2666,7 @@ msgstr "Korea"
 msgid "韩语"
 msgstr "Korean"
 
-#: src/components/player/NowPlaying.tsx:598
+#: src/components/player/NowPlaying.tsx:608
 msgid "音乐"
 msgstr "Music"
 
@@ -2718,7 +2718,7 @@ msgid "页面不存在"
 msgstr "Page not found"
 
 #: src/components/player/PlayerBar.tsx:1202
-#: src/store/player.ts:977
+#: src/store/player.ts:999
 msgid "顺序播放"
 msgstr "Play in order"
 
@@ -2745,3 +2745,7 @@ msgstr "Play in order"
 #: src/store/settings.ts:14
 msgid "高 · 128kbps"
 msgstr "High · 128kbps"
+
+#: src/routes/settings.tsx:430
+msgid "默认使用轻量的 CSS 动态渐变；开启后在歌曲详情页使用 GPU 绘制封面色彩雾气，不支持 WebGL 时自动回退。"
+msgstr ""

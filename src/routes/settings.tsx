@@ -428,7 +428,7 @@ function SettingsPage() {
               </p>
               <p className="mt-1 max-w-[560px] text-[11px] leading-relaxed text-black/40">
                 <Trans>
-                  在歌曲详情页使用 GPU 绘制缓慢上升的封面色彩雾气；不支持 WebGL 时自动回退到轻量背景。
+                  默认使用轻量的 CSS 动态渐变；开启后在歌曲详情页使用 GPU 绘制封面色彩雾气，不支持 WebGL 时自动回退。
                 </Trans>
               </p>
             </div>
