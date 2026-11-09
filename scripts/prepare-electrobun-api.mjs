@@ -79,6 +79,8 @@ const DESKTOP_MODULE_FILES = new Set([
   'search_hot.js',
   'search_hot_detail.js',
   'search_suggest.js',
+  'scrobble.js',
+  'scrobble_v1.js',
   'simi_artist.js',
   'simi_mv.js',
   'song_url_match.js',
