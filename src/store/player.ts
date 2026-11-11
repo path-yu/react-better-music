@@ -71,6 +71,8 @@ interface PlayerState {
   /** Queue this song right after the current track (deduplicating/moving it). */
   playNext: (song: Song) => Promise<boolean>
   addToQueue: (songs: Song[]) => void
+  /** Reorder one queue entry; the current track stays selected. */
+  moveQueueItem: (from: number, to: number) => void
   togglePlay: () => Promise<void>
   /** `auto` is true only when the current track ended on its own. */
   next: (options?: { auto?: boolean }) => Promise<void>
@@ -498,26 +500,21 @@ export const usePlayerStore = create<PlayerState>()(
           return { songId: song.id, url, trialEnd, unblocked }
         })
 
-        // Lossless/Hi-Res files can reach dozens of megabytes; keep those as
-        // streams instead of holding a full Blob in memory.
-        const level = useSettingsStore.getState().playLevel
-        const allowDownload = level !== 'lossless' && level !== 'hires'
-
         void Promise.all(resolves).then((results) => {
           if (token !== prefetchToken || get().currentIndex !== index) return
           const start = () => {
             if (token !== prefetchToken || get().currentIndex !== index) return
-            if (!allowDownload) return
             for (const result of results) {
               // Third-party URLs cannot go through the NetEase-only audio
               // proxy, so they stay streaming-only. A matched URL that still
               // points at the NetEase CDN can replace the old trial cache.
               if (
-                result &&
-                (!result.unblocked || NETEASE_MEDIA.test(result.url ?? ''))
+                !result ||
+                (result.unblocked && !NETEASE_MEDIA.test(result.url ?? ''))
               ) {
-                void prefetchAudio(result.songId, result.url, result.trialEnd)
+                continue
               }
+              void prefetchAudio(result.songId, result.url, result.trialEnd)
             }
           }
           if (delay <= 0) {
@@ -956,6 +953,31 @@ export const usePlayerStore = create<PlayerState>()(
           toast.success(
             i18n._(msg`已添加 ${additions.length} 首歌曲到播放列表`),
           )
+        },
+
+        moveQueueItem(from, to) {
+          const { queue, currentIndex } = get()
+          if (
+            from < 0 ||
+            from >= queue.length ||
+            to < 0 ||
+            to >= queue.length ||
+            from === to
+          ) {
+            return
+          }
+          const currentSong = queue[currentIndex]
+          const nextQueue = [...queue]
+          const [moved] = nextQueue.splice(from, 1)
+          nextQueue.splice(to, 0, moved)
+          const nextIndex = currentSong
+            ? nextQueue.indexOf(currentSong)
+            : Math.min(currentIndex, nextQueue.length - 1)
+          set({
+            queue: nextQueue,
+            currentIndex: Math.max(0, nextIndex),
+          })
+          prefetchNeighbors(Math.max(0, nextIndex), 0)
         },
 
         async togglePlay() {

@@ -55,7 +55,7 @@ export interface AlbumDetail extends ArtistAlbum {
   songs: Song[]
 }
 
-export type PlayLevel = 'standard' | 'higher' | 'exhigh' | 'lossless' | 'hires'
+export type PlayLevel = 'standard' | 'higher' | 'exhigh'
 
 /** NetEase's own copyright hint attached to songs in list payloads. */
 export interface NoCopyrightRcmd {

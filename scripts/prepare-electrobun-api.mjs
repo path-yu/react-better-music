@@ -103,10 +103,63 @@ function routeForFile(file) {
   )
 }
 
+const routeToFile = new Map(
+  moduleFiles.map((file) => [routeForFile(file), file]),
+)
+const sourceDir = path.join(root, 'src')
+const sourceRoutes = new Map()
+
+function collectSourceRoutes(dir) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = path.join(dir, entry.name)
+    if (entry.isDirectory()) {
+      collectSourceRoutes(fullPath)
+      continue
+    }
+    if (!/\.(ts|tsx)$/.test(entry.name)) continue
+    const source = fs.readFileSync(fullPath, 'utf8')
+    for (const match of source.matchAll(/(['"`])(\/[^'"`\s]{1,200})\1/g)) {
+      const route = match[2].split('?')[0].replace(/\/+$/, '') || '/'
+      if (routeToFile.has(route)) sourceRoutes.set(route, fullPath)
+    }
+  }
+}
+
+if (fs.existsSync(sourceDir)) collectSourceRoutes(sourceDir)
+
+// Every endpoint called from the central API client must resolve to a server
+// module (or an intentionally custom endpoint). This catches a new frontend API
+// being added without a matching route before release packaging.
+const API_INDEX = path.join(sourceDir, 'api', 'index.ts')
+const CUSTOM_API_ROUTES = new Set(['/audio/proxy'])
+const apiIndexSource = fs.existsSync(API_INDEX)
+  ? fs.readFileSync(API_INDEX, 'utf8')
+  : ''
+const apiIndexRoutes = new Set(
+  [...apiIndexSource.matchAll(/(['"`])(\/[^'"`\s]{1,200})\1/g)].map(
+    (match) => match[2].split('?')[0].replace(/\/+$/, '') || '/',
+  ),
+)
+const unresolvedApiRoutes = [...apiIndexRoutes].filter(
+  (route) => !routeToFile.has(route) && !CUSTOM_API_ROUTES.has(route),
+)
+if (unresolvedApiRoutes.length) {
+  console.error(
+    `[electrobun] API routes have no packaged module: ${unresolvedApiRoutes.join(', ')}`,
+  )
+  process.exit(1)
+}
+
+const selectedSet = new Set(DESKTOP_MODULE_FILES)
+for (const file of sourceRoutes.values()) selectedSet.add(file)
 const selectedModuleFiles =
   process.env.QIMIAO_API_ALL_ROUTES === '1'
     ? moduleFiles
-    : moduleFiles.filter((file) => DESKTOP_MODULE_FILES.has(file))
+    : moduleFiles.filter((file) => selectedSet.has(file))
+
+console.log(
+  `[electrobun] API route discovery: ${apiIndexRoutes.size} source endpoints, ${sourceRoutes.size} modules auto-selected`,
+)
 
 const moduleDefs = selectedModuleFiles
   .map((file) => {

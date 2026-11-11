@@ -30,7 +30,7 @@ interface LocalLibraryState {
   favorites: Song[]
   recent: LocalRecent[]
   load: (force?: boolean) => Promise<void>
-  createPlaylist: (name: string) => Promise<LocalPlaylist | null>
+  createPlaylist: (name: string, songs?: Song[]) => Promise<LocalPlaylist | null>
   renamePlaylist: (id: string, name: string) => Promise<boolean>
   removePlaylist: (id: string) => Promise<boolean>
   addSong: (playlistId: string, song: Song) => Promise<boolean>
@@ -73,9 +73,9 @@ export const useLocalLibraryStore = create<LocalLibraryState>()((set, get) => ({
     }
   },
 
-  async createPlaylist(name) {
+  async createPlaylist(name, songs) {
     try {
-      const playlist = await createLocalPlaylist(name)
+      const playlist = await createLocalPlaylist(name, songs)
       set((state) => ({ playlists: [playlist, ...state.playlists] }))
       return playlist
     } catch (error) {

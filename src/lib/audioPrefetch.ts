@@ -10,7 +10,7 @@ interface PrefetchEntry {
 
 /** Neighbours only: the next track plus one in-flight transition. */
 const MAX_ENTRIES = 3
-/** Guard against holding very large lossless files in memory. */
+/** Guard against unexpectedly large prefetch responses. */
 const MAX_PREFETCH_BYTES = 32 * 1024 * 1024
 
 const entries = new Map<number, PrefetchEntry>()

@@ -1400,7 +1400,7 @@ export function PlayerBar() {
                 showNowPlaying ? 'text-white/35' : 'text-black/30',
               )}
             >
-              <Trans>无损 / Hi-Res 需要对应会员权益；已缓存歌曲按设置中的缓存品质播放。</Trans>
+              <Trans>部分高品质音源需要对应会员权益；已缓存歌曲按设置中的缓存品质播放。</Trans>
             </p>
           </PlayerMenuContent>
         </Popover>

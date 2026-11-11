@@ -60,8 +60,8 @@ async function localRequest<T>(
 export const fetchLocalLibrary = () =>
   localRequest<LocalLibrary>('GET', '/local/library')
 
-export const createLocalPlaylist = (name: string) =>
-  localRequest<LocalPlaylist>('POST', '/local/playlists', { name })
+export const createLocalPlaylist = (name: string, songs?: Song[]) =>
+  localRequest<LocalPlaylist>('POST', '/local/playlists', { name, songs })
 
 export const renameLocalPlaylist = (id: string, name: string) =>
   localRequest<LocalPlaylist>('PATCH', `/local/playlists/${encodeURIComponent(id)}`, {

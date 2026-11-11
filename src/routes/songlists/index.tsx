@@ -3,7 +3,14 @@ import { createFileRoute } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { ChevronDown, ChevronLeft, ChevronRight, Loader2, Sparkles } from 'lucide-react'
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  RefreshCw,
+  Sparkles,
+} from 'lucide-react'
 import {
   Button,
   Popover,
@@ -16,6 +23,7 @@ import { EmptyState } from '../../components/common/EmptyState'
 import { fetchPlaylistTags, fetchTopPlaylists } from '../../api'
 import { getArrLast, cn } from '../../lib/format'
 import { useDocumentTitle } from '../../lib/title'
+import { invalidateApiCache } from '../../lib/http'
 import { toast } from '../../lib/toast'
 import { TAG_LABELS } from '../../lib/tagLabels'
 import type { Playlist } from '../../types'
@@ -100,7 +108,11 @@ function SonglistsPage() {
     }
   }, [activeTag, attempt])
 
-  const retry = () => setAttempt((value) => value + 1)
+  const retry = () => {
+    // /top/playlist is cached for two minutes; a refresh button must bypass it.
+    invalidateApiCache(['/top/playlist'])
+    setAttempt((value) => value + 1)
+  }
 
   const loadMore = async () => {
     const last = getArrLast(playlists)
@@ -132,10 +144,21 @@ function SonglistsPage() {
             <Trans>编辑精选的华语、欧美与器乐歌单</Trans>
           </p>
         </div>
-        <span className="flex items-center gap-1.5 rounded-full border border-black/8 bg-white px-3 py-1.5 text-[11px] text-black/40">
-          <Sparkles className="h-3.5 w-3.5 text-accent" />
-          <Trans>精品歌单</Trans>
-        </span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={retry}
+            aria-label={i18n._(msg`刷新歌单`)}
+            title={i18n._(msg`刷新歌单`)}
+            className="pressable flex h-8 w-8 items-center justify-center rounded-full border border-black/8 text-black/35 hover:border-accent/30 hover:text-accent"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+          </button>
+          <span className="flex items-center gap-1.5 rounded-full border border-black/8 bg-white px-3 py-1.5 text-[11px] text-black/40">
+            <Sparkles className="h-3.5 w-3.5 text-accent" />
+            <Trans>精品歌单</Trans>
+          </span>
+        </div>
       </div>
 
       <div className="sticky top-0 z-20 -mx-8 mt-5 border-b border-[var(--app-border)] bg-[var(--app-glass)] px-8 py-2.5 backdrop-blur-xl">

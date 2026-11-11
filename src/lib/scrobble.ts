@@ -16,8 +16,8 @@ const MAX_THRESHOLD_MS = 240_000
 const REPORT_COOLDOWN_MS = 30 * 60_000
 
 function bitrateForLevel(level: string) {
-  if (level === 'hires') return 1_999_000
-  if (level === 'lossless') return 999_000
+  if (level === 'standard') return 128_000
+  if (level === 'higher') return 192_000
   return 320_000
 }
 

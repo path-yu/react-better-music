@@ -202,12 +202,26 @@ function getState() {
   return load()
 }
 
-function createPlaylist(name) {
+function createPlaylist(name, songs) {
   const now = Date.now()
+  const seen = new Set()
+  const snapshots = []
+  if (Array.isArray(songs)) {
+    for (const song of songs) {
+      try {
+        const snapshot = normalizeSong(song)
+        if (seen.has(snapshot.id)) continue
+        seen.add(snapshot.id)
+        snapshots.push(snapshot)
+      } catch {
+        // Ignore malformed queue entries; save the rest of the queue.
+      }
+    }
+  }
   const playlist = {
     id: createId(),
     name: playlistName(name),
-    songs: [],
+    songs: snapshots,
     createdAt: now,
     updatedAt: now,
   }

@@ -21,8 +21,6 @@ export const PLAY_QUALITY_OPTIONS: Array<{
   { value: 'standard', label: msg`标准` },
   { value: 'higher', label: msg`较高` },
   { value: 'exhigh', label: msg`极高` },
-  { value: 'lossless', label: msg`无损` },
-  { value: 'hires', label: msg`Hi-Res` },
 ]
 
 export type LyricDisplayMode = 'both' | 'original' | 'translation'
@@ -120,7 +118,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'react-music-settings',
-      version: 4,
+      version: 5,
       // v1 stored a boolean translation switch; keep "off" users in original mode.
       migrate: (persisted, version) => {
         const previous = persisted as Partial<SettingsState> & {
@@ -136,7 +134,18 @@ export const useSettingsStore = create<SettingsState>()(
             : previous
         // v4 moves the WebGL fog behind an explicit opt-in. Reset old persisted
         // true values once so existing installs also get the safer default.
-        return version < 4 ? { ...next, fogBackdrop: false } : next
+        const withFog = version < 4 ? { ...next, fogBackdrop: false } : next
+        // v5 removes Lossless/Hi-Res. Keep existing installs on a valid level
+        // instead of leaving a stale value that the quality picker cannot show.
+        if (
+          version < 5 &&
+          !PLAY_QUALITY_OPTIONS.some(
+            (option) => option.value === withFog.playLevel,
+          )
+        ) {
+          return { ...withFog, playLevel: 'exhigh' as PlayLevel }
+        }
+        return withFog
       },
     },
   ),

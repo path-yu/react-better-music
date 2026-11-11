@@ -7,11 +7,14 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import {
   Disc3,
   Film,
+  GripVertical,
   Heart,
   ListMusic,
   Loader2,
   LocateFixed,
+  Search,
   Volume2,
+  X,
 } from 'lucide-react'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
@@ -39,7 +42,7 @@ import {
 } from '../../lib/color'
 import { resizedImageUrl } from '../../lib/image'
 import { toast } from '../../lib/toast'
-import { cn, formatDuration } from '../../lib/format'
+import { cn, formatDuration, matchesKeyword } from '../../lib/format'
 import type { Song } from '../../types'
 
 type NowPlayingPanel = 'lyrics' | 'stage' | 'queue' | 'wall' | 'comments'
@@ -78,6 +81,7 @@ export function NowPlaying() {
   const toggleNowPlaying = usePlayerStore((state) => state.toggleNowPlaying)
   const toggleQueue = usePlayerStore((state) => state.toggleQueue)
   const playAt = usePlayerStore((state) => state.playAt)
+  const moveQueueItem = usePlayerStore((state) => state.moveQueueItem)
   const ensureLyrics = usePlayerStore((state) => state.ensureLyrics)
   const commentTotal = useCommentTotal(0, currentSong?.id ?? 0, show)
   const likedIds = useUserStore((state) => state.likedIds)
@@ -105,6 +109,17 @@ export function NowPlaying() {
   const queueScrollRef = useRef<HTMLDivElement>(null)
   const queueListRef = useRef<HTMLDivElement>(null)
   const [queueWidth, setQueueWidth] = useState(0)
+  const [queueSearch, setQueueSearch] = useState('')
+  const [draggedQueueIndex, setDraggedQueueIndex] = useState<number | null>(
+    null,
+  )
+  const [dragOverQueueIndex, setDragOverQueueIndex] = useState<number | null>(
+    null,
+  )
+  const [queueDropPosition, setQueueDropPosition] = useState<'before' | 'after'>(
+    'before',
+  )
+  const justDraggedRef = useRef(false)
   const [palette, setPalette] = useState<Palette>(FALLBACK_PALETTE)
   const [videoLoading, setVideoLoading] = useState(false)
   const [mvMode, setMvMode] = useState(false)
@@ -153,8 +168,23 @@ export function NowPlaying() {
     estimateSize: () => queueRowHeight,
     overscan: 4,
   })
+  const queueEntries = useMemo(() => {
+    const query = queueSearch.trim()
+    return queue
+      .map((song, index) => ({ song, index }))
+      .filter(
+        ({ song }) =>
+          !query ||
+          matchesKeyword(
+            query,
+            song.name,
+            song.al.name,
+            song.ar.map((artist) => artist.name).join(' '),
+          ),
+      )
+  }, [queue, queueSearch])
   const queueListVirtualizer = useVirtualizer({
-    count: panel === 'queue' ? queue.length : 0,
+    count: panel === 'queue' ? queueEntries.length : 0,
     getScrollElement: () => queueListRef.current,
     estimateSize: () => 58,
     overscan: 8,
@@ -164,6 +194,8 @@ export function NowPlaying() {
     if (panel !== 'wall') return
     measureQueue()
   }, [panel, queueColumns, queueRowHeight, measureQueue])
+
+
 
   // The overlay is lazy-mounted only while open, so the first effect run is the
   // mount itself — not a navigation. Only close on a real pathname change.
@@ -813,124 +845,266 @@ export function NowPlaying() {
                   />
                 )
               ) : panel === 'queue' ? (
-                <div className="relative h-[min(72vh,620px)] min-h-[360px] md:h-full">
+                <div className="relative flex h-[min(72vh,620px)] min-h-[360px] flex-col md:h-full">
+                  <div className="flex shrink-0 items-center gap-2 px-2 pt-2">
+                    <div className="relative min-w-0 flex-1">
+                      <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/35" />
+                      <input
+                        value={queueSearch}
+                        onChange={(event) => {
+                          setQueueSearch(event.target.value)
+                          queueListRef.current?.scrollTo({ top: 0 })
+                        }}
+                        placeholder={i18n._(msg`搜索待播歌曲`)}
+                        aria-label={i18n._(msg`搜索待播歌曲`)}
+                        className="h-8 w-full rounded-full bg-white/10 pl-8 pr-7 text-[11.5px] text-white/85 outline-none shadow-none placeholder:text-white/30 focus:bg-white/14"
+                      />
+                      {queueSearch ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setQueueSearch('')
+                            queueListRef.current?.scrollTo({ top: 0 })
+                          }}
+                          aria-label={i18n._(msg`清除搜索`)}
+                          className="pressable absolute right-1.5 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full text-white/40 hover:bg-white/10 hover:text-white"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+
                   <div
                     ref={queueListRef}
-                    className="h-full overflow-y-auto px-2 pb-16 pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    className="min-h-0 flex-1 overflow-y-auto px-2 pb-16 pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                   >
-                  {queue.length ? (
-                    <div
-                      className="relative w-full"
-                      style={{ height: `${queueListVirtualizer.getTotalSize()}px` }}
-                    >
-                      {queueListVirtualizer.getVirtualItems().map((row) => {
-                        const song = queue[row.index]
-                        if (!song) return null
-                        const active = row.index === currentIndex
-                        return (
-                          <div
-                            key={`${song.id}-${row.index}`}
-                            role="button"
-                            tabIndex={0}
-                            aria-current={active ? 'true' : undefined}
-                            onClick={() => {
-                              if (!active) void playAt(row.index)
-                            }}
-                            onKeyDown={(event) => {
-                              if (event.target !== event.currentTarget) return
-                              if (event.key !== 'Enter' && event.key !== ' ') {
-                                return
-                              }
-                              event.preventDefault()
-                              if (!active) void playAt(row.index)
-                            }}
-                            onPointerDown={(event) => {
-                              if (event.button !== 2) return
-                              event.preventDefault()
-                              event.stopPropagation()
-                              setQueueContext({
-                                song,
-                                x: event.clientX,
-                                y: event.clientY,
-                              })
-                            }}
-                            onContextMenu={(event) => {
-                              event.preventDefault()
-                              event.stopPropagation()
-                              setQueueContext({
-                                song,
-                                x: event.clientX,
-                                y: event.clientY,
-                              })
-                            }}
-                            className={cn(
-                              'np-queue-row group',
-                              active && 'is-current',
-                            )}
-                            style={{
-                              position: 'absolute',
-                              top: 0,
-                              right: 0,
-                              left: 0,
-                              height: `${row.size}px`,
-                              transform: `translateY(${row.start}px)`,
-                              backgroundColor:
-                                active && palette.colors[0]
-                                  ? withAlpha(palette.colors[0], 0.16)
-                                  : undefined,
-                            }}
-                          >
-                            <span className="np-queue-row__index">
-                              {active ? (
-                                <Volume2
-                                  className="h-3.5 w-3.5"
-                                  style={
-                                    palette.colors[0]
-                                      ? { color: palette.colors[0] }
-                                      : undefined
+                    {queue.length ? (
+                      queueEntries.length ? (
+                        <div
+                          className="relative w-full"
+                          style={{ height: `${queueListVirtualizer.getTotalSize()}px` }}
+                        >
+                          {queueListVirtualizer.getVirtualItems().map((row) => {
+                            const entry = queueEntries[row.index]
+                            if (!entry) return null
+                            const song = entry.song
+                            const originalIndex = entry.index
+                            const active = originalIndex === currentIndex
+                            return (
+                              <div
+                                key={`${song.id}-${originalIndex}`}
+                                role="button"
+                                tabIndex={0}
+                                aria-current={active ? 'true' : undefined}
+                                onClick={(event) => {
+                                  if (justDraggedRef.current) return
+                                  // Selection controls live inside the row; a
+                                  // click there must never fall through to play.
+                                  if (
+                                    (event.target as HTMLElement).closest(
+                                      'button, a, input, [role="checkbox"]',
+                                    )
+                                  ) {
+                                    return
                                   }
+                                  if (!active) void playAt(originalIndex)
+                                }}
+                                onKeyDown={(event) => {
+                                  if (event.target !== event.currentTarget) return
+                                  if (event.key !== 'Enter' && event.key !== ' ') {
+                                    return
+                                  }
+                                  event.preventDefault()
+                                  if (!active) void playAt(originalIndex)
+                                }}
+                                onDragStart={(event) => {
+                                  if (queueSearch.trim()) return
+                                  justDraggedRef.current = true
+                                  setDraggedQueueIndex(originalIndex)
+                                  event.dataTransfer.effectAllowed = 'move'
+                                  event.dataTransfer.setData(
+                                    'text/plain',
+                                    String(originalIndex),
+                                  )
+                                }}
+                                onDragEnd={() => {
+                                  setDraggedQueueIndex(null)
+                                  setDragOverQueueIndex(null)
+                                  window.setTimeout(() => {
+                                    justDraggedRef.current = false
+                                  }, 0)
+                                }}
+                                onDragOver={(event) => {
+                                  if (
+                                    draggedQueueIndex === null ||
+                                    queueSearch.trim()
+                                  ) {
+                                    return
+                                  }
+                                  event.preventDefault()
+                                  event.dataTransfer.dropEffect = 'move'
+                                  const rect =
+                                    event.currentTarget.getBoundingClientRect()
+                                  setQueueDropPosition(
+                                    event.clientY >= rect.top + rect.height / 2
+                                      ? 'after'
+                                      : 'before',
+                                  )
+                                  setDragOverQueueIndex(originalIndex)
+                                }}
+                                onDrop={(event) => {
+                                  event.preventDefault()
+                                  const from =
+                                    draggedQueueIndex ??
+                                    Number(event.dataTransfer.getData('text/plain'))
+                                  setDraggedQueueIndex(null)
+                                  setDragOverQueueIndex(null)
+                                  window.setTimeout(() => {
+                                    justDraggedRef.current = false
+                                  }, 0)
+                                  if (!Number.isInteger(from) || from < 0) {
+                                    return
+                                  }
+                                  let targetIndex =
+                                    originalIndex +
+                                    (queueDropPosition === 'after' ? 1 : 0)
+                                  if (from < targetIndex) targetIndex -= 1
+                                  if (targetIndex === from) return
+                                  moveQueueItem(from, targetIndex)
+                                }}
+                                onPointerDown={(event) => {
+                                  if (event.button !== 2) return
+                                  event.preventDefault()
+                                  event.stopPropagation()
+                                  setQueueContext({
+                                    song,
+                                    x: event.clientX,
+                                    y: event.clientY,
+                                  })
+                                }}
+                                onContextMenu={(event) => {
+                                  event.preventDefault()
+                                  event.stopPropagation()
+                                  setQueueContext({
+                                    song,
+                                    x: event.clientX,
+                                    y: event.clientY,
+                                  })
+                                }}
+                                className={cn(
+                                  'np-queue-row group',
+                                  active && 'is-current',
+                                  draggedQueueIndex === originalIndex &&
+                                    'is-dragging',
+                                  dragOverQueueIndex === originalIndex &&
+                                    'is-drop-target',
+                                )}
+                                style={{
+                                  position: 'absolute',
+                                  top: 0,
+                                  right: 0,
+                                  left: 0,
+                                  height: `${row.size}px`,
+                                  transform: `translateY(${row.start}px)`,
+                                  backgroundColor:
+                                    active && palette.colors[0]
+                                      ? withAlpha(palette.colors[0], 0.16)
+                                      : dragOverQueueIndex === originalIndex
+                                        ? withAlpha(
+                                            palette.colors[0] ?? '#8e8e93',
+                                            0.06,
+                                          )
+                                        : undefined,
+                                }}
+                              >
+                                {dragOverQueueIndex === originalIndex ? (
+                                  <span
+                                    aria-hidden="true"
+                                    className={cn(
+                                      'np-queue-drop-line',
+                                      queueDropPosition === 'after' && 'is-after',
+                                    )}
+                                    style={{
+                                      backgroundColor: withAlpha(
+                                        palette.colors[0] ?? '#8e8e93',
+                                        0.55,
+                                      ),
+                                    }}
+                                  />
+                                ) : null}
+                                <span
+                                  className="np-queue-drag"
+                                  draggable={!queueSearch.trim()}
+                                  onClick={(event) => event.stopPropagation()}
+                                  title={i18n._(msg`拖动排序`)}
+                                  aria-label={i18n._(msg`拖动排序`)}
+                                  role="img"
+                                >
+                                  <GripVertical className="h-4 w-4" />
+                                </span>
+                                <span className="np-queue-row__index">
+                                  {active ? (
+                                    <Volume2
+                                      className="h-3.5 w-3.5"
+                                      style={
+                                        palette.colors[0]
+                                          ? { color: palette.colors[0] }
+                                          : undefined
+                                      }
+                                    />
+                                  ) : (
+                                    String(originalIndex + 1).padStart(2, '0')
+                                  )}
+                                </span>
+                                <ImageWithFallback
+                                  src={song.al.picUrl}
+                                  alt={song.name}
+                                  rounded="rounded-[7px]"
+                                  className="h-[42px] w-[42px] shrink-0"
+                                  resize="96y96"
                                 />
-                              ) : (
-                                String(row.index + 1).padStart(2, '0')
-                              )}
-                            </span>
-                            <ImageWithFallback
-                              src={song.al.picUrl}
-                              alt={song.name}
-                              rounded="rounded-[7px]"
-                              className="h-[42px] w-[42px] shrink-0"
-                              resize="96y96"
-                            />
-                            <span className="np-queue-row__text">
-                              <span className="np-queue-row__name">
-                                {song.name}
-                              </span>
-                              <ArtistLinks
-                                artists={song.ar}
-                                className="np-queue-row__artist"
-                              />
-                            </span>
-                            <span className="np-queue-row__time">
-                              {formatDuration(song.dt)}
-                            </span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  ) : (
-                    <div className="flex h-full min-h-[180px] items-center justify-center text-[12px] text-white/45">
-                      <Trans>播放队列为空</Trans>
-                    </div>
-                  )}
+                                <span className="np-queue-row__text">
+                                  <span className="np-queue-row__name">
+                                    {song.name}
+                                  </span>
+                                  <ArtistLinks
+                                    artists={song.ar}
+                                    className="np-queue-row__artist"
+                                  />
+                                </span>
+                                <span className="np-queue-row__time">
+                                  {formatDuration(song.dt)}
+                                </span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      ) : (
+                        <div className="flex h-full min-h-[180px] items-center justify-center text-[12px] text-white/45">
+                          <Trans>没有匹配的歌曲</Trans>
+                        </div>
+                      )
+                    ) : (
+                      <div className="flex h-full min-h-[180px] items-center justify-center text-[12px] text-white/45">
+                        <Trans>播放队列为空</Trans>
+                      </div>
+                    )}
                   </div>
-                  {currentIndex >= 0 ? (
+
+                  {queueEntries.some((entry) => entry.index === currentIndex) ? (
                     <button
                       type="button"
-                      onClick={() =>
-                        queueListVirtualizer.scrollToIndex(currentIndex, {
-                          align: 'center',
-                        })
-                      }
+                      onClick={() => {
+                        const position = queueEntries.findIndex(
+                          (entry) => entry.index === currentIndex,
+                        )
+                        if (position >= 0) {
+                          queueListVirtualizer.scrollToIndex(position, {
+                            align: 'center',
+                          })
+                        }
+                      }}
                       aria-label={i18n._(msg`定位到当前播放`)}
                       title={i18n._(msg`定位到当前播放`)}
                       className="pressable absolute bottom-1.5 right-1.5 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-black/30 text-white/75 shadow-[0_6px_18px_rgba(0,0,0,0.28)] backdrop-blur-xl transition-colors hover:bg-white/15 hover:text-white"

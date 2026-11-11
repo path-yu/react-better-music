@@ -8,6 +8,7 @@ import {
   Check,
   Heart,
   Pencil,
+  RefreshCw,
   Share2,
   Star,
 } from 'lucide-react'
@@ -38,6 +39,7 @@ import {
 import { useUserStore } from '../../store/user'
 import { useLocalLibraryStore } from '../../store/localLibrary'
 import { toast } from '../../lib/toast'
+import { invalidateApiCache } from '../../lib/http'
 import { useDocumentTitle } from '../../lib/title'
 import {
   formatDate,
@@ -62,6 +64,7 @@ function PlaylistDetailPage() {
   const [keyword, setKeyword] = useState('')
   const [descExpanded, setDescExpanded] = useState(false)
   const [subscribing, setSubscribing] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
   useDocumentTitle(detail?.name ?? i18n._(msg`歌单`))
 
   const isLogin = useUserStore((state) => state.isLogin)
@@ -116,7 +119,7 @@ function PlaylistDetailPage() {
     void load()
 
     return () => controller.abort()
-  }, [id])
+  }, [id, refreshKey])
 
   // Guests who favorited this playlist before track snapshots were stored get
   // backfilled automatically as soon as the detail page has song data.
@@ -435,6 +438,22 @@ function PlaylistDetailPage() {
 
           <div className="mt-5 flex flex-wrap items-center gap-2">
             <PlayAllButton songs={songs} playlistId={String(detail.id)} />
+            <Button
+              variant="secondary"
+              size="sm"
+              className="rounded-full px-3.5 text-[12px]"
+              onClick={() => {
+                // Detail/track responses are cached for five minutes.
+                invalidateApiCache([
+                  '/playlist/detail',
+                  '/playlist/track/all',
+                ])
+                setRefreshKey((value) => value + 1)
+              }}
+            >
+              <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+              <Trans>刷新</Trans>
+            </Button>
             <Button
               variant="secondary"
               size="sm"

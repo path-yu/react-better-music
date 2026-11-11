@@ -1243,6 +1243,77 @@ html.desktop .app-window {
   background: rgba(255, 255, 255, 0.12);
 }
 
+.np-queue-row {
+  cursor: pointer;
+}
+
+.np-queue-row.is-dragging {
+  opacity: 0.42;
+}
+
+.np-queue-drop-line {
+  position: absolute;
+  z-index: 2;
+  top: -1px;
+  right: 8px;
+  left: 8px;
+  height: 2px;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+  animation: np-queue-drop-in 0.14s ease-out;
+}
+
+.np-queue-drop-line.is-after {
+  top: auto;
+  bottom: -1px;
+}
+
+@keyframes np-queue-drop-in {
+  from {
+    opacity: 0;
+    transform: scaleX(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+.np-queue-drag {
+  display: inline-flex;
+  width: 18px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.32);
+  cursor: grab;
+  opacity: 0;
+  transition:
+    color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.np-queue-row:hover .np-queue-drag,
+.np-queue-row:focus-within .np-queue-drag,
+.np-queue-row.is-dragging .np-queue-drag {
+  opacity: 1;
+}
+
+.np-queue-row:hover .np-queue-drag {
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.np-queue-drag:active {
+  cursor: grabbing;
+}
+
+@media (hover: none) {
+  .np-queue-drag {
+    opacity: 1;
+  }
+}
+
 .np-queue-row__index {
   display: inline-flex;
   width: 22px;
