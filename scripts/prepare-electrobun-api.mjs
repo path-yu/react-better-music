@@ -131,7 +131,7 @@ if (fs.existsSync(sourceDir)) collectSourceRoutes(sourceDir)
 // module (or an intentionally custom endpoint). This catches a new frontend API
 // being added without a matching route before release packaging.
 const API_INDEX = path.join(sourceDir, 'api', 'index.ts')
-const CUSTOM_API_ROUTES = new Set(['/audio/proxy'])
+const CUSTOM_API_ROUTES = new Set(['/audio/proxy', '/media/probe'])
 const apiIndexSource = fs.existsSync(API_INDEX)
   ? fs.readFileSync(API_INDEX, 'utf8')
   : ''

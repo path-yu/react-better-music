@@ -176,11 +176,14 @@ function MvDetailPage() {
                 poster={resizedImageUrl(detail.cover, '640y360') ?? undefined}
                 onPlay={handleVideoPlay}
                 onEnded={resumeMusic}
+                onError={() => setVideoUrl('')}
               />
             ) : (
-              <div className="flex h-full flex-col items-center justify-center gap-2 text-white/40">
+              <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center text-white/40">
                 <Play className="h-8 w-8" />
-                <span className="text-[12px]">暂无视频资源</span>
+                <span className="text-[12px]">
+                  <Trans>视频暂时无法播放，可能已下架或存在地区限制</Trans>
+                </span>
               </div>
             )}
           </div>

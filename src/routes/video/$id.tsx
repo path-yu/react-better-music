@@ -125,6 +125,13 @@ function VideoPage() {
                 autoPlay
                 onPlay={handlePlay}
                 onEnded={handleEnded}
+                onError={() => {
+                  // The CDN can return a 404 HTML/video response for removed
+                  // or region-locked MVs. Replace the media element's raw
+                  // MEDIA_ELEMENT_ERROR panel with this page's retry state.
+                  setUrl('')
+                  setFailed(true)
+                }}
               />
             </div>
           ) : (
@@ -132,7 +139,7 @@ function VideoPage() {
               <Play className="h-8 w-8" />
               <p className="text-[12px]">
                 {failed ? (
-                  <Trans>暂无视频播放地址</Trans>
+                  <Trans>视频暂时无法播放，可能已下架或存在地区限制</Trans>
                 ) : (
                   <Trans>视频加载失败</Trans>
                 )}

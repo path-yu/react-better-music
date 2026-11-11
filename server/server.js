@@ -363,6 +363,61 @@ async function constructServer(moduleDefs) {
   })
 
   /**
+   * Validate a NetEase video/CDN URL without exposing the renderer to CORS.
+   * A removed MV can still have a signed URL whose body is a 404 HTML/video
+   * response; probing it here lets the UI show a proper unavailable state
+   * instead of letting <video> emit MEDIA_ELEMENT_ERROR: Format error.
+   */
+  app.get('/media/probe', async (req, res) => {
+    const raw = typeof req.query.url === 'string' ? req.query.url : ''
+    let parsed
+    try {
+      parsed = new URL(raw)
+    } catch {
+      res.status(400).json({ ok: false, msg: 'Invalid media url' })
+      return
+    }
+    if (
+      (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') ||
+      !/(^|\.)126\.net$/i.test(parsed.hostname)
+    ) {
+      res.status(400).json({ ok: false, msg: 'Invalid media host' })
+      return
+    }
+    try {
+      const response = await axios.get(raw, {
+        responseType: 'stream',
+        timeout: 15000,
+        proxy: false,
+        httpAgent: httpProxyAgent,
+        httpsAgent: httpsProxyAgent,
+        headers: {
+          'User-Agent': 'Mozilla/5.0',
+          Referer: 'https://music.163.com/',
+          Range: 'bytes=0-0',
+        },
+        validateStatus: () => true,
+      })
+      const contentType = String(response.headers['content-type'] ?? '')
+      response.data.on('error', () => undefined)
+      response.data.destroy()
+      const ok =
+        response.status >= 200 &&
+        response.status < 300 &&
+        !contentType.startsWith('text/html')
+      res.setHeader('Cache-Control', 'no-store')
+      res.json({
+        ok,
+        status: response.status,
+        contentType,
+      })
+    } catch (error) {
+      res.setHeader('Cache-Control', 'no-store')
+      res.status(502).json({ ok: false, status: 502, msg: error.message })
+    }
+  })
+
+  /**
    * Guest/local library (desktop app, no NetEase login required).
    *
    * These routes intentionally sit before the API cache middleware: mutations

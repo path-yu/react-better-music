@@ -255,6 +255,7 @@ export function NowPlaying() {
       !show ||
       mvMode ||
       mvLoading ||
+      mvFailed ||
       nowPlayingMode !== 'video' ||
       !hasMv ||
       videoEndedSongRef.current === currentSong?.id
@@ -264,7 +265,7 @@ export function NowPlaying() {
     void openMvMode()
     // openMvMode intentionally reads the latest song/mv state on each track.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [show, currentSong?.id, hasMv, mvLoading, mvMode, nowPlayingMode])
+  }, [show, currentSong?.id, hasMv, mvLoading, mvFailed, mvMode, nowPlayingMode])
 
   useEffect(() => {
     if (!mvMode || !mvUrl) return
@@ -404,14 +405,24 @@ export function NowPlaying() {
     mvWasPlayingRef.current = false
   }
 
-  const openMvMode = async () => {
-    if (mvMode || !hasMv || !mvId) return
+  const enterMvMode = (url: string) => {
+    // Only pause audio after a playable URL exists. Entering a black video
+    // surface first would leave the user stuck there when the MV is gone.
     mvWasPlayingRef.current = usePlayerStore.getState().playing
     usePlayerStore.getState().setPlaying(false)
     setMvMode(true)
     setMvFailed(false)
     setMvVideoReady(false)
     useVideoPlaybackStore.getState().setActive(true)
+    setMvUrl(url)
+  }
+
+  const openMvMode = async () => {
+    if (mvMode || !hasMv || !mvId) return
+    setMvLoading(true)
+    setMvFailed(false)
+    setMvVideoReady(false)
+    setMvUrl('')
 
     // Reopening the play page should not show a cover/poster loading flash or
     // refetch the same URL. A ten-minute cache is enough for the signed MV URL.
@@ -421,12 +432,11 @@ export function NowPlaying() {
       cached.songId === currentSong.id &&
       Date.now() - cached.at < 10 * 60 * 1000
     ) {
-      setMvUrl(cached.url)
+      enterMvMode(cached.url)
       setMvLoading(false)
       return
     }
 
-    setMvLoading(true)
     try {
       // The song's raw `mv` can point at a programme/teaser clip. Resolve the
       // official MV through search first, then request that video's URL.
@@ -440,10 +450,15 @@ export function NowPlaying() {
         url,
         at: Date.now(),
       }
-      setMvUrl(url)
+      enterMvMode(url)
     } catch {
+      // Stay on the audio page; the URL probe rejected a removed/region-locked
+      // MV before mounting a <video> element.
       setMvFailed(true)
-      toast.error(i18n._(msg`MV 加载失败`))
+      setNowPlayingMode('audio')
+      toast.info(
+        i18n._(msg`视频暂时无法播放，可能已下架或存在地区限制`),
+      )
     } finally {
       setMvLoading(false)
     }
@@ -584,8 +599,8 @@ export function NowPlaying() {
           <div className="np-video-player relative min-h-0 flex-1 overflow-hidden bg-black">
             {mvFailed ? (
               <div className="flex h-full flex-col items-center justify-center gap-3 text-white/55">
-                <p className="text-[12px]">
-                  <Trans>MV 加载失败</Trans>
+                <p className="max-w-[280px] text-center text-[12px]">
+                  <Trans>视频暂时无法播放，可能已下架或存在地区限制</Trans>
                 </p>
                 <button
                   type="button"

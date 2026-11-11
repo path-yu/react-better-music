@@ -1,4 +1,5 @@
-import { useEffect, useRef, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { Trans } from '@lingui/react/macro'
 import { I18nProvider } from '@videojs/react/i18n'
 import { Video, VideoPlayer, VideoSkin } from '@videojs/react/video'
 import '@videojs/react/video/skin.css'
@@ -51,6 +52,11 @@ export function MvVideoPlayer({
   onError,
 }: MvVideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
+  const [failed, setFailed] = useState(false)
+
+  useEffect(() => {
+    setFailed(false)
+  }, [src])
 
   // Audio is the other transport. If the playlist starts playing while this
   // MV is playing, stop the video and hand the player bar back to audio.
@@ -63,6 +69,22 @@ export function MvVideoPlayer({
       }),
     [],
   )
+
+  // A dead CDN URL must never leave Video.js' raw MEDIA_ELEMENT_ERROR panel on
+  // screen. This fallback is independent of the parent's error state.
+  if (failed) {
+    return (
+      <div
+        className={
+          fill
+            ? 'flex h-full w-full items-center justify-center bg-black px-6 text-center text-[12px] text-white/55'
+            : 'flex aspect-video w-full items-center justify-center bg-black px-6 text-center text-[12px] text-white/55'
+        }
+      >
+        <Trans>视频暂时无法播放，可能已下架或存在地区限制</Trans>
+      </div>
+    )
+  }
 
   return (
     <VideoPlayer>
@@ -96,7 +118,10 @@ export function MvVideoPlayer({
             }}
             onEnded={onEnded}
             onCanPlay={onReady}
-            onError={onError}
+            onError={() => {
+              setFailed(true)
+              onError?.()
+            }}
           />
         </VideoSkin>
       </I18nProvider>

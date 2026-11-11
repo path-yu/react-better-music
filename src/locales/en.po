@@ -160,7 +160,7 @@ msgstr "Failed to load MVs"
 #~ msgid "MV 推荐加载失败"
 #~ msgstr "Failed to load MV recommendations"
 
-#: src/routes/mv/$id.tsx:225
+#: src/routes/mv/$id.tsx:228
 msgid "MV 评论"
 msgstr "MV comments"
 
@@ -1571,8 +1571,8 @@ msgid "暂无相关视频"
 msgstr "No related videos"
 
 #: src/routes/video/$id.tsx:135
-msgid "暂无视频播放地址"
-msgstr "No video source available"
+#~ msgid "暂无视频播放地址"
+#~ msgstr "No video source available"
 
 #: src/components/user/UserCard.tsx:38
 #: src/routes/users/$id.tsx:183
@@ -2202,8 +2202,8 @@ msgstr "Clear everything?"
 
 #: src/routes/search.tsx:275
 #: src/routes/video/$id.tsx:42
-#: src/routes/video/$id.tsx:153
-#: src/routes/video/$id.tsx:155
+#: src/routes/video/$id.tsx:160
+#: src/routes/video/$id.tsx:162
 msgid "视频"
 msgstr "Videos"
 
@@ -2212,11 +2212,17 @@ msgid "视频加载中…"
 msgstr "Loading video…"
 
 #: src/routes/search.tsx:544
-#: src/routes/video/$id.tsx:137
+#: src/routes/video/$id.tsx:144
 msgid "视频加载失败"
 msgstr "Failed to load videos"
 
-#: src/routes/video/$id.tsx:167
+#: src/components/mv/MvVideoPlayer.tsx:84
+#: src/routes/mv/$id.tsx:185
+#: src/routes/video/$id.tsx:142
+msgid "视频暂时无法播放，可能已下架或存在地区限制"
+msgstr ""
+
+#: src/routes/video/$id.tsx:174
 msgid "视频评论"
 msgstr "Video comments"
 
@@ -2359,7 +2365,7 @@ msgstr "Editor-picked Chinese, Western and instrumental playlists"
 msgid "网易云官方"
 msgstr "NetEase official"
 
-#: src/routes/video/$id.tsx:158
+#: src/routes/video/$id.tsx:165
 msgid "网易云音乐"
 msgstr "NetEase Cloud Music"
 
@@ -2681,7 +2687,7 @@ msgstr "Failed to rename playlist"
 msgid "重新加载"
 msgstr "Reload"
 
-#: src/routes/video/$id.tsx:146
+#: src/routes/video/$id.tsx:153
 msgid "重试"
 msgstr "Retry"
 

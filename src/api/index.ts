@@ -463,7 +463,34 @@ export async function fetchMvDetail(mvid: number | string) {
 
 export async function fetchMvUrl(id: number | string, signal?: AbortSignal) {
   const res = await get<{ data?: { url?: string } }>('/mv/url', { id }, signal)
-  return secureMediaUrl(res.data?.url) ?? ''
+  const url = secureMediaUrl(res.data?.url) ?? ''
+  if (!url) return ''
+  // Removed/region-locked MVs still get a signed URL from the API, but the
+  // CDN returns a 404 body with a video content type. Probe before mounting
+  // <video> so Video.js never reports MEDIA_ELEMENT_ERROR: Format error.
+  return (await isPlayableVideoUrl(url, signal)) ? url : ''
+}
+
+/**
+ * A `src` pointing at an HTML error body still fires a media error in the
+ * <video> element, which surfaces as the ugly MEDIA_ELEMENT_ERROR: Format
+ * error panel. Probe the first byte first and reject dead CDN URLs.
+ */
+async function isPlayableVideoUrl(url: string, signal?: AbortSignal) {
+  try {
+    // Probe through the local API: the video CDN's CORS behavior differs
+    // between WebView2 versions, and a failed cross-origin probe used to be
+    // mistaken for a playable URL.
+    const response = await get<{ ok?: boolean }>(
+      '/media/probe',
+      { url },
+      signal,
+    )
+    return response.ok === true
+  } catch {
+    // If the API is still starting, do not hide a URL that might work.
+    return true
+  }
 }
 
 /** User-uploaded videos from `/cloudsearch?type=1014`. */
@@ -473,14 +500,17 @@ export async function fetchVideoUrl(id: number | string, signal?: AbortSignal) {
     data?: { url?: string }
   }>('/video/url', { id }, signal)
   const direct = secureMediaUrl(res.urls?.[0]?.url ?? res.data?.url)
-  if (direct) return direct
+  if (direct && (await isPlayableVideoUrl(direct, signal))) return direct
 
   // The cloud-search video list also contains MV ids (type 0). For those,
   // `/video/url` returns `{ urls: [] }`; the same id resolves through
-  // `/mv/url`. Without this fallback the detail page shows “暂无视频播放地址”.
+  // `/mv/url`. Some MVs are removed/region-locked and the CDN still returns a
+  // signed URL whose body is a 404, so validate the fallback as well.
   try {
     const mv = await get<{ data?: { url?: string } }>('/mv/url', { id }, signal)
-    return secureMediaUrl(mv.data?.url) ?? ''
+    const mvUrl = secureMediaUrl(mv.data?.url)
+    if (!mvUrl) return ''
+    return (await isPlayableVideoUrl(mvUrl, signal)) ? mvUrl : ''
   } catch {
     return ''
   }
