@@ -705,7 +705,11 @@ export function NowPlaying() {
               <button
                 type="button"
                 onClick={() => closeMvMode()}
-                className="np-round-button pressable pointer-events-auto flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] text-white/75"
+                aria-label={i18n._(msg`返回音乐`)}
+                title={i18n._(msg`返回音乐`)}
+                // The MV can have a white/bright frame; a transparent glass
+                // pill leaves this white icon invisible. Keep a dark scrim.
+                className="np-round-button pressable pointer-events-auto flex shrink-0 items-center gap-1.5 rounded-full border-white/15 bg-black/45 px-3 py-1.5 text-[11px] text-white shadow-[0_4px_18px_rgba(0,0,0,0.28)] backdrop-blur-md transition-colors hover:bg-black/65"
               >
                 <Disc3 className="h-3.5 w-3.5" />
                 <Trans>音乐</Trans>
