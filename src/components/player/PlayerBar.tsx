@@ -30,6 +30,7 @@ import { Popover, PopoverContent, PopoverTrigger, Switch } from '@pikoloo/darwin
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
 import { PlaylistPicker } from './PlaylistPicker'
+import { useDelayedBusy } from '../../lib/useDelayedBusy'
 import { ImmersiveProgressBar } from './ImmersiveProgressBar'
 import { ProgressSlider } from './ProgressSlider'
 import { SourcePicker } from './SourcePicker'
@@ -132,6 +133,9 @@ export function PlayerBar() {
   const audioUrl = usePlayerStore((state) => state.audioUrl)
   const sourceReady = usePlayerStore((state) => state.sourceReady)
   const audioReady = usePlayerStore((state) => state.audioReady)
+  const busyVisible = useDelayedBusy(
+    playing && (!sourceReady || !audioReady),
+  )
   const audioFromCache = usePlayerStore((state) => state.audioFromCache)
   const audioBlob = usePlayerStore((state) => state.audioBlob)
   const heartMode = usePlayerStore((state) => state.heartMode)
@@ -779,7 +783,6 @@ export function PlayerBar() {
     trialDuration || (sourceMatches ? mediaDuration : 0) || currentSong.dt || 0
   const loadingSource = playing && !sourceReady
   const buffering = playing && sourceReady && !audioReady
-  const busy = loadingSource || buffering
   const percent = duration ? Math.min(100, (currentTime * 1000 * 100) / duration) : 0
   const pendingTime = pendingSeek !== null ? (pendingSeek / 100) * (duration / 1000) : null
   // While the audio element still points at the previous track, force the
@@ -796,7 +799,7 @@ export function PlayerBar() {
       : 0
     : displayPercent
   const playbackPlaying = videoActive ? videoPlaying : playing
-  const playbackBusy = videoActive ? false : busy
+  const playbackBusy = videoActive ? false : busyVisible
 
   const handleSeek = (value: number) => {
     const incoming = incomingRef.current
@@ -1219,7 +1222,7 @@ export function PlayerBar() {
             <PlaylistPicker song={currentSong} tint={playerMenuTint} />
           </div>
           <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-black/40">
-            {loadingSource ? (
+            {busyVisible && loadingSource ? (
               <>
                 <Loader2 className="h-3 w-3 flex-none animate-spin text-accent" />
                 <Trans>正在加载音源…</Trans>

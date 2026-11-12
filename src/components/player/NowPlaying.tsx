@@ -16,7 +16,6 @@ import {
   Volume2,
   X,
 } from 'lucide-react'
-import { CrossfadeImage } from '../common/CrossfadeImage'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
 import { menuSurfaceStyle } from '../../lib/menuSurface'
@@ -28,6 +27,7 @@ import { MvVideoPlayer } from '../mv/MvVideoPlayer'
 import { CommentSection, useCommentTotal } from '../comments/CommentSection'
 import { SongContextMenu } from '../songs/SongContextMenu'
 import { fetchMvUrl, fetchRelatedVideos } from '../../api'
+import { useDelayedBusy } from '../../lib/useDelayedBusy'
 import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
 import { useLocalLibraryStore } from '../../store/localLibrary'
@@ -72,6 +72,9 @@ export function NowPlaying() {
   const playing = usePlayerStore((state) => state.playing)
   const audioReady = usePlayerStore((state) => state.audioReady)
   const sourceReady = usePlayerStore((state) => state.sourceReady)
+  const busyVisible = useDelayedBusy(
+    playing && (!sourceReady || !audioReady),
+  )
   // Playback progress changes several times per second; keep the overlay from
   // re-rendering while it is closed.
   const currentTime = usePlayerStore((state) =>
@@ -417,8 +420,6 @@ export function NowPlaying() {
   if (!currentSong || !show) return null
 
   const loadingSource = playing && !sourceReady
-  const buffering = playing && sourceReady && !audioReady
-  const busy = loadingSource || buffering
   // The backdrop is heavily blurred, so a 320px copy is indistinguishable from
   // the original but avoids fetching/decoding a multi-megapixel cover.
 
@@ -770,7 +771,7 @@ export function NowPlaying() {
                   column is vertically centered, so mounting it conditionally
                   would push the content up and down on every play/pause. */}
               <div className="mt-2 flex h-5 items-center justify-center" aria-live="polite">
-                {busy ? (
+                {busyVisible ? (
                   <span
                     className="flex items-center gap-1.5 text-[12px] text-accent"
                     role="status"
@@ -802,13 +803,12 @@ export function NowPlaying() {
                   }
                   className="album-cover group relative block h-full w-full cursor-pointer disabled:cursor-default"
                 >
-                  <CrossfadeImage
+                  <ImageWithFallback
                     src={currentSong.al.picUrl}
                     alt={currentSong.name}
                     rounded="rounded-[14px]"
                     className="h-full w-full"
                     resize="640y640"
-                    priority
                   />
                   {/* Hover hint so the cover reads as a link into the album. */}
                   <span className="pointer-events-none absolute inset-0 flex items-end justify-center bg-black/25 p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100">
