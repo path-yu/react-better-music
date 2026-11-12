@@ -133,27 +133,36 @@ export function NowPlaying() {
   const [mvVideoReady, setMvVideoReady] = useState(false)
   const mvWasPlayingRef = useRef(false)
   const videoEndedSongRef = useRef<number | null>(null)
-  const mvUrlCacheRef = useRef<{ songId: number; url: string; at: number } | null>(
-    null,
-  )
-  // Some songs in the queue do not carry `mv`/`mvid`, even though an official
-  // MV exists. Discover it from the same related-video search used by the film
-  // button so the direct MV badge can still appear.
-  const relatedMvCacheRef = useRef(new Map<number, number | null>())
-  const [relatedMv, setRelatedMv] = useState<{
+  const mvUrlCacheRef = useRef<{
     songId: number
-    id: number | null
+    videoId: number
+    url: string
+    at: number
+  } | null>(null)
+  // Some songs carry no `mv` field, or only a related video. Search determines
+  // whether the result is a real official MV or merely an adjacent video.
+  const videoCacheRef = useRef(
+    new Map<number, { id: number; official: boolean } | null>(),
+  )
+  const [resolvedVideo, setResolvedVideo] = useState<{
+    songId: number
+    id: number
+    official: boolean
   } | null>(null)
   const rawMvId = currentSong?.mv ?? currentSong?.mvid
-  // `mv: 0` is a valid "no MV" marker, not a nullish value. Treat it as absent
-  // so a discovered related MV can fill the gap.
+  // `mv: 0` is a valid "no MV" marker, not a nullish value.
   const mvId = rawMvId && Number(rawMvId) > 0 ? rawMvId : undefined
-  const relatedMvId =
-    currentSong && relatedMv?.songId === currentSong.id
-      ? relatedMv.id
+  const resolvedVideoForSong =
+    currentSong && resolvedVideo?.songId === currentSong.id
+      ? resolvedVideo
       : null
-  const effectiveMvId = mvId ?? relatedMvId
-  const hasMv = Boolean(effectiveMvId && Number(effectiveMvId) > 0)
+  const activeVideo =
+    resolvedVideoForSong ??
+    (mvId ? { id: Number(mvId), official: false } : null)
+  const hasMv = Boolean(activeVideo?.id)
+  const videoBadgeLabel = activeVideo?.official
+    ? 'MV'
+    : i18n._(msg`视频`)
   // The CDN URLs returned by the API are HTTP; WebView2 rejects them as mixed
   // content. Normalise to a secure, smaller copy before colour sampling.
   const ambientSource = useMemo(
@@ -324,31 +333,40 @@ export function NowPlaying() {
     }
   }, [ambientSource, artwork])
 
-  // Resolve a missing `mv` field through search. The badge is shown as soon as
-  // an official MV is found and the result is cached for this session.
+  // Resolve official-vs-related once per song. Exact title/artist matches are
+  // labelled MV; everything else gets the generic 视频 label.
   useEffect(() => {
-    if (!show || !currentSong || (mvId && Number(mvId) > 0)) return
+    if (!show || !currentSong) return
     const song = currentSong
-    const cached = relatedMvCacheRef.current.get(song.id)
+    const cached = videoCacheRef.current.get(song.id)
     if (cached !== undefined) {
-      setRelatedMv({ songId: song.id, id: cached })
+      setResolvedVideo(
+        cached ? { songId: song.id, ...cached } : null,
+      )
       return
     }
     let active = true
-    void fetchRelatedVideos(song, 3, undefined, true)
+    void fetchRelatedVideos(song, 8)
       .then((videos) => {
-        if (!active) return
-        const official = videos.find((video) => video.kind === 'mv')
-        const parsedId = official ? Number(official.id) : null
-        const id =
-          parsedId !== null && Number.isFinite(parsedId) ? parsedId : null
-        relatedMvCacheRef.current.set(song.id, id)
-        setRelatedMv({ songId: song.id, id })
+        const mv = videos.find((video) => video.kind === 'mv')
+        let next: { id: number; official: boolean } | null = null
+        if (mv) {
+          const id = Number(mv.id)
+          if (Number.isFinite(id)) {
+            next = { id, official: Boolean(mv.official) }
+          }
+        }
+        if (!next && mvId) {
+          next = { id: Number(mvId), official: false }
+        }
+        videoCacheRef.current.set(song.id, next)
+        if (active) {
+          setResolvedVideo(next ? { songId: song.id, ...next } : null)
+        }
       })
       .catch(() => {
-        if (!active) return
-        relatedMvCacheRef.current.set(song.id, null)
-        setRelatedMv({ songId: song.id, id: null })
+        videoCacheRef.current.set(song.id, null)
+        if (active) setResolvedVideo(null)
       })
     return () => {
       active = false
@@ -460,7 +478,7 @@ export function NowPlaying() {
   }
 
   const openMvMode = async () => {
-    if (mvMode || !hasMv || !effectiveMvId) return
+    if (mvMode || !activeVideo) return
     setMvLoading(true)
     setMvFailed(false)
     setMvVideoReady(false)
@@ -472,6 +490,7 @@ export function NowPlaying() {
     if (
       cached &&
       cached.songId === currentSong.id &&
+      cached.videoId === activeVideo.id &&
       Date.now() - cached.at < 10 * 60 * 1000
     ) {
       enterMvMode(cached.url)
@@ -480,29 +499,11 @@ export function NowPlaying() {
     }
 
     try {
-      let officialId = Number(effectiveMvId)
-      // A discovered MV is already the matched official result. When only the
-      // song's raw `mv` field exists, prefer an exact search match and fall
-      // back to the raw id if search is unavailable.
-      if (!relatedMvId) {
-        try {
-          const related = await fetchRelatedVideos(
-            currentSong,
-            3,
-            undefined,
-            true,
-          )
-          const official = related.find((video) => video.kind === 'mv')
-          if (official) officialId = Number(official.id)
-        } catch {
-          // Keep the raw `mv` id as the fallback.
-        }
-      }
-      if (!officialId) throw new Error('no official mv')
-      const url = await fetchMvUrl(officialId)
+      const url = await fetchMvUrl(activeVideo.id)
       if (!url) throw new Error('empty mv url')
       mvUrlCacheRef.current = {
         songId: currentSong.id,
+        videoId: activeVideo.id,
         url,
         at: Date.now(),
       }
@@ -735,7 +736,7 @@ export function NowPlaying() {
                     onClick={() => void toggleMvMode()}
                     className="np-mv-badge  shrink-0 rounded-[5px] border-0 bg-transparent px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-accent transition-colors hover:bg-white/10"
                   >
-                    MV
+                    {videoBadgeLabel}
                   </button>
                 ) : null}
                 <button

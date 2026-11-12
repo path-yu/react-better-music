@@ -547,6 +547,7 @@ export async function fetchRelatedVideos(
   officialOnly = false,
 ) {
   const official: VideoItem[] = []
+  const relatedSearch: VideoItem[] = []
   const mvId = song.mv ?? song.mvid
   const artistNames = new Set(
     (song.ar ?? []).map((artist) => artist.name.trim().toLowerCase()),
@@ -588,14 +589,22 @@ export async function fetchRelatedVideos(
       { keywords: query, type: '1004', limit: 8 },
       signal,
     )
-    official.push(
-      ...(result.mvs ?? [])
-        .map((mv) => ({ mv, score: scoreMv(mv) }))
-        .filter((item) => item.score > 0)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 3)
-        .map((item) => item.mv),
-    )
+    const candidates = (result.mvs ?? [])
+      .map((video) => ({ video, score: scoreMv(video) }))
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score)
+
+    for (const item of candidates) {
+      const exact = canonicalTitle(item.video.title) === songTitle
+      const video = { ...item.video, official: exact }
+      if (exact) {
+        if (official.length < 3) official.push(video)
+      } else if (relatedSearch.length < 3) {
+        // Documentaries/live programmes are related videos, not the MV badge.
+        relatedSearch.push(video)
+      }
+      if (official.length >= 3 && relatedSearch.length >= 3) break
+    }
   } catch {
     // Fall through to the song's mv id and then Mlog recommendations.
   }
@@ -605,7 +614,12 @@ export async function fetchRelatedVideos(
       const detail = await fetchMvDetail(mvId)
       if (detail) {
         const candidate = videoFromMv(detail)
-        if (scoreMv(candidate) > 0) official.push(candidate)
+        if (scoreMv(candidate) > 0) {
+          const exact = canonicalTitle(candidate.title) === songTitle
+          const video = { ...candidate, official: exact }
+          if (exact) official.push(video)
+          else relatedSearch.push(video)
+        }
       }
     } catch {
       // Keep Mlog recommendations as the fallback.
@@ -626,7 +640,7 @@ export async function fetchRelatedVideos(
     .filter((item): item is VideoItem => Boolean(item))
 
   const seen = new Set<string>()
-  return [...official, ...clips]
+  return [...official, ...relatedSearch, ...clips]
     .filter((item) => {
       const key = `${item.kind}:${item.id}`
       if (seen.has(key)) return false

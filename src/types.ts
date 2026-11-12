@@ -238,6 +238,8 @@ export interface VideoItem {
   /** MVs use numeric ids; video/mlog ids are strings. */
   id: number | string
   title: string
+  /** Only exact title/artist matches are official MVs. */
+  official?: boolean
   cover?: string
   artist?: string
   duration?: number
