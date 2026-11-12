@@ -1,8 +1,15 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react'
 import { Trans } from '@lingui/react/macro'
 import { I18nProvider } from '@videojs/react/i18n'
 import { Video, VideoPlayer, VideoSkin } from '@videojs/react/video'
 import '@videojs/react/video/skin.css'
+import { cn } from '../../lib/format'
 import { usePlayerStore } from '../../store/player'
 import { useVideoPlaybackStore } from '../../store/videoPlayback'
 
@@ -53,10 +60,46 @@ export function MvVideoPlayer({
 }: MvVideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const [failed, setFailed] = useState(false)
+  const [playing, setPlaying] = useState(false)
+  const [controlsVisible, setControlsVisible] = useState(true)
+  const playingRef = useRef(false)
+  const hideTimerRef = useRef<number | null>(null)
+
+  const clearHideTimer = useCallback(() => {
+    if (hideTimerRef.current !== null) {
+      window.clearTimeout(hideTimerRef.current)
+      hideTimerRef.current = null
+    }
+  }, [])
+
+  const showControls = useCallback(() => {
+    setControlsVisible(true)
+    clearHideTimer()
+    if (playingRef.current) {
+      hideTimerRef.current = window.setTimeout(() => {
+        setControlsVisible(false)
+      }, 1000)
+    }
+  }, [clearHideTimer])
+
+  useEffect(() => {
+    playingRef.current = playing
+    if (!playing) {
+      clearHideTimer()
+      setControlsVisible(true)
+      return
+    }
+    showControls()
+  }, [playing, showControls, clearHideTimer])
+
+  useEffect(() => clearHideTimer, [clearHideTimer])
 
   useEffect(() => {
     setFailed(false)
-  }, [src])
+    setPlaying(false)
+    setControlsVisible(true)
+    clearHideTimer()
+  }, [src, clearHideTimer])
 
   // Audio is the other transport. If the playlist starts playing while this
   // MV is playing, stop the video and hand the player bar back to audio.
@@ -87,6 +130,15 @@ export function MvVideoPlayer({
   }
 
   return (
+    <div
+      className={cn('mv-video-shell relative w-full', fill && 'h-full')}
+      data-controls-hidden={!controlsVisible ? 'true' : undefined}
+      onPointerMove={showControls}
+      onPointerDown={showControls}
+      onTouchStart={showControls}
+      onKeyDown={showControls}
+      onContextMenu={showControls}
+    >
     <VideoPlayer>
       <I18nProvider locale="zh-CN">
         <VideoSkin
@@ -110,15 +162,21 @@ export function MvVideoPlayer({
             preload="metadata"
             onPlay={(event) => {
               videoRef.current = event.currentTarget
+              setPlaying(true)
               // Any MV start (including autoplay and playback from the MV
               // detail page) must stop the playlist audio. Call the caller
               // first so its resume/ended bookkeeping still sees `playing`.
               onPlay?.()
               usePlayerStore.getState().setPlaying(false)
             }}
-            onEnded={onEnded}
+            onPause={() => setPlaying(false)}
+            onEnded={() => {
+              setPlaying(false)
+              onEnded?.()
+            }}
             onCanPlay={onReady}
             onError={() => {
+              setPlaying(false)
               setFailed(true)
               onError?.()
             }}
@@ -126,5 +184,6 @@ export function MvVideoPlayer({
         </VideoSkin>
       </I18nProvider>
     </VideoPlayer>
+    </div>
   )
 }

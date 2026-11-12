@@ -102,8 +102,8 @@ const SongRow = memo(function SongRow({
             )}
           />
         ) : (
-          <span className="text-[11px] tabular-nums text-black/25 transition-opacity group-hover:opacity-0">
-            {index < 9 ? `0${index + 1}` : index + 1}
+          <span className="text-center text-[10.5px] font-medium leading-none tabular-nums text-black/30 transition-opacity group-hover:opacity-0">
+            {index + 1}
           </span>
         )}
         <button

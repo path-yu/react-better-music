@@ -26,6 +26,11 @@ import {
   prefetchAudio,
   retainPrefetchedAudio,
 } from '../lib/audioPrefetch'
+import {
+  getCachedLyricsPatch,
+  saveCachedLyrics,
+  type LyricsPatch,
+} from '../lib/lyricsCache'
 import { createCoalescedStorage } from '../lib/persistStorage'
 import { toast } from '../lib/toast'
 import { apiErrorMessage } from '../lib/apiErrors'
@@ -237,6 +242,35 @@ const unblockAnnounced = new Set<number>()
  * so third-party matches are streamed directly by the audio element.
  */
 const NETEASE_MEDIA = /^https?:\/\/[^/]*music\.126\.net\//
+
+/** Deduplicate lyric loads between the current track and neighbour prefetch. */
+const lyricsRequests = new Map<number, Promise<LyricsPatch | null>>()
+
+async function loadLyricsPatch(songId: number): Promise<LyricsPatch | null> {
+  const cached = await getCachedLyricsPatch(songId)
+  if (cached) return cached
+  const running = lyricsRequests.get(songId)
+  if (running) return running
+
+  const task = fetchLyric(songId)
+    .then((data) => {
+      const patch: LyricsPatch = {
+        lyric: data.lyric,
+        tlyric: data.tlyric,
+        yrc: data.yrc,
+        isNotLyric: isEmptyLyric(data.lyric) && !data.yrc,
+      }
+      // Save as soon as the response arrives, not only when the track starts.
+      void saveCachedLyrics(songId, patch)
+      return patch
+    })
+    .catch(() => null)
+    .finally(() => {
+      lyricsRequests.delete(songId)
+    })
+  lyricsRequests.set(songId, task)
+  return task
+}
 
 function playbackUrl(url: string, unblocked: boolean) {
   return unblocked && !NETEASE_MEDIA.test(url) ? url : apiUrl('/audio/proxy', { url })
@@ -470,6 +504,19 @@ export const usePlayerStore = create<PlayerState>()(
         retainPrefetchedAudio(uniqueNeighbors.map((entry) => entry.song.id))
         if (!uniqueNeighbors.length) return
 
+        // Lyrics are tiny compared with audio; fetch both neighbours now and
+        // patch the queue so switching does not show the lyric spinner. The
+        // helper checks IndexedDB first, so a previously heard track is instant.
+        for (const { index: neighborIndex, song } of uniqueNeighbors) {
+          if (song.lyric || song.yrc || song.isNotLyric) continue
+          void loadLyricsPatch(song.id).then((patch) => {
+            if (!patch) return
+            const active = get().queue[neighborIndex]
+            if (!active || active.id !== song.id) return
+            patchSong(neighborIndex, patch)
+          })
+        }
+
         const resolves = uniqueNeighbors.map(async ({ index: neighborIndex, song }) => {
           const bypassAudioCache = await shouldBypassAudioCache(song)
           if (bypassAudioCache) void removeCachedAudio(song.id)
@@ -527,17 +574,23 @@ export const usePlayerStore = create<PlayerState>()(
 
       const resolveLyrics = async (index: number, song: Song, requestId: number) => {
         if (song.lyric || song.yrc || song.isNotLyric) {
+          void saveCachedLyrics(song.id, {
+            lyric: song.lyric ?? '',
+            tlyric: song.tlyric ?? '',
+            yrc: song.yrc ?? '',
+            isNotLyric: Boolean(song.isNotLyric),
+          })
           set({ lyricLines: readLyrics(song), lyricLoading: false })
           return
         }
         try {
-          const lyricData = await fetchLyric(song.id)
+          // Neighbour prefetch may already have filled the queue, or the
+          // persistent cache may have lyrics from an earlier session.
+          const patch = await loadLyricsPatch(song.id)
           if (get().loadRequestId !== requestId) return
-          const patch: Partial<Song> = {
-            lyric: lyricData.lyric,
-            tlyric: lyricData.tlyric,
-            yrc: lyricData.yrc,
-            isNotLyric: isEmptyLyric(lyricData.lyric) && !lyricData.yrc,
+          if (!patch) {
+            set({ lyricLoading: false })
+            return
           }
           patchSong(index, patch)
           set({ lyricLines: readLyrics({ ...song, ...patch }), lyricLoading: false })
@@ -551,12 +604,18 @@ export const usePlayerStore = create<PlayerState>()(
         const song = state.queue[index]
         if (!song) return false
         const requestId = state.loadRequestId + 1
+        // Neighbour prefetch normally has already filled these fields. Hydrate
+        // them synchronously so switching to a known track never flashes the
+        // lyric loading state.
+        const hasKnownLyrics = Boolean(
+          song.lyric || song.yrc || song.isNotLyric,
+        )
         // Clear stale lyrics/source so a different song never shows the
         // previous track's data while its own source is still resolving.
         set({
           loadRequestId: requestId,
-          lyricLoading: true,
-          lyricLines: [],
+          lyricLoading: !hasKnownLyrics,
+          lyricLines: hasKnownLyrics ? readLyrics(song) : [],
           audioUrl: '',
           sourceReady: false,
           audioFromCache: false,
@@ -1134,8 +1193,15 @@ export const usePlayerStore = create<PlayerState>()(
           const state = get()
           const song = state.queue[state.currentIndex]
           if (!song) return
-          // Already resolved (including "no lyrics") — only hydrate the view.
+          // Already resolved (including "no lyrics") — persist it and hydrate
+          // the view without another network or cache read.
           if (song.lyric || song.yrc || song.isNotLyric) {
+            void saveCachedLyrics(song.id, {
+              lyric: song.lyric ?? '',
+              tlyric: song.tlyric ?? '',
+              yrc: song.yrc ?? '',
+              isNotLyric: Boolean(song.isNotLyric),
+            })
             if (!state.lyricLines.length) {
               set({ lyricLines: readLyrics(song), lyricLoading: false })
             }
@@ -1147,16 +1213,14 @@ export const usePlayerStore = create<PlayerState>()(
           const requestId = state.loadRequestId
           set({ lyricLoading: true })
           try {
-            const lyricData = await fetchLyric(song.id)
+            const patch = await loadLyricsPatch(song.id)
             // A track switch (or a newer load) owns the state now.
             if (get().loadRequestId !== requestId) return
             const active = get().queue[get().currentIndex]
             if (!active || active.id !== song.id) return
-            const patch: Partial<Song> = {
-              lyric: lyricData.lyric,
-              tlyric: lyricData.tlyric,
-              yrc: lyricData.yrc,
-              isNotLyric: isEmptyLyric(lyricData.lyric) && !lyricData.yrc,
+            if (!patch) {
+              set({ lyricLoading: false })
+              return
             }
             patchSong(get().currentIndex, patch)
             set({ lyricLines: readLyrics({ ...active, ...patch }), lyricLoading: false })

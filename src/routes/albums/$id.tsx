@@ -197,10 +197,14 @@ function AlbumDetailPage() {
       </div>
 
       <div className="sticky top-0 z-20 -mx-8 mt-7 flex items-center justify-between gap-4 border-b border-[var(--app-border)] bg-[var(--app-glass)] px-8 py-2 backdrop-blur-xl">
-        <p className="text-[12px] font-medium text-black/70">
-          <Trans>歌曲列表</Trans>
-          <span className="ml-1 text-[11px] text-black/30">{songs.length}</span>
-        </p>
+        <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+          <span className="text-[12px] font-medium text-black/70">
+            <Trans>歌曲列表</Trans>
+          </span>
+          <span className="text-[11px] tabular-nums text-black/30">
+            {songs.length}
+          </span>
+        </div>
         <Input.Search
           value={keyword}
           onChange={(event) => setKeyword(event.target.value)}

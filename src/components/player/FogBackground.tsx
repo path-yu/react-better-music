@@ -216,18 +216,58 @@ export function FogBackground({
     let width = 1
     let height = 1
     // Parsing the cover colour every frame creates avoidable garbage; the
-    // palette only changes when the track/tint changes.
+    // palette only changes when the track/tint changes. Keep separate target
+    // and current colours so a track change fades instead of flashing.
     let deepColor: [number, number, number] = [0, 0, 0]
     let fogColor: [number, number, number] = [0, 0, 0]
+    let targetDeep: [number, number, number] = [0, 0, 0]
+    let targetFog: [number, number, number] = [0, 0, 0]
+    let colorTransition = false
+    let lastColorAt = performance.now()
 
-    const updateColors = () => {
+    const updateColorTargets = () => {
       const colors = fogColors(tintRef.current)
       const nextDeep = vec3(colors.deep)
       const nextFog = vec3(colors.fog)
-      deepColor = [nextDeep[0], nextDeep[1], nextDeep[2]]
-      fogColor = [nextFog[0], nextFog[1], nextFog[2]]
+      targetDeep = [nextDeep[0], nextDeep[1], nextDeep[2]]
+      targetFog = [nextFog[0], nextFog[1], nextFog[2]]
+      colorTransition = true
+      if (reducedMotion.matches) snapColors()
+    }
+
+    const snapColors = () => {
+      deepColor = [targetDeep[0], targetDeep[1], targetDeep[2]]
+      fogColor = [targetFog[0], targetFog[1], targetFog[2]]
       gl.uniform3fv(deep, deepColor)
       gl.uniform3fv(fog, fogColor)
+      colorTransition = false
+    }
+
+    const stepColors = (now: number) => {
+      const dt = Math.min(Math.max((now - lastColorAt) / 1000, 0), 0.1)
+      lastColorAt = now
+      if (!colorTransition) return
+      // ~1 second to settle after a song change.
+      const amount = Math.min(1, dt * 3.2)
+      let remaining = 0
+      for (let i = 0; i < 3; i += 1) {
+        deepColor[i] += (targetDeep[i] - deepColor[i]) * amount
+        fogColor[i] += (targetFog[i] - fogColor[i]) * amount
+        remaining = Math.max(
+          remaining,
+          Math.abs(targetDeep[i] - deepColor[i]),
+          Math.abs(targetFog[i] - fogColor[i]),
+        )
+      }
+      gl.uniform3fv(deep, deepColor)
+      gl.uniform3fv(fog, fogColor)
+      if (remaining < 0.002) {
+        deepColor = [targetDeep[0], targetDeep[1], targetDeep[2]]
+        fogColor = [targetFog[0], targetFog[1], targetFog[2]]
+        gl.uniform3fv(deep, deepColor)
+        gl.uniform3fv(fog, fogColor)
+        colorTransition = false
+      }
     }
 
     const resize = () => {
@@ -246,6 +286,7 @@ export function FogBackground({
     }
 
     const draw = (now: number) => {
+      stepColors(now)
       gl.uniform1f(time, drift)
       const measured = playingRef.current ? getAudioBassLevel() : 0
       const fallback = 0.35 + 0.25 * (0.5 + 0.5 * Math.sin(now * 0.0018))
@@ -283,7 +324,7 @@ export function FogBackground({
       // Keep the loop alive while playing even if this frame's dt was too
       // small to accelerate yet. Without this guard, a zero-dt first frame
       // stopped the loop forever.
-      if (playingRef.current || speed > 0.003) {
+      if (playingRef.current || speed > 0.003 || colorTransition) {
         raf = window.requestAnimationFrame(frame)
       }
     }
@@ -291,12 +332,13 @@ export function FogBackground({
     const kick = () => {
       if (disposed) return
       last = performance.now()
-      updateColors()
+      updateColorTargets()
+      stepColors(last)
       gl.uniform1f(time, drift)
       gl.uniform1f(bass, playingRef.current ? smoothedBass : 0)
       gl.drawArrays(gl.TRIANGLES, 0, 3)
       if (
-        (playingRef.current || speed > 0.003) &&
+        (playingRef.current || speed > 0.003 || colorTransition) &&
         !reducedMotion.matches &&
         !raf
       ) {
@@ -305,7 +347,8 @@ export function FogBackground({
     }
 
     kickRef.current = kick
-    updateColors()
+    updateColorTargets()
+    snapColors()
     gl.uniform2f(resolution, 1, 1)
     gl.uniform1f(bass, 0)
     gl.clearColor(0.08, 0.07, 0.1, 1)

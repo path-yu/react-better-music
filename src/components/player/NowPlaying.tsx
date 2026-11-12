@@ -16,6 +16,7 @@ import {
   Volume2,
   X,
 } from 'lucide-react'
+import { CrossfadeImage } from '../common/CrossfadeImage'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
 import { menuSurfaceStyle } from '../../lib/menuSurface'
@@ -292,12 +293,6 @@ export function NowPlaying() {
       bindVideo(null)
     }
   }, [bindVideo, mvMode, mvUrl])
-
-  // Only reset when the artwork changes; reopening the same song keeps the
-  // cached palette instead of flashing back to the un-tinted backdrop.
-  useEffect(() => {
-    setPalette(FALLBACK_PALETTE)
-  }, [artwork])
 
   // Preload the cover thumbnails and sample the artwork palette so both the
   // animated mesh and the blurred-cover backdrop are ready as soon as the
@@ -744,12 +739,13 @@ export function NowPlaying() {
                   }
                   className="album-cover group relative block h-full w-full cursor-pointer disabled:cursor-default"
                 >
-                  <ImageWithFallback
+                  <CrossfadeImage
                     src={currentSong.al.picUrl}
                     alt={currentSong.name}
                     rounded="rounded-[14px]"
                     className="h-full w-full"
                     resize="640y640"
+                    priority
                   />
                   {/* Hover hint so the cover reads as a link into the album. */}
                   <span className="pointer-events-none absolute inset-0 flex items-end justify-center bg-black/25 p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100">

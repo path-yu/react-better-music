@@ -642,6 +642,67 @@ html.desktop .app-window {
   cursor: pointer;
 }
 
+/* MV detail page: hide the Video.js chrome after two seconds of inactivity.
+   VideoSkin's internal idle state can disagree with custom wrappers, so the
+   shell controls the final opacity itself. */
+.mv-video-shell .video-controls-content,
+.mv-video-shell .video-controls-primary,
+.mv-video-shell .video-controls-secondary,
+.mv-video-shell .video-controls-backdrop {
+  transition:
+    opacity 0.22s ease,
+    visibility 0s linear 0s;
+}
+
+.mv-video-shell[data-controls-hidden='true'] {
+  cursor: none;
+}
+
+.mv-video-shell[data-controls-hidden='true'] .video-controls-content,
+.mv-video-shell[data-controls-hidden='true'] .video-controls-primary,
+.mv-video-shell[data-controls-hidden='true'] .video-controls-secondary,
+.mv-video-shell[data-controls-hidden='true'] .video-controls-backdrop {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  transition:
+    opacity 0.22s ease,
+    visibility 0s linear 0.22s;
+}
+
+.mv-video-shell:not([data-controls-hidden]) .video-controls-content,
+.mv-video-shell:not([data-controls-hidden]) .video-controls-primary,
+.mv-video-shell:not([data-controls-hidden]) .video-controls-secondary,
+.mv-video-shell:not([data-controls-hidden]) .video-controls-backdrop {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* VideoSkin blurs its controls when its own idle state hides them. The shell
+   timer may intentionally keep them visible while paused, so undo that blur. */
+.mv-video-shell:not([data-controls-hidden]) .video-controls-content,
+.mv-video-shell:not([data-controls-hidden]) .video-controls-primary,
+.mv-video-shell:not([data-controls-hidden]) .video-controls-secondary {
+  filter: none !important;
+}
+
+.mv-video-shell:not([data-controls-hidden]) .video-controls-content {
+  translate: 0 0 !important;
+  scale: 1 1 !important;
+}
+
+.mv-video-shell:not([data-controls-hidden]) .video-controls-primary,
+.mv-video-shell:not([data-controls-hidden]) .video-controls-secondary {
+  pointer-events: auto !important;
+}
+
+.mv-video-shell[data-controls-hidden='true'] video {
+  cursor: none;
+}
+
 .mv-related__list {
   display: flex;
   min-height: 0;

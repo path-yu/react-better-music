@@ -60,6 +60,7 @@ A macOS-style third-party NetEase Cloud Music client rewritten with React 19 + T
 - Top-edge progress line with no side gutter, cover gradient, hover expansion and a thumb that appears on hover
 - Desktop lyrics window and mini player window
 - Lyrics load automatically after a refresh, without pressing play first
+- Neighbour lyrics are prefetched and persisted in IndexedDB, so revisiting a song skips the lyric spinner
 
 ### Account
 
