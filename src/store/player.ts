@@ -322,12 +322,81 @@ const AUDIO_PREFETCH_DELAY = 1800
 
 let prefetchTimer: number | undefined
 let prefetchToken = 0
-// In random mode the prefetched forward/backward candidates are reserved so
-// the next/previous action can consume the actual downloaded blobs.
-let randomNextIndex: number | null = null
-let randomPrevIndex: number | null = null
-// Explicit "Play next" must win over the random reservation.
+/**
+ * Random mode uses a pre-shuffled permutation plus a cursor. The order stays
+ * fixed for the current queue, so next/previous walk the same sequence instead
+ * of independently rolling two random tracks. The cursor is rebuilt when the
+ * queue changes or when the user jumps to an explicit song.
+ */
+let shuffleOrder: number[] = []
+let shuffleCursor = -1
+let shuffleKey = ''
+// Explicit "Play next" must win over the shuffled target.
 let forcedNextSongId: number | null = null
+
+const shuffleQueueKey = (queue: Song[]) =>
+  queue.map((song) => song?.id ?? 0).join(',')
+
+function shuffleArray(values: number[]) {
+  for (let i = values.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[values[i], values[j]] = [values[j], values[i]]
+  }
+}
+
+function ensureShuffleOrder(queue: Song[], currentIndex: number) {
+  const key = shuffleQueueKey(queue)
+  if (key !== shuffleKey || shuffleOrder.length !== queue.length) {
+    shuffleKey = key
+    shuffleOrder = queue.map((_, index) => index)
+    shuffleArray(shuffleOrder)
+    shuffleCursor = Math.max(0, shuffleOrder.indexOf(currentIndex))
+    return
+  }
+  if (shuffleOrder[shuffleCursor] !== currentIndex) {
+    const position = shuffleOrder.indexOf(currentIndex)
+    if (position >= 0) shuffleCursor = position
+  }
+}
+
+/** Peek without moving the cursor, used by neighbour prefetch. */
+function peekShuffled(queue: Song[], currentIndex: number, direction: 1 | -1) {
+  ensureShuffleOrder(queue, currentIndex)
+  if (shuffleOrder.length <= 1) return null
+  if (direction === 1) return shuffleOrder[shuffleCursor + 1] ?? null
+  return shuffleOrder[shuffleCursor - 1] ?? null
+}
+
+/** Advance the cursor for a real next/previous action. */
+function stepShuffled(queue: Song[], currentIndex: number, direction: 1 | -1) {
+  ensureShuffleOrder(queue, currentIndex)
+  const length = shuffleOrder.length
+  if (length <= 1) return null
+
+  if (direction === 1) {
+    if (shuffleCursor + 1 < length) {
+      shuffleCursor += 1
+      return shuffleOrder[shuffleCursor]
+    }
+    // Start a new cycle: keep the current song as the boundary so pressing
+    // previous from the new cycle returns to where the user came from.
+    const rest = Array.from({ length }, (_, index) => index).filter(
+      (index) => index !== currentIndex,
+    )
+    shuffleArray(rest)
+    shuffleOrder = [currentIndex, ...rest]
+    shuffleCursor = 1
+    return shuffleOrder[1] ?? null
+  }
+
+  if (shuffleCursor > 0) {
+    shuffleCursor -= 1
+    return shuffleOrder[shuffleCursor]
+  }
+  // At the very beginning there is no previous track in this permutation.
+  const candidates = shuffleOrder.filter((index) => index !== currentIndex)
+  return candidates[Math.floor(Math.random() * candidates.length)] ?? null
+}
 const urlRequests = new Map<number, Promise<SongSource>>()
 
 /**
@@ -480,16 +549,18 @@ export const usePlayerStore = create<PlayerState>()(
             forcedNextSongId === null
               ? -1
               : queue.findIndex((song) => song.id === forcedNextSongId)
-          randomNextIndex =
-            forcedIndex >= 0 && forcedIndex !== index ? forcedIndex : pick()
-          randomPrevIndex = pick(randomNextIndex === null ? [] : [randomNextIndex])
-          neighbors = [randomNextIndex, randomPrevIndex]
+          const nextIndex =
+            forcedIndex >= 0 && forcedIndex !== index
+              ? forcedIndex
+              : (peekShuffled(queue, index, 1) ?? pick())
+          const previousIndex =
+            peekShuffled(queue, index, -1) ??
+            pick(nextIndex === null ? [] : [nextIndex])
+          neighbors = [nextIndex, previousIndex]
             .filter((candidateIndex): candidateIndex is number => candidateIndex !== null)
             .map((candidateIndex) => findNeighbor(candidateIndex))
             .filter((entry): entry is { index: number; song: Song } => Boolean(entry))
         } else {
-          randomNextIndex = null
-          randomPrevIndex = null
           const nextIndex = (index + 1) % queue.length
           const previousIndex = (index - 1 + queue.length) % queue.length
           neighbors = [findNeighbor(nextIndex), findNeighbor(previousIndex)].filter(
@@ -812,21 +883,17 @@ export const usePlayerStore = create<PlayerState>()(
             direction === 1 && forcedNextSongId !== null
               ? queue.findIndex((item) => item.id === forcedNextSongId)
               : -1
-          const reserved =
+          const shuffledIndex =
             forcedIndex >= 0
               ? forcedIndex
-              : direction === 1
-                ? randomNextIndex
-                : randomPrevIndex
+              : stepShuffled(queue, currentIndex, direction)
           const nextIndex =
-            reserved !== null &&
-            reserved !== currentIndex &&
-            queue[reserved]
-              ? reserved
+            shuffledIndex !== null &&
+            shuffledIndex !== currentIndex &&
+            queue[shuffledIndex]
+              ? shuffledIndex
               : candidates[Math.floor(Math.random() * candidates.length)]
           if (direction === 1) forcedNextSongId = null
-          randomNextIndex = null
-          randomPrevIndex = null
           set((state) => ({
             currentIndex: nextIndex,
             playing: true,
@@ -930,6 +997,9 @@ export const usePlayerStore = create<PlayerState>()(
             lyricLoading: true,
             playToken: state.playToken + 1,
           }))
+          if (get().mode === 'random') {
+            ensureShuffleOrder(get().queue, targetIndex)
+          }
           await loadAt(targetIndex)
         },
 
@@ -1075,6 +1145,14 @@ export const usePlayerStore = create<PlayerState>()(
           const nextMode: PlayMode =
             mode === 'order' ? 'random' : mode === 'random' ? 'singleLoop' : 'order'
           set({ mode: nextMode })
+          if (nextMode === 'random') {
+            const state = get()
+            ensureShuffleOrder(state.queue, state.currentIndex)
+          } else {
+            shuffleOrder = []
+            shuffleCursor = -1
+            shuffleKey = ''
+          }
           toast.info(
             nextMode === 'order'
               ? i18n._(msg`顺序播放`)
@@ -1133,6 +1211,9 @@ export const usePlayerStore = create<PlayerState>()(
 
         clearQueue() {
           clearPrefetchedAudio()
+          shuffleOrder = []
+          shuffleCursor = -1
+          shuffleKey = ''
           prefetchToken += 1
           if (prefetchTimer !== undefined) {
             window.clearTimeout(prefetchTimer)

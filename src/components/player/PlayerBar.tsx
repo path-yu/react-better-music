@@ -1209,8 +1209,7 @@ export function PlayerBar() {
           tabIndex={0}
           className="min-w-0 flex-1 cursor-pointer"
           onClick={(event) => {
-            // Like / add-to-playlist buttons live inside this clickable region.
-            // Never let their click bubble into opening the immersive player.
+            // Do not let nested controls open the immersive player.
             if ((event.target as HTMLElement).closest('button')) return
             toggleNowPlaying()
           }}
@@ -1244,24 +1243,6 @@ export function PlayerBar() {
                 <Trans>其他音源</Trans>
               </span>
             ) : null}
-            <button
-              type="button"
-              aria-label={liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)}
-              onClick={(event) => {
-                event.stopPropagation()
-                if (isLogin) void likeSong(currentSong.id, !liked)
-                else void toggleLocalFavorite(currentSong)
-              }}
-              className="pressable shrink-0 max-md:hidden"
-            >
-              <Heart
-                className={cn(
-                  'h-4 w-4 transition-colors',
-                  liked ? 'fill-[#ff2d55] text-[#ff2d55]' : 'text-black/30 hover:text-black/60',
-                )}
-              />
-            </button>
-            <PlaylistPicker song={currentSong} tint={playerMenuTint} />
           </div>
           <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-black/40">
             {busyVisible && loadingSource ? (
@@ -1278,28 +1259,28 @@ export function PlayerBar() {
 
       <div className="flex flex-col items-center max-md:items-end">
         <div className="flex items-center gap-5 max-md:gap-3">
-          {showNowPlaying ? (
-            <button
-              type="button"
-              aria-label={liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)}
-              aria-pressed={liked}
-              title={liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)}
-              onClick={() => {
-                if (isLogin) void likeSong(currentSong.id, !liked)
-                else void toggleLocalFavorite(currentSong)
-              }}
-              className="pressable flex h-8 w-8 items-center justify-center transition-colors max-md:hidden"
-            >
-              <Heart
-                className={cn(
-                  'h-4 w-4 transition-colors',
-                  liked
-                    ? 'fill-[#ff2d55] text-[#ff2d55]'
-                    : 'text-white/35 hover:text-white/70',
-                )}
-              />
-            </button>
-          ) : null}
+          <button
+            type="button"
+            aria-label={liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)}
+            aria-pressed={liked}
+            title={liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)}
+            onClick={() => {
+              if (isLogin) void likeSong(currentSong.id, !liked)
+              else void toggleLocalFavorite(currentSong)
+            }}
+            className="pressable flex h-8 w-8 items-center justify-center transition-colors max-md:hidden"
+          >
+            <Heart
+              className={cn(
+                'h-4 w-4 transition-colors',
+                liked
+                  ? 'fill-[#ff2d55] text-[#ff2d55]'
+                  : showNowPlaying
+                    ? 'text-white/35 hover:text-white/70'
+                    : 'text-black/35 hover:text-black/70',
+              )}
+            />
+          </button>
           <button
             type="button"
             title={
@@ -1540,13 +1521,14 @@ export function PlayerBar() {
 
         <SourcePicker tint={playerMenuTint} />
 
-        {showNowPlaying ? (
-          <PlaylistPicker
-            song={currentSong}
-            tint={playerMenuTint}
-            buttonClassName="flex h-7 w-7 items-center justify-center rounded-full hover:bg-white/10"
-          />
-        ) : null}
+        <PlaylistPicker
+          song={currentSong}
+          tint={playerMenuTint}
+          buttonClassName={cn(
+            'flex h-7 w-7 items-center justify-center rounded-full',
+            showNowPlaying ? 'hover:bg-white/10' : 'hover:bg-black/5',
+          )}
+        />
 
         <Popover>
           <PopoverTrigger asChild>
@@ -1710,7 +1692,7 @@ export function PlayerBar() {
           </PlayerMenuContent>
         </Popover>
 
-        {!showNowPlaying ? (
+        {/* {!showNowPlaying ? (
           <button
             type="button"
             onClick={() => toggleNowPlaying()}
@@ -1719,7 +1701,7 @@ export function PlayerBar() {
           >
             <ChevronUp className="h-[16px] w-[16px]" />
           </button>
-        ) : null}
+        ) : null} */}
       </div>
 
       <audio ref={audioARef} className="hidden" {...audioProps} />
