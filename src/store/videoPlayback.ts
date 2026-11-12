@@ -28,13 +28,19 @@ export const useVideoPlaybackStore = create<VideoPlaybackState>((set) => ({
   },
 
   bind(video) {
+    const previous = videoElement
     cleanup?.()
     cleanup = null
-    videoElement = video
     if (!video) {
+      // Unbinding while the overlay closes must stop the media element, not
+      // just drop the JS reference: a detached <video> otherwise keeps playing.
+      previous?.pause()
+      videoElement = null
       set({ playing: false, currentTime: 0, duration: 0 })
       return
     }
+    if (previous && previous !== video) previous.pause()
+    videoElement = video
 
     const sync = () => {
       set({

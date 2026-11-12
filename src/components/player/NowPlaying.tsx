@@ -252,21 +252,6 @@ export function NowPlaying() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSong?.id])
 
-  useEffect(() => {
-    if (show) return
-    // Closing the detail page releases the MV/video decoder instead of leaving
-    // a hidden <video> running for the rest of the session.
-    setMvMode(false)
-    setMvUrl('')
-    setMvFailed(false)
-    setMvLoading(false)
-    setMvVideoReady(false)
-    useVideoPlaybackStore.getState().setActive(false)
-    bindVideo(null)
-    mvWasPlayingRef.current = false
-    videoEndedSongRef.current = null
-  }, [show, bindVideo])
-
   // If the user last chose video mode, keep that preference for every
   // following track that has an MV. This also restores the video view when the
   // immersive player is reopened in a later session.
@@ -416,8 +401,10 @@ export function NowPlaying() {
     seekAudio(timeMs / 1000)
   }, [])
 
-  // The overlay owns the MV decoder and WebGL fog; closing it must release both.
-  if (!currentSong || !show) return null
+  // Keep the MV mounted while the detail page is collapsed so closing the
+  // overlay only hides the UI instead of stopping the video. Audio-only views
+  // can unmount normally, and the WebGL fog is still gated by `show` below.
+  if (!currentSong || (!show && !mvMode)) return null
 
   const loadingSource = playing && !sourceReady
   // The backdrop is heavily blurred, so a 320px copy is indistinguishable from

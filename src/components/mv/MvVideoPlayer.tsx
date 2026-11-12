@@ -100,6 +100,22 @@ export function MvVideoPlayer({
     showControls()
   }, [playing, showControls, clearHideTimer])
 
+  // Closing the immersive page unmounts this player. Explicitly stop the
+  // decoder there; removing the DOM node alone can leave audio playing.
+  useEffect(
+    () => () => {
+      const video =
+        videoRef.current ?? shellRef.current?.querySelector('video')
+      if (video) {
+        video.pause()
+        video.removeAttribute('src')
+        video.load()
+      }
+      useVideoPlaybackStore.getState().setActive(false)
+    },
+    [],
+  )
+
   // Keep the local state in sync with the actual media element. This matters
   // in dev: HMR can recreate the component without replaying Video.js' onPlay,
   // even though the native video is still playing.
