@@ -66,6 +66,8 @@ import type { PlayLevel } from '../../types'
 
 /** Crossfade length for track changes; inside the 200–400ms sweet spot. */
 const CROSSFADE_MS = 320
+/** Never leave the previous track playing indefinitely while a source loads. */
+const CROSSFADE_HANDOFF_MS = 600
 
 /** NetEase's audio CDN sends CORS headers, so captureStream can read it. */
 function canAnalyseAudio(url: string) {
@@ -457,6 +459,22 @@ export function PlayerBar() {
       crossfadePendingRef.current = true
       outgoingRef.current = audio
       switchingRef.current = true
+      // If the next source is slow, cut the old track instead of overlapping
+      // indefinitely while the UI says "loading source".
+      crossfadeTimerRef.current = window.setTimeout(() => {
+        crossfadeTimerRef.current = null
+        if (!crossfadePendingRef.current) return
+        crossfadePendingRef.current = false
+        const pendingIncoming = incomingRef.current
+        incomingRef.current = null
+        if (pendingIncoming && pendingIncoming !== audio) {
+          settleElement(pendingIncoming)
+        }
+        outgoingRef.current = null
+        settleElement(audio)
+        switchingRef.current = true
+        setAudioReady(false)
+      }, CROSSFADE_HANDOFF_MS)
       return
     }
 
@@ -563,6 +581,8 @@ export function PlayerBar() {
     }
 
     // Pausing must stop both elements, including a running crossfade.
+    clearCrossfadeTimer()
+    crossfadePendingRef.current = false
     clearFade()
     clearFadeEndTimer()
     const outgoing = outgoingRef.current
