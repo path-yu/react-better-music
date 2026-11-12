@@ -107,12 +107,12 @@ msgstr "{0} 首歌曲"
 #~ msgstr "{countdown}s 后重发"
 
 #. placeholder {0}: song.name
-#: src/store/player.ts:711
+#: src/store/player.ts:782
 msgid "「{0}」VIP 歌曲已为你匹配其他音源播放"
 msgstr "「{0}」VIP 歌曲已为你匹配其他音源播放"
 
 #. placeholder {0}: song.name
-#: src/store/player.ts:710
+#: src/store/player.ts:781
 msgid "「{0}」暂无官方音源，已为你匹配其他音源播放"
 msgstr "「{0}」暂无官方音源，已为你匹配其他音源播放"
 
@@ -317,7 +317,7 @@ msgid "云音乐官方榜单，实时更新"
 msgstr "云音乐官方榜单，实时更新"
 
 #: src/store/player.ts:285
-#: src/store/player.ts:698
+#: src/store/player.ts:769
 msgid "亲爱的，暂无版权，已为你跳过"
 msgstr "亲爱的，暂无版权，已为你跳过"
 
@@ -600,7 +600,7 @@ msgstr "切换到视频播放"
 msgid "切换界面语言，立即生效。当前翻译覆盖导航、播放器与设置等主要界面，其余页面会逐步补齐。"
 msgstr "切换界面语言，立即生效。当前翻译覆盖导航、播放器与设置等主要界面，其余页面会逐步补齐。"
 
-#: src/store/player.ts:1265
+#: src/store/player.ts:1346
 msgid "切换音源失败，请稍后再试"
 msgstr "切换音源失败，请稍后再试"
 
@@ -696,7 +696,7 @@ msgid "单曲"
 msgstr "单曲"
 
 #: src/components/player/PlayerBar.tsx:1313
-#: src/store/player.ts:1083
+#: src/store/player.ts:1161
 msgid "单曲循环"
 msgstr "单曲循环"
 
@@ -949,8 +949,8 @@ msgid "展开全部"
 msgstr "展开全部"
 
 #: src/components/player/PlayerBar.tsx:1700
-msgid "展开播放页"
-msgstr "展开播放页"
+#~ msgid "展开播放页"
+#~ msgstr "展开播放页"
 
 #: src/components/songs/SongContextMenu.tsx:233
 msgid "已从歌单移除"
@@ -970,11 +970,11 @@ msgstr "已允许开发者工具，重启应用后完全生效"
 msgid "已关闭"
 msgstr "已关闭"
 
-#: src/store/player.ts:1091
+#: src/store/player.ts:1169
 msgid "已关闭心动模式"
 msgstr "已关闭心动模式"
 
-#: src/store/player.ts:1263
+#: src/store/player.ts:1344
 msgid "已切换到其他音源"
 msgstr "已切换到其他音源"
 
@@ -1026,7 +1026,7 @@ msgid "已收藏到「{0}」"
 msgstr "已收藏到「{0}」"
 
 #. placeholder {0}: additions.length
-#: src/store/player.ts:1013
+#: src/store/player.ts:1083
 msgid "已添加 {0} 首歌曲到播放列表"
 msgstr "已添加 {0} 首歌曲到播放列表"
 
@@ -1073,11 +1073,11 @@ msgid "当前：{currentLabel}"
 msgstr "当前：{currentLabel}"
 
 #. placeholder {0}: prefetched.trialEnd
-#: src/store/player.ts:659
+#: src/store/player.ts:730
 msgid "当前仅可试听 {0} 秒，登录或开通会员后可播放完整版"
 msgstr "当前仅可试听 {0} 秒，登录或开通会员后可播放完整版"
 
-#: src/store/player.ts:721
+#: src/store/player.ts:792
 msgid "当前仅可试听 {trialEnd} 秒，登录或开通会员后可播放完整版"
 msgstr "当前仅可试听 {trialEnd} 秒，登录或开通会员后可播放完整版"
 
@@ -1110,11 +1110,11 @@ msgstr "律动效果"
 msgid "心动模式"
 msgstr "心动模式"
 
-#: src/store/player.ts:1105
+#: src/store/player.ts:1183
 msgid "心动模式已开启，将为你推荐歌曲"
 msgstr "心动模式已开启，将为你推荐歌曲"
 
-#: src/store/player.ts:785
+#: src/store/player.ts:856
 msgid "心动模式暂不可用，请先登录"
 msgstr "心动模式暂不可用，请先登录"
 
@@ -1311,7 +1311,7 @@ msgstr "播放全部"
 msgid "播放列表"
 msgstr "播放列表"
 
-#: src/store/player.ts:1158
+#: src/store/player.ts:1239
 msgid "播放列表已清空"
 msgstr "播放列表已清空"
 
@@ -1606,7 +1606,7 @@ msgstr "更多播放选项"
 msgid "更换头像"
 msgstr "更换头像"
 
-#: src/store/player.ts:1242
+#: src/store/player.ts:1323
 msgid "未找到其他可用音源"
 msgstr "未找到其他可用音源"
 
@@ -1826,11 +1826,11 @@ msgstr "歌手简介"
 msgid "歌曲列表"
 msgstr "歌曲列表"
 
-#: src/store/player.ts:738
+#: src/store/player.ts:809
 msgid "歌曲加载失败"
 msgstr "歌曲加载失败"
 
-#: src/store/player.ts:1008
+#: src/store/player.ts:1078
 msgid "歌曲已在播放列表中"
 msgstr "歌曲已在播放列表中"
 
@@ -1847,7 +1847,7 @@ msgstr "歌曲评论"
 #~ msgid "歌曲详情页动态渐变"
 #~ msgstr "歌曲详情页动态渐变"
 
-#: src/store/player.ts:1186
+#: src/store/player.ts:1267
 msgid "歌曲资源已失效"
 msgstr "歌曲资源已失效"
 
@@ -2399,7 +2399,7 @@ msgid "获取二维码失败，请检查本地 API 服务是否启动"
 msgstr "获取二维码失败，请检查本地 API 服务是否启动"
 
 #: src/store/player.ts:284
-#: src/store/player.ts:697
+#: src/store/player.ts:768
 msgid "获取歌曲播放地址失败"
 msgstr "获取歌曲播放地址失败"
 
@@ -2443,7 +2443,7 @@ msgstr "试听"
 msgid "试听结束，登录或开通会员可播放完整版"
 msgstr "试听结束，登录或开通会员可播放完整版"
 
-#: src/store/player.ts:911
+#: src/store/player.ts:978
 msgid "该列表暂无可播放歌曲"
 msgstr "该列表暂无可播放歌曲"
 
@@ -2477,7 +2477,7 @@ msgstr "该用户还没有收藏歌单"
 msgid "说点什么…"
 msgstr "说点什么…"
 
-#: src/store/player.ts:1096
+#: src/store/player.ts:1174
 msgid "请先播放歌曲"
 msgstr "请先播放歌曲"
 
@@ -2711,7 +2711,7 @@ msgstr "链接已复制"
 
 #: src/components/player/PlayerBar.tsx:1312
 #: src/routes/daily.tsx:171
-#: src/store/player.ts:1082
+#: src/store/player.ts:1160
 msgid "随机播放"
 msgstr "随机播放"
 
@@ -2777,7 +2777,7 @@ msgid "页面不存在"
 msgstr "页面不存在"
 
 #: src/components/player/PlayerBar.tsx:1310
-#: src/store/player.ts:1080
+#: src/store/player.ts:1158
 msgid "顺序播放"
 msgstr "顺序播放"
 

@@ -107,12 +107,12 @@ msgstr "{0} songs"
 #~ msgstr "Resend in {countdown}s"
 
 #. placeholder {0}: song.name
-#: src/store/player.ts:711
+#: src/store/player.ts:782
 msgid "「{0}」VIP 歌曲已为你匹配其他音源播放"
 msgstr "「{0}」VIP track matched to another source"
 
 #. placeholder {0}: song.name
-#: src/store/player.ts:710
+#: src/store/player.ts:781
 msgid "「{0}」暂无官方音源，已为你匹配其他音源播放"
 msgstr "「{0}」has no official source; matched another source"
 
@@ -317,7 +317,7 @@ msgid "云音乐官方榜单，实时更新"
 msgstr "Official NetEase Cloud Music charts, updated in real time"
 
 #: src/store/player.ts:285
-#: src/store/player.ts:698
+#: src/store/player.ts:769
 msgid "亲爱的，暂无版权，已为你跳过"
 msgstr "Sorry, this track is unavailable due to copyright; skipping"
 
@@ -600,7 +600,7 @@ msgstr "Switch to video"
 msgid "切换界面语言，立即生效。当前翻译覆盖导航、播放器与设置等主要界面，其余页面会逐步补齐。"
 msgstr "Changes take effect immediately. Navigation, player and settings are translated first; remaining pages will follow."
 
-#: src/store/player.ts:1265
+#: src/store/player.ts:1346
 msgid "切换音源失败，请稍后再试"
 msgstr "Failed to switch sources. Try again later."
 
@@ -696,7 +696,7 @@ msgid "单曲"
 msgstr "Songs"
 
 #: src/components/player/PlayerBar.tsx:1313
-#: src/store/player.ts:1083
+#: src/store/player.ts:1161
 msgid "单曲循环"
 msgstr "Repeat one"
 
@@ -949,8 +949,8 @@ msgid "展开全部"
 msgstr "Show all"
 
 #: src/components/player/PlayerBar.tsx:1700
-msgid "展开播放页"
-msgstr "Open Now Playing"
+#~ msgid "展开播放页"
+#~ msgstr "Open Now Playing"
 
 #: src/components/songs/SongContextMenu.tsx:233
 msgid "已从歌单移除"
@@ -970,11 +970,11 @@ msgstr "Developer tools enabled. Restart the app to apply fully."
 msgid "已关闭"
 msgstr "Off"
 
-#: src/store/player.ts:1091
+#: src/store/player.ts:1169
 msgid "已关闭心动模式"
 msgstr "Heart Mode turned off"
 
-#: src/store/player.ts:1263
+#: src/store/player.ts:1344
 msgid "已切换到其他音源"
 msgstr "Switched to another source"
 
@@ -1026,7 +1026,7 @@ msgid "已收藏到「{0}」"
 msgstr "Saved to \"{0}\""
 
 #. placeholder {0}: additions.length
-#: src/store/player.ts:1013
+#: src/store/player.ts:1083
 msgid "已添加 {0} 首歌曲到播放列表"
 msgstr "Added {0} tracks to the queue"
 
@@ -1073,11 +1073,11 @@ msgid "当前：{currentLabel}"
 msgstr "Current: {currentLabel}"
 
 #. placeholder {0}: prefetched.trialEnd
-#: src/store/player.ts:659
+#: src/store/player.ts:730
 msgid "当前仅可试听 {0} 秒，登录或开通会员后可播放完整版"
 msgstr "Preview only ({0}s). Sign in or get VIP for the full track."
 
-#: src/store/player.ts:721
+#: src/store/player.ts:792
 msgid "当前仅可试听 {trialEnd} 秒，登录或开通会员后可播放完整版"
 msgstr "Preview only ({trialEnd}s). Sign in or get VIP for the full track."
 
@@ -1110,11 +1110,11 @@ msgstr ""
 msgid "心动模式"
 msgstr "Heart Mode"
 
-#: src/store/player.ts:1105
+#: src/store/player.ts:1183
 msgid "心动模式已开启，将为你推荐歌曲"
 msgstr "Heart Mode is on; recommendations will be added"
 
-#: src/store/player.ts:785
+#: src/store/player.ts:856
 msgid "心动模式暂不可用，请先登录"
 msgstr "Heart Mode is unavailable. Please sign in."
 
@@ -1311,7 +1311,7 @@ msgstr "Play all"
 msgid "播放列表"
 msgstr "Queue"
 
-#: src/store/player.ts:1158
+#: src/store/player.ts:1239
 msgid "播放列表已清空"
 msgstr "Queue cleared"
 
@@ -1606,7 +1606,7 @@ msgstr "More playback options"
 msgid "更换头像"
 msgstr "Change avatar"
 
-#: src/store/player.ts:1242
+#: src/store/player.ts:1323
 msgid "未找到其他可用音源"
 msgstr "No alternative source found"
 
@@ -1826,11 +1826,11 @@ msgstr "Artist bio"
 msgid "歌曲列表"
 msgstr "Tracks"
 
-#: src/store/player.ts:738
+#: src/store/player.ts:809
 msgid "歌曲加载失败"
 msgstr "Failed to load track"
 
-#: src/store/player.ts:1008
+#: src/store/player.ts:1078
 msgid "歌曲已在播放列表中"
 msgstr "Track is already in the queue"
 
@@ -1847,7 +1847,7 @@ msgstr "Song comments"
 #~ msgid "歌曲详情页动态渐变"
 #~ msgstr "Dynamic song-detail gradient"
 
-#: src/store/player.ts:1186
+#: src/store/player.ts:1267
 msgid "歌曲资源已失效"
 msgstr "Track source expired"
 
@@ -2399,7 +2399,7 @@ msgid "获取二维码失败，请检查本地 API 服务是否启动"
 msgstr "Failed to get the QR code. Check whether the local API is running."
 
 #: src/store/player.ts:284
-#: src/store/player.ts:697
+#: src/store/player.ts:768
 msgid "获取歌曲播放地址失败"
 msgstr "Failed to get the playback URL"
 
@@ -2443,7 +2443,7 @@ msgstr "Preview"
 msgid "试听结束，登录或开通会员可播放完整版"
 msgstr "Preview ended. Sign in or get VIP to play the full track."
 
-#: src/store/player.ts:911
+#: src/store/player.ts:978
 msgid "该列表暂无可播放歌曲"
 msgstr "No playable tracks in this list"
 
@@ -2477,7 +2477,7 @@ msgstr "This user hasn't saved any playlists"
 msgid "说点什么…"
 msgstr "Say something…"
 
-#: src/store/player.ts:1096
+#: src/store/player.ts:1174
 msgid "请先播放歌曲"
 msgstr "Play a track first"
 
@@ -2711,7 +2711,7 @@ msgstr "Link copied"
 
 #: src/components/player/PlayerBar.tsx:1312
 #: src/routes/daily.tsx:171
-#: src/store/player.ts:1082
+#: src/store/player.ts:1160
 msgid "随机播放"
 msgstr "Shuffle"
 
@@ -2777,7 +2777,7 @@ msgid "页面不存在"
 msgstr "Page not found"
 
 #: src/components/player/PlayerBar.tsx:1310
-#: src/store/player.ts:1080
+#: src/store/player.ts:1158
 msgid "顺序播放"
 msgstr "Play in order"
 
