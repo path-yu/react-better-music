@@ -8,7 +8,6 @@ import {
   ChevronDown,
   LogOut,
   Settings2,
-  UserRound,
 } from 'lucide-react'
 import {
   Avatar,
@@ -19,11 +18,9 @@ import {
   PopoverTrigger,
 } from '@pikoloo/darwin-ui'
 import { useUserStore } from '../../store/user'
-import { useUiStore } from '../../store/ui'
 
 export function UserMenu() {
   const navigate = useNavigate()
-  const openLogin = useUiStore((state) => state.openLogin)
   const isLogin = useUserStore((state) => state.isLogin)
   const profile = useUserStore((state) => state.profile)
   const pcSign = useUserStore((state) => state.pcSign)
@@ -33,18 +30,9 @@ export function UserMenu() {
   const { i18n } = useLingui()
   const [open, setOpen] = useState(false)
 
-  if (!isLogin || !profile) {
-    return (
-      <button
-        type="button"
-        onClick={openLogin}
-        className="pressable flex items-center gap-1.5 rounded-full bg-accent px-4 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-accent-hover"
-      >
-        <UserRound className="h-3.5 w-3.5" />
-        <Trans>登录</Trans>
-      </button>
-    )
-  }
+  // The sidebar owns the logged-out login CTA. Keeping it out of the top bar
+  // avoids two login buttons on the same screen.
+  if (!isLogin || !profile) return null
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

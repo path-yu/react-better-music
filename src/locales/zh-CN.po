@@ -583,11 +583,11 @@ msgstr "分享"
 #~ msgid "切换其他音源"
 #~ msgstr "切换其他音源"
 
-#: src/components/layout/TopBar.tsx:83
+#: src/components/layout/TopBar.tsx:84
 msgid "切换到浅色模式"
 msgstr "切换到浅色模式"
 
-#: src/components/layout/TopBar.tsx:84
+#: src/components/layout/TopBar.tsx:85
 msgid "切换到深色模式"
 msgstr "切换到深色模式"
 
@@ -651,7 +651,7 @@ msgstr "刷新歌单"
 msgid "刷新缓存信息"
 msgstr "刷新缓存信息"
 
-#: src/components/layout/TopBar.tsx:66
+#: src/components/layout/TopBar.tsx:67
 msgid "前进"
 msgstr "前进"
 
@@ -761,7 +761,7 @@ msgstr "另类/独立"
 msgid "只能编辑自己创建的歌单"
 msgstr "只能编辑自己创建的歌单"
 
-#: src/components/layout/TopBar.tsx:58
+#: src/components/layout/TopBar.tsx:59
 msgid "后退"
 msgstr "后退"
 
@@ -939,8 +939,8 @@ msgstr "小语种"
 msgid "展开"
 msgstr "展开"
 
-#: src/components/layout/TopBar.tsx:41
-#: src/components/layout/TopBar.tsx:44
+#: src/components/layout/TopBar.tsx:42
+#: src/components/layout/TopBar.tsx:45
 msgid "展开侧栏"
 msgstr "展开侧栏"
 
@@ -1155,7 +1155,7 @@ msgstr "打开"
 msgid "打开专辑 {0}"
 msgstr "打开专辑 {0}"
 
-#: src/components/layout/TopBar.tsx:32
+#: src/components/layout/TopBar.tsx:33
 msgid "打开导航"
 msgstr "打开导航"
 
@@ -1424,8 +1424,8 @@ msgstr "收藏的歌单"
 msgid "收起"
 msgstr "收起"
 
-#: src/components/layout/TopBar.tsx:41
-#: src/components/layout/TopBar.tsx:44
+#: src/components/layout/TopBar.tsx:42
+#: src/components/layout/TopBar.tsx:45
 msgid "收起侧栏"
 msgstr "收起侧栏"
 
@@ -2009,7 +2009,7 @@ msgstr "流行"
 msgid "浅色"
 msgstr "浅色"
 
-#: src/components/layout/TopBar.tsx:87
+#: src/components/layout/TopBar.tsx:88
 msgid "浅色模式"
 msgstr "浅色模式"
 
@@ -2021,7 +2021,7 @@ msgstr "浏览"
 msgid "深色"
 msgstr "深色"
 
-#: src/components/layout/TopBar.tsx:87
+#: src/components/layout/TopBar.tsx:88
 msgid "深色模式"
 msgstr "深色模式"
 
@@ -2404,8 +2404,8 @@ msgid "获取歌曲播放地址失败"
 msgstr "获取歌曲播放地址失败"
 
 #: src/components/layout/TitleBar.tsx:28
-#: src/components/layout/TopBar.tsx:96
 #: src/components/layout/TopBar.tsx:97
+#: src/components/layout/TopBar.tsx:98
 #: src/routes/settings.tsx:74
 #: src/routes/settings.tsx:338
 msgid "设置"

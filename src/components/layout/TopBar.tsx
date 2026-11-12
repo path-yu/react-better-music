@@ -12,6 +12,7 @@ import {
   Sun,
 } from 'lucide-react'
 import { SearchBox } from './SearchBox'
+import { UserMenu } from './UserMenu'
 import { useUiStore } from '../../store/ui'
 
 export function TopBar() {
@@ -100,6 +101,7 @@ export function TopBar() {
         >
           <Settings2 className="h-4 w-4" />
         </button>
+        <UserMenu />
       </div>
     </header>
   )
