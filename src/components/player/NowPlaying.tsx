@@ -133,8 +133,24 @@ export function NowPlaying() {
   const mvUrlCacheRef = useRef<{ songId: number; url: string; at: number } | null>(
     null,
   )
-  const mvId = currentSong?.mv ?? currentSong?.mvid
-  const hasMv = Boolean(mvId && Number(mvId) > 0)
+  // Some songs in the queue do not carry `mv`/`mvid`, even though an official
+  // MV exists. Discover it from the same related-video search used by the film
+  // button so the direct MV badge can still appear.
+  const relatedMvCacheRef = useRef(new Map<number, number | null>())
+  const [relatedMv, setRelatedMv] = useState<{
+    songId: number
+    id: number | null
+  } | null>(null)
+  const rawMvId = currentSong?.mv ?? currentSong?.mvid
+  // `mv: 0` is a valid "no MV" marker, not a nullish value. Treat it as absent
+  // so a discovered related MV can fill the gap.
+  const mvId = rawMvId && Number(rawMvId) > 0 ? rawMvId : undefined
+  const relatedMvId =
+    currentSong && relatedMv?.songId === currentSong.id
+      ? relatedMv.id
+      : null
+  const effectiveMvId = mvId ?? relatedMvId
+  const hasMv = Boolean(effectiveMvId && Number(effectiveMvId) > 0)
   // The CDN URLs returned by the API are HTTP; WebView2 rejects them as mixed
   // content. Normalise to a secure, smaller copy before colour sampling.
   const ambientSource = useMemo(
@@ -320,6 +336,39 @@ export function NowPlaying() {
     }
   }, [ambientSource, artwork])
 
+  // Resolve a missing `mv` field through search. The badge is shown as soon as
+  // an official MV is found and the result is cached for this session.
+  useEffect(() => {
+    if (!show || !currentSong || (mvId && Number(mvId) > 0)) return
+    const song = currentSong
+    const cached = relatedMvCacheRef.current.get(song.id)
+    if (cached !== undefined) {
+      setRelatedMv({ songId: song.id, id: cached })
+      return
+    }
+    let active = true
+    void fetchRelatedVideos(song, 3, undefined, true)
+      .then((videos) => {
+        if (!active) return
+        const official = videos.find((video) => video.kind === 'mv')
+        const parsedId = official ? Number(official.id) : null
+        const id =
+          parsedId !== null && Number.isFinite(parsedId) ? parsedId : null
+        relatedMvCacheRef.current.set(song.id, id)
+        setRelatedMv({ songId: song.id, id })
+      })
+      .catch(() => {
+        if (!active) return
+        relatedMvCacheRef.current.set(song.id, null)
+        setRelatedMv({ songId: song.id, id: null })
+      })
+    return () => {
+      active = false
+    }
+    // `currentSong` changes on lyric patches; only its id affects the lookup.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [show, currentSong?.id, mvId])
+
   // Preload the next track's cover while the current one plays.
   const nextArtwork = queue[currentIndex + 1]?.al.picUrl
   useEffect(() => {
@@ -413,7 +462,7 @@ export function NowPlaying() {
   }
 
   const openMvMode = async () => {
-    if (mvMode || !hasMv || !mvId) return
+    if (mvMode || !hasMv || !effectiveMvId) return
     setMvLoading(true)
     setMvFailed(false)
     setMvVideoReady(false)
@@ -433,12 +482,26 @@ export function NowPlaying() {
     }
 
     try {
-      // The song's raw `mv` can point at a programme/teaser clip. Resolve the
-      // official MV through search first, then request that video's URL.
-      const related = await fetchRelatedVideos(currentSong, 12)
-      const official = related.find((video) => video.kind === 'mv')
-      if (!official) throw new Error('no official mv')
-      const url = await fetchMvUrl(official.id)
+      let officialId = Number(effectiveMvId)
+      // A discovered MV is already the matched official result. When only the
+      // song's raw `mv` field exists, prefer an exact search match and fall
+      // back to the raw id if search is unavailable.
+      if (!relatedMvId) {
+        try {
+          const related = await fetchRelatedVideos(
+            currentSong,
+            3,
+            undefined,
+            true,
+          )
+          const official = related.find((video) => video.kind === 'mv')
+          if (official) officialId = Number(official.id)
+        } catch {
+          // Keep the raw `mv` id as the fallback.
+        }
+      }
+      if (!officialId) throw new Error('no official mv')
+      const url = await fetchMvUrl(officialId)
       if (!url) throw new Error('empty mv url')
       mvUrlCacheRef.current = {
         songId: currentSong.id,

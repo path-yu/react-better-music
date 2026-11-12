@@ -59,6 +59,7 @@ export function MvVideoPlayer({
   onError,
 }: MvVideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
+  const shellRef = useRef<HTMLDivElement | null>(null)
   const [failed, setFailed] = useState(false)
   const [playing, setPlaying] = useState(false)
   const [controlsVisible, setControlsVisible] = useState(true)
@@ -75,10 +76,17 @@ export function MvVideoPlayer({
   const showControls = useCallback(() => {
     setControlsVisible(true)
     clearHideTimer()
-    if (playingRef.current) {
+    // Read the real media element as well as React state. Fast Refresh can
+    // remount this component while the existing <video> keeps playing, which
+    // used to leave `playingRef` false and stop the idle timer.
+    const video = shellRef.current?.querySelector<HTMLVideoElement>('video')
+    const isPlaying = video
+      ? !video.paused && !video.ended
+      : playingRef.current
+    if (isPlaying) {
       hideTimerRef.current = window.setTimeout(() => {
         setControlsVisible(false)
-      }, 1000)
+      }, 800)
     }
   }, [clearHideTimer])
 
@@ -91,6 +99,39 @@ export function MvVideoPlayer({
     }
     showControls()
   }, [playing, showControls, clearHideTimer])
+
+  // Keep the local state in sync with the actual media element. This matters
+  // in dev: HMR can recreate the component without replaying Video.js' onPlay,
+  // even though the native video is still playing.
+  useEffect(() => {
+    const video = shellRef.current?.querySelector<HTMLVideoElement>('video')
+    if (!video) return
+    const onPlay = () => {
+      playingRef.current = true
+      setPlaying(true)
+      showControls()
+    }
+    const onPause = () => {
+      playingRef.current = false
+      setPlaying(false)
+      clearHideTimer()
+      setControlsVisible(true)
+    }
+    video.addEventListener('play', onPlay)
+    video.addEventListener('pause', onPause)
+    video.addEventListener('ended', onPause)
+    // Autoplay may have started before this effect attached.
+    if (!video.paused && !video.ended) {
+      playingRef.current = true
+      setPlaying(true)
+      showControls()
+    }
+    return () => {
+      video.removeEventListener('play', onPlay)
+      video.removeEventListener('pause', onPause)
+      video.removeEventListener('ended', onPause)
+    }
+  }, [showControls, clearHideTimer])
 
   useEffect(() => clearHideTimer, [clearHideTimer])
 
@@ -131,6 +172,7 @@ export function MvVideoPlayer({
 
   return (
     <div
+      ref={shellRef}
       className={cn('mv-video-shell relative w-full', fill && 'h-full')}
       data-controls-hidden={!controlsVisible ? 'true' : undefined}
       onPointerMove={showControls}

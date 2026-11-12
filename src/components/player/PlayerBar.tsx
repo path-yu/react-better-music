@@ -30,6 +30,7 @@ import { Popover, PopoverContent, PopoverTrigger, Switch } from '@pikoloo/darwin
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
 import { PlaylistPicker } from './PlaylistPicker'
+import { ImmersiveProgressBar } from './ImmersiveProgressBar'
 import { ProgressSlider } from './ProgressSlider'
 import { SourcePicker } from './SourcePicker'
 import { VolumeSlider } from './VolumeSlider'
@@ -1121,6 +1122,15 @@ export function PlayerBar() {
         if (showQueue) toggleQueue(false)
       }}
     >
+      {videoActive ? (
+        <ImmersiveProgressBar
+          value={playbackPercent}
+          durationMs={playbackDurationMs}
+          onChange={(value) => {
+            if (videoDuration) seekVideo((value / 100) * videoDuration)
+          }}
+        />
+      ) : null}
       <div className="flex min-w-0 items-center gap-3">
         <button
           type="button"
@@ -1322,30 +1332,26 @@ export function PlayerBar() {
             </button>
         </div>
 
-        <div className="mt-1.5 flex w-full items-center gap-2.5 max-md:absolute max-md:inset-x-0 max-md:top-0 max-md:mt-0 max-md:px-3">
-          <span
-            data-testid="elapsed-time"
-            className="w-9 shrink-0 text-right text-[11px] tabular-nums text-black/35 max-md:hidden"
-          >
-            {formatDuration(playbackTime * 1000)}
-          </span>
-          <ProgressSlider
-            key={`${currentSong.id}-${playToken}-${videoActive ? 'video' : 'audio'}`}
-            value={playbackPercent}
-            buffered={videoActive ? 0 : displayBuffered}
-            onChange={(value) => {
-              if (videoActive) {
-                if (videoDuration) seekVideo((value / 100) * videoDuration)
-                return
-              }
-              handleSeek(value)
-            }}
-            valueText={`${formatDuration(playbackTime * 1000)} / ${formatDuration(playbackDurationMs)}`}
-          />
-          <span className="w-9 shrink-0 text-[11px] tabular-nums text-black/35 max-md:hidden">
-            {formatDuration(playbackDurationMs)}
-          </span>
-        </div>
+        {!videoActive ? (
+          <div className="mt-1.5 flex w-full items-center gap-2.5 max-md:absolute max-md:inset-x-0 max-md:top-0 max-md:mt-0 max-md:px-3">
+            <span
+              data-testid="elapsed-time"
+              className="w-9 shrink-0 text-right text-[11px] tabular-nums text-black/35 max-md:hidden"
+            >
+              {formatDuration(playbackTime * 1000)}
+            </span>
+            <ProgressSlider
+              key={`${currentSong.id}-${playToken}-audio`}
+              value={playbackPercent}
+              buffered={displayBuffered}
+              onChange={handleSeek}
+              valueText={`${formatDuration(playbackTime * 1000)} / ${formatDuration(playbackDurationMs)}`}
+            />
+            <span className="w-9 shrink-0 text-[11px] tabular-nums text-black/35 max-md:hidden">
+              {formatDuration(playbackDurationMs)}
+            </span>
+          </div>
+        ) : null}
       </div>
 
       <div className="flex items-center justify-end gap-2 max-md:hidden">

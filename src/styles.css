@@ -2881,6 +2881,41 @@ html.desktop .app-window {
   height: 14px;
 }
 
+/* Match the normal player seek bar's palette on the custom immersive line. */
+[data-testid='immersive-progress'] .immersive-progress__track {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--player-progress-tint, #ffffff) 16%, transparent),
+    rgba(255, 255, 255, 0.1) 55%,
+    rgba(255, 255, 255, 0.04)
+  );
+}
+
+[data-testid='immersive-progress'] .immersive-progress__fill {
+  background: linear-gradient(
+    90deg,
+    var(--player-progress-tint, var(--apple-blue-focus)) 0%,
+    var(--player-progress-tint, var(--apple-blue-focus)) 38%,
+    color-mix(
+        in srgb,
+        var(--player-progress-tint, var(--apple-blue-focus)) 52%,
+        #22d3ee
+      )
+      100%
+  );
+  box-shadow: 0 0 10px
+    color-mix(
+      in srgb,
+      var(--player-progress-tint, var(--apple-blue-focus)) 28%,
+      transparent
+    );
+  transition: filter 0.18s ease;
+}
+
+[data-testid='immersive-progress']:hover .immersive-progress__fill {
+  filter: brightness(1.12);
+}
+
 .player-glass--immersive .seek-slider {
   --slider-fill: var(--player-progress-tint, var(--apple-blue-focus));
   --slider-fill-end: color-mix(in srgb, var(--slider-fill) 52%, #22d3ee);

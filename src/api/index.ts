@@ -544,6 +544,7 @@ export async function fetchRelatedVideos(
   song: Pick<Song, 'id' | 'name' | 'ar' | 'mv' | 'mvid'>,
   limit = 12,
   signal?: AbortSignal,
+  officialOnly = false,
 ) {
   const official: VideoItem[] = []
   const mvId = song.mv ?? song.mvid
@@ -610,6 +611,9 @@ export async function fetchRelatedVideos(
       // Keep Mlog recommendations as the fallback.
     }
   }
+
+  // The MV badge only needs the official result; skip the slower clip feed.
+  if (officialOnly) return official.slice(0, limit)
 
   const res = await get<{ data?: { feeds?: RawRelatedVideoFeed[] } }>(
     '/mlog/music/rcmd',
