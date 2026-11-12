@@ -291,7 +291,7 @@ msgstr "专辑暂时没有歌曲"
 msgid "个人信息"
 msgstr "个人信息"
 
-#: src/components/layout/UserMenu.tsx:128
+#: src/components/layout/UserMenu.tsx:116
 msgid "个人信息设置"
 msgstr "个人信息设置"
 
@@ -342,7 +342,7 @@ msgstr "今日 {0} 首"
 msgid "今日为你推荐"
 msgstr "今日为你推荐"
 
-#: src/components/layout/UserMenu.tsx:114
+#: src/components/layout/UserMenu.tsx:102
 msgid "今日已签到"
 msgstr "今日已签到"
 
@@ -450,7 +450,7 @@ msgstr "共找到 {userTotal} 位用户"
 msgid "共找到 {videoTotal} 个视频"
 msgstr "共找到 {videoTotal} 个视频"
 
-#: src/components/layout/UserMenu.tsx:95
+#: src/components/layout/UserMenu.tsx:83
 #: src/routes/users/$id.tsx:234
 msgid "关注"
 msgstr "关注"
@@ -677,7 +677,7 @@ msgstr "加载更多失败"
 msgid "加载更多评论失败"
 msgstr "加载更多评论失败"
 
-#: src/components/layout/UserMenu.tsx:94
+#: src/components/layout/UserMenu.tsx:82
 msgid "动态"
 msgstr "动态"
 
@@ -2117,7 +2117,6 @@ msgstr "用户加载失败"
 
 #: src/components/layout/LoginModal.tsx:231
 #: src/components/layout/Sidebar.tsx:409
-#: src/components/layout/UserMenu.tsx:44
 msgid "登录"
 msgstr "登录"
 
@@ -2282,7 +2281,7 @@ msgstr "第三方音源"
 msgid "等待扫码"
 msgstr "等待扫码"
 
-#: src/components/layout/UserMenu.tsx:114
+#: src/components/layout/UserMenu.tsx:102
 msgid "签到"
 msgstr "签到"
 
@@ -2310,7 +2309,7 @@ msgstr "管理外观、语言与本地音乐缓存"
 msgid "类型"
 msgstr "类型"
 
-#: src/components/layout/UserMenu.tsx:96
+#: src/components/layout/UserMenu.tsx:84
 #: src/routes/users/$id.tsx:240
 msgid "粉丝"
 msgstr "粉丝"
@@ -2641,7 +2640,7 @@ msgstr "迷你播放器"
 msgid "迷你播放器暂不可用"
 msgstr "迷你播放器暂不可用"
 
-#: src/components/layout/UserMenu.tsx:139
+#: src/components/layout/UserMenu.tsx:127
 msgid "退出登录"
 msgstr "退出登录"
 
