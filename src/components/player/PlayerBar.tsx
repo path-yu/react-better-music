@@ -26,10 +26,11 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react'
-import { Popover, PopoverContent, PopoverTrigger, Switch } from '@pikoloo/darwin-ui'
+import { Popover, PopoverContent, PopoverTrigger } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
 import { PlaylistPicker } from './PlaylistPicker'
+import { ToggleSwitch } from '../common/ToggleSwitch'
 import { useDelayedBusy } from '../../lib/useDelayedBusy'
 import { ImmersiveProgressBar } from './ImmersiveProgressBar'
 import { ProgressSlider } from './ProgressSlider'
@@ -1124,7 +1125,10 @@ export function PlayerBar() {
   return (
     <div
       className={cn(
-        'player-glass relative grid h-[76px] grid-cols-[minmax(170px,1fr)_minmax(300px,1.5fr)_minmax(150px,1fr)] items-center gap-4 px-4 max-md:grid-cols-[minmax(0,1fr)_auto] max-md:gap-2 max-md:px-3',
+        'player-glass relative grid h-[76px] items-center px-4 max-md:grid-cols-[minmax(0,1fr)_auto] max-md:gap-2 max-md:px-3',
+        showNowPlaying
+          ? 'gap-2 grid-cols-[minmax(0,1fr)_minmax(340px,560px)_minmax(0,1fr)]'
+          : 'grid-cols-[minmax(170px,1fr)_minmax(300px,1.5fr)_minmax(150px,1fr)] gap-4',
         // While the immersive view is open, the bar floats above that artwork
         // backdrop as frosted glass instead of sitting in its own strip.
         showNowPlaying ? 'dark player-glass--immersive z-[70]' : 'z-30',
@@ -1154,7 +1158,25 @@ export function PlayerBar() {
           }}
         />
       ) : null}
-      <div className="flex min-w-0 items-center gap-3">
+      {showNowPlaying ? (
+        <div className="flex min-w-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={() => toggleNowPlaying(false)}
+            aria-label={i18n._(msg`收起播放页`)}
+            title={i18n._(msg`收起播放页（Esc）`)}
+            className="np-round-button pressable flex h-9 w-9 items-center justify-center rounded-full text-white/75"
+          >
+            <ChevronDown className="h-4 w-4" />
+          </button>
+        </div>
+      ) : null}
+      <div
+        className={cn(
+          'flex min-w-0 items-center gap-3',
+          showNowPlaying && 'hidden',
+        )}
+      >
         <button
           type="button"
           onClick={() => toggleNowPlaying()}
@@ -1256,6 +1278,28 @@ export function PlayerBar() {
 
       <div className="flex flex-col items-center max-md:items-end">
         <div className="flex items-center gap-5 max-md:gap-3">
+          {showNowPlaying ? (
+            <button
+              type="button"
+              aria-label={liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)}
+              aria-pressed={liked}
+              title={liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)}
+              onClick={() => {
+                if (isLogin) void likeSong(currentSong.id, !liked)
+                else void toggleLocalFavorite(currentSong)
+              }}
+              className="pressable flex h-8 w-8 items-center justify-center transition-colors max-md:hidden"
+            >
+              <Heart
+                className={cn(
+                  'h-4 w-4 transition-colors',
+                  liked
+                    ? 'fill-[#ff2d55] text-[#ff2d55]'
+                    : 'text-white/35 hover:text-white/70',
+                )}
+              />
+            </button>
+          ) : null}
           <button
             type="button"
             title={
@@ -1496,6 +1540,14 @@ export function PlayerBar() {
 
         <SourcePicker tint={playerMenuTint} />
 
+        {showNowPlaying ? (
+          <PlaylistPicker
+            song={currentSong}
+            tint={playerMenuTint}
+            buttonClassName="flex h-7 w-7 items-center justify-center rounded-full hover:bg-white/10"
+          />
+        ) : null}
+
         <Popover>
           <PopoverTrigger asChild>
             <button
@@ -1589,10 +1641,10 @@ export function PlayerBar() {
                   <Trans>关闭后只高亮整行，不做逐字动画</Trans>
                 </p>
               </div>
-              <Switch
+              <ToggleSwitch
                 checked={wordByWordLyrics}
                 onChange={setWordByWordLyrics}
-                aria-label={i18n._(msg`逐字播放`)}
+                ariaLabel={i18n._(msg`逐字播放`)}
               />
             </div>
 
@@ -1658,22 +1710,16 @@ export function PlayerBar() {
           </PlayerMenuContent>
         </Popover>
 
-        <button
-          type="button"
-          onClick={() => toggleNowPlaying()}
-          className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/45 transition-colors hover:bg-black/5 hover:text-black/75 max-md:h-10 max-md:w-10"
-          aria-label={
-            showNowPlaying
-              ? i18n._(msg`收起播放页`)
-              : i18n._(msg`展开播放页`)
-          }
-        >
-          {showNowPlaying ? (
-            <ChevronDown className="h-[16px] w-[16px]" />
-          ) : (
+        {!showNowPlaying ? (
+          <button
+            type="button"
+            onClick={() => toggleNowPlaying()}
+            className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/45 transition-colors hover:bg-black/5 hover:text-black/75 max-md:h-10 max-md:w-10"
+            aria-label={i18n._(msg`展开播放页`)}
+          >
             <ChevronUp className="h-[16px] w-[16px]" />
-          )}
-        </button>
+          </button>
+        ) : null}
       </div>
 
       <audio ref={audioARef} className="hidden" {...audioProps} />

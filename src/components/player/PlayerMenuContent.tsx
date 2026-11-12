@@ -47,7 +47,13 @@ export function PlayerMenuContent({
       side={side}
       align={align}
       sideOffset={sideOffset}
-      className={cn(className, 'border-0 bg-transparent p-0 shadow-none')}
+      // Darwin may keep a wrapper border/shadow even with utility classes;
+      // `player-menu-popover` removes it with !important and MenuSurface owns
+      // the only visible edge.
+      className={cn(
+        className,
+        'player-menu-popover border-0 bg-transparent p-0 shadow-none',
+      )}
     >
       <MenuSurface active tint={tint} className="p-1.5">
         <div className="dark">{children}</div>

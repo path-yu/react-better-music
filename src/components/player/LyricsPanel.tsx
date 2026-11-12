@@ -217,7 +217,7 @@ export const LyricsPanel = memo(function LyricsPanel({
           }
           const content = (
             <>
-              <span className="lyric-line__text block">
+              <span className="lyric-line__text">
                 {!translationOnly && hasWords ? (
                   active ? (
                     <ActiveWords
@@ -237,7 +237,11 @@ export const LyricsPanel = memo(function LyricsPanel({
                 )}
               </span>
               {displayMode === 'both' && line.translate ? (
-                <span className="lyric-line__translate mt-1 block">{line.translate}</span>
+                <span className="mt-1 block">
+                  <span className="lyric-line__translate inline-block max-w-full">
+                    {line.translate}
+                  </span>
+                </span>
               ) : null}
             </>
           )
@@ -247,7 +251,18 @@ export const LyricsPanel = memo(function LyricsPanel({
               key={`${line.time}-${index}`}
               ref={setLineRef}
               type="button"
-              onClick={() => onSeek(line.time)}
+              onClick={(event) => {
+                // The line button spans the full lyrics column so the text can
+                // wrap. Only clicks on the actual text/translation should seek;
+                // empty space to the right of a short line must do nothing.
+                const target = event.target as HTMLElement
+                if (
+                  event.detail === 0 ||
+                  target.closest('.lyric-line__text, .lyric-line__translate')
+                ) {
+                  onSeek(line.time)
+                }
+              }}
               style={style}
               className={className}
             >

@@ -1268,8 +1268,18 @@ html.desktop .app-window {
 
 /* Shared dark surface for floating menus over the immersive player. The
    inline cover-coloured gradient is layered on top by MenuSurface. */
+.player-menu-popover {
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  background: transparent !important;
+}
+
 .menu-surface {
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  /* No outline: over dark artwork a 1px border reads as a black seam at the
+     top of the menu. Use a faint inset highlight and a softer drop shadow. */
+  border: none;
+  outline: none;
   border-radius: 10px;
   background-color: rgba(28, 28, 30, 0.94);
   background-image: radial-gradient(
@@ -1277,7 +1287,9 @@ html.desktop .app-window {
     rgb(var(--nowplaying-accent-rgb, 41 151 255) / 0.18),
     transparent 60%
   );
-  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.45);
+  box-shadow:
+    0 14px 36px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.09);
   color: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);

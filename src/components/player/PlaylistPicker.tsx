@@ -27,9 +27,12 @@ interface PlaylistChoice {
 export function PlaylistPicker({
   song,
   tint,
+  buttonClassName,
 }: {
   song: Song
   tint?: string
+  /** Optional sizing/hover wrapper when the picker sits in a button row. */
+  buttonClassName?: string
 }) {
   const { i18n } = useLingui()
   const immersive = usePlayerStore((state) => state.showNowPlaying)
@@ -125,7 +128,7 @@ export function PlaylistPicker({
           title={i18n._(msg`收藏到歌单`)}
           onClick={(event) => event.stopPropagation()}
           onPointerDown={(event) => event.stopPropagation()}
-          className="pressable shrink-0 max-md:hidden"
+          className={cn('pressable shrink-0 max-md:hidden', buttonClassName)}
         >
           <ListPlus
             className={

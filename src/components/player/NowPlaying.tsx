@@ -412,6 +412,16 @@ export function NowPlaying() {
 
 
   const albumId = currentSong.al.id
+  // A self-titled album is the same string as the artist; repeating it makes the
+  // metadata read like a bug. The cover still links to the album.
+  const artistLabel = currentSong.ar
+    .map((artist) => artist.name)
+    .join(' / ')
+    .trim()
+    .toLowerCase()
+  const showAlbumMeta =
+    Boolean(currentSong.al.name.trim()) &&
+    currentSong.al.name.trim().toLowerCase() !== artistLabel
   const openAlbum = () => {
     if (!albumId) return
     // Close first: the router may commit the album route only after its data
@@ -744,15 +754,19 @@ export function NowPlaying() {
               ) : null}
               <p className="np-track-meta mt-2 text-[13px] text-black/45">
                 <ArtistLinks artists={currentSong.ar} />
-                <span className="mx-2 text-black/20">·</span>
-                <button
-                  type="button"
-                  onClick={openAlbum}
-                  disabled={!albumId}
-                  className="pressable rounded-[6px] underline-offset-2 transition-colors hover:text-white hover:underline disabled:cursor-default cursor-pointer"
-                >
-                  {currentSong.al.name}
-                </button>
+                {showAlbumMeta ? (
+                  <>
+                    <span className="mx-2 text-black/20">·</span>
+                    <button
+                      type="button"
+                      onClick={openAlbum}
+                      disabled={!albumId}
+                      className="pressable rounded-[6px] underline-offset-2 transition-colors hover:text-white hover:underline disabled:cursor-default cursor-pointer"
+                    >
+                      {currentSong.al.name}
+                    </button>
+                  </>
+                ) : null}
               </p>
               {/* Fixed-height status slot: the text appears/disappears while the
                   column is vertically centered, so mounting it conditionally
