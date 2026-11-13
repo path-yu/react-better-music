@@ -677,7 +677,7 @@ export const usePlayerStore = create<PlayerState>()(
         if (!song) return false
         // Keep artwork available even when the track itself is played from the
         // local audio cache or when the network drops later.
-        void cacheCoverImage(song.al?.picUrl)
+        void cacheCoverImage(song.al?.picUrl, song.id)
         const requestId = state.loadRequestId + 1
         // Neighbour prefetch normally has already filled these fields. Hydrate
         // them synchronously so switching to a known track never flashes the

@@ -1,4 +1,9 @@
 import type { Song } from '../types'
+import { isDesktopApp } from './desktopDownloads'
+import {
+  desktopAudioCacheAssetGet,
+  desktopAudioCacheAssetPut,
+} from './desktopAudioCache'
 
 export interface CachedLyrics {
   id: number
@@ -68,6 +73,17 @@ function toPatch(record: CachedLyrics): LyricsPatch {
 }
 
 export async function getCachedLyrics(id: number): Promise<CachedLyrics | null> {
+  if (isDesktopApp()) {
+    try {
+      const blob = await desktopAudioCacheAssetGet('lyrics', { id })
+      if (blob?.size) {
+        const record = JSON.parse(await blob.text()) as CachedLyrics
+        if (record && record.id === id) return record
+      }
+    } catch {
+      // Older cache directories do not have a lyrics sidecar.
+    }
+  }
   if (typeof indexedDB === 'undefined') return null
   try {
     const db = await openDb()
@@ -102,6 +118,13 @@ export async function saveCachedLyrics(
       yrc: patch.yrc ?? '',
       isNotLyric: Boolean(patch.isNotLyric),
       savedAt: Date.now(),
+    }
+    if (isDesktopApp()) {
+      void desktopAudioCacheAssetPut(
+        'lyrics',
+        new Blob([JSON.stringify(record)], { type: 'application/json' }),
+        { id },
+      ).catch(() => undefined)
     }
     const transaction = db.transaction(STORE, 'readwrite')
     transaction.objectStore(STORE).put(record)

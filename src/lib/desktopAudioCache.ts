@@ -49,6 +49,53 @@ export async function desktopAudioCachePut(
   }
 }
 
+export type DesktopAudioAssetKind = 'cover' | 'lyrics'
+
+function assetQuery(
+  kind: DesktopAudioAssetKind,
+  params: { id?: number; url?: string; ext?: string },
+) {
+  const query = new URLSearchParams({ kind })
+  if (params.id) query.set('id', String(params.id))
+  if (params.url) query.set('url', params.url)
+  if (params.ext) query.set('ext', params.ext)
+  return query.toString()
+}
+
+export async function desktopAudioCacheAssetGet(
+  kind: DesktopAudioAssetKind,
+  params: { id?: number; url?: string },
+): Promise<Blob | null> {
+  const response = await bridgeFetch(`/audio-cache/asset?${assetQuery(kind, params)}`)
+  if (response.status === 204 || response.status === 404) return null
+  if (!response.ok) throw new Error(`audio cache asset read failed: ${response.status}`)
+  return response.blob()
+}
+
+export async function desktopAudioCacheAssetPut(
+  kind: DesktopAudioAssetKind,
+  blob: Blob,
+  params: { id: number; url?: string; ext?: string },
+): Promise<void> {
+  const response = await bridgeFetch(`/audio-cache/asset?${assetQuery(kind, params)}`, {
+    method: 'POST',
+    body: blob,
+  })
+  if (!response.ok) {
+    throw new Error(`audio cache asset write failed: ${response.status}`)
+  }
+}
+
+export async function desktopAudioCacheAssetRemove(
+  kind: DesktopAudioAssetKind,
+  params: { id?: number; url?: string },
+): Promise<void> {
+  const response = await bridgeFetch(`/audio-cache/asset?${assetQuery(kind, params)}`, {
+    method: 'DELETE',
+  })
+  if (!response.ok) throw new Error(`audio cache asset remove failed: ${response.status}`)
+}
+
 export async function desktopAudioCacheRemove(id: number): Promise<void> {
   const response = await bridgeFetch(`/audio-cache?id=${id}`, {
     method: 'DELETE',

@@ -13,6 +13,7 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
+  readdirSync,
   renameSync,
   rmSync,
   writeFileSync,
@@ -958,6 +959,8 @@ interface AudioCacheMeta {
 const AUDIO_CACHE_DIR_FILE = join(APP_DATA_DIR, 'audio-cache-dir.json')
 const DEFAULT_AUDIO_CACHE_DIR = join(APP_DATA_DIR, 'audio-cache')
 const AUDIO_CACHE_INDEX = 'index.json'
+/** Maps remote cover URLs to filenames stored next to the audio files. */
+const AUDIO_CACHE_ASSET_INDEX = 'assets.json'
 // The renderer enforces the user-configured MB limit after each write. Keep
 // only a generous safety ceiling here so custom limits are not pre-empted.
 const AUDIO_CACHE_MAX_ENTRIES = Number.MAX_SAFE_INTEGER
@@ -1083,6 +1086,70 @@ function writeAudioCacheIndex(items: AudioCacheMeta[]) {
     JSON.stringify(items),
     'utf8',
   )
+}
+
+function readAudioAssetIndex(): Record<string, string> {
+  try {
+    const parsed = JSON.parse(
+      readFileSync(join(audioCacheDir, AUDIO_CACHE_ASSET_INDEX), 'utf8'),
+    ) as unknown
+    return parsed && typeof parsed === 'object'
+      ? (parsed as Record<string, string>)
+      : {}
+  } catch {
+    return {}
+  }
+}
+
+function writeAudioAssetIndex(index: Record<string, string>) {
+  mkdirSync(audioCacheDir, { recursive: true })
+  writeFileSync(
+    join(audioCacheDir, AUDIO_CACHE_ASSET_INDEX),
+    JSON.stringify(index),
+    'utf8',
+  )
+}
+
+function safeAssetExt(raw: string | null) {
+  const ext = (raw || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '')
+  return ext === 'jpeg' ? 'jpg' : ext.slice(0, 5) || 'jpg'
+}
+
+function assetContentType(ext: string) {
+  return ext === 'png'
+    ? 'image/png'
+    : ext === 'webp'
+      ? 'image/webp'
+      : ext === 'gif'
+        ? 'image/gif'
+        : 'image/jpeg'
+}
+
+function coverAssetPath(name: string) {
+  return join(audioCacheDir, name)
+}
+
+function lyricsAssetPath(id: number) {
+  return join(audioCacheDir, `${id}.lyrics.json`)
+}
+
+function clearAudioCacheAssets() {
+  const index = readAudioAssetIndex()
+  for (const name of Object.values(index)) {
+    if (!name.includes('/') && !name.includes('\\') && !name.includes('..')) {
+      rmSync(coverAssetPath(name), { force: true })
+    }
+  }
+  writeAudioAssetIndex({})
+  try {
+    for (const name of readdirSync(audioCacheDir)) {
+      if (name.includes('.cover.') || name.endsWith('.lyrics.json')) {
+        rmSync(join(audioCacheDir, name), { force: true })
+      }
+    }
+  } catch {
+    // Directory may not exist yet.
+  }
 }
 
 // Existing numeric cache entries are renamed before the bridge starts serving.
@@ -1356,6 +1423,127 @@ try {
             },
           })
         }
+        if (url.pathname === '/audio-cache/asset' && request.method === 'GET') {
+          const kind = url.searchParams.get('kind')
+          const id = Number(url.searchParams.get('id'))
+          if (kind === 'cover') {
+            const coverUrl = url.searchParams.get('url') || ''
+            const name = readAudioAssetIndex()[coverUrl]
+            if (!name) return new Response(null, { status: 204, headers })
+            const target = coverAssetPath(name)
+            if (!existsSync(target)) {
+              return new Response(null, { status: 204, headers })
+            }
+            const ext = name.split('.').pop() || 'jpg'
+            return new Response(Bun.file(target), {
+              headers: {
+                ...headers,
+                'content-type': assetContentType(ext),
+                'cache-control': 'no-store',
+              },
+            })
+          }
+          if (kind === 'lyrics') {
+            if (!Number.isSafeInteger(id) || id <= 0) {
+              return Response.json(
+                { error: 'invalid id' },
+                { status: 400, headers },
+              )
+            }
+            const target = lyricsAssetPath(id)
+            if (!existsSync(target)) {
+              return new Response(null, { status: 204, headers })
+            }
+            return new Response(Bun.file(target), {
+              headers: {
+                ...headers,
+                'content-type': 'application/json',
+                'cache-control': 'no-store',
+              },
+            })
+          }
+          return Response.json(
+            { error: 'invalid kind' },
+            { status: 400, headers },
+          )
+        }
+        if (url.pathname === '/audio-cache/asset' && request.method === 'POST') {
+          const kind = url.searchParams.get('kind')
+          const id = Number(url.searchParams.get('id'))
+          if (!Number.isSafeInteger(id) || id <= 0) {
+            return Response.json(
+              { error: 'invalid id' },
+              { status: 400, headers },
+            )
+          }
+          const bytes = await request.arrayBuffer()
+          if (!bytes.byteLength) {
+            return Response.json(
+              { error: 'empty asset' },
+              { status: 400, headers },
+            )
+          }
+          mkdirSync(audioCacheDir, { recursive: true })
+          if (kind === 'cover') {
+            const coverUrl = url.searchParams.get('url') || ''
+            if (!coverUrl) {
+              return Response.json(
+                { error: 'invalid url' },
+                { status: 400, headers },
+              )
+            }
+            const ext = safeAssetExt(url.searchParams.get('ext'))
+            const name = `${id}.cover.${ext}`
+            try {
+              for (const existing of readdirSync(audioCacheDir)) {
+                if (
+                  existing.startsWith(`${id}.cover.`) &&
+                  existing !== name
+                ) {
+                  rmSync(join(audioCacheDir, existing), { force: true })
+                }
+              }
+            } catch {
+              // First write.
+            }
+            await Bun.write(coverAssetPath(name), bytes)
+            const index = readAudioAssetIndex()
+            const previous = index[coverUrl]
+            if (previous && previous !== name) {
+              rmSync(coverAssetPath(previous), { force: true })
+            }
+            index[coverUrl] = name
+            writeAudioAssetIndex(index)
+            return Response.json({ ok: true, name }, { headers })
+          }
+          if (kind === 'lyrics') {
+            await Bun.write(lyricsAssetPath(id), bytes)
+            return Response.json({ ok: true }, { headers })
+          }
+          return Response.json(
+            { error: 'invalid kind' },
+            { status: 400, headers },
+          )
+        }
+        if (url.pathname === '/audio-cache/asset' && request.method === 'DELETE') {
+          const kind = url.searchParams.get('kind')
+          if (kind === 'cover') {
+            const coverUrl = url.searchParams.get('url') || ''
+            const index = readAudioAssetIndex()
+            const name = index[coverUrl]
+            if (name) {
+              rmSync(coverAssetPath(name), { force: true })
+              delete index[coverUrl]
+              writeAudioAssetIndex(index)
+            }
+          } else if (kind === 'lyrics') {
+            const id = Number(url.searchParams.get('id'))
+            if (Number.isSafeInteger(id) && id > 0) {
+              rmSync(lyricsAssetPath(id), { force: true })
+            }
+          }
+          return Response.json({ ok: true }, { headers })
+        }
         if (url.pathname === '/audio-cache' && request.method === 'POST') {
           let meta: AudioCacheMeta
           try {
@@ -1408,12 +1596,14 @@ try {
             const items = readAudioCacheIndex()
             const item = items.find((entry) => entry.id === id)
             rmSync(item ? audioCachePath(item) : audioCachePath(id), { force: true })
+            rmSync(lyricsAssetPath(id), { force: true })
             writeAudioCacheIndex(items.filter((entry) => entry.id !== id))
           } else {
             for (const item of readAudioCacheIndex()) {
               rmSync(audioCachePath(item), { force: true })
             }
             writeAudioCacheIndex([])
+            clearAudioCacheAssets()
           }
           return Response.json({ ok: true }, { headers })
         }

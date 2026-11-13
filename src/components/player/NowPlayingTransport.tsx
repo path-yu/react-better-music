@@ -203,6 +203,7 @@ export function NowPlayingTransport({
           </PopoverTrigger>
           <MorePlaybackOptions
             immersive
+            expandAudioOptions
             submenuSide="right"
             onClose={() => setMoreOpen(false)}
             onOpenRelatedVideos={onOpenRelatedVideos}

@@ -10,7 +10,6 @@ import {
   ListMusic,
   Loader2,
   Pause,
-  PictureInPicture2,
   Play,
   Repeat,
   Repeat1,
@@ -18,7 +17,6 @@ import {
   SkipBack,
   SkipForward,
   Sparkles,
-  Subtitles,
   Volume1,
   Volume2,
   VolumeX,
@@ -48,13 +46,6 @@ import {
   attachAudioAnalyser,
   resumeAudioAnalyser,
 } from '../../lib/audioAnalyser'
-import { isDesktopShell } from '../../lib/desktop'
-import {
-  getDesktopLyricsVisible,
-  getMiniPlayerVisible,
-  setDesktopLyricsVisible,
-  setMiniPlayerVisible,
-} from '../../lib/desktopBridge'
 import { cacheSong, cacheSongFromBlob } from '../../lib/songCache'
 import { useScrobble } from '../../lib/scrobble'
 import { toast } from '../../lib/toast'
@@ -171,9 +162,6 @@ export function PlayerBar() {
   const setVideoVolume = useVideoPlaybackStore((state) => state.setVolume)
 
 
-  const desktopShell = isDesktopShell()
-  const [lyricsWindowOpen, setLyricsWindowOpen] = useState(false)
-  const [miniWindowOpen, setMiniWindowOpen] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
   // Real duration reported by the media element; trial clips are shorter than
   // the catalogue duration in song.dt.
@@ -296,49 +284,6 @@ export function PlayerBar() {
     },
     [],
   )
-
-  // The HUD can also be toggled by the global shortcut or its own close button,
-  // so the two toolbar buttons need to stay in sync. Poll only while the window
-  // is visible (a minimized/tray window sends nothing) and at a low rate; focus
-  // and the button handlers cover the interactive cases immediately.
-  useEffect(() => {
-    if (!desktopShell) return
-    let active = true
-    let polling = false
-    let timer = 0
-
-    const sync = () => {
-      if (!active || document.visibilityState !== 'visible' || polling) return
-      polling = true
-      void Promise.allSettled([
-        getDesktopLyricsVisible().then(({ visible }) => {
-          if (active) setLyricsWindowOpen(visible)
-        }),
-        getMiniPlayerVisible().then(({ visible }) => {
-          if (active) setMiniWindowOpen(visible)
-        }),
-      ]).finally(() => {
-        polling = false
-      })
-    }
-
-    const start = () => {
-      window.clearInterval(timer)
-      if (document.visibilityState !== 'visible') return
-      sync()
-      timer = window.setInterval(sync, 10_000)
-    }
-
-    start()
-    window.addEventListener('focus', sync)
-    document.addEventListener('visibilitychange', start)
-    return () => {
-      active = false
-      window.clearInterval(timer)
-      window.removeEventListener('focus', sync)
-      document.removeEventListener('visibilitychange', start)
-    }
-  }, [desktopShell])
 
   useEffect(() => {
     masterVolumeRef.current = Math.min(1, Math.max(0, usePlayerStore.getState().volume / 100))
@@ -872,18 +817,6 @@ export function PlayerBar() {
     const ranges = audio.buffered
     if (!ranges.length || !audio.duration) return
     setBuffered((ranges.end(ranges.length - 1) / audio.duration) * 100)
-  }
-
-  const handleToggleDesktopLyrics = () => {
-    void setDesktopLyricsVisible('toggle')
-      .then(({ visible }) => setLyricsWindowOpen(visible))
-      .catch(() => toast.warning(i18n._(msg`桌面歌词窗口暂不可用`)))
-  }
-
-  const handleToggleMiniPlayer = () => {
-    void setMiniPlayerVisible('toggle')
-      .then(({ visible }) => setMiniWindowOpen(visible))
-      .catch(() => toast.warning(i18n._(msg`迷你播放器暂不可用`)))
   }
 
   const modeIcon =
@@ -1434,52 +1367,6 @@ export function PlayerBar() {
             flat
             submenuSide="left"
             onClose={() => setMoreOpen(false)}
-            footer={
-              desktopShell ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={handleToggleDesktopLyrics}
-                    className="flex w-full items-center gap-2 rounded-[7px] px-2 py-1.5 text-left text-[12px] text-black/65 transition-colors hover:bg-black/5"
-                  >
-                    <Subtitles className="h-4 w-4" />
-                    <span className="flex-1">
-                      <Trans>桌面歌词</Trans>
-                    </span>
-                    <span
-                      className={cn(
-                        'text-[10.5px]',
-                        lyricsWindowOpen ? 'text-accent' : 'text-black/30',
-                      )}
-                    >
-                      {lyricsWindowOpen
-                        ? i18n._(msg`已开启`)
-                        : i18n._(msg`已关闭`)}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleToggleMiniPlayer}
-                    className="flex w-full items-center gap-2 rounded-[7px] px-2 py-1.5 text-left text-[12px] text-black/65 transition-colors hover:bg-black/5"
-                  >
-                    <PictureInPicture2 className="h-4 w-4" />
-                    <span className="flex-1">
-                      <Trans>迷你播放器</Trans>
-                    </span>
-                    <span
-                      className={cn(
-                        'text-[10.5px]',
-                        miniWindowOpen ? 'text-accent' : 'text-black/30',
-                      )}
-                    >
-                      {miniWindowOpen
-                        ? i18n._(msg`已开启`)
-                        : i18n._(msg`已关闭`)}
-                    </span>
-                  </button>
-                </>
-              ) : undefined
-            }
           />
         </Popover>
 

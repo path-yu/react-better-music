@@ -356,7 +356,7 @@ async function transcodeAndStore(song: CacheableSong, epoch: number, source?: Bl
 function enqueueCache(song: CacheableSong, source?: Blob) {
   // Cache artwork in parallel with audio; it is tiny and makes the cached row
   // usable offline without fetching the CDN again.
-  void cacheCoverImage(song.picUrl)
+  void cacheCoverImage(song.picUrl, song.id)
   if (typeof indexedDB === 'undefined' || pending.has(song.id)) return
   const epoch = cacheEpoch
   // Encoding is memory-heavy, so cache jobs run in sequence.

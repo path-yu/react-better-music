@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
@@ -9,7 +9,9 @@ import {
   Film,
   Languages,
   Loader2,
+  PictureInPicture2,
   Radio,
+  Subtitles,
 } from 'lucide-react'
 import { MenuSurface } from '../common/MenuSurface'
 import { ToggleSwitch } from '../common/ToggleSwitch'
@@ -18,6 +20,13 @@ import { usePlayerMenuTint } from '../../lib/menuSurface'
 import { SOURCE_OPTIONS } from '../../lib/sources'
 import { cn } from '../../lib/format'
 import { toast } from '../../lib/toast'
+import { isDesktopShell } from '../../lib/desktop'
+import {
+  getDesktopLyricsVisible,
+  getMiniPlayerVisible,
+  setDesktopLyricsVisible,
+  setMiniPlayerVisible,
+} from '../../lib/desktopBridge'
 import { usePlayerStore } from '../../store/player'
 import {
   LYRIC_DISPLAY_OPTIONS,
@@ -37,8 +46,8 @@ interface MorePlaybackOptionsProps {
   submenuSide?: 'left' | 'right'
   /** Render quality/source/lyrics directly instead of hover submenus. */
   flat?: boolean
-  /** Optional desktop-only rows appended to the shared menu. */
-  footer?: ReactNode
+  /** Expand quality/source inline while keeping the lyrics submenu. */
+  expandAudioOptions?: boolean
 }
 
 /**
@@ -53,9 +62,12 @@ export function MorePlaybackOptions({
   videoLoading = false,
   submenuSide = 'right',
   flat = false,
-  footer,
+  expandAudioOptions = false,
 }: MorePlaybackOptionsProps) {
   const { i18n } = useLingui()
+  const desktopShell = isDesktopShell()
+  const [lyricsWindowOpen, setLyricsWindowOpen] = useState(false)
+  const [miniWindowOpen, setMiniWindowOpen] = useState(false)
   const [submenu, setSubmenu] = useState<'quality' | 'source' | 'lyrics' | null>(
     null,
   )
@@ -88,6 +100,32 @@ export function MorePlaybackOptions({
     (state) => state.setWordByWordLyrics,
   )
   const tint = usePlayerMenuTint(immersive, currentSong?.al.picUrl)
+
+  useEffect(() => {
+    if (!desktopShell) return
+    let active = true
+    void getDesktopLyricsVisible().then(({ visible }) => {
+      if (active) setLyricsWindowOpen(visible)
+    })
+    void getMiniPlayerVisible().then(({ visible }) => {
+      if (active) setMiniWindowOpen(visible)
+    })
+    return () => {
+      active = false
+    }
+  }, [desktopShell])
+
+  const handleToggleDesktopLyrics = () => {
+    void setDesktopLyricsVisible('toggle')
+      .then(({ visible }) => setLyricsWindowOpen(visible))
+      .catch(() => toast.warning(i18n._(msg`桌面歌词窗口暂不可用`)))
+  }
+
+  const handleToggleMiniPlayer = () => {
+    void setMiniPlayerVisible('toggle')
+      .then(({ visible }) => setMiniWindowOpen(visible))
+      .catch(() => toast.warning(i18n._(msg`迷你播放器暂不可用`)))
+  }
 
   const qualityOption = PLAY_QUALITY_OPTIONS.find(
     (option) => option.value === playLevel,
@@ -223,7 +261,7 @@ export function MorePlaybackOptions({
         </>
       ) : null}
 
-      {flat ? (
+      {flat || expandAudioOptions ? (
         <div className="px-2 pb-1.5 pt-1">
           <p
             className={cn(
@@ -312,8 +350,9 @@ export function MorePlaybackOptions({
         </div>
       )}
 
-      {flat ? (
-        <div className="px-2 pb-1.5 pt-1">
+      {flat || expandAudioOptions ? (
+        // Temporarily hidden: source switching is not exposed in the menu.
+        <div className="hidden px-2 pb-1.5 pt-1">
           <p
             className={cn(
               'mb-1 flex items-center justify-between gap-2 text-[11px]',
@@ -350,7 +389,7 @@ export function MorePlaybackOptions({
         </div>
       ) : (
         <div
-          className="relative"
+          className="relative hidden"
           onMouseEnter={(event) => openSubmenu('source', event.currentTarget)}
           onMouseLeave={() => setSubmenu(null)}
         >
@@ -411,16 +450,18 @@ export function MorePlaybackOptions({
         </div>
       )}
 
-      <div className={cn('my-1 h-px', immersive ? 'bg-white/8' : 'bg-black/8')} />
+      {!flat ? (
+        <>
+          <div className={cn('my-1 h-px', immersive ? 'bg-white/8' : 'bg-black/8')} />
 
-      <div className="flex items-center justify-between gap-3 px-2 pb-1.5 pt-2">
-        <div>
-          <p
-            className={cn(
-              'text-[11.5px] font-medium',
-              immersive ? 'text-white/80' : 'text-black/70',
-            )}
-          >
+          <div className="flex items-center justify-between gap-3 px-2 pb-1.5 pt-2">
+            <div>
+              <p
+                className={cn(
+                  'text-[11.5px] font-medium',
+                  immersive ? 'text-white/80' : 'text-black/70',
+                )}
+              >
             <Trans>逐字播放</Trans>
           </p>
           <p
@@ -541,13 +582,64 @@ export function MorePlaybackOptions({
           </div>
         )
       ) : null}
+        </>
+      ) : null}
 
-      {footer ? (
+      {desktopShell ? (
         <>
           <div
             className={cn('my-1 h-px', immersive ? 'bg-white/8' : 'bg-black/8')}
           />
-          {footer}
+          <button
+            type="button"
+            onClick={handleToggleDesktopLyrics}
+            className={cn(
+              'flex w-full items-center gap-2 rounded-[7px] px-2 py-1.5 text-left text-[12px] transition-colors',
+              rowClass,
+            )}
+          >
+            <Subtitles className="h-4 w-4" />
+            <span className="flex-1">
+              <Trans>桌面歌词</Trans>
+            </span>
+            <span
+              className={cn(
+                'text-[10.5px]',
+                lyricsWindowOpen
+                  ? 'text-accent'
+                  : immersive
+                    ? 'text-white/35'
+                    : 'text-black/30',
+              )}
+            >
+              {lyricsWindowOpen ? i18n._(msg`已开启`) : i18n._(msg`已关闭`)}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={handleToggleMiniPlayer}
+            className={cn(
+              'flex w-full items-center gap-2 rounded-[7px] px-2 py-1.5 text-left text-[12px] transition-colors',
+              rowClass,
+            )}
+          >
+            <PictureInPicture2 className="h-4 w-4" />
+            <span className="flex-1">
+              <Trans>迷你播放器</Trans>
+            </span>
+            <span
+              className={cn(
+                'text-[10.5px]',
+                miniWindowOpen
+                  ? 'text-accent'
+                  : immersive
+                    ? 'text-white/35'
+                    : 'text-black/30',
+              )}
+            >
+              {miniWindowOpen ? i18n._(msg`已开启`) : i18n._(msg`已关闭`)}
+            </span>
+          </button>
         </>
       ) : null}
     </PlayerMenuContent>
