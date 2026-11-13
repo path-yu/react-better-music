@@ -276,11 +276,6 @@ export function ImmersivePlayerBar() {
                 if (videoActive) toggleVideo()
                 else void togglePlay()
               }}
-              title={
-                playbackPlaying
-                  ? i18n._(msg`暂停（空格）`)
-                  : i18n._(msg`播放（空格）`)
-              }
               className="pressable flex h-12 w-12 items-center justify-center rounded-full text-white hover:text-white/80"
             >
               {playbackPlaying ? (

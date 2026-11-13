@@ -1175,6 +1175,68 @@ html.desktop .app-window {
   animation: nowplaying-fade 0.26s ease-out both;
 }
 
+/* User-selectable entrance for the full-screen player. */
+.np-enter-fade {
+  animation: np-overlay-fade 0.28s ease-out both;
+}
+
+.np-enter-slide-up {
+  animation: np-overlay-slide-up 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform;
+}
+
+.np-enter-scale {
+  animation: np-overlay-scale 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
+}
+
+/* The overlay-level animation already covers the whole page; fade the content
+   separately would make the two easing curves fight each other. */
+.nowplaying-overlay[class*='np-enter-'] .np-content-enter {
+  animation: none;
+}
+
+.np-enter-none {
+  animation: none !important;
+}
+
+@keyframes np-overlay-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes np-overlay-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes np-overlay-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.965);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .np-enter-fade,
+  .np-enter-slide-up,
+  .np-enter-scale {
+    animation: none;
+  }
+}
+
 /* The overlay carries its own `.dark` class (it stays dark even when the app is
    light), so the nested `.dark .nowplaying-overlay ...` border tweaks never
    match; mirror them on the element itself. */

@@ -26,6 +26,17 @@ export const PLAY_QUALITY_OPTIONS: Array<{
 export type LyricDisplayMode = 'both' | 'original' | 'translation'
 export type NowPlayingMode = 'audio' | 'video'
 export type LyricStageStyle = 'flow' | 'partita' | 'tilt'
+export type NowPlayingTransition = 'fade' | 'slide-up' | 'scale' | 'none'
+
+export const NOW_PLAYING_TRANSITION_OPTIONS: Array<{
+  value: NowPlayingTransition
+  label: MessageDescriptor
+}> = [
+  { value: 'fade', label: msg`淡入` },
+  { value: 'slide-up', label: msg`从底部滑入` },
+  { value: 'scale', label: msg`缩放淡入` },
+  { value: 'none', label: msg`无动画` },
+]
 
 export const LYRIC_STAGE_STYLE_OPTIONS: Array<{
   value: LyricStageStyle
@@ -60,6 +71,8 @@ interface SettingsState {
   preferredSource: string
   /** Audio/video preference, persisted across tracks and app restarts. */
   nowPlayingMode: NowPlayingMode
+  /** Entrance animation for the full-screen now-playing page. */
+  nowPlayingTransition: NowPlayingTransition
   /** Desktop only: block right-click / F12 / DevTools shortcuts. */
   disableDevTools: boolean
   /** Prefer a matched provider for VIP tracks (manual switch is always available). */
@@ -76,6 +89,7 @@ interface SettingsState {
   setLyricStageStyle: (value: LyricStageStyle) => void
   setPreferredSource: (value: string) => void
   setNowPlayingMode: (value: NowPlayingMode) => void
+  setNowPlayingTransition: (value: NowPlayingTransition) => void
   setDisableDevTools: (value: boolean) => void
   setAutoReplaceVipSource: (value: boolean) => void
   setAutoScrobble: (value: boolean) => void
@@ -95,6 +109,7 @@ export const useSettingsStore = create<SettingsState>()(
       lyricStageStyle: 'flow',
       preferredSource: 'auto',
       nowPlayingMode: 'audio',
+      nowPlayingTransition: 'fade',
       disableDevTools: false,
       autoReplaceVipSource: false,
       // Reporting private listening logs is opt-in and never automatic.
@@ -108,6 +123,8 @@ export const useSettingsStore = create<SettingsState>()(
       setLyricStageStyle: (lyricStageStyle) => set({ lyricStageStyle }),
       setPreferredSource: (preferredSource) => set({ preferredSource }),
       setNowPlayingMode: (nowPlayingMode) => set({ nowPlayingMode }),
+      setNowPlayingTransition: (nowPlayingTransition) =>
+        set({ nowPlayingTransition }),
       setDisableDevTools: (disableDevTools) => set({ disableDevTools }),
       setAutoReplaceVipSource: (autoReplaceVipSource) => set({ autoReplaceVipSource }),
       setAutoScrobble: (autoScrobble) => set({ autoScrobble }),

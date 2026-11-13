@@ -22,7 +22,12 @@ import {
   Trash2,
 } from 'lucide-react'
 import { Button, Checkbox, Select, Switch } from '@pikoloo/darwin-ui'
-import { CACHE_QUALITY_OPTIONS, useSettingsStore } from '../store/settings'
+import {
+  CACHE_QUALITY_OPTIONS,
+  NOW_PLAYING_TRANSITION_OPTIONS,
+  useSettingsStore,
+  type NowPlayingTransition,
+} from '../store/settings'
 import { useUiStore } from '../store/ui'
 import { PALETTE_OPTIONS } from '../lib/theme'
 import {
@@ -102,6 +107,12 @@ function SettingsPage() {
   const setPalette = useUiStore((state) => state.setPalette)
   const fogBackdrop = useSettingsStore((state) => state.fogBackdrop)
   const setFogBackdrop = useSettingsStore((state) => state.setFogBackdrop)
+  const nowPlayingTransition = useSettingsStore(
+    (state) => state.nowPlayingTransition,
+  )
+  const setNowPlayingTransition = useSettingsStore(
+    (state) => state.setNowPlayingTransition,
+  )
   const autoScrobble = useSettingsStore((state) => state.autoScrobble)
   const setAutoScrobble = useSettingsStore((state) => state.setAutoScrobble)
 
@@ -438,6 +449,33 @@ function SettingsPage() {
               checked={fogBackdrop}
               onChange={setFogBackdrop}
               aria-label={i18n._(msg`WebGL 雾化背景`)}
+            />
+          </div>
+
+          <div className="mt-4 flex items-center justify-between gap-4 border-t border-[var(--app-border)] pt-4">
+            <div>
+              <p className="text-[13px] font-medium text-black/75">
+                <Trans>播放页过渡动画</Trans>
+              </p>
+              <p className="mt-1 max-w-[560px] text-[11px] leading-relaxed text-black/40">
+                <Trans>
+                  选择打开歌曲详情页时的入场方式。“从底部滑入”会像 macOS
+                  面板一样从窗口下沿升起。
+                </Trans>
+              </p>
+            </div>
+            <Select
+              value={nowPlayingTransition}
+              onChange={(event) =>
+                setNowPlayingTransition(
+                  event.target.value as NowPlayingTransition,
+                )
+              }
+              options={NOW_PLAYING_TRANSITION_OPTIONS.map((option) => ({
+                value: option.value,
+                label: i18n._(option.label),
+              }))}
+              className="w-[150px] text-[12px]"
             />
           </div>
         </section>

@@ -1354,11 +1354,6 @@ export function PlayerBar() {
               if (videoActive) toggleVideo()
               else void togglePlay()
             }}
-            title={
-              playbackPlaying
-                ? i18n._(msg`暂停（空格）`)
-                : i18n._(msg`播放（空格）`)
-            }
             className="pressable flex h-10 w-10 items-center justify-center rounded-full text-black/65 transition-colors hover:bg-black/5 hover:text-black max-md:h-10 max-md:w-10"
           >
             {playbackBusy ? (

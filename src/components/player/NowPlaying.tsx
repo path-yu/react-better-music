@@ -107,6 +107,9 @@ export function NowPlaying() {
     (state) => state.setNowPlayingMode,
   )
   const fogBackdrop = useSettingsStore((state) => state.fogBackdrop)
+  const nowPlayingTransition = useSettingsStore(
+    (state) => state.nowPlayingTransition,
+  )
   const [panel, setPanel] = useState<NowPlayingPanel>('lyrics')
   const [queueContext, setQueueContext] = useState<{
     song: Song
@@ -571,6 +574,13 @@ export function NowPlaying() {
     <div
       className={cn(
         'nowplaying-overlay dark',
+        // The animation class is only present while the page is open so the
+        // hidden video overlay cannot be forced back to opacity: 1 by a filled
+        // animation. Re-adding it also replays the entrance for video mode.
+        show &&
+          (nowPlayingTransition === 'none'
+            ? 'np-enter-none'
+            : `np-enter-${nowPlayingTransition}`),
         // `opacity-0` rather than `display:none`: WebView2 keeps decoding and
         // playing the <video> audio while the overlay is invisible.
         !show && 'pointer-events-none opacity-0',

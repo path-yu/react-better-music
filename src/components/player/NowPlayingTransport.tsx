@@ -274,11 +274,6 @@ export function NowPlayingTransport({
             if (videoActive) toggleVideo()
             else void togglePlay()
           }}
-          title={
-            playbackPlaying
-              ? i18n._(msg`暂停（空格）`)
-              : i18n._(msg`播放（空格）`)
-          }
           className="pressable flex h-11 w-11 items-center justify-center rounded-full text-white hover:text-white/80"
         >
           {playbackPlaying ? (
