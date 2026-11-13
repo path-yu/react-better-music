@@ -5,8 +5,8 @@ import { Trans } from '@lingui/react/macro'
 import { useNavigate, useRouterState } from '@tanstack/react-router'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import {
+  ChevronDown,
   Disc3,
-  Film,
   GripVertical,
   Heart,
   ListMusic,
@@ -24,6 +24,8 @@ import { LyricStage } from './LyricStage'
 import AmbientBackground from './AmbientBackground'
 import { FogBackground } from './FogBackground'
 import { MvVideoPlayer } from '../mv/MvVideoPlayer'
+import { ImmersivePlayerBar } from './ImmersivePlayerBar'
+import { NowPlayingTransport } from './NowPlayingTransport'
 import { CommentSection, useCommentTotal } from '../comments/CommentSection'
 import { SongContextMenu } from '../songs/SongContextMenu'
 import { fetchMvUrl, fetchRelatedVideos } from '../../api'
@@ -99,6 +101,7 @@ export function NowPlaying() {
       : localFavorites.some((song) => song.id === currentSong.id)
     : false
   const bindVideo = useVideoPlaybackStore((state) => state.bind)
+  const videoActive = useVideoPlaybackStore((state) => state.active)
   const nowPlayingMode = useSettingsStore((state) => state.nowPlayingMode)
   const setNowPlayingMode = useSettingsStore(
     (state) => state.setNowPlayingMode,
@@ -602,23 +605,18 @@ export function NowPlaying() {
 
       {/* The player bar floats over the bottom of the backdrop, so keep the
           immersive content clear of it. */}
-      <div className="np-content-enter relative flex h-full flex-col pb-[76px]">
+      <div
+        className={cn(
+          'np-content-enter relative flex h-full flex-col',
+          videoActive ? 'pb-[76px]' : 'pb-4',
+        )}
+      >
         <div
           className={cn(
             'flex h-[58px] flex-none items-center justify-between px-6',
             mvMode && 'hidden',
           )}
         >
-          {/* <button
-            type="button"
-            aria-label={i18n._(msg`收起播放页`)}
-            title={i18n._(msg`收起播放页（Esc）`)}
-            onClick={() => toggleNowPlaying(false)}
-            className="np-round-button  flex h-9 w-9 items-center justify-center rounded-full text-white/75 max-md:h-10 max-md:w-10"
-          >
-            <ChevronDown className="h-4 w-4" />
-          </button> */}
-
           {/* The floating player bar already exposes like/queue on desktop; on
               mobile it hides both, so this row is their only entry point. */}
           <div className="flex items-center gap-2 md:hidden">
@@ -653,6 +651,7 @@ export function NowPlaying() {
         </div>
 
         {mvMode ? (
+          <>
           <div className="np-video-player relative min-h-0 flex-1 overflow-hidden bg-black">
             {mvFailed ? (
               <div className="flex h-full flex-col items-center justify-center gap-3 text-white/55">
@@ -717,6 +716,7 @@ export function NowPlaying() {
               </button>
             </div>
           </div>
+          </>
         ) : (
           <>
         {/* Desktop: the columns own their scrolling (lyrics/comments), so the
@@ -739,20 +739,6 @@ export function NowPlaying() {
                     {videoBadgeLabel}
                   </button>
                 ) : null}
-                <button
-                  type="button"
-                  aria-label={i18n._(msg`相关视频`)}
-                  title={i18n._(msg`相关视频`)}
-                  disabled={videoLoading}
-                  onClick={() => void openRelatedVideos()}
-                  className=" np-round-button pressable flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white/60 transition-colors hover:text-white disabled:opacity-50"
-                >
-                  {videoLoading ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Film className="h-4 w-4" />
-                  )}
-                </button>
               </div>
               {currentSong.alia?.[0] ? (
                 <p className="mt-1 truncate text-[12px] text-black/35">{currentSong.alia[0]}</p>
@@ -825,6 +811,12 @@ export function NowPlaying() {
                   </span>
                 </button>
               </div>
+            </div>
+            <div className="np-transport-panel mt-5">
+              <NowPlayingTransport
+                onOpenRelatedVideos={() => void openRelatedVideos()}
+                videoLoading={videoLoading}
+              />
             </div>
           </div>
           <div className="relative flex min-h-0 flex-col max-md:min-h-[420px]">
@@ -1283,6 +1275,20 @@ export function NowPlaying() {
           </>
         )}
       </div>
+
+      {!mvMode ? (
+        <button
+          type="button"
+          aria-label={i18n._(msg`收起播放页`)}
+          title={i18n._(msg`收起播放页（Esc）`)}
+          onClick={() => toggleNowPlaying(false)}
+          className="np-round-button pressable absolute bottom-5 left-6 z-50 flex h-9 w-9 items-center justify-center rounded-full text-white/75"
+        >
+          <ChevronDown className="h-4 w-4" />
+        </button>
+      ) : null}
+
+      {videoActive ? <ImmersivePlayerBar /> : null}
 
       {queueContext ? (
         <SongContextMenu

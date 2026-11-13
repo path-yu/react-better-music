@@ -9,6 +9,10 @@ interface ProgressSliderProps {
   onChange?: (value: number) => void
   /** Human-readable position, e.g. "1:23 / 3:45", read by screen readers. */
   valueText?: string
+  /** Apple Music-style white scrubber for the song-detail transport. */
+  immersive?: boolean
+  /** Accessible name when the same slider is reused for volume. */
+  ariaLabel?: string
   className?: string
 }
 
@@ -23,6 +27,8 @@ export function ProgressSlider({
   buffered = 0,
   onChange,
   valueText,
+  immersive = false,
+  ariaLabel,
   className,
 }: ProgressSliderProps) {
   const { i18n } = useLingui()
@@ -43,7 +49,13 @@ export function ProgressSlider({
   }
 
   return (
-    <div className={cn('seek-slider relative flex h-5 w-full items-center', className)}>
+    <div
+      className={cn(
+        'seek-slider relative flex h-5 w-full items-center',
+        immersive && 'seek-slider--apple',
+        className,
+      )}
+    >
       <div className="seek-slider__track" />
       <div
         className="seek-slider__buffer"
@@ -57,7 +69,7 @@ export function ProgressSlider({
       />
       <div
         className={cn('seek-slider__thumb', dragging && 'is-dragging')}
-        style={{ left: `calc(${percent}% - ${((percent / 100) * THUMB_SIZE).toFixed(2)}px)` }}
+        style={{ left: `calc(${percent}% - ${THUMB_SIZE / 2}px)` }}
       />
       <input
         type="range"
@@ -65,7 +77,7 @@ export function ProgressSlider({
         max={100}
         step={0.1}
         value={percent}
-        aria-label={i18n._(msg`播放进度`)}
+        aria-label={ariaLabel ?? i18n._(msg`播放进度`)}
         aria-valuetext={valueText}
         className="seek-slider__input relative z-10 h-5 w-full cursor-pointer appearance-none bg-transparent opacity-0"
         onPointerDown={(event) => {

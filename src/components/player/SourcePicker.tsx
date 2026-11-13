@@ -61,11 +61,9 @@ export function SourcePicker({ tint }: { tint?: string }) {
           title={`${i18n._(msg`选择音源`)} · ${currentLabel}`}
           className={cn(
             'pressable flex h-7 w-7 items-center justify-center rounded-full transition-colors max-md:h-10 max-md:w-10',
-            currentSong?.unblocked
-              ? 'text-accent'
-              : immersive
-                ? 'text-white/55 hover:bg-white/10 hover:text-white'
-                : 'text-black/45 hover:bg-black/5 hover:text-black/75',
+            immersive
+              ? 'text-white/55 hover:bg-white/10 hover:text-white'
+              : 'text-black/45 hover:bg-black/5 hover:text-black/75',
           )}
         >
           {switchingSource ? (

@@ -34,6 +34,11 @@ import { ToggleSwitch } from '../common/ToggleSwitch'
 import { useDelayedBusy } from '../../lib/useDelayedBusy'
 import { ImmersiveProgressBar } from './ImmersiveProgressBar'
 import { ProgressSlider } from './ProgressSlider'
+import {
+  TRANSPORT_BUSY_ICON,
+  TRANSPORT_PAUSE_ICON,
+  TRANSPORT_PLAY_ICON,
+} from './transportIcons'
 import { SourcePicker } from './SourcePicker'
 import { VolumeSlider } from './VolumeSlider'
 import { PlayerMenuContent } from './PlayerMenuContent'
@@ -1129,9 +1134,9 @@ export function PlayerBar() {
         showNowPlaying
           ? 'gap-2 grid-cols-[minmax(0,1fr)_minmax(340px,560px)_minmax(0,1fr)]'
           : 'grid-cols-[minmax(170px,1fr)_minmax(300px,1.5fr)_minmax(150px,1fr)] gap-4',
-        // While the immersive view is open, the bar floats above that artwork
-        // backdrop as frosted glass instead of sitting in its own strip.
-        showNowPlaying ? 'dark player-glass--immersive z-[70]' : 'z-30',
+        // NowPlaying renders its own transport. Keep this instance mounted for
+        // the audio engine, but hide its UI so there is no surface to morph.
+        showNowPlaying ? 'invisible pointer-events-none z-30' : 'z-30',
       )}
       style={
         showNowPlaying
@@ -1315,7 +1320,9 @@ export function PlayerBar() {
             onClick={cycleMode}
             className={cn(
               'pressable flex h-8 w-8 items-center justify-center transition-colors max-md:h-10 max-md:w-10',
-              mode === 'order' ? 'text-black/35 hover:text-black/70' : 'text-accent',
+              mode === 'order'
+                ? 'text-black/35 hover:text-black/70'
+                : 'text-black/65 hover:text-black',
             )}
           >
             {modeIcon}
@@ -1352,14 +1359,14 @@ export function PlayerBar() {
                 ? i18n._(msg`暂停（空格）`)
                 : i18n._(msg`播放（空格）`)
             }
-            className="accent-play-shadow pressable flex h-9 w-9 items-center justify-center rounded-full bg-accent text-white hover:bg-accent-hover max-md:h-10 max-md:w-10"
+            className="pressable flex h-10 w-10 items-center justify-center rounded-full text-black/65 transition-colors hover:bg-black/5 hover:text-black max-md:h-10 max-md:w-10"
           >
             {playbackBusy ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
+              <Loader2 className={TRANSPORT_BUSY_ICON} />
             ) : playbackPlaying ? (
-              <Pause className="h-5 w-5 fill-current" />
+              <Pause className={TRANSPORT_PAUSE_ICON} />
             ) : (
-              <Play className="ml-[1px] h-5 w-5 fill-current" />
+              <Play className={TRANSPORT_PLAY_ICON} />
             )}
           </button>
           <button

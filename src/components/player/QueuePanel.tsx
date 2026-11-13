@@ -89,7 +89,16 @@ export function QueuePanel() {
   }
 
   return (
-    <div className="absolute inset-x-0 bottom-[76px] top-[var(--titlebar-height,44px)] z-[70] flex justify-end">
+    <div
+      className={cn(
+        'absolute flex justify-end',
+        // In the song detail overlay the queue sheet owns the full window
+        // height and must also cover the custom title bar's window buttons.
+        immersive
+          ? 'inset-0 z-[90]'
+          : 'inset-x-0 bottom-[76px] top-[var(--titlebar-height,44px)] z-[70]',
+      )}
+    >
       <button
         type="button"
         aria-label={i18n._(msg`关闭播放列表`)}
@@ -103,7 +112,10 @@ export function QueuePanel() {
         role="dialog"
         aria-label={i18n._(msg`播放列表`)}
         className={cn(
-          'fade-up relative flex h-full w-[min(360px,100%)] flex-col border-l',
+          'relative flex h-full w-[min(360px,100%)] flex-col border-l',
+          // The immersive sheet must be flush with the top/bottom edges; the
+          // normal panel keeps its small upward entrance.
+          !immersive && 'fade-up',
           immersive
             ? 'queue-panel-immersive border-white/10 shadow-[-24px_0_70px_-24px_rgba(0,0,0,0.8)]'
             : 'border-black/10 bg-[#fbfbfd]/95 shadow-[-20px_0_50px_-20px_rgba(0,0,0,0.3)] backdrop-blur-xl',

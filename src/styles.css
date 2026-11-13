@@ -962,8 +962,16 @@ html.desktop .app-window {
 }
 
 .now-disc {
-  width: clamp(190px, min(30vw, 36vh), 330px);
-  height: clamp(190px, min(30vw, 36vh), 330px);
+  /* Give the artwork a little more presence; the transport below it is now
+     compact enough to fit without squeezing the cover. */
+  width: clamp(230px, min(36vw, 50vh), 380px);
+  height: clamp(230px, min(36vw, 50vh), 380px);
+}
+
+/* The scrubber/timeline uses exactly the artwork width on the detail page. */
+.np-transport-panel {
+  width: clamp(230px, min(36vw, 50vh), 380px);
+  max-width: 100%;
 }
 
 /* macOS-style artwork: rounded square, layered shadow, and the glass edge with
@@ -3031,6 +3039,58 @@ html.desktop .app-window {
 .seek-slider__thumb.is-dragging,
 .volume-slider:hover .volume-slider__thumb,
 .volume-slider__thumb.is-dragging {
+  transform: scale(1.12);
+}
+
+/* Apple Music-style scrubber used only by the NowPlaying transport. */
+.seek-slider--apple {
+  height: 16px;
+}
+
+.seek-slider--apple .seek-slider__track,
+.seek-slider--apple .seek-slider__buffer,
+.seek-slider--apple .seek-slider__fill {
+  top: 6px;
+  height: 4px;
+  margin-top: 0;
+  border-radius: 999px;
+}
+
+.seek-slider--apple .seek-slider__track {
+  background: rgba(255, 255, 255, 0.26);
+}
+
+.seek-slider--apple .seek-slider__buffer {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.seek-slider--apple .seek-slider__fill {
+  background: #ffffff;
+  box-shadow: none;
+}
+
+.seek-slider--apple:hover .seek-slider__track,
+.seek-slider--apple:hover .seek-slider__buffer,
+.seek-slider--apple:hover .seek-slider__fill {
+  height: 4px;
+  filter: none;
+}
+
+.seek-slider--apple .seek-slider__thumb {
+  top: 50%;
+  width: 13px;
+  height: 13px;
+  margin-top: -6.5px;
+  opacity: 1;
+  transform: scale(1);
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.seek-slider--apple:hover .seek-slider__thumb,
+.seek-slider--apple .seek-slider__thumb.is-dragging {
+  top: 50%;
+  opacity: 1;
   transform: scale(1.12);
 }
 
