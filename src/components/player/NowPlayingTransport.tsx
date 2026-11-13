@@ -8,7 +8,6 @@ import {
   ChevronRight,
   Ellipsis,
   Film,
-  Heart,
   Languages,
   ListMusic,
   Loader2,
@@ -36,8 +35,6 @@ import {
   useSettingsStore,
 } from '../../store/settings'
 import { usePlayerStore } from '../../store/player'
-import { useUserStore } from '../../store/user'
-import { useLocalLibraryStore } from '../../store/localLibrary'
 import { useVideoPlaybackStore } from '../../store/videoPlayback'
 import { SOURCE_OPTIONS } from '../../lib/sources'
 import type { PlayLevel } from '../../types'
@@ -104,14 +101,6 @@ export function NowPlayingTransport({
     (state) => state.setPreferredSource,
   )
 
-  const isLogin = useUserStore((state) => state.isLogin)
-  const likedIds = useUserStore((state) => state.likedIds)
-  const likeSong = useUserStore((state) => state.likeSong)
-  const localFavorites = useLocalLibraryStore((state) => state.favorites)
-  const toggleLocalFavorite = useLocalLibraryStore(
-    (state) => state.toggleFavorite,
-  )
-
   const videoActive = useVideoPlaybackStore((state) => state.active)
   const videoPlaying = useVideoPlaybackStore((state) => state.playing)
   const videoTime = useVideoPlaybackStore((state) => state.currentTime)
@@ -130,9 +119,6 @@ export function NowPlayingTransport({
 
   if (!currentSong) return null
 
-  const liked = isLogin
-    ? likedIds.includes(currentSong.id)
-    : localFavorites.some((song) => song.id === currentSong.id)
   const playbackPlaying = videoActive ? videoPlaying : playing
   const durationMs = videoActive ? videoDuration * 1000 : currentSong.dt || 0
   const playbackMs = videoActive ? videoTime * 1000 : currentTime * 1000
@@ -234,26 +220,6 @@ export function NowPlayingTransport({
       )}
     >
       <div className="order-2 flex w-full items-center justify-center gap-4">
-        <button
-          type="button"
-          aria-label={liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)}
-          aria-pressed={liked}
-          title={liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)}
-          onClick={() => {
-            if (isLogin) void likeSong(currentSong.id, !liked)
-            else void toggleLocalFavorite(currentSong)
-          }}
-          className="pressable flex h-7 w-7 items-center justify-center transition-colors max-md:hidden"
-        >
-          <Heart
-            className={cn(
-              'h-4 w-4',
-              liked
-                ? 'fill-[#ff2d55] text-[#ff2d55]'
-                : 'text-white/45 hover:text-white/80',
-            )}
-          />
-        </button>
         <button
           type="button"
           title={heartMode ? i18n._(msg`关闭心动模式`) : i18n._(msg`心动模式`)}

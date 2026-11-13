@@ -810,6 +810,24 @@ export function NowPlaying() {
                     </span>
                   </span>
                 </button>
+                <button
+                  type="button"
+                  aria-label={liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)}
+                  aria-pressed={liked}
+                  title={liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)}
+                  onClick={() => {
+                    if (isLogin) void likeSong(currentSong.id, !liked)
+                    else void toggleLocalFavorite(currentSong)
+                  }}
+                  className="pressable absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/35 text-white/80 shadow-[0_4px_14px_rgba(0,0,0,0.28)] backdrop-blur-md transition-colors hover:bg-black/50 hover:text-white max-md:hidden"
+                >
+                  <Heart
+                    className={cn(
+                      'h-4 w-4',
+                      liked && 'fill-[#ff2d55] text-[#ff2d55]',
+                    )}
+                  />
+                </button>
               </div>
             </div>
             <div className="np-transport-panel mt-5">
