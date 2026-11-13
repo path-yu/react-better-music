@@ -6,7 +6,6 @@ import { Trans } from '@lingui/react/macro'
 import {
   CalendarHeart,
   ChartNoAxesColumnIncreasing,
-  Disc3,
   Film,
   Heart,
   History,
@@ -19,7 +18,6 @@ import {
 } from 'lucide-react'
 import { Button } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../common/ImageWithFallback'
-import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
 import { useUiStore } from '../../store/ui'
 import { useLocalLibraryStore } from '../../store/localLibrary'
@@ -43,9 +41,6 @@ export function Sidebar() {
   const profile = useUserStore((state) => state.profile)
   const createdPlaylists = useUserStore((state) => state.createdPlaylists)
   const collectedPlaylists = useUserStore((state) => state.collectedPlaylists)
-  const queue = usePlayerStore((state) => state.queue)
-  const showNowPlaying = usePlayerStore((state) => state.showNowPlaying)
-  const toggleNowPlaying = usePlayerStore((state) => state.toggleNowPlaying)
   const sidebarCollapsed = useUiStore((state) => state.sidebarCollapsed)
   const localPlaylists = useLocalLibraryStore((state) => state.playlists)
   const localSubscribedPlaylists = useLocalLibraryStore(
@@ -119,23 +114,6 @@ export function Sidebar() {
 
           <div className="my-2 h-px w-7 bg-black/8" />
 
-          {queue.length ? (
-            <button
-              type="button"
-              title={i18n._(msg`正在播放`)}
-              aria-label={i18n._(msg`正在播放`)}
-              onClick={() => toggleNowPlaying(true)}
-              className={cn(
-                'pressable flex h-9 w-9 items-center justify-center rounded-[10px] transition-colors',
-                showNowPlaying
-                  ? 'bg-accent/12 text-accent'
-                  : 'text-black/45 hover:bg-black/6 hover:text-black/75',
-              )}
-            >
-              <Disc3 className="h-4 w-4" strokeWidth={1.75} />
-            </button>
-          ) : null}
-
           <button
             type="button"
             title={i18n._(msg`我喜欢的音乐`)}
@@ -205,28 +183,6 @@ export function Sidebar() {
         </nav>
 
         <div className="my-3 h-px bg-black/8" />
-
-        {queue.length > 0 && (
-          <button
-            type="button"
-            onClick={() => toggleNowPlaying(true)}
-            className={cn(
-              'mb-1 flex h-[30px] w-full items-center gap-2.5 rounded-[10px] px-2.5 max-md:h-10 text-left text-[12.5px] transition-colors',
-              showNowPlaying
-                ? 'bg-black/8 font-medium text-black'
-                : 'text-black/65 hover:bg-black/4 hover:text-black',
-            )}
-          >
-            <Disc3
-              className={cn(
-                'h-4 w-4 shrink-0',
-                showNowPlaying ? 'text-accent' : 'text-black/40',
-              )}
-              strokeWidth={1.75}
-            />
-            <Trans>正在播放</Trans>
-          </button>
-        )}
 
         <p className="eyebrow px-2.5 pb-1.5 pt-2">
           <Trans>我的音乐</Trans>

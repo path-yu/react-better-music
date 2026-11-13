@@ -443,13 +443,12 @@ html.desktop .app-window {
 }
 
 /*
- * The immersive now-playing view is full-bleed and dark. When it is open the
- * chrome above it (native title bar) switches to dark glass, otherwise a light
- * strip sits on top of the artwork.
+ * The now-playing page owns a separate title-bar component. It is transparent
+ * from the first frame and has no shared CSS transition with the external bar.
  */
-.app-window:has(.nowplaying-overlay.np-open) .desktop-titlebar,
-.app-window:has(.nowplaying-overlay.np-open) .titlebar {
-  background: transparent !important;
+.desktop-titlebar--immersive,
+.titlebar--immersive {
+  background: transparent;
   /* A backdrop blur here creates a visible dark strip over the artwork and
      breaks the full-bleed gradient. The window controls stay above it; the bar
      itself must be completely invisible. */
@@ -458,19 +457,11 @@ html.desktop .app-window {
   border-bottom-color: transparent;
 }
 
-.app-window:has(.nowplaying-overlay.np-open) .titlebar-title {
-  color: rgba(255, 255, 255, 0.72);
-}
-
-.app-window:has(.nowplaying-overlay.np-open) .titlebar-subtitle {
-  color: rgba(255, 255, 255, 0.58);
-}
-
-.app-window:has(.nowplaying-overlay.np-open) .desktop-titlebar__button {
+.desktop-titlebar--immersive .desktop-titlebar__button {
   color: rgba(255, 255, 255, 0.55);
 }
 
-.app-window:has(.nowplaying-overlay.np-open) .desktop-titlebar__button:hover {
+.desktop-titlebar--immersive .desktop-titlebar__button:hover {
   background: rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.85);
 }
@@ -1152,7 +1143,9 @@ html.desktop .app-window {
   /* Full-bleed: the artwork backdrop continues behind the player bar so the
      bottom edge has no seam (content is padded by the bar height instead). */
   inset: 0;
-  z-index: 60;
+  /* Above the external title bar (z-80) so the detail page can own the top
+     chrome with an independent TitleBar. The queue sheet stays at z-90. */
+  z-index: 85;
   /* Keep the overlay's backdrop (artwork) independent from the transparent
      title bar: a hover repaint above must not bleed into blurred controls. */
   isolation: isolate;

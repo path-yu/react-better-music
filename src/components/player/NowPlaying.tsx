@@ -32,6 +32,7 @@ import AmbientBackground from './AmbientBackground'
 import { FogBackground } from './FogBackground'
 import { MvVideoPlayer } from '../mv/MvVideoPlayer'
 import { ImmersivePlayerBar } from './ImmersivePlayerBar'
+import { NowPlayingTitleBar } from './NowPlayingTitleBar'
 import { NowPlayingTransport } from './NowPlayingTransport'
 import { CommentSection, useCommentTotal } from '../comments/CommentSection'
 import { SongContextMenu } from '../songs/SongContextMenu'
@@ -701,6 +702,8 @@ export function NowPlaying() {
       style={{ backgroundColor: 'var(--nowplaying-base, #0f0f12)' }}
       aria-hidden={!show}
     >
+      <NowPlayingTitleBar />
+
       {/*
         Keep the WebGL canvas alive only while the detail page is actually
         visible. Keeping a full-screen WebGL context around for the whole

@@ -6,7 +6,6 @@ import { useRouterState } from '@tanstack/react-router'
 import { Copy, Minus, Music2, Square, X } from 'lucide-react'
 import { isDesktopShell } from '../../lib/desktop'
 import { isTauriApp } from '../../lib/platform'
-import { usePlayerStore } from '../../store/player'
 import {
   closeWindow,
   desktopPlatform,
@@ -36,52 +35,30 @@ const NO_DRAG_CLASS = 'electrobun-webkit-app-region-no-drag'
 export function TitleBar() {
   const { i18n } = useLingui()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
-  const showNowPlaying = usePlayerStore((state) => state.showNowPlaying)
-  // The immersive song view owns the whole window; the underlying route label
-  // would be misleading there, so the chrome switches to the playback context.
   const matched = TITLES.find(
     ([path]) => pathname === path || pathname.startsWith(path),
   )?.[1]
-  const subtitle = showNowPlaying
-    ? i18n._(msg`正在播放`)
-    : pathname !== '/' && matched
-      ? i18n._(matched)
-      : undefined
+  const subtitle =
+    pathname !== '/' && matched ? i18n._(matched) : undefined
 
   if (isTauriApp() || isDesktopShell()) {
-    return (
-      <DesktopTitleBar subtitle={subtitle} hideTitle={showNowPlaying} />
-    )
+    return <DesktopTitleBar subtitle={subtitle} />
   }
 
   return (
-    <div
-      className="titlebar"
-      style={
-        showNowPlaying
-          ? {
-              background: 'transparent',
-              backdropFilter: 'none',
-              WebkitBackdropFilter: 'none',
-              borderBottomColor: 'transparent',
-            }
-          : undefined
-      }
-    >
+    <div className="titlebar">
       <div className="traffic-lights">
         <span className="traffic-dot red" />
         <span className="traffic-dot yellow" />
         <span className="traffic-dot green" />
       </div>
-      {showNowPlaying ? null : (
-        <div className="titlebar-title flex items-center gap-1.5">
-          <Music2 className="brand-mark h-3.5 w-3.5 text-accent" strokeWidth={1.9} />
-          声屿
-          {subtitle ? (
-            <span className="titlebar-subtitle font-normal">— {subtitle}</span>
-          ) : null}
-        </div>
-      )}
+      <div className="titlebar-title flex items-center gap-1.5">
+        <Music2 className="brand-mark h-3.5 w-3.5 text-accent" strokeWidth={1.9} />
+        声屿
+        {subtitle ? (
+          <span className="titlebar-subtitle font-normal">— {subtitle}</span>
+        ) : null}
+      </div>
       <div className="ml-auto flex items-center gap-1.5 text-[11px] text-black/30">
         <span className="hidden sm:inline">macOS Edition</span>
       </div>
@@ -95,12 +72,12 @@ export function TitleBar() {
  * local bridge. macOS keeps its native traffic lights, so only Windows and
  * Linux get the in-app buttons.
  */
-function DesktopTitleBar({
+export function DesktopTitleBar({
   subtitle,
-  hideTitle,
+  immersive = false,
 }: {
   subtitle?: string
-  hideTitle?: boolean
+  immersive?: boolean
 }) {
   const { i18n } = useLingui()
   const nativeControls = desktopPlatform() === 'macos'
@@ -154,20 +131,10 @@ function DesktopTitleBar({
 
   return (
     <div
-      className={`desktop-titlebar ${DRAG_CLASS}${nativeControls ? ' desktop-titlebar--mac' : ''}`}
-      style={
-        hideTitle
-          ? {
-              background: 'transparent',
-              backdropFilter: 'none',
-              WebkitBackdropFilter: 'none',
-              borderBottomColor: 'transparent',
-            }
-          : undefined
-      }
+      className={`desktop-titlebar ${DRAG_CLASS}${nativeControls ? ' desktop-titlebar--mac' : ''}${immersive ? ' desktop-titlebar--immersive' : ''}`}
       onDoubleClick={nativeControls || tauri ? undefined : handleBarDoubleClick}
     >
-      {hideTitle ? null : (
+      {immersive ? null : (
         <div
           className="titlebar-title flex items-center gap-1.5"
           data-tauri-drag-region={tauri ? '' : undefined}
