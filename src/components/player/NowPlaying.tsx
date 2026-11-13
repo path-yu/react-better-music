@@ -25,7 +25,10 @@ import {
 } from 'lucide-react'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
-import { menuSurfaceStyle } from '../../lib/menuSurface'
+import {
+  cachePlayerMenuTint,
+  menuSurfaceStyle,
+} from '../../lib/menuSurface'
 import { LyricsPanel } from './LyricsPanel'
 import { LyricStage } from './LyricStage'
 import AmbientBackground from './AmbientBackground'
@@ -543,6 +546,14 @@ export function NowPlaying() {
   const handleSeek = useCallback((timeMs: number) => {
     seekAudio(timeMs / 1000)
   }, [])
+
+  // Share the already-extracted artwork colour with menu/queue panels so they
+  // can paint their first frame with the final tint.
+  useEffect(() => {
+    const cover = currentSong?.al.picUrl
+    const tint = palette.colors[0]
+    if (cover && tint) cachePlayerMenuTint(cover, tint)
+  }, [currentSong?.al.picUrl, palette.colors])
 
   // Keep the overlay mounted so closing can play its exit animation. Video
   // mode already stays mounted to keep the decoder alive; audio mode remains

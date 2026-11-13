@@ -11,13 +11,38 @@ export function menuSurfaceStyle(tint?: string | string[]): CSSProperties {
   }
 }
 
+/**
+ * Last sampled tint per cover. Menus (especially QueuePanel) mount and
+ * unmount with `showQueue`, so an async-only value would paint the fallback
+ * gradient first and then recolor the whole panel on the next microtask.
+ */
+const tintCache = new Map<string, string>()
+
+export function cachePlayerMenuTint(
+  cover: string | null | undefined,
+  tint: string | undefined,
+) {
+  if (!cover || !tint) return
+  tintCache.set(cover, tint)
+}
+
+export function getCachedPlayerMenuTint(cover?: string | null) {
+  return cover ? tintCache.get(cover) : undefined
+}
+
 /** Samples the current cover once for all player-bar popovers. */
 export function usePlayerMenuTint(enabled: boolean, cover?: string | null) {
-  const [tint, setTint] = useState<string | undefined>(undefined)
+  const cached = enabled ? getCachedPlayerMenuTint(cover) : undefined
+  const [tint, setTint] = useState<string | undefined>(cached)
 
   useEffect(() => {
     if (!enabled) {
       setTint(undefined)
+      return
+    }
+    const existing = getCachedPlayerMenuTint(cover)
+    if (existing) {
+      setTint(existing)
       return
     }
     const source = resizedImageUrl(cover, '320y320')
@@ -28,6 +53,7 @@ export function usePlayerMenuTint(enabled: boolean, cover?: string | null) {
     let active = true
     void extractPalette(source)
       .then((palette) => {
+        cachePlayerMenuTint(cover, palette.colors[0])
         if (active) setTint(palette.colors[0])
       })
       .catch(() => undefined)
@@ -36,5 +62,7 @@ export function usePlayerMenuTint(enabled: boolean, cover?: string | null) {
     }
   }, [enabled, cover])
 
-  return tint
+  // Fall back to the cache during the render in which `cover` changes so
+  // consumers can already use a known colour.
+  return tint ?? (enabled ? getCachedPlayerMenuTint(cover) : undefined)
 }
