@@ -162,6 +162,10 @@ export function NowPlaying() {
     id: number
     official: boolean
   } | null>(null)
+  const [videoLookup, setVideoLookup] = useState<{
+    songId: number
+    done: boolean
+  }>({ songId: 0, done: false })
   const overlayRef = useRef<HTMLDivElement>(null)
   const exitTimerRef = useRef<number | null>(null)
   const exitCleanupRef = useRef<(() => void) | null>(null)
@@ -264,9 +268,17 @@ export function NowPlaying() {
     currentSong && resolvedVideo?.songId === currentSong.id
       ? resolvedVideo
       : null
-  const activeVideo =
-    resolvedVideoForSong ??
-    (mvId ? { id: Number(mvId), official: false } : null)
+  // Do not render an optimistic 视频 badge and then swap it to MV when the
+  // official match arrives. The button only appears after the lookup settles.
+  const videoLookupDone = Boolean(
+    currentSong &&
+      videoLookup.songId === currentSong.id &&
+      videoLookup.done,
+  )
+  const activeVideo = videoLookupDone
+    ? (resolvedVideoForSong ??
+      (mvId ? { id: Number(mvId), official: false } : null))
+    : null
   const hasMv = Boolean(activeVideo?.id)
   const videoBadgeLabel = activeVideo?.official
     ? 'MV'
@@ -448,11 +460,11 @@ export function NowPlaying() {
     const song = currentSong
     const cached = videoCacheRef.current.get(song.id)
     if (cached !== undefined) {
-      setResolvedVideo(
-        cached ? { songId: song.id, ...cached } : null,
-      )
+      setResolvedVideo(cached ? { songId: song.id, ...cached } : null)
+      setVideoLookup({ songId: song.id, done: true })
       return
     }
+    setVideoLookup({ songId: song.id, done: false })
     let active = true
     void fetchRelatedVideos(song, 8)
       .then((videos) => {
@@ -470,11 +482,15 @@ export function NowPlaying() {
         videoCacheRef.current.set(song.id, next)
         if (active) {
           setResolvedVideo(next ? { songId: song.id, ...next } : null)
+          setVideoLookup({ songId: song.id, done: true })
         }
       })
       .catch(() => {
         videoCacheRef.current.set(song.id, null)
-        if (active) setResolvedVideo(null)
+        if (active) {
+          setResolvedVideo(null)
+          setVideoLookup({ songId: song.id, done: true })
+        }
       })
     return () => {
       active = false
