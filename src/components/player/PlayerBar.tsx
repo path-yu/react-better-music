@@ -653,6 +653,7 @@ export function PlayerBar() {
         artists: formatArtists(active.ar),
         duration: active.dt,
         trialEnd: active.trialEnd ?? 0,
+        picUrl: active.al.picUrl,
       }
       if (audioBlob) {
         cacheSongFromBlob(meta, audioBlob)

@@ -12,6 +12,7 @@ import {
   desktopAudioCacheRemove,
 } from './desktopAudioCache'
 import { toast } from './toast'
+import { cacheCoverImage } from './coverCache'
 import { useSettingsStore } from '../store/settings'
 
 interface CacheMeta {
@@ -38,6 +39,8 @@ export interface CacheableSong {
   artists?: string
   duration?: number
   trialEnd?: number | null
+  /** Artwork URL persisted alongside the audio for offline playback. */
+  picUrl?: string
 }
 
 const DB_NAME = 'react-music-audio'
@@ -351,6 +354,9 @@ async function transcodeAndStore(song: CacheableSong, epoch: number, source?: Bl
 }
 
 function enqueueCache(song: CacheableSong, source?: Blob) {
+  // Cache artwork in parallel with audio; it is tiny and makes the cached row
+  // usable offline without fetching the CDN again.
+  void cacheCoverImage(song.picUrl)
   if (typeof indexedDB === 'undefined' || pending.has(song.id)) return
   const epoch = cacheEpoch
   // Encoding is memory-heavy, so cache jobs run in sequence.
