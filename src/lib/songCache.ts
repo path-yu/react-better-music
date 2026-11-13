@@ -45,8 +45,9 @@ const DB_VERSION = 2
 const AUDIO_STORE = 'audio'
 const META_STORE = 'meta'
 // Cached audio is Opus (96kbps by default), roughly 2.9MB per four-minute song.
-const MAX_ENTRIES = 60
-const MAX_BYTES = 80 * 1024 * 1024
+// The user-configurable MB limit is the only eviction policy.
+const cacheMaxBytes = () =>
+  Math.max(50, useSettingsStore.getState().cacheMaxMb) * 1024 * 1024
 
 let dbPromise: Promise<IDBDatabase> | null = null
 let writeQueue: Promise<void> = Promise.resolve()
@@ -179,7 +180,8 @@ async function putCachedAudio(
     trialEnd?: number
   },
 ) {
-  if (blob.size > MAX_BYTES) return
+  const maxBytes = cacheMaxBytes()
+  if (blob.size > maxBytes) return
   const meta: CacheMeta = {
     id,
     name,
@@ -191,6 +193,13 @@ async function putCachedAudio(
   // only the browser fallback.
   if (isDesktopApp()) {
     await desktopAudioCachePut(meta, blob)
+    // The filesystem bridge keeps a generous hard ceiling; apply the actual
+    // user setting here so changing it above/below the old 80MB works.
+    try {
+      await trimAudioCacheToLimit()
+    } catch {
+      // Cache cleanup is best-effort; the track itself was written.
+    }
     return
   }
   const db = await openDb()
@@ -202,18 +211,16 @@ async function putCachedAudio(
   await trimCache(db)
 }
 
-async function trimCache(db: IDBDatabase) {
+async function trimCache(db: IDBDatabase, maxBytes = cacheMaxBytes()) {
   const metas = await requestResult<CacheMeta[]>(
     db.transaction(META_STORE, 'readonly').objectStore(META_STORE).getAll(),
   )
   metas.sort((a, b) => a.createdAt - b.createdAt)
-  let count = metas.length
   let bytes = metas.reduce((total, meta) => total + meta.size, 0)
   const removals: number[] = []
   for (const meta of metas) {
-    if (count <= MAX_ENTRIES && bytes <= MAX_BYTES) break
+    if (bytes <= maxBytes) break
     removals.push(meta.id)
-    count -= 1
     bytes -= meta.size
   }
   if (!removals.length) return
@@ -225,6 +232,27 @@ async function trimCache(db: IDBDatabase) {
     metaStore.delete(id)
   })
   await transactionDone(transaction)
+}
+
+/** Apply the configured MB limit immediately (also after changing the setting). */
+export async function trimAudioCacheToLimit(maxMb?: number): Promise<void> {
+  const limit =
+    Math.max(50, maxMb ?? useSettingsStore.getState().cacheMaxMb) *
+    1024 *
+    1024
+  if (isDesktopApp()) {
+    const { items } = await desktopAudioCacheList()
+    const sorted = [...items].sort((a, b) => a.createdAt - b.createdAt)
+    let bytes = sorted.reduce((total, item) => total + item.size, 0)
+    for (const item of sorted) {
+      if (bytes <= limit) break
+      await desktopAudioCacheRemove(item.id)
+      bytes -= item.size
+    }
+    return
+  }
+  const db = await openDb()
+  await trimCache(db, limit)
 }
 
 /** Decode compressed audio; mediabunny normalizes rate/channels for Opus. */

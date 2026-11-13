@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { Button, Checkbox, Select, Switch } from '@pikoloo/darwin-ui'
 import {
+  CACHE_MAX_MB_OPTIONS,
   CACHE_QUALITY_OPTIONS,
   NOW_PLAYING_TRANSITION_OPTIONS,
   useSettingsStore,
@@ -34,6 +35,7 @@ import {
   clearAudioCache,
   downloadCachedAudio,
   listCachedAudio,
+  trimAudioCacheToLimit,
   type CachedAudioItem,
 } from '../lib/songCache'
 import {
@@ -78,6 +80,8 @@ function SettingsPage() {
   const { i18n } = useLingui()
   useDocumentTitle(i18n._(msg`设置`))
   const cacheBitrate = useSettingsStore((state) => state.cacheBitrate)
+  const cacheMaxMb = useSettingsStore((state) => state.cacheMaxMb)
+  const setCacheMaxMb = useSettingsStore((state) => state.setCacheMaxMb)
   const setCacheBitrate = useSettingsStore((state) => state.setCacheBitrate)
   const autoReplaceVipSource = useSettingsStore((state) => state.autoReplaceVipSource)
   const setAutoReplaceVipSource = useSettingsStore(
@@ -530,7 +534,7 @@ function SettingsPage() {
             </button>
           </div>
 
-          <div className="mt-5 grid gap-4 sm:grid-cols-[1fr_180px]">
+          <div className="mt-5 grid gap-4 sm:grid-cols-[1fr_1fr_180px]">
             <div>
               <p className="mb-1.5 text-[11px] text-black/40">
                 <Trans>缓存品质</Trans>
@@ -548,6 +552,29 @@ function SettingsPage() {
                 <Trans>
                   约 64kbps ≈ 1.9MB / 4 分钟，96kbps ≈ 2.9MB，128kbps ≈ 3.8MB。
                 </Trans>
+              </p>
+            </div>
+            <div>
+              <p className="mb-1.5 text-[11px] text-black/40">
+                <Trans>最大缓存容量</Trans>
+              </p>
+              <Select
+                value={String(cacheMaxMb)}
+                onChange={(event) => {
+                  const next = Number(event.target.value)
+                  setCacheMaxMb(next)
+                  void trimAudioCacheToLimit(next)
+                    .then(() => loadCache())
+                    .catch(() => undefined)
+                }}
+                options={CACHE_MAX_MB_OPTIONS.map((mb) => ({
+                  value: String(mb),
+                  label: `${mb} MB`,
+                }))}
+                className="text-[12px]"
+              />
+              <p className="mt-2 text-[11px] leading-relaxed text-black/30">
+                <Trans>默认 200 MB，超出后按缓存时间从旧到新清理。</Trans>
               </p>
             </div>
             <div className="rounded-[14px] border border-[var(--app-border)] bg-[var(--app-card)] px-4 py-3">

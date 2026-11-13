@@ -23,6 +23,9 @@ export const PLAY_QUALITY_OPTIONS: Array<{
   { value: 'exhigh', label: msg`极高` },
 ]
 
+/** Preset limits for the locally cached audio library. */
+export const CACHE_MAX_MB_OPTIONS = [100, 200, 300, 500, 1000, 2048]
+
 export type LyricDisplayMode = 'both' | 'original' | 'translation'
 export type NowPlayingMode = 'audio' | 'video'
 export type LyricStageStyle = 'flow' | 'partita' | 'tilt'
@@ -58,6 +61,8 @@ export const LYRIC_DISPLAY_OPTIONS: Array<{
 
 interface SettingsState {
   cacheBitrate: number
+  /** Maximum size of the local audio cache, in megabytes. */
+  cacheMaxMb: number
   playLevel: PlayLevel
   /** How lyric lines and their translations are shown. */
   lyricDisplayMode: LyricDisplayMode
@@ -82,6 +87,7 @@ interface SettingsState {
   /** UI language; the source catalog is Simplified Chinese. */
   locale: Locale
   setCacheBitrate: (value: number) => void
+  setCacheMaxMb: (value: number) => void
   setPlayLevel: (value: PlayLevel) => void
   setLyricDisplayMode: (value: LyricDisplayMode) => void
   setWordByWordLyrics: (value: boolean) => void
@@ -100,6 +106,7 @@ export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
       cacheBitrate: 96,
+      cacheMaxMb: 200,
       playLevel: 'exhigh',
       lyricDisplayMode: 'both',
       wordByWordLyrics: true,
@@ -116,6 +123,7 @@ export const useSettingsStore = create<SettingsState>()(
       autoScrobble: false,
       locale: defaultLocale,
       setCacheBitrate: (cacheBitrate) => set({ cacheBitrate }),
+      setCacheMaxMb: (cacheMaxMb) => set({ cacheMaxMb }),
       setPlayLevel: (playLevel) => set({ playLevel }),
       setLyricDisplayMode: (lyricDisplayMode) => set({ lyricDisplayMode }),
       setWordByWordLyrics: (wordByWordLyrics) => set({ wordByWordLyrics }),

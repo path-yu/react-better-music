@@ -958,8 +958,10 @@ interface AudioCacheMeta {
 const AUDIO_CACHE_DIR_FILE = join(APP_DATA_DIR, 'audio-cache-dir.json')
 const DEFAULT_AUDIO_CACHE_DIR = join(APP_DATA_DIR, 'audio-cache')
 const AUDIO_CACHE_INDEX = 'index.json'
-const AUDIO_CACHE_MAX_ENTRIES = 60
-const AUDIO_CACHE_MAX_BYTES = 80 * 1024 * 1024
+// The renderer enforces the user-configured MB limit after each write. Keep
+// only a generous safety ceiling here so custom limits are not pre-empted.
+const AUDIO_CACHE_MAX_ENTRIES = Number.MAX_SAFE_INTEGER
+const AUDIO_CACHE_MAX_BYTES = 1024 * 1024 * 1024 * 1024
 
 function readAudioCacheDir() {
   try {

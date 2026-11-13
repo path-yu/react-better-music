@@ -405,8 +405,10 @@ async fn desktop_command(
 }
 
 const AUDIO_CACHE_INDEX: &str = "index.json";
-const AUDIO_CACHE_MAX_ENTRIES: usize = 60;
-const AUDIO_CACHE_MAX_BYTES: u64 = 80 * 1024 * 1024;
+// The renderer enforces the user-configured MB limit after each write. This is
+// only a safety ceiling so custom limits are not pre-empted.
+const AUDIO_CACHE_MAX_ENTRIES: usize = usize::MAX;
+const AUDIO_CACHE_MAX_BYTES: u64 = 1024 * 1024 * 1024 * 1024;
 
 fn audio_cache_stem(name: &str, id: u64) -> String {
     let safe: String = name
