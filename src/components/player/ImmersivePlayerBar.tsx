@@ -55,7 +55,11 @@ import {
  * progress line and lives entirely inside NowPlaying. The external PlayerBar
  * stays mounted only as the audio engine while this view is open.
  */
-export function ImmersivePlayerBar() {
+export function ImmersivePlayerBar({
+  onRequestClose,
+}: {
+  onRequestClose?: () => void
+} = {}) {
   const { i18n } = useLingui()
   const queue = usePlayerStore((state) => state.queue)
   const currentIndex = usePlayerStore((state) => state.currentIndex)
@@ -182,7 +186,10 @@ export function ImmersivePlayerBar() {
         <div className="flex min-w-0 items-center">
           <button
             type="button"
-            onClick={() => toggleNowPlaying(false)}
+            onClick={() => {
+              if (onRequestClose) onRequestClose()
+              else toggleNowPlaying(false)
+            }}
             aria-label={i18n._(msg`收起播放页`)}
             title={i18n._(msg`收起播放页（Esc）`)}
             className="np-round-button pressable flex h-9 w-9 items-center justify-center rounded-full text-white/75"

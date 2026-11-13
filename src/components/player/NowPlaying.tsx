@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
@@ -155,6 +162,101 @@ export function NowPlaying() {
     id: number
     official: boolean
   } | null>(null)
+  const overlayRef = useRef<HTMLDivElement>(null)
+  const exitTimerRef = useRef<number | null>(null)
+  const exitCleanupRef = useRef<(() => void) | null>(null)
+  const exitingRef = useRef(false)
+  const requestClose = useCallback(() => {
+    if (exitingRef.current) return
+    const reduced = window.matchMedia?.(
+      '(prefers-reduced-motion: reduce)',
+    ).matches
+    const durations = {
+      fade: 240,
+      'slide-up': 360,
+      scale: 280,
+      none: 0,
+    }
+    const duration = reduced ? 0 : durations[nowPlayingTransition]
+    const overlay = overlayRef.current
+    if (!duration || !overlay) {
+      toggleNowPlaying(false)
+      return
+    }
+
+    // Apply the exit directly to the DOM instead of changing React state. A
+    // state update re-renders the whole lyrics/artwork tree and can block the
+    // first frames, which previously made the close look instantaneous.
+    exitingRef.current = true
+    const easing = 'cubic-bezier(0.4, 0, 1, 1)'
+    overlay.style.transition =
+      nowPlayingTransition === 'fade'
+        ? `opacity ${duration}ms ease`
+        : nowPlayingTransition === 'scale'
+          ? `transform ${duration}ms ${easing}, opacity ${duration}ms ease`
+          : `transform ${duration}ms ${easing}`
+
+    // Establish the starting style, flush it, then assign the exit target.
+    if (nowPlayingTransition !== 'fade') {
+      overlay.style.transform = 'translateY(0) scale(1)'
+    }
+    overlay.style.opacity = '1'
+    overlay.getBoundingClientRect()
+
+    let finished = false
+    const finish = () => {
+      if (finished) return
+      finished = true
+      exitCleanupRef.current?.()
+      exitCleanupRef.current = null
+      exitingRef.current = false
+      toggleNowPlaying(false)
+    }
+    const onTransitionEnd = (event: TransitionEvent) => {
+      if (event.target === overlay) finish()
+    }
+    overlay.addEventListener('transitionend', onTransitionEnd)
+    // The transition itself decides when the close is safe. A fallback covers
+    // a frame stall where transitionend never arrives.
+    exitTimerRef.current = window.setTimeout(finish, duration + 150)
+    exitCleanupRef.current = () => {
+      overlay.removeEventListener('transitionend', onTransitionEnd)
+      if (exitTimerRef.current !== null) {
+        window.clearTimeout(exitTimerRef.current)
+        exitTimerRef.current = null
+      }
+    }
+
+    if (nowPlayingTransition === 'slide-up') {
+      overlay.style.transform = 'translateY(100%)'
+    } else if (nowPlayingTransition === 'fade') {
+      overlay.style.opacity = '0'
+    } else {
+      overlay.style.transform = 'scale(0.965)'
+      overlay.style.opacity = '0'
+    }
+  }, [nowPlayingTransition, toggleNowPlaying])
+
+  useEffect(() => {
+    return () => {
+      exitCleanupRef.current?.()
+      exitCleanupRef.current = null
+      exitingRef.current = false
+    }
+  }, [])
+
+  useLayoutEffect(() => {
+    if (!show) return
+    exitCleanupRef.current?.()
+    exitCleanupRef.current = null
+    exitingRef.current = false
+    const overlay = overlayRef.current
+    if (!overlay) return
+    overlay.style.transition = ''
+    overlay.style.transform = ''
+    overlay.style.opacity = ''
+  }, [show])
+
   const rawMvId = currentSong?.mv ?? currentSong?.mvid
   // `mv: 0` is a valid "no MV" marker, not a nullish value.
   const mvId = rawMvId && Number(rawMvId) > 0 ? rawMvId : undefined
@@ -403,11 +505,11 @@ export function NowPlaying() {
       if (event.key !== 'Escape') return
       // The queue panel is stacked above this view and handles Escape itself.
       if (usePlayerStore.getState().showQueue) return
-      toggleNowPlaying(false)
+      requestClose()
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [show, toggleNowPlaying])
+  }, [show, requestClose])
 
   // Apple Music's lyrics screen is literally the artwork: the container carries
   // `background-image: url(cover)` + `background-color: var(--nowPlayingBackdropBG)`
@@ -425,10 +527,10 @@ export function NowPlaying() {
     seekAudio(timeMs / 1000)
   }, [])
 
-  // Keep the MV mounted while the detail page is collapsed so closing the
-  // overlay only hides the UI instead of stopping the video. Audio-only views
-  // can unmount normally, and the WebGL fog is still gated by `show` below.
-  if (!currentSong || (!show && !mvMode)) return null
+  // Keep the overlay mounted so closing can play its exit animation. Video
+  // mode already stays mounted to keep the decoder alive; audio mode remains
+  // in the DOM but is hidden and non-interactive.
+  if (!currentSong) return null
 
   const loadingSource = playing && !sourceReady
   // The backdrop is heavily blurred, so a 320px copy is indistinguishable from
@@ -572,18 +674,13 @@ export function NowPlaying() {
 
   return (
     <div
+      ref={overlayRef}
       className={cn(
         'nowplaying-overlay dark',
-        // The animation class is only present while the page is open so the
-        // hidden video overlay cannot be forced back to opacity: 1 by a filled
-        // animation. Re-adding it also replays the entrance for video mode.
-        show &&
-          (nowPlayingTransition === 'none'
-            ? 'np-enter-none'
-            : `np-enter-${nowPlayingTransition}`),
-        // `opacity-0` rather than `display:none`: WebView2 keeps decoding and
-        // playing the <video> audio while the overlay is invisible.
-        !show && 'pointer-events-none opacity-0',
+        // Symmetric enter/exit transitions: the open state is the resting
+        // geometry and the closed state is the off-screen/faded target.
+        `np-transition-${nowPlayingTransition}`,
+        show ? 'np-open' : 'np-closed pointer-events-none',
       )}
       style={{ backgroundColor: 'var(--nowplaying-base, #0f0f12)' }}
       aria-hidden={!show}
@@ -617,7 +714,7 @@ export function NowPlaying() {
           immersive content clear of it. */}
       <div
         className={cn(
-          'np-content-enter relative flex h-full flex-col',
+          'relative flex h-full flex-col',
           videoActive ? 'pb-[76px]' : 'pb-4',
         )}
       >
@@ -1309,14 +1406,16 @@ export function NowPlaying() {
           type="button"
           aria-label={i18n._(msg`收起播放页`)}
           title={i18n._(msg`收起播放页（Esc）`)}
-          onClick={() => toggleNowPlaying(false)}
+          onClick={requestClose}
           className="np-round-button pressable absolute bottom-5 left-6 z-50 flex h-9 w-9 items-center justify-center rounded-full text-white/75"
         >
           <ChevronDown className="h-4 w-4" />
         </button>
       ) : null}
 
-      {videoActive ? <ImmersivePlayerBar /> : null}
+      {videoActive ? (
+        <ImmersivePlayerBar onRequestClose={requestClose} />
+      ) : null}
 
       {queueContext ? (
         <SongContextMenu

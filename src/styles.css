@@ -447,8 +447,8 @@ html.desktop .app-window {
  * chrome above it (native title bar) switches to dark glass, otherwise a light
  * strip sits on top of the artwork.
  */
-.app-window:has(.nowplaying-overlay:not(.opacity-0)) .desktop-titlebar,
-.app-window:has(.nowplaying-overlay:not(.opacity-0)) .titlebar {
+.app-window:has(.nowplaying-overlay.np-open) .desktop-titlebar,
+.app-window:has(.nowplaying-overlay.np-open) .titlebar {
   background: transparent !important;
   /* A backdrop blur here creates a visible dark strip over the artwork and
      breaks the full-bleed gradient. The window controls stay above it; the bar
@@ -458,19 +458,19 @@ html.desktop .app-window {
   border-bottom-color: transparent;
 }
 
-.app-window:has(.nowplaying-overlay:not(.opacity-0)) .titlebar-title {
+.app-window:has(.nowplaying-overlay.np-open) .titlebar-title {
   color: rgba(255, 255, 255, 0.72);
 }
 
-.app-window:has(.nowplaying-overlay:not(.opacity-0)) .titlebar-subtitle {
+.app-window:has(.nowplaying-overlay.np-open) .titlebar-subtitle {
   color: rgba(255, 255, 255, 0.58);
 }
 
-.app-window:has(.nowplaying-overlay:not(.opacity-0)) .desktop-titlebar__button {
+.app-window:has(.nowplaying-overlay.np-open) .desktop-titlebar__button {
   color: rgba(255, 255, 255, 0.55);
 }
 
-.app-window:has(.nowplaying-overlay:not(.opacity-0)) .desktop-titlebar__button:hover {
+.app-window:has(.nowplaying-overlay.np-open) .desktop-titlebar__button:hover {
   background: rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.85);
 }
@@ -1169,70 +1169,111 @@ html.desktop .app-window {
   color: var(--apple-ink);
 }
 
-/* Animate the content only: fading the full-screen blurred backdrop forced a
-   composite/raster pass for every frame of the old 400 ms transition. */
-.np-content-enter {
-  animation: nowplaying-fade 0.26s ease-out both;
+/* Symmetric, user-selectable enter/exit transitions for the full-screen player.
+   Keeping the overlay mounted means closing is animated instead of snapping. */
+.np-transition-fade {
+  transition: opacity 0.24s ease;
 }
 
-/* User-selectable entrance for the full-screen player. */
-.np-enter-fade {
-  animation: np-overlay-fade 0.28s ease-out both;
-}
-
-.np-enter-slide-up {
-  animation: np-overlay-slide-up 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+.np-transition-slide-up {
+  transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
 }
 
-.np-enter-scale {
-  animation: np-overlay-scale 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+.np-transition-scale {
+  transform-origin: center;
+  transition:
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.24s ease;
   will-change: transform, opacity;
 }
 
-/* The overlay-level animation already covers the whole page; fade the content
-   separately would make the two easing curves fight each other. */
-.nowplaying-overlay[class*='np-enter-'] .np-content-enter {
-  animation: none;
+.np-transition-none {
+  transition: none;
 }
 
-.np-enter-none {
-  animation: none !important;
+.np-transition-fade.np-open,
+.np-transition-scale.np-open {
+  opacity: 1;
 }
 
-@keyframes np-overlay-fade {
+.np-transition-fade.np-closed,
+.np-transition-scale.np-closed,
+.np-transition-none.np-closed {
+  opacity: 0;
+}
+
+.np-transition-scale.np-open {
+  transform: scale(1);
+}
+
+.np-transition-scale.np-closed {
+  transform: scale(0.965);
+}
+
+.np-transition-slide-up.np-open {
+  transform: translateY(0);
+}
+
+.np-transition-slide-up.np-closed {
+  transform: translateY(100%);
+}
+
+/* CSS animations (not transitions) drive the exit so it still starts when the
+   closed classes are applied in the same commit as the state change. */
+.np-exit-fade {
+  animation: np-exit-fade 0.24s ease both;
+}
+
+.np-exit-slide-up {
+  animation: np-exit-slide-up 0.36s cubic-bezier(0.4, 0, 1, 1) both;
+  will-change: transform;
+}
+
+.np-exit-scale {
+  animation: np-exit-scale 0.28s cubic-bezier(0.4, 0, 1, 1) both;
+  will-change: transform, opacity;
+}
+
+@keyframes np-exit-fade {
   from {
-    opacity: 0;
-  }
-  to {
     opacity: 1;
   }
+  to {
+    opacity: 0;
+  }
 }
 
-@keyframes np-overlay-slide-up {
+@keyframes np-exit-slide-up {
   from {
-    transform: translateY(100%);
-  }
-  to {
     transform: translateY(0);
   }
+  to {
+    transform: translateY(100%);
+  }
 }
 
-@keyframes np-overlay-scale {
+@keyframes np-exit-scale {
   from {
-    opacity: 0;
-    transform: scale(0.965);
-  }
-  to {
     opacity: 1;
     transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.965);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .np-enter-fade,
-  .np-enter-slide-up,
-  .np-enter-scale {
+  .np-transition-fade,
+  .np-transition-slide-up,
+  .np-transition-scale {
+    transition: none;
+  }
+
+  .np-exit-fade,
+  .np-exit-slide-up,
+  .np-exit-scale {
     animation: none;
   }
 }
