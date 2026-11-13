@@ -795,7 +795,7 @@ function SettingsPage() {
                 </span>
               </div>
 
-              <ul>
+              <ul className="max-h-[min(46vh,360px)] overflow-y-auto overscroll-contain [scrollbar-width:thin]">
                 {items.map((item) => (
                   <li
                     key={item.id}

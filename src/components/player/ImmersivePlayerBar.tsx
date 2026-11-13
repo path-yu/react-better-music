@@ -400,10 +400,11 @@ export function ImmersivePlayerBar({
             </PlayerMenuContent>
           </Popover>
 
-          <SourcePicker tint={tint} />
+          <SourcePicker tint={tint} immersive />
           <PlaylistPicker
             song={currentSong}
             tint={tint}
+            immersive
             buttonClassName="flex h-7 w-7 items-center justify-center rounded-full hover:bg-white/10"
           />
 

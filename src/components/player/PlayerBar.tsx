@@ -1,15 +1,12 @@
-import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react'
+import { useEffect, useRef, useState, type SyntheticEvent } from 'react'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import {
-  AudioLines,
-  Check,
   ChevronDown,
   ChevronUp,
   Ellipsis,
   Heart,
-  Languages,
   ListMusic,
   Loader2,
   Pause,
@@ -29,8 +26,8 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
+import { MorePlaybackOptions } from './MorePlaybackOptions'
 import { PlaylistPicker } from './PlaylistPicker'
-import { ToggleSwitch } from '../common/ToggleSwitch'
 import { useDelayedBusy } from '../../lib/useDelayedBusy'
 import { ImmersiveProgressBar } from './ImmersiveProgressBar'
 import { ProgressSlider } from './ProgressSlider'
@@ -39,18 +36,11 @@ import {
   TRANSPORT_PAUSE_ICON,
   TRANSPORT_PLAY_ICON,
 } from './transportIcons'
-import { SourcePicker } from './SourcePicker'
 import { VolumeSlider } from './VolumeSlider'
-import { PlayerMenuContent } from './PlayerMenuContent'
 import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
 import { useLocalLibraryStore } from '../../store/localLibrary'
 import { useVideoPlaybackStore } from '../../store/videoPlayback'
-import {
-  LYRIC_DISPLAY_OPTIONS,
-  PLAY_QUALITY_OPTIONS,
-  useSettingsStore,
-} from '../../store/settings'
 import { cn, formatArtists, formatDuration } from '../../lib/format'
 import { usePlayerMenuTint } from '../../lib/menuSurface'
 import { getAudio, registerAudio, seekAudio } from '../../lib/audio'
@@ -68,7 +58,6 @@ import {
 import { cacheSong, cacheSongFromBlob } from '../../lib/songCache'
 import { useScrobble } from '../../lib/scrobble'
 import { toast } from '../../lib/toast'
-import type { PlayLevel } from '../../types'
 
 /** Crossfade length for track changes; inside the 200–400ms sweet spot. */
 const CROSSFADE_MS = 320
@@ -148,7 +137,6 @@ export function PlayerBar() {
   const audioBlob = usePlayerStore((state) => state.audioBlob)
   const heartMode = usePlayerStore((state) => state.heartMode)
   const heartLoading = usePlayerStore((state) => state.heartLoading)
-  const lyricLines = usePlayerStore((state) => state.lyricLines)
 
   const togglePlay = usePlayerStore((state) => state.togglePlay)
   const next = usePlayerStore((state) => state.next)
@@ -163,12 +151,12 @@ export function PlayerBar() {
   const toggleQueue = usePlayerStore((state) => state.toggleQueue)
   const refreshCurrentUrl = usePlayerStore((state) => state.refreshCurrentUrl)
   const prefetchNext = usePlayerStore((state) => state.prefetchNext)
-  const invalidateUrls = usePlayerStore((state) => state.invalidateUrls)
-  const showNowPlaying = usePlayerStore((state) => state.showNowPlaying)
-  const playerMenuTint = usePlayerMenuTint(
-    showNowPlaying,
-    currentSong?.al.picUrl,
-  )
+
+  // This is exclusively the external bar. It deliberately does not subscribe
+  // to showNowPlaying: the detail overlay (z-85) simply covers it, so opening
+  // or closing NowPlaying can never reflow/repaint these controls.
+  const showNowPlaying = false
+  const playerMenuTint = usePlayerMenuTint(false, currentSong?.al.picUrl)
   const showQueue = usePlayerStore((state) => state.showQueue)
   const resumeAt = usePlayerStore((state) => state.resumeAt)
   const consumeResumeAt = usePlayerStore((state) => state.consumeResumeAt)
@@ -182,21 +170,11 @@ export function PlayerBar() {
   const seekVideo = useVideoPlaybackStore((state) => state.seek)
   const setVideoVolume = useVideoPlaybackStore((state) => state.setVolume)
 
-  const playLevel = useSettingsStore((state) => state.playLevel)
-  const setPlayLevel = useSettingsStore((state) => state.setPlayLevel)
-  const lyricDisplayMode = useSettingsStore((state) => state.lyricDisplayMode)
-  const setLyricDisplayMode = useSettingsStore((state) => state.setLyricDisplayMode)
-  const wordByWordLyrics = useSettingsStore((state) => state.wordByWordLyrics)
-  const setWordByWordLyrics = useSettingsStore((state) => state.setWordByWordLyrics)
-  // The mode menu is only meaningful when the current lyric actually carries a translation.
-  const hasTranslation = useMemo(
-    () => lyricLines.some((line) => Boolean(line.translate)),
-    [lyricLines],
-  )
+
   const desktopShell = isDesktopShell()
   const [lyricsWindowOpen, setLyricsWindowOpen] = useState(false)
   const [miniWindowOpen, setMiniWindowOpen] = useState(false)
-  const [qualityOpen, setQualityOpen] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(false)
   // Real duration reported by the media element; trial clips are shorter than
   // the catalogue duration in song.dt.
   const [mediaDuration, setMediaDuration] = useState(0)
@@ -895,11 +873,6 @@ export function PlayerBar() {
     setBuffered((ranges.end(ranges.length - 1) / audio.duration) * 100)
   }
 
-  const qualityOption = PLAY_QUALITY_OPTIONS.find(
-    (option) => option.value === playLevel,
-  )
-  const qualityLabel = qualityOption ? i18n._(qualityOption.label) : playLevel
-
   const handleToggleDesktopLyrics = () => {
     void setDesktopLyricsVisible('toggle')
       .then(({ visible }) => setLyricsWindowOpen(visible))
@@ -910,17 +883,6 @@ export function PlayerBar() {
     void setMiniPlayerVisible('toggle')
       .then(({ visible }) => setMiniWindowOpen(visible))
       .catch(() => toast.warning(i18n._(msg`迷你播放器暂不可用`)))
-  }
-
-  const handleQualityChange = (level: PlayLevel) => {
-    setQualityOpen(false)
-    if (level === playLevel) return
-    setPlayLevel(level)
-    invalidateUrls()
-    const option = PLAY_QUALITY_OPTIONS.find((item) => item.value === level)
-    const label = option ? i18n._(option.label) : level
-    toast.info(i18n._(msg`播放音质已切换为${label}，正在重新加载`))
-    void refreshCurrentUrl()
   }
 
   const modeIcon =
@@ -1310,25 +1272,6 @@ export function PlayerBar() {
           </button>
           <button
             type="button"
-            title={
-              mode === 'order'
-                ? i18n._(msg`顺序播放`)
-                : mode === 'random'
-                  ? i18n._(msg`随机播放`)
-                  : i18n._(msg`单曲循环`)
-            }
-            onClick={cycleMode}
-            className={cn(
-              'pressable flex h-8 w-8 items-center justify-center transition-colors max-md:h-10 max-md:w-10',
-              mode === 'order'
-                ? 'text-black/35 hover:text-black/70'
-                : 'text-black/65 hover:text-black',
-            )}
-          >
-            {modeIcon}
-          </button>
-          <button
-            type="button"
             aria-label={i18n._(msg`上一首`)}
             onClick={() => void prev()}
             className="pressable flex h-8 w-8 items-center justify-center text-black/65 hover:text-black max-md:h-10 max-md:w-10"
@@ -1372,14 +1315,33 @@ export function PlayerBar() {
           >
             <SkipForward className="h-5 w-5 fill-current" />
           </button>
-        <button
-              type="button"
-              onClick={() => toggleQueue()}
-              className="pressable flex h-8 w-8 items-center justify-center text-black/35 transition-colors hover:text-black/70 max-md:hidden"
-              title={i18n._(msg`播放列表`)}
-            >
-              <ListMusic className="h-4 w-4" />
-            </button>
+          <button
+            type="button"
+            title={
+              mode === 'order'
+                ? i18n._(msg`顺序播放`)
+                : mode === 'random'
+                  ? i18n._(msg`随机播放`)
+                  : i18n._(msg`单曲循环`)
+            }
+            onClick={cycleMode}
+            className={cn(
+              'pressable flex h-8 w-8 items-center justify-center transition-colors max-md:h-10 max-md:w-10',
+              mode === 'order'
+                ? 'text-black/35 hover:text-black/70'
+                : 'text-black/65 hover:text-black',
+            )}
+          >
+            {modeIcon}
+          </button>
+          <button
+            type="button"
+            onClick={() => toggleQueue()}
+            className="pressable flex h-8 w-8 items-center justify-center text-black/35 transition-colors hover:text-black/70 max-md:hidden"
+            title={i18n._(msg`播放列表`)}
+          >
+            <ListMusic className="h-4 w-4" />
+          </button>
         </div>
 
         {!videoActive ? (
@@ -1405,62 +1367,6 @@ export function PlayerBar() {
       </div>
 
       <div className="flex items-center justify-end gap-2 max-md:hidden">
-        <Popover open={qualityOpen} onOpenChange={setQualityOpen}>
-          <PopoverTrigger asChild>
-            <button
-              type="button"
-              aria-label={i18n._(msg`播放音质`)}
-              title={i18n._(msg`播放音质`)}
-              className="pressable flex h-7 items-center gap-1 rounded-full px-2 text-[11px] text-black/45 transition-colors hover:bg-black/5 hover:text-black/75"
-            >
-              <AudioLines className="h-3.5 w-3.5" />
-              {qualityLabel}
-            </button>
-          </PopoverTrigger>
-          <PlayerMenuContent
-            immersive={showNowPlaying}
-            tint={playerMenuTint}
-            className="w-[min(190px,calc(100vw-24px))] max-w-[calc(100vw-24px)]"
-          >
-            <p
-              className={cn(
-                'px-2 py-1 text-[11px]',
-                showNowPlaying ? 'text-white/45' : 'text-black/35',
-              )}
-            >
-              <Trans>播放音质</Trans>
-            </p>
-            {PLAY_QUALITY_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => handleQualityChange(option.value)}
-                className={cn(
-                  'flex w-full items-center justify-between rounded-[6px] px-2 py-1.5 text-left text-[12px] transition-colors',
-                  playLevel === option.value
-                    ? showNowPlaying
-                      ? 'bg-white/12 text-white'
-                      : 'bg-accent/10 text-accent'
-                    : showNowPlaying
-                      ? 'text-white/65 hover:bg-white/8'
-                      : 'text-black/65 hover:bg-black/5',
-                )}
-              >
-                <span>{i18n._(option.label)}</span>
-                {playLevel === option.value ? <Check className="h-3.5 w-3.5" /> : null}
-              </button>
-            ))}
-            <p
-              className={cn(
-                'px-2 pb-1 pt-1 text-[11px] leading-relaxed',
-                showNowPlaying ? 'text-white/35' : 'text-black/30',
-              )}
-            >
-              <Trans>部分高品质音源需要对应会员权益；已缓存歌曲按设置中的缓存品质播放。</Trans>
-            </p>
-          </PlayerMenuContent>
-        </Popover>
-
         <Popover>
           <PopoverTrigger asChild>
             <button
@@ -1483,25 +1389,7 @@ export function PlayerBar() {
               )}
             </button>
           </PopoverTrigger>
-          {showNowPlaying ? (
-            <PlayerMenuContent
-              immersive
-              tint={playerMenuTint}
-              align="center"
-              className="w-[52px]"
-            >
-              <div className="flex flex-col items-center gap-2 py-2">
-                <VolumeSlider
-                  value={videoActive ? videoVolume : volume}
-                  onChange={videoActive ? setVideoVolume : setVolume}
-                />
-                <span className="text-[11px] tabular-nums text-white/45">
-                  {volume}
-                </span>
-              </div>
-            </PlayerMenuContent>
-          ) : (
-            <PopoverContent
+          <PopoverContent
               side="top"
               align="center"
               sideOffset={10}
@@ -1518,10 +1406,7 @@ export function PlayerBar() {
                 </span>
               </div>
             </PopoverContent>
-          )}
         </Popover>
-
-        <SourcePicker tint={playerMenuTint} />
 
         <PlaylistPicker
           song={currentSong}
@@ -1532,7 +1417,7 @@ export function PlayerBar() {
           )}
         />
 
-        <Popover>
+        <Popover open={moreOpen} onOpenChange={setMoreOpen}>
           <PopoverTrigger asChild>
             <button
               type="button"
@@ -1543,155 +1428,58 @@ export function PlayerBar() {
               <Ellipsis className="h-4 w-4" />
             </button>
           </PopoverTrigger>
-          <PlayerMenuContent
-            immersive={showNowPlaying}
-            tint={playerMenuTint}
-            className="max-h-[min(70vh,460px)] w-[min(236px,calc(100vw-24px))] overflow-y-auto"
-          >
-            <p
-              className={cn(
-                'px-2 py-1 text-[11px]',
-                showNowPlaying ? 'text-white/45' : 'text-black/35',
-              )}
-            >
-              <Trans>播放选项</Trans>
-            </p>
-
-            {hasTranslation ? (
-              <div className="px-2 pb-1.5 pt-1">
-                <p
-                  className={cn(
-                    'mb-1 flex items-center gap-1.5 text-[11px]',
-                    showNowPlaying ? 'text-white/50' : 'text-black/40',
-                  )}
-                >
-                  <Languages className="h-3.5 w-3.5" />
-                  <Trans>歌词显示</Trans>
-                </p>
-                <div
-                  className={cn(
-                    'space-y-0.5 rounded-[8px] p-0.5',
-                    showNowPlaying ? 'bg-white/5' : 'bg-black/4',
-                  )}
-                >
-                  {LYRIC_DISPLAY_OPTIONS.map((option) => {
-                    const active = lyricDisplayMode === option.value
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        aria-pressed={active}
-                        onClick={() => setLyricDisplayMode(option.value)}
-                        className={cn(
-                          'flex w-full items-center justify-between gap-2 rounded-[6px] px-2 py-1.5 text-left text-[11px] transition-colors',
-                          active
-                            ? showNowPlaying
-                              ? 'bg-white/14 text-white shadow-sm'
-                              : 'bg-white text-accent shadow-sm dark:bg-white/15 dark:text-white'
-                            : showNowPlaying
-                              ? 'text-white/60 hover:bg-white/8 hover:text-white/85'
-                              : 'text-black/55 hover:text-black/75 dark:text-white/50 dark:hover:text-white/80',
-                        )}
-                      >
-                        <span>{i18n._(option.label)}</span>
-                        {active ? <Check className="h-3 w-3 shrink-0" /> : null}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            ) : null}
-
-            <div className="flex items-center justify-between gap-3 px-2 pb-1.5 pt-2">
-              <div>
-                <p
-                  className={cn(
-                    'text-[11.5px] font-medium',
-                    showNowPlaying
-                      ? 'text-white/80'
-                      : 'text-black/70 dark:text-white/80',
-                  )}
-                >
-                  <Trans>逐字播放</Trans>
-                </p>
-                <p
-                  className={cn(
-                    'mt-0.5 text-[10px] leading-relaxed',
-                    showNowPlaying
-                      ? 'text-white/40'
-                      : 'text-black/35 dark:text-white/40',
-                  )}
-                >
-                  <Trans>关闭后只高亮整行，不做逐字动画</Trans>
-                </p>
-              </div>
-              <ToggleSwitch
-                checked={wordByWordLyrics}
-                onChange={setWordByWordLyrics}
-                ariaLabel={i18n._(msg`逐字播放`)}
-              />
-            </div>
-
-            {desktopShell ? (
-              <>
-                <button
-                  type="button"
-                  onClick={handleToggleDesktopLyrics}
-                  className={cn(
-                    'flex w-full items-center gap-2 rounded-[7px] px-2 py-1.5 text-left text-[12px] transition-colors',
-                    showNowPlaying
-                      ? 'text-white/65 hover:bg-white/8'
-                      : 'text-black/65 hover:bg-black/5',
-                  )}
-                >
-                  <Subtitles className="h-4 w-4" />
-                  <span className="flex-1">
-                    <Trans>桌面歌词</Trans>
-                  </span>
-                  <span
-                    className={cn(
-                      'text-[10.5px]',
-                      lyricsWindowOpen
-                        ? 'text-accent'
-                        : showNowPlaying
-                          ? 'text-white/35'
-                          : 'text-black/30',
-                    )}
+          <MorePlaybackOptions
+            immersive={false}
+            flat
+            submenuSide="left"
+            onClose={() => setMoreOpen(false)}
+            footer={
+              desktopShell ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleToggleDesktopLyrics}
+                    className="flex w-full items-center gap-2 rounded-[7px] px-2 py-1.5 text-left text-[12px] text-black/65 transition-colors hover:bg-black/5"
                   >
-                    {lyricsWindowOpen ? i18n._(msg`已开启`) : i18n._(msg`已关闭`)}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleToggleMiniPlayer}
-                  className={cn(
-                    'flex w-full items-center gap-2 rounded-[7px] px-2 py-1.5 text-left text-[12px] transition-colors',
-                    showNowPlaying
-                      ? 'text-white/65 hover:bg-white/8'
-                      : 'text-black/65 hover:bg-black/5',
-                  )}
-                >
-                  <PictureInPicture2 className="h-4 w-4" />
-                  <span className="flex-1">
-                    <Trans>迷你播放器</Trans>
-                  </span>
-                  <span
-                    className={cn(
-                      'text-[10.5px]',
-                      miniWindowOpen
-                        ? 'text-accent'
-                        : showNowPlaying
-                          ? 'text-white/35'
-                          : 'text-black/30',
-                    )}
+                    <Subtitles className="h-4 w-4" />
+                    <span className="flex-1">
+                      <Trans>桌面歌词</Trans>
+                    </span>
+                    <span
+                      className={cn(
+                        'text-[10.5px]',
+                        lyricsWindowOpen ? 'text-accent' : 'text-black/30',
+                      )}
+                    >
+                      {lyricsWindowOpen
+                        ? i18n._(msg`已开启`)
+                        : i18n._(msg`已关闭`)}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleToggleMiniPlayer}
+                    className="flex w-full items-center gap-2 rounded-[7px] px-2 py-1.5 text-left text-[12px] text-black/65 transition-colors hover:bg-black/5"
                   >
-                    {miniWindowOpen ? i18n._(msg`已开启`) : i18n._(msg`已关闭`)}
-                  </span>
-                </button>
-              </>
-            ) : null}
-
-          </PlayerMenuContent>
+                    <PictureInPicture2 className="h-4 w-4" />
+                    <span className="flex-1">
+                      <Trans>迷你播放器</Trans>
+                    </span>
+                    <span
+                      className={cn(
+                        'text-[10.5px]',
+                        miniWindowOpen ? 'text-accent' : 'text-black/30',
+                      )}
+                    >
+                      {miniWindowOpen
+                        ? i18n._(msg`已开启`)
+                        : i18n._(msg`已关闭`)}
+                    </span>
+                  </button>
+                </>
+              ) : undefined
+            }
+          />
         </Popover>
 
         {/* {!showNowPlaying ? (

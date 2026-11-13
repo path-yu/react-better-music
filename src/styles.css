@@ -753,6 +753,14 @@ html.desktop .app-window {
   border-top: 1px solid var(--app-border);
 }
 
+/* The external bar stays mounted and untouched behind NowPlaying. Do not hide
+   it with `visibility` here: in fade mode that made it vanish on the first
+   frame while the overlay was still transparent, which read as a flash. The
+   z-85 overlay now fades over it naturally; only hit-testing is disabled. */
+.app-window:has(.nowplaying-overlay.np-open) > .player-glass {
+  pointer-events: none;
+}
+
 .pushbar-glass {
   background: var(--app-glass);
   backdrop-filter: saturate(180%) blur(20px);
@@ -1185,6 +1193,16 @@ html.desktop .app-window {
   transition: none;
 }
 
+/* Once the page is fully closed it must not animate while the user changes the
+   transition preference. Without this, switching slide-up↔fade changed the
+   closed geometry/opacity and briefly replayed a page animation over Settings. */
+.nowplaying-overlay.np-closed-hidden {
+  opacity: 0 !important;
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+}
+
 .np-transition-fade.np-open,
 .np-transition-scale.np-open {
   opacity: 1;
@@ -1210,6 +1228,59 @@ html.desktop .app-window {
 
 .np-transition-slide-up.np-closed {
   transform: translateY(100%);
+}
+
+/* Explicit entrance animations. Unlike transitions, these always start from
+   the selected mode's keyframes, even directly after changing the setting. */
+.np-enter-fade {
+  animation: np-overlay-fade 0.24s ease-out both;
+}
+
+.np-enter-slide-up {
+  animation: np-overlay-slide-up 0.36s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform;
+}
+
+.np-enter-scale {
+  animation: np-overlay-scale 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
+}
+
+@keyframes np-overlay-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes np-overlay-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes np-overlay-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.965);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .np-enter-fade,
+  .np-enter-slide-up,
+  .np-enter-scale {
+    animation: none;
+  }
 }
 
 /* CSS animations (not transitions) drive the exit so it still starts when the

@@ -196,6 +196,13 @@ export function NowPlaying() {
     // state update re-renders the whole lyrics/artwork tree and can block the
     // first frames, which previously made the close look instantaneous.
     exitingRef.current = true
+    // A filled entrance animation would otherwise keep overriding the inline
+    // exit transition (animations outrank transitions in the cascade).
+    overlay.classList.remove(
+      'np-enter-fade',
+      'np-enter-slide-up',
+      'np-enter-scale',
+    )
     const easing = 'cubic-bezier(0.4, 0, 1, 1)'
     overlay.style.transition =
       nowPlayingTransition === 'fade'
@@ -254,16 +261,21 @@ export function NowPlaying() {
   }, [])
 
   useLayoutEffect(() => {
-    if (!show) return
-    exitCleanupRef.current?.()
-    exitCleanupRef.current = null
-    exitingRef.current = false
+    if (show) {
+      exitCleanupRef.current?.()
+      exitCleanupRef.current = null
+      exitingRef.current = false
+    }
     const overlay = overlayRef.current
     if (!overlay) return
+    // The close animation is written imperatively so it can start immediately.
+    // Always clear those inline styles once the page is closed (and whenever
+    // the transition mode changes), otherwise the next open/close would reuse
+    // the previous mode's transform/transition for one cycle.
     overlay.style.transition = ''
     overlay.style.transform = ''
     overlay.style.opacity = ''
-  }, [show])
+  }, [show, nowPlayingTransition])
 
   const rawMvId = currentSong?.mv ?? currentSong?.mvid
   // `mv: 0` is a valid "no MV" marker, not a nullish value.
@@ -705,10 +717,16 @@ export function NowPlaying() {
       ref={overlayRef}
       className={cn(
         'nowplaying-overlay dark',
-        // Symmetric enter/exit transitions: the open state is the resting
-        // geometry and the closed state is the off-screen/faded target.
+        // The closed geometry/fade lives in the transition classes; opening
+        // uses an explicit keyframe animation so a newly selected mode cannot
+        // inherit the previous mode's computed transform/opacity for a cycle.
         `np-transition-${nowPlayingTransition}`,
-        show ? 'np-open' : 'np-closed pointer-events-none',
+        show
+          ? 'np-open'
+          : 'np-closed np-closed-hidden pointer-events-none',
+        show &&
+          nowPlayingTransition !== 'none' &&
+          `np-enter-${nowPlayingTransition}`,
       )}
       style={{ backgroundColor: 'var(--nowplaying-base, #0f0f12)' }}
       aria-hidden={!show}

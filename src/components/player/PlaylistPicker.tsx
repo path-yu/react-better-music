@@ -5,7 +5,6 @@ import { Trans } from '@lingui/react/macro'
 import { ListMusic, ListPlus, Loader2 } from 'lucide-react'
 import { Popover, PopoverTrigger } from '@pikoloo/darwin-ui'
 import { addSongToPlaylist } from '../../api'
-import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
 import { useLocalLibraryStore } from '../../store/localLibrary'
 import { PlayerMenuContent } from './PlayerMenuContent'
@@ -28,14 +27,15 @@ export function PlaylistPicker({
   song,
   tint,
   buttonClassName,
+  immersive = false,
 }: {
   song: Song
   tint?: string
   /** Optional sizing/hover wrapper when the picker sits in a button row. */
   buttonClassName?: string
+  immersive?: boolean
 }) {
   const { i18n } = useLingui()
-  const immersive = usePlayerStore((state) => state.showNowPlaying)
   const isLogin = useUserStore((state) => state.isLogin)
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)

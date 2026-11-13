@@ -15,10 +15,15 @@ import { cn } from '../../lib/format'
  * `/song/url/match?source=`; selecting one re-resolves the current song and
  * preserves its playback position.
  */
-export function SourcePicker({ tint }: { tint?: string }) {
+export function SourcePicker({
+  tint,
+  immersive = false,
+}: {
+  tint?: string
+  immersive?: boolean
+}) {
   const { i18n } = useLingui()
   const [open, setOpen] = useState(false)
-  const immersive = usePlayerStore((state) => state.showNowPlaying)
   const queue = usePlayerStore((state) => state.queue)
   const currentIndex = usePlayerStore((state) => state.currentIndex)
   const currentSong = queue[currentIndex]
