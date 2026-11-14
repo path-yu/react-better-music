@@ -23,6 +23,7 @@ import { seekAudio } from '../../lib/audio'
 import { usePlayerStore } from '../../store/player'
 import { useVideoPlaybackStore } from '../../store/videoPlayback'
 import { MorePlaybackOptions } from './MorePlaybackOptions'
+import { OutputDevicePicker } from './OutputDevicePicker'
 import { ProgressSlider } from './ProgressSlider'
 
 import {
@@ -246,6 +247,7 @@ export function NowPlayingTransport({
           immersive
           ariaLabel={i18n._(msg`音量`)}
         />
+        <OutputDevicePicker />
       </div>
 
     </div>

@@ -41,6 +41,8 @@ import { useLocalLibraryStore } from '../../store/localLibrary'
 import { useVideoPlaybackStore } from '../../store/videoPlayback'
 import { cn, formatArtists, formatDuration } from '../../lib/format'
 import { usePlayerMenuTint } from '../../lib/menuSurface'
+import { applyAudioOutputDevice } from '../../lib/audioOutput'
+import { useSettingsStore } from '../../store/settings'
 import { getAudio, registerAudio, seekAudio } from '../../lib/audio'
 import {
   attachAudioAnalyser,
@@ -163,6 +165,13 @@ export function PlayerBar() {
 
 
   const [moreOpen, setMoreOpen] = useState(false)
+  const audioOutputId = useSettingsStore((state) => state.audioOutputId)
+
+  // Re-apply the persisted sink after a restart and whenever the user picks a
+  // different output device.
+  useEffect(() => {
+    void applyAudioOutputDevice(audioOutputId)
+  }, [audioOutputId])
   // Real duration reported by the media element; trial clips are shorter than
   // the catalogue duration in song.dt.
   const [mediaDuration, setMediaDuration] = useState(0)
