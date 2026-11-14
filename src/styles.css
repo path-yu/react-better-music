@@ -1054,6 +1054,37 @@ html.desktop .app-window {
   animation: fade-up 0.4s ease both;
 }
 
+@keyframes queue-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes queue-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.queue-backdrop {
+  animation: queue-backdrop-in 0.24s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .queue-panel-immersive,
+  .queue-backdrop {
+    animation: none;
+  }
+}
+
 @keyframes marquee {
   0%,
   20% {
@@ -1430,8 +1461,10 @@ html.desktop .app-window {
    card. The two radial layers keep it tied to the theme accent while the dark
    base prevents the song table behind it from showing through as hairlines. */
 .queue-panel-immersive {
+  animation: queue-sheet-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
   /* Neutral charcoal, not a second brown wash. The cover colour stays a
-     restrained top-right accent; a soft vertical shade supplies the depth. */
+    restrained top-right accent; a soft vertical shade supplies the depth. */
   background:
     linear-gradient(
       180deg,

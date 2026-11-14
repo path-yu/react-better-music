@@ -103,7 +103,7 @@ export function QueuePanel() {
         type="button"
         aria-label={i18n._(msg`关闭播放列表`)}
         className={cn(
-          'absolute inset-0 backdrop-blur-[2px]',
+          'queue-backdrop absolute inset-0 backdrop-blur-[2px]',
           immersive ? 'bg-black/35' : 'bg-black/20',
         )}
         onClick={() => toggleQueue(false)}

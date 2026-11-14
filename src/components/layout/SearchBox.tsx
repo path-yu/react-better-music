@@ -269,7 +269,7 @@ export function SearchBox({
           }
         }}
         wrapperClassName="w-full"
-        className="app-search-input electrobun-webkit-app-region-no-drag h-8 rounded-full border border-[var(--app-border-strong)] bg-transparent pl-9 pr-9 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
+        className="app-search-input electrobun-webkit-app-region-no-drag rounded-full border border-[var(--app-border-strong)] bg-transparent pl-9 pr-9 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
       />
 
       {/* Own clear button: the slot provided by the input was not clickable and
