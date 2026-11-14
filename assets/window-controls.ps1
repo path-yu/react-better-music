@@ -2,10 +2,11 @@ param(
   [Parameter(Mandatory = $true)][string]$WindowTitle
 )
 
-# Electrobun's hiddenInset chrome removes WS_MINIMIZEBOX / WS_MAXIMIZEBOX on
-# Windows. The window still draws its own buttons, but the OS taskbar cannot
-# minimize it and BrowserWindow.minimize() becomes a no-op. Restore the two
-# style bits without changing the custom title bar.
+# Electrobun's frameless chrome removes WS_MINIMIZEBOX / WS_MAXIMIZEBOX and
+# WS_THICKFRAME on Windows. The window still draws its own buttons, but the OS
+# taskbar cannot minimize it, BrowserWindow.minimize() becomes a no-op, and the
+# non-client resize borders disappear (so edge cursors/drag-resize stop working).
+# Restore the style bits without changing the custom title bar.
 Add-Type @"
 using System;
 using System.Runtime.InteropServices;
@@ -32,6 +33,7 @@ for ($attempt = 0; $attempt -lt 20 -and $hwnd -eq [IntPtr]::Zero; $attempt += 1)
 if ($hwnd -eq [IntPtr]::Zero) { exit 0 }
 
 $GWL_STYLE = -16
+$WS_THICKFRAME = 0x00040000
 $WS_MAXIMIZEBOX = 0x00010000
 $WS_MINIMIZEBOX = 0x00020000
 $SWP_NOSIZE = 0x0001
@@ -41,7 +43,7 @@ $SWP_NOACTIVATE = 0x0010
 $SWP_FRAMECHANGED = 0x0020
 
 $style = [QimiaoWindowControls]::GetWindowLongPtrW($hwnd, $GWL_STYLE).ToInt64()
-$updated = $style -bor $WS_MINIMIZEBOX -bor $WS_MAXIMIZEBOX
+$updated = $style -bor $WS_MINIMIZEBOX -bor $WS_MAXIMIZEBOX -bor $WS_THICKFRAME
 if ($updated -ne $style) {
   [void][QimiaoWindowControls]::SetWindowLongPtrW($hwnd, $GWL_STYLE, [IntPtr]$updated)
   [void][QimiaoWindowControls]::SetWindowPos(
