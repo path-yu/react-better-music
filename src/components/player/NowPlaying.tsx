@@ -17,6 +17,8 @@ import {
   Disc3,
   GripVertical,
   Heart,
+  LayoutGrid,
+  List,
   ListMusic,
   Loader2,
   LocateFixed,
@@ -61,7 +63,8 @@ import { toast } from '../../lib/toast'
 import { cn, formatDuration, matchesKeyword } from '../../lib/format'
 import type { Song } from '../../types'
 
-type NowPlayingPanel = 'lyrics' | 'stage' | 'queue' | 'wall' | 'comments'
+type NowPlayingPanel = 'lyrics' | 'stage' | 'queue' | 'comments'
+type QueueView = 'list' | 'grid'
 
 function formatCommentCount(value: number, locale: string) {
   if (value < 1000) return String(value)
@@ -132,6 +135,7 @@ export function NowPlaying() {
   const queueScrollRef = useRef<HTMLDivElement>(null)
   const queueListRef = useRef<HTMLDivElement>(null)
   const [queueWidth, setQueueWidth] = useState(0)
+  const [queueView, setQueueView] = useState<QueueView>('list')
   const [queueSearch, setQueueSearch] = useState('')
   const [draggedQueueIndex, setDraggedQueueIndex] = useState<number | null>(
     null,
@@ -308,10 +312,10 @@ export function NowPlaying() {
     [artwork],
   )
 
-  // Measure the picker once before laying out rows. Only visible rows are
-  // mounted below, so a 1000+ song queue does not create thousands of covers.
+  // Measure the grid once before laying out rows. Only visible rows are mounted
+  // below, so a 1000+ song queue does not create thousands of covers.
   useEffect(() => {
-    if (panel !== 'wall') return
+    if (panel !== 'queue' || queueView !== 'grid') return
     const element = queueScrollRef.current
     if (!element) return
     const updateWidth = () => setQueueWidth(element.clientWidth)
@@ -319,7 +323,7 @@ export function NowPlaying() {
     const observer = new ResizeObserver(updateWidth)
     observer.observe(element)
     return () => observer.disconnect()
-  }, [panel])
+  }, [panel, queueView])
 
   const queueInnerWidth = Math.max(0, queueWidth - 16)
   const queueColumns = Math.max(
@@ -328,13 +332,6 @@ export function NowPlaying() {
   )
   const queueTileWidth = Math.min(SONG_TILE_MIN, queueInnerWidth)
   const queueRowHeight = Math.max(80, queueTileWidth + SONG_TILE_GAP)
-  const queueRowCount = Math.ceil(queue.length / queueColumns)
-  const queueVirtualizer = useVirtualizer({
-    count: panel === 'wall' && queueWidth > 0 ? queueRowCount : 0,
-    getScrollElement: () => queueScrollRef.current,
-    estimateSize: () => queueRowHeight,
-    overscan: 4,
-  })
   const queueEntries = useMemo(() => {
     const query = queueSearch.trim()
     return queue
@@ -350,17 +347,28 @@ export function NowPlaying() {
           ),
       )
   }, [queue, queueSearch])
+  const queueRowCount = Math.ceil(queueEntries.length / queueColumns)
+  const queueVirtualizer = useVirtualizer({
+    count:
+      panel === 'queue' && queueView === 'grid' && queueWidth > 0
+        ? queueRowCount
+        : 0,
+    getScrollElement: () => queueScrollRef.current,
+    estimateSize: () => queueRowHeight,
+    overscan: 4,
+  })
   const queueListVirtualizer = useVirtualizer({
-    count: panel === 'queue' ? queueEntries.length : 0,
+    count:
+      panel === 'queue' && queueView === 'list' ? queueEntries.length : 0,
     getScrollElement: () => queueListRef.current,
     estimateSize: () => 58,
     overscan: 8,
   })
   const measureQueue = queueVirtualizer.measure
   useEffect(() => {
-    if (panel !== 'wall') return
+    if (panel !== 'queue' || queueView !== 'grid') return
     measureQueue()
-  }, [panel, queueColumns, queueRowHeight, measureQueue])
+  }, [panel, queueView, queueColumns, queueRowHeight, measureQueue])
 
 
 
@@ -1004,7 +1012,7 @@ export function NowPlaying() {
               <div
                 className="np-tabs"
                 role="tablist"
-                aria-label={i18n._(msg`歌词、律动、待播清单、选歌与评论`)}
+                aria-label={i18n._(msg`歌词、律动、播放队列与评论`)}
               >
                 <button
                   type="button"
@@ -1031,16 +1039,7 @@ export function NowPlaying() {
                   onClick={() => setPanel('queue')}
                   className={cn('np-tab', panel === 'queue' && 'is-active')}
                 >
-                  <Trans>待播清单</Trans>
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={panel === 'wall'}
-                  onClick={() => setPanel('wall')}
-                  className={cn('np-tab', panel === 'wall' && 'is-active')}
-                >
-                  <Trans>选歌</Trans>
+                  <Trans>播放队列</Trans>
                 </button>
                 <button
                   type="button"
@@ -1106,6 +1105,7 @@ export function NowPlaying() {
                         onChange={(event) => {
                           setQueueSearch(event.target.value)
                           queueListRef.current?.scrollTo({ top: 0 })
+                          queueScrollRef.current?.scrollTo({ top: 0 })
                         }}
                         placeholder={i18n._(msg`搜索待播歌曲`)}
                         aria-label={i18n._(msg`搜索待播歌曲`)}
@@ -1117,6 +1117,7 @@ export function NowPlaying() {
                           onClick={() => {
                             setQueueSearch('')
                             queueListRef.current?.scrollTo({ top: 0 })
+                            queueScrollRef.current?.scrollTo({ top: 0 })
                           }}
                           aria-label={i18n._(msg`清除搜索`)}
                           className="pressable absolute right-1.5 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full text-white/40 hover:bg-white/10 hover:text-white"
@@ -1125,8 +1126,46 @@ export function NowPlaying() {
                         </button>
                       ) : null}
                     </div>
+                    <div
+                      role="group"
+                      aria-label={i18n._(msg`队列视图`)}
+                      className="flex shrink-0 items-center rounded-full bg-white/8 p-0.5"
+                    >
+                      <button
+                        type="button"
+                        aria-label={i18n._(msg`列表视图`)}
+                        title={i18n._(msg`列表视图`)}
+                        aria-pressed={queueView === 'list'}
+                        onClick={() => setQueueView('list')}
+                        className={cn(
+                          'flex h-7 w-7 items-center justify-center rounded-full transition-colors',
+                          queueView === 'list'
+                            ? 'bg-white/18 text-white'
+                            : 'text-white/45 hover:bg-white/10 hover:text-white/80',
+                        )}
+                      >
+                        <List className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={i18n._(msg`网格视图`)}
+                        title={i18n._(msg`网格视图`)}
+                        aria-pressed={queueView === 'grid'}
+                        onClick={() => setQueueView('grid')}
+                        className={cn(
+                          'flex h-7 w-7 items-center justify-center rounded-full transition-colors',
+                          queueView === 'grid'
+                            ? 'bg-white/18 text-white'
+                            : 'text-white/45 hover:bg-white/10 hover:text-white/80',
+                        )}
+                      >
+                        <LayoutGrid className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
 
+                  {queueView === 'list' ? (
+                    <>
                   <div
                     ref={queueListRef}
                     className="min-h-0 flex-1 overflow-y-auto px-2 pb-16 pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -1364,78 +1403,96 @@ export function NowPlaying() {
                       <LocateFixed className="h-3.5 w-3.5" strokeWidth={1.8} />
                     </button>
                   ) : null}
-                </div>
-              ) : panel === 'wall' ? (
-                <div
-                  ref={queueScrollRef}
-                  className="h-[min(72vh,620px)] min-h-[360px] overflow-y-auto px-2 pb-8 pt-2 md:h-full [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-                >
-                  {queue.length ? (
+                    </>
+                  ) : (
                     <div
-                      className="relative w-full"
-                      style={{ height: `${queueVirtualizer.getTotalSize()}px` }}
+                      ref={queueScrollRef}
+                      className="min-h-0 flex-1 overflow-y-auto px-2 pb-8 pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                     >
-                      {queueVirtualizer.getVirtualItems().map((virtualRow) => {
-                        const start = virtualRow.index * queueColumns
-                        const rowSongs = queue.slice(start, start + queueColumns)
-                        return (
+                      {queue.length ? (
+                        queueEntries.length ? (
                           <div
-                            key={virtualRow.key}
-                            className="np-song-row"
-                            style={{
-                              position: 'absolute',
-                              top: 0,
-                              left: 0,
-                              right: 0,
-                              height: `${queueRowHeight}px`,
-                              transform: `translateY(${virtualRow.start}px)`,
-                              gridTemplateColumns: `repeat(${queueColumns}, ${queueTileWidth}px)`,
-                            }}
+                            className="relative w-full"
+                            style={{ height: `${queueVirtualizer.getTotalSize()}px` }}
                           >
-                            {rowSongs.map((song, offset) => {
-                              const index = start + offset
-                              const active = index === currentIndex
+                            {queueVirtualizer.getVirtualItems().map((virtualRow) => {
+                              const start = virtualRow.index * queueColumns
+                              const rowEntries = queueEntries.slice(
+                                start,
+                                start + queueColumns,
+                              )
                               return (
-                                <button
-                                  key={`${song.id}-${index}`}
-                                  type="button"
-                                  title={song.name}
-                                  aria-current={active ? 'true' : undefined}
-                                  onClick={() => void playAt(index)}
-                                  className={cn(
-                                    'np-song-tile group',
-                                    active && 'is-current',
-                                  )}
+                                <div
+                                  key={virtualRow.key}
+                                  className="np-song-row"
+                                  style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    height: `${queueRowHeight}px`,
+                                    transform: `translateY(${virtualRow.start}px)`,
+                                    gridTemplateColumns: `repeat(${queueColumns}, ${queueTileWidth}px)`,
+                                  }}
                                 >
-                                  <span className="np-song-tile__cover">
-                                    <ImageWithFallback
-                                      src={song.al.picUrl}
-                                      alt={song.name}
-                                      rounded="rounded-[12px]"
-                                      className="h-full w-full"
-                                      resize="240y240"
-                                    />
-                                    <span className="np-song-tile__caption">
-                                      <span className="np-song-tile__name">
-                                        {song.name}
-                                      </span>
-                                      <span className="np-song-tile__artist">
-                                        {song.ar
-                                          .map((artist) => artist.name)
-                                          .join(' / ')}
-                                      </span>
-                                    </span>
-                                  </span>
-                                </button>
+                                  {rowEntries.map(({ song, index }) => {
+                                    const active = index === currentIndex
+                                    return (
+                                      <button
+                                        key={`${song.id}-${index}`}
+                                        type="button"
+                                        title={song.name}
+                                        aria-current={active ? 'true' : undefined}
+                                        onClick={() => void playAt(index)}
+                                        onContextMenu={(event) => {
+                                          event.preventDefault()
+                                          setQueueContext({
+                                            song,
+                                            x: event.clientX,
+                                            y: event.clientY,
+                                          })
+                                        }}
+                                        className={cn(
+                                          'np-song-tile group',
+                                          active && 'is-current',
+                                        )}
+                                      >
+                                        <span className="np-song-tile__cover">
+                                          <ImageWithFallback
+                                            src={song.al.picUrl}
+                                            alt={song.name}
+                                            rounded="rounded-[12px]"
+                                            className="h-full w-full"
+                                            resize="240y240"
+                                          />
+                                          <span className="np-song-tile__caption">
+                                            <span className="np-song-tile__name">
+                                              {song.name}
+                                            </span>
+                                            <span className="np-song-tile__artist">
+                                              {song.ar
+                                                .map((artist) => artist.name)
+                                                .join(' / ')}
+                                            </span>
+                                          </span>
+                                        </span>
+                                      </button>
+                                    )
+                                  })}
+                                </div>
                               )
                             })}
                           </div>
+                        ) : (
+                          <div className="flex h-full min-h-[180px] items-center justify-center text-[12px] text-white/45">
+                            <Trans>没有匹配的歌曲</Trans>
+                          </div>
                         )
-                      })}
-                    </div>
-                  ) : (
-                    <div className="flex h-full min-h-[180px] items-center justify-center text-[12px] text-white/45">
-                      <Trans>播放队列为空</Trans>
+                      ) : (
+                        <div className="flex h-full min-h-[180px] items-center justify-center text-[12px] text-white/45">
+                          <Trans>播放队列为空</Trans>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

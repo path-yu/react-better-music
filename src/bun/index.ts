@@ -297,16 +297,15 @@ function createMainWindow() {
     title: '声屿',
     url: mainViewUrl(),
     // The renderer draws its own title bar (drag region + window buttons).
-    // On Windows/Linux `hidden` is required so the native caption hit area
-    // cannot sit invisibly over the toolbar; macOS keeps its inset traffic
-    // lights and reserves space for them in the renderer.
-    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
+    // `hiddenInset` keeps the native resize hit-test without a caption, so the
+    // client area can stay flush with the window and still expose edge resizing.
+    titleBarStyle: 'hiddenInset',
     // Created hidden so the first visible frame is the inline boot shell from
     // index.html, never the white native WebView surface.
     hidden: true,
     frame: {
-      width: 1440,
-      height: 900,
+      width: 1350,
+      height: 850,
       x: 80,
       y: 60,
     },

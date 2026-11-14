@@ -2434,10 +2434,13 @@ html.desktop .app-window {
   filter: none;
 }
 
-/* Our lyrics column is narrower than Apple's 40vw stage, so the type is fluid
-   instead of following their 28/38/50px viewport ladder. */
+/* Our lyrics column is narrower than Apple's 40vw stage. Keep the desktop
+   reading size stable while resizing the window: below ~1410px the 24px floor
+   takes over, so shrinking the window no longer makes every lyric smaller. */
 .lyric-line__text {
-  font-size: clamp(18px, 1.7vw, 28px);
+  font-size: calc(
+    clamp(24px, 1.7vw, 28px) * var(--lyric-font-scale, 1)
+  );
   line-height: 1.34;
   letter-spacing: -0.01em;
 }

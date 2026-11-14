@@ -27,6 +27,7 @@ export const PLAY_QUALITY_OPTIONS: Array<{
 export const CACHE_MAX_MB_OPTIONS = [100, 200, 300, 500, 1000, 2048]
 
 export type LyricDisplayMode = 'both' | 'original' | 'translation'
+export type LyricFontSize = 'small' | 'medium' | 'large'
 export type NowPlayingMode = 'audio' | 'video'
 export type LyricStageStyle = 'flow' | 'partita' | 'tilt'
 export type NowPlayingTransition = 'fade' | 'slide-up' | 'scale' | 'none'
@@ -59,6 +60,16 @@ export const LYRIC_DISPLAY_OPTIONS: Array<{
   { value: 'translation', label: msg`仅译文` },
 ]
 
+export const LYRIC_FONT_SIZE_OPTIONS: Array<{
+  value: LyricFontSize
+  label: MessageDescriptor
+  scale: number
+}> = [
+  { value: 'small', label: msg`小`, scale: 0.9 },
+  { value: 'medium', label: msg`标准`, scale: 1 },
+  { value: 'large', label: msg`大`, scale: 1.15 },
+]
+
 interface SettingsState {
   cacheBitrate: number
   /** Maximum size of the local audio cache, in megabytes. */
@@ -66,6 +77,8 @@ interface SettingsState {
   playLevel: PlayLevel
   /** How lyric lines and their translations are shown. */
   lyricDisplayMode: LyricDisplayMode
+  /** Reading size of desktop lyric lines. */
+  lyricFontSize: LyricFontSize
   /** Karaoke word-by-word animation; off falls back to whole-line highlighting. */
   wordByWordLyrics: boolean
   /** WebGL fog backdrop on the immersive player. */
@@ -92,6 +105,7 @@ interface SettingsState {
   setCacheMaxMb: (value: number) => void
   setPlayLevel: (value: PlayLevel) => void
   setLyricDisplayMode: (value: LyricDisplayMode) => void
+  setLyricFontSize: (value: LyricFontSize) => void
   setWordByWordLyrics: (value: boolean) => void
   setFogBackdrop: (value: boolean) => void
   setLyricStageStyle: (value: LyricStageStyle) => void
@@ -112,6 +126,7 @@ export const useSettingsStore = create<SettingsState>()(
       cacheMaxMb: 200,
       playLevel: 'exhigh',
       lyricDisplayMode: 'both',
+      lyricFontSize: 'medium',
       wordByWordLyrics: true,
       // CSS ambient gradients are cheaper and do not keep a WebGL context alive.
       // Users can opt into the WebGL fog in Settings.
@@ -130,6 +145,7 @@ export const useSettingsStore = create<SettingsState>()(
       setCacheMaxMb: (cacheMaxMb) => set({ cacheMaxMb }),
       setPlayLevel: (playLevel) => set({ playLevel }),
       setLyricDisplayMode: (lyricDisplayMode) => set({ lyricDisplayMode }),
+      setLyricFontSize: (lyricFontSize) => set({ lyricFontSize }),
       setWordByWordLyrics: (wordByWordLyrics) => set({ wordByWordLyrics }),
       setFogBackdrop: (fogBackdrop) => set({ fogBackdrop }),
       setLyricStageStyle: (lyricStageStyle) => set({ lyricStageStyle }),

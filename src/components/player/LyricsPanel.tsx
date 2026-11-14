@@ -1,7 +1,10 @@
 import { memo, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Trans } from '@lingui/react/macro'
 import type { LyricLine, LyricWord } from '../../lib/lyric'
-import { useSettingsStore } from '../../store/settings'
+import {
+  LYRIC_FONT_SIZE_OPTIONS,
+  useSettingsStore,
+} from '../../store/settings'
 import { getAudio } from '../../lib/audio'
 import { cn } from '../../lib/format'
 
@@ -148,7 +151,11 @@ export const LyricsPanel = memo(function LyricsPanel({
   const lineRefs = useRef<Record<number, HTMLElement | null>>({})
   const lastActiveRef = useRef(-1)
   const displayMode = useSettingsStore((state) => state.lyricDisplayMode)
+  const lyricFontSize = useSettingsStore((state) => state.lyricFontSize)
   const wordByWordLyrics = useSettingsStore((state) => state.wordByWordLyrics)
+  const fontScale =
+    LYRIC_FONT_SIZE_OPTIONS.find((option) => option.value === lyricFontSize)
+      ?.scale ?? 1
 
   useEffect(() => {
     const container = containerRef.current
@@ -180,6 +187,7 @@ export const LyricsPanel = memo(function LyricsPanel({
   return (
     <div
       ref={containerRef}
+      style={{ '--lyric-font-scale': fontScale } as CSSProperties}
       className={cn(
         'lyrics-viewport relative h-full overflow-y-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
         // Mobile keeps a single outer scroll container for the whole page.

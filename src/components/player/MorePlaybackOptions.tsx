@@ -12,6 +12,7 @@ import {
   PictureInPicture2,
   Radio,
   Subtitles,
+  Type,
 } from 'lucide-react'
 import { MenuSurface } from '../common/MenuSurface'
 import { ToggleSwitch } from '../common/ToggleSwitch'
@@ -30,6 +31,7 @@ import {
 import { usePlayerStore } from '../../store/player'
 import {
   LYRIC_DISPLAY_OPTIONS,
+  LYRIC_FONT_SIZE_OPTIONS,
   PLAY_QUALITY_OPTIONS,
   useSettingsStore,
 } from '../../store/settings'
@@ -68,9 +70,9 @@ export function MorePlaybackOptions({
   const desktopShell = isDesktopShell()
   const [lyricsWindowOpen, setLyricsWindowOpen] = useState(false)
   const [miniWindowOpen, setMiniWindowOpen] = useState(false)
-  const [submenu, setSubmenu] = useState<'quality' | 'source' | 'lyrics' | null>(
-    null,
-  )
+  const [submenu, setSubmenu] = useState<
+    'quality' | 'source' | 'lyrics' | 'font' | null
+  >(null)
   const [placement, setPlacement] = useState<{
     side: 'top' | 'bottom'
     maxHeight: number
@@ -95,6 +97,8 @@ export function MorePlaybackOptions({
   const setLyricDisplayMode = useSettingsStore(
     (state) => state.setLyricDisplayMode,
   )
+  const lyricFontSize = useSettingsStore((state) => state.lyricFontSize)
+  const setLyricFontSize = useSettingsStore((state) => state.setLyricFontSize)
   const wordByWordLyrics = useSettingsStore((state) => state.wordByWordLyrics)
   const setWordByWordLyrics = useSettingsStore(
     (state) => state.setWordByWordLyrics,
@@ -148,9 +152,15 @@ export function MorePlaybackOptions({
   const lyricLabel = lyricOption
     ? i18n._(lyricOption.label)
     : i18n._(msg`默认`)
+  const lyricFontSizeOption = LYRIC_FONT_SIZE_OPTIONS.find(
+    (option) => option.value === lyricFontSize,
+  )
+  const lyricFontSizeLabel = lyricFontSizeOption
+    ? i18n._(lyricFontSizeOption.label)
+    : i18n._(msg`标准`)
 
   const openSubmenu = (
-    kind: 'quality' | 'source' | 'lyrics',
+    kind: 'quality' | 'source' | 'lyrics' | 'font',
     target: HTMLElement,
   ) => {
     const row = target.getBoundingClientRect()
@@ -582,6 +592,65 @@ export function MorePlaybackOptions({
           </div>
         )
       ) : null}
+
+      <div
+        className="relative"
+        onMouseEnter={(event) => openSubmenu('font', event.currentTarget)}
+        onMouseLeave={() => setSubmenu(null)}
+      >
+        <button
+          type="button"
+          onFocus={(event) =>
+            openSubmenu('font', event.currentTarget.parentElement!)
+          }
+          onClick={(event) =>
+            openSubmenu('font', event.currentTarget.parentElement!)
+          }
+          className={cn(
+            'flex w-full items-center justify-between rounded-[7px] px-2 py-1.5 text-left text-[11.5px] transition-colors',
+            rowClass,
+          )}
+        >
+          <span className="flex items-center gap-1.5">
+            <Type className={cn('h-3.5 w-3.5', iconClass)} />
+            <Trans>歌词字号</Trans>
+          </span>
+          <span className={cn('flex items-center gap-1', metaClass)}>
+            {lyricFontSizeLabel}
+            <ChevronRight className="h-3 w-3" />
+          </span>
+        </button>
+        {submenu === 'font' ? (
+          <MenuSurface
+            active={immersive}
+            tint={immersive ? tint : undefined}
+            className={cn(surfaceClass, submenuPosition, 'w-[150px]')}
+            style={placementStyle}
+          >
+            {LYRIC_FONT_SIZE_OPTIONS.map((option) => {
+              const active = lyricFontSize === option.value
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => {
+                    setLyricFontSize(option.value)
+                    onClose()
+                  }}
+                  className={cn(
+                    'flex w-full items-center justify-between rounded-[6px] px-2 py-1.5 text-left text-[11px] transition-colors',
+                    active ? activeClass : inactiveClass,
+                  )}
+                >
+                  <span>{i18n._(option.label)}</span>
+                  {active ? <Check className="h-3 w-3" /> : null}
+                </button>
+              )
+            })}
+          </MenuSurface>
+        ) : null}
+      </div>
         </>
       ) : null}
 
