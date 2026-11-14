@@ -5,6 +5,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
 } from 'react'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
@@ -51,6 +52,7 @@ import { seekAudio } from '../../lib/audio'
 import {
   FALLBACK_PALETTE,
   extractPalette,
+  hexToRgb,
   withAlpha,
   type Palette,
 } from '../../lib/color'
@@ -931,14 +933,19 @@ export function NowPlaying() {
             </div>
 
             <div className="relative mt-6 flex items-center justify-center">
-              <div className="now-disc relative">
-                {palette.colors[0] ? (
-                  <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute -inset-5 rounded-[28px] opacity-40 blur-2xl transition-colors duration-500"
-                    style={{ backgroundColor: palette.colors[0] }}
-                  />
-                ) : null}
+              <div
+                className="now-disc relative"
+                style={
+                  palette.colors[0]
+                    ? ({
+                        '--album-glow-rgb': (() => {
+                          const { r, g, b } = hexToRgb(palette.colors[0])
+                          return `${r} ${g} ${b}`
+                        })(),
+                      } as CSSProperties)
+                    : undefined
+                }
+              >
                 <button
                   type="button"
                   onClick={openAlbum}
