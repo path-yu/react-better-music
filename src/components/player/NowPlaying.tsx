@@ -887,8 +887,8 @@ export function NowPlaying() {
         {/* Desktop: the columns own their scrolling (lyrics/comments), so the
             page itself never scrolls and the wheel target stays predictable.
             Mobile: one single scroll container for the whole page. */}
-        <div className="grid flex-1 grid-cols-1 gap-4 px-6 pb-5 max-md:overflow-y-auto md:grid-cols-[minmax(220px,0.9fr)_minmax(250px,1.1fr)] md:overflow-hidden xl:gap-6 xl:px-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <div className="flex min-h-0 flex-col items-center justify-center">
+        <div className="grid flex-1 grid-cols-1 gap-4 px-6 pb-5 max-md:auto-rows-max max-md:content-start max-md:overflow-y-auto md:grid-cols-[minmax(220px,0.9fr)_minmax(250px,1.1fr)] md:overflow-hidden xl:gap-6 xl:px-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex min-h-0 flex-col items-center justify-center max-md:h-fit max-md:min-h-fit max-md:justify-start">
             <div className="max-w-[360px] text-center">
               <div className="flex min-w-0 items-center justify-center gap-1.5">
                 <h2 className="headline-lg np-track-heading min-w-0 truncate text-[24px]">{currentSong.name}</h2>

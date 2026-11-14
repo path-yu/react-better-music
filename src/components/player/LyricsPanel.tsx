@@ -166,12 +166,10 @@ export const LyricsPanel = memo(function LyricsPanel({
     const jump = Math.abs(activeIndex - lastActiveRef.current)
     lastActiveRef.current = activeIndex
     const behavior: ScrollBehavior = jump > 2 ? 'auto' : 'smooth'
-    // On mobile the viewport is not scrollable on purpose (the whole page is);
-    // keep the active line centred by scrolling its nearest ancestor instead.
-    if (container.scrollHeight <= container.clientHeight + 1) {
-      active.scrollIntoView({ block: 'center', inline: 'nearest', behavior })
-      return
-    }
+    // On mobile the viewport is not scrollable on purpose (the whole page is).
+    // Do not scroll the active line into view there: it yanks the whole detail
+    // page upward and hides the artwork/transport above the tabs.
+    if (container.scrollHeight <= container.clientHeight + 1) return
     const top = active.offsetTop - container.clientHeight / 2 + active.offsetHeight / 2
     container.scrollTo({ top: Math.max(0, top), behavior })
   }, [activeIndex])
@@ -196,7 +194,7 @@ export const LyricsPanel = memo(function LyricsPanel({
         className,
       )}
     >
-      <div className={compact ? 'py-16' : 'py-[38%]'}>
+      <div className={compact ? 'py-16' : 'py-8 md:py-[38%]'}>
         {lines.map((line, index) => {
           const active = index === activeIndex
           const away = activeIndex < 0 ? 0 : Math.abs(index - activeIndex)
