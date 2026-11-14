@@ -567,7 +567,7 @@ export function CommentSection({
                 variant="secondary"
                 size="sm"
                 loading={loadingMore}
-                className="rounded-full px-4 text-[11.5px]"
+                className="rounded-full px-4 text-[11.5px]  border-none"
                 onClick={() => void handleLoadMore()}
               >
                 <CornerDownRight className="mr-1.5 h-3 w-3" />

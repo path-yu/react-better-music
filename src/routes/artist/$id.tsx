@@ -1,12 +1,13 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { ChevronDown, Disc3, Music2, Video } from 'lucide-react'
+import { Disc3, Music2, Video } from 'lucide-react'
 import { Skeleton, Tabs, TabsContent, TabsList, TabsTrigger, Button } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../../components/common/ImageWithFallback'
 import { EmptyState } from '../../components/common/EmptyState'
+import { ExpandableDescription } from '../../components/common/ExpandableDescription'
 import { MvCard } from '../../components/cards/MvCard'
 import { PlayAllButton } from '../../components/songs/PlayAllButton'
 import { SongTable } from '../../components/songs/SongTable'
@@ -17,7 +18,7 @@ import {
   fetchArtistTopSongs,
   fetchSimilarArtists,
 } from '../../api'
-import { cn, formatDate, formatNumber } from '../../lib/format'
+import { formatDate, formatNumber } from '../../lib/format'
 import { useDocumentTitle } from '../../lib/title'
 import { toast } from '../../lib/toast'
 import type { ArtistAlbum, ArtistProfile, ArtistSummary, Mv, Song } from '../../types'
@@ -25,8 +26,6 @@ import type { ArtistAlbum, ArtistProfile, ArtistSummary, Mv, Song } from '../../
 export const Route = createFileRoute('/artist/$id')({
   component: ArtistPage,
 })
-
-const BIO_PREVIEW_HEIGHT = 75
 
 function ArtistPage() {
   const { i18n } = useLingui()
@@ -39,11 +38,8 @@ function ArtistPage() {
   const [similar, setSimilar] = useState<ArtistSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('songs')
-  const [bioExpanded, setBioExpanded] = useState(false)
-  const [bioHeight, setBioHeight] = useState(0)
   const [albumsLoadingMore, setAlbumsLoadingMore] = useState(false)
   const [albumsDone, setAlbumsDone] = useState(false)
-  const bioTextRef = useRef<HTMLParagraphElement>(null)
   useDocumentTitle(profile?.name ?? i18n._(msg`歌手`))
 
   useEffect(() => {
@@ -55,8 +51,6 @@ function ArtistPage() {
     setAlbums([])
     setMvs([])
     setSimilar([])
-    setBioExpanded(false)
-    setBioHeight(0)
     setAlbumsLoadingMore(false)
     setAlbumsDone(false)
 
@@ -93,16 +87,6 @@ function ArtistPage() {
       controller.abort()
     }
   }, [id])
-
-  useLayoutEffect(() => {
-    const element = bioTextRef.current
-    if (!element) return
-    const measure = () => setBioHeight(element.scrollHeight)
-    measure()
-    const observer = new ResizeObserver(measure)
-    observer.observe(element)
-    return () => observer.disconnect()
-  }, [profile?.briefDesc])
 
   if (loading) {
     return (
@@ -214,39 +198,10 @@ function ArtistPage() {
                 <p className="eyebrow text-left">
                   <Trans>歌手简介</Trans>
                 </p>
-                <div
-                  className="mt-1.5 overflow-hidden transition-[height] duration-300 ease-in-out motion-reduce:transition-none"
-                  style={{
-                    height: bioHeight
-                      ? bioHeight > BIO_PREVIEW_HEIGHT && !bioExpanded
-                        ? BIO_PREVIEW_HEIGHT
-                        : bioHeight
-                      : undefined,
-                  }}
-                >
-                  <p
-                    ref={bioTextRef}
-                    className="whitespace-pre-wrap text-left text-[11.5px] leading-relaxed text-black/40"
-                  >
-                    {profile.briefDesc}
-                  </p>
-                </div>
-                {bioHeight > BIO_PREVIEW_HEIGHT ? (
-                  <button
-                    type="button"
-                    aria-expanded={bioExpanded}
-                    onClick={() => setBioExpanded((value) => !value)}
-                    className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-accent transition-colors hover:text-accent-hover"
-                  >
-                    {bioExpanded ? <Trans>收起</Trans> : <Trans>展开全部</Trans>}
-                    <ChevronDown
-                      className={cn(
-                        'h-3 w-3 transition-transform duration-300',
-                        bioExpanded && 'rotate-180',
-                      )}
-                    />
-                  </button>
-                ) : null}
+                <ExpandableDescription
+                  text={profile.briefDesc}
+                  className="mt-1.5"
+                />
               </div>
             ) : null}
           </div>

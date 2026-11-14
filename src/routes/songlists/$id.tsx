@@ -24,6 +24,7 @@ import {
 } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../../components/common/ImageWithFallback'
 import { EmptyState } from '../../components/common/EmptyState'
+import { ExpandableDescription } from '../../components/common/ExpandableDescription'
 import { TAG_LABELS } from '../../lib/tagLabels'
 import { SongTable } from '../../components/songs/SongTable'
 import { PlayAllButton } from '../../components/songs/PlayAllButton'
@@ -41,12 +42,7 @@ import { useLocalLibraryStore } from '../../store/localLibrary'
 import { toast } from '../../lib/toast'
 import { invalidateApiCache } from '../../lib/http'
 import { useDocumentTitle } from '../../lib/title'
-import {
-  formatDate,
-  formatNumber,
-  matchesKeyword,
-  cn,
-} from '../../lib/format'
+import { formatDate, formatNumber, matchesKeyword } from '../../lib/format'
 import type { Playlist, Song } from '../../types'
 
 export const Route = createFileRoute('/songlists/$id')({
@@ -62,7 +58,6 @@ function PlaylistDetailPage() {
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('songs')
   const [keyword, setKeyword] = useState('')
-  const [descExpanded, setDescExpanded] = useState(false)
   const [subscribing, setSubscribing] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
   useDocumentTitle(detail?.name ?? i18n._(msg`歌单`))
@@ -402,25 +397,10 @@ function PlaylistDetailPage() {
           ) : null}
 
           {detail.description ? (
-            <div className="mt-2.5 max-w-[760px]">
-              <p
-                className={cn(
-                  'whitespace-pre-wrap text-[11.5px] leading-relaxed text-black/40',
-                  !descExpanded && 'line-clamp-2',
-                )}
-              >
-                {detail.description}
-              </p>
-              {detail.description.length > 120 ? (
-                <button
-                  type="button"
-                  className="mt-1 text-[11px] text-accent"
-                  onClick={() => setDescExpanded((value) => !value)}
-                >
-                  {descExpanded ? <Trans>收起</Trans> : <Trans>展开</Trans>}
-                </button>
-              ) : null}
-            </div>
+            <ExpandableDescription
+              text={detail.description}
+              className="mt-2.5 max-w-[760px]"
+            />
           ) : isOwner ? (
             <button
               type="button"

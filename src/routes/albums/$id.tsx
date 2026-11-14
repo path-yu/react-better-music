@@ -11,12 +11,13 @@ import {
 } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../../components/common/ImageWithFallback'
 import { EmptyState } from '../../components/common/EmptyState'
+import { ExpandableDescription } from '../../components/common/ExpandableDescription'
 import { ArtistLinks } from '../../components/common/ArtistLinks'
 import { SongTable } from '../../components/songs/SongTable'
 import { PlayAllButton } from '../../components/songs/PlayAllButton'
 import { fetchAlbumDetail } from '../../api'
 import type { AlbumDetail } from '../../types'
-import { cn, formatDate, matchesKeyword } from '../../lib/format'
+import { formatDate, matchesKeyword } from '../../lib/format'
 import { useDocumentTitle } from '../../lib/title'
 import { toast } from '../../lib/toast'
 
@@ -31,7 +32,6 @@ function AlbumDetailPage() {
   const [album, setAlbum] = useState<AlbumDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [keyword, setKeyword] = useState('')
-  const [descExpanded, setDescExpanded] = useState(false)
   useDocumentTitle(album?.name ?? i18n._(msg`专辑`))
 
   useEffect(() => {
@@ -39,7 +39,6 @@ function AlbumDetailPage() {
     setLoading(true)
     setAlbum(null)
     setKeyword('')
-    setDescExpanded(false)
 
     void fetchAlbumDetail(id)
       .then((detail) => {
@@ -153,25 +152,10 @@ function AlbumDetailPage() {
           </div>
 
           {description ? (
-            <div className="mt-2.5 max-w-[760px]">
-              <p
-                className={cn(
-                  'whitespace-pre-wrap text-[11.5px] leading-relaxed text-black/40',
-                  !descExpanded && 'line-clamp-2',
-                )}
-              >
-                {description}
-              </p>
-              {description.length > 120 ? (
-                <button
-                  type="button"
-                  className="mt-1 text-[11px] text-accent"
-                  onClick={() => setDescExpanded((value) => !value)}
-                >
-                  {descExpanded ? <Trans>收起</Trans> : <Trans>展开</Trans>}
-                </button>
-              ) : null}
-            </div>
+            <ExpandableDescription
+              text={description}
+              className="mt-2.5 max-w-[760px]"
+            />
           ) : null}
 
           <div className="mt-5 flex flex-wrap items-center gap-2">
