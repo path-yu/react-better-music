@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
@@ -6,6 +6,7 @@ import { Trans } from '@lingui/react/macro'
 import { Disc3, ListMusic, Search, Users } from 'lucide-react'
 import { Skeleton, Tabs, TabsContent, TabsList, TabsTrigger } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../components/common/ImageWithFallback'
+import { SearchBox } from '../components/layout/SearchBox'
 import { EmptyState } from '../components/common/EmptyState'
 import { Pager } from '../components/common/Pager'
 import { AlbumCard } from '../components/cards/AlbumCard'
@@ -15,12 +16,18 @@ import { UserCard } from '../components/user/UserCard'
 import { VideoCard } from '../components/video/VideoCard'
 import { searchAll } from '../api'
 import { formatNumber } from '../lib/format'
+import {
+  cacheSearchResult,
+  getCachedSearchResult,
+} from '../lib/searchCache'
 import { useDocumentTitle } from '../lib/title'
 import { toast } from '../lib/toast'
+import { useSearchStore } from '../store/search'
 import type {
   Album,
   ArtistSummary,
   Playlist,
+  SearchResult,
   Song,
   UserSummary,
   VideoItem,
@@ -78,6 +85,15 @@ function SearchPage() {
   // A failed request must not look like an empty result set.
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
+  const setLastSearch = useSearchStore((state) => state.setSearch)
+  const handleKeywordChange = useCallback(
+    (value: string) => setLastSearch(value, tab),
+    [setLastSearch, tab],
+  )
+
+  useEffect(() => {
+    setLastSearch(keyword, tab)
+  }, [keyword, tab, setLastSearch])
 
   useEffect(() => {
     setPage(1)
@@ -98,8 +114,44 @@ function SearchPage() {
     setFailed(false)
   }, [keyword])
 
+  const applyResult = useCallback(
+    (result: SearchResult) => {
+      if (tab === 'songs') {
+        setSongs(result.songs ?? [])
+        setSongTotal(result.songCount ?? 0)
+      } else if (tab === 'artists') {
+        setArtists(result.artists ?? [])
+        setArtistTotal(result.artistCount ?? 0)
+      } else if (tab === 'albums') {
+        setAlbums(result.albums ?? [])
+        setAlbumTotal(result.albumCount ?? 0)
+      } else if (tab === 'users') {
+        setUsers(result.users ?? [])
+        setUserTotal(result.userCount ?? 0)
+      } else if (tab === 'mvs') {
+        setMvs(result.mvs ?? [])
+        setMvTotal(result.mvCount ?? 0)
+      } else if (tab === 'videos') {
+        setVideos(result.videos ?? [])
+        setVideoTotal(result.videoCount ?? 0)
+      } else {
+        setPlaylists(result.playlists ?? [])
+        setPlaylistTotal(result.playlistCount ?? 0)
+      }
+    },
+    [tab],
+  )
+
   useEffect(() => {
     if (!keyword.trim()) return
+    const cacheKey = `${keyword}|${tab}|${page}`
+    const cached = getCachedSearchResult(cacheKey)
+    if (cached) {
+      setFailed(false)
+      setLoading(false)
+      applyResult(cached)
+      return
+    }
     const controller = new AbortController()
     setLoading(true)
     setFailed(false)
@@ -140,28 +192,8 @@ function SearchPage() {
     )
       .then((result) => {
         if (controller.signal.aborted) return
-        if (tab === 'songs') {
-          setSongs(result.songs ?? [])
-          setSongTotal(result.songCount ?? 0)
-        } else if (tab === 'artists') {
-          setArtists(result.artists ?? [])
-          setArtistTotal(result.artistCount ?? 0)
-        } else if (tab === 'albums') {
-          setAlbums(result.albums ?? [])
-          setAlbumTotal(result.albumCount ?? 0)
-        } else if (tab === 'users') {
-          setUsers(result.users ?? [])
-          setUserTotal(result.userCount ?? 0)
-        } else if (tab === 'mvs') {
-          setMvs(result.mvs ?? [])
-          setMvTotal(result.mvCount ?? 0)
-        } else if (tab === 'videos') {
-          setVideos(result.videos ?? [])
-          setVideoTotal(result.videoCount ?? 0)
-        } else {
-          setPlaylists(result.playlists ?? [])
-          setPlaylistTotal(result.playlistCount ?? 0)
-        }
+        cacheSearchResult(cacheKey, result)
+        applyResult(result)
       })
       .catch(() => {
         if (controller.signal.aborted) return
@@ -172,7 +204,7 @@ function SearchPage() {
         if (!controller.signal.aborted) setLoading(false)
       })
     return () => controller.abort()
-  }, [keyword, tab, page, attempt])
+  }, [keyword, tab, page, attempt, applyResult])
 
   const retry = () => setAttempt((value) => value + 1)
 
@@ -231,21 +263,31 @@ function SearchPage() {
                 : playlistTotal
   const pageCount = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [pageSize, total])
 
-  if (!keyword.trim()) {
-    return (
-      <div className="px-8 pt-10">
-        <EmptyState
-          icon={<Search className="h-6 w-6" />}
-          title={i18n._(msg`搜索音乐、歌单、专辑、歌手、用户、MV 或视频`)}
-          description={i18n._(msg`在顶部搜索框输入关键词后回车`)}
-        />
-      </div>
-    )
-  }
+  const hasKeyword = Boolean(keyword.trim())
 
   return (
     <div className="px-8 pb-14 pt-6">
-      <div>
+      <div className="mx-auto w-full max-w-[560px]">
+        <SearchBox
+          initialKeyword={keyword}
+          autoFocus={!hasKeyword}
+          className="max-w-[560px]"
+          onKeywordChange={handleKeywordChange}
+        />
+        {!hasKeyword ? (
+          <div className="pt-10">
+            <EmptyState
+              icon={<Search className="h-6 w-6" />}
+              title={i18n._(msg`搜索音乐、歌单、专辑、歌手、用户、MV 或视频`)}
+              description={i18n._(msg`输入关键词后按回车开始搜索`)}
+            />
+          </div>
+        ) : null}
+      </div>
+
+      {hasKeyword ? (
+        <>
+          <div>
         <p className="eyebrow">
           <Trans>搜索结果</Trans>
         </p>
@@ -572,6 +614,8 @@ function SearchPage() {
         </TabsContent>
 
       </Tabs>
+        </>
+      ) : null}
     </div>
   )
 }

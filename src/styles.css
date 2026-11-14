@@ -316,7 +316,7 @@ html.desktop .app-shell {
 }
 
 html.desktop .app-window {
-  --titlebar-height: 38px;
+  --titlebar-height: 44px;
   max-width: none;
   border-radius: 0;
   box-shadow: none;
@@ -414,9 +414,10 @@ html.desktop .app-window {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 46px;
+  width: 48px;
   height: 100%;
   border: 0;
+  border-radius: 0;
   padding: 0;
   background: transparent;
   color: rgba(0, 0, 0, 0.68);
@@ -765,6 +766,15 @@ html.desktop .app-window {
   background: var(--app-glass);
   backdrop-filter: saturate(180%) blur(20px);
   border-bottom: 1px solid var(--app-border);
+}
+
+/* Native drag regions must not swallow clicks on the merged title bar. */
+.topbar-interactive button,
+.topbar-interactive input,
+.topbar-interactive a,
+.topbar-interactive [role='button'] {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
 }
 
 /* ---------- Apple typography ---------- */

@@ -731,7 +731,7 @@ export function NowPlaying() {
       style={{ backgroundColor: 'var(--nowplaying-base, #0f0f12)' }}
       aria-hidden={!show}
     >
-      <NowPlayingTitleBar />
+      {show ? <NowPlayingTitleBar /> : null}
 
       {/*
         Keep the WebGL canvas alive only while the detail page is actually

@@ -39,7 +39,7 @@ export function UserMenu() {
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="pressable flex items-center gap-2 rounded-full py-1 pl-1 pr-2.5 transition-colors hover:bg-black/5"
+          className="electrobun-webkit-app-region-no-drag pressable flex items-center gap-2 rounded-full py-1 pl-1 pr-2.5 transition-colors hover:bg-black/5"
         >
           <Avatar src={profile.avatarUrl} alt={profile.nickname} size="xs" />
           <span className="max-w-[92px] truncate text-[12px] font-medium text-black/75">

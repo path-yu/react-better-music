@@ -12,6 +12,7 @@ import {
   ListMusic,
   Music2,
   Plus,
+  Search,
   Sparkles,
   Star,
   UserRound,
@@ -21,9 +22,11 @@ import { ImageWithFallback } from '../common/ImageWithFallback'
 import { useUserStore } from '../../store/user'
 import { useUiStore } from '../../store/ui'
 import { useLocalLibraryStore } from '../../store/localLibrary'
+import { useSearchStore } from '../../store/search'
 import { cn } from '../../lib/format'
 
 const primaryNav = [
+  { to: '/search', label: msg`搜索`, icon: Search },
   { to: '/', label: msg`发现音乐`, icon: Sparkles },
   { to: '/daily', label: msg`每日推荐`, icon: CalendarHeart },
   { to: '/songlists', label: msg`推荐歌单`, icon: ListMusic },
@@ -79,6 +82,12 @@ export function Sidebar() {
     return pathname.startsWith(to)
   }
 
+  // Reopen the last search instead of resetting to an empty search page.
+  const openSearch = () => {
+    const { keyword, tab } = useSearchStore.getState()
+    void navigate({ to: '/search', search: { keyword, tab } })
+  }
+
   const playlistActive = (id: number) => pathname === `/songlists/${id}`
 
   // Icon rail: keep the primary destinations reachable after collapsing the
@@ -99,7 +108,11 @@ export function Sidebar() {
                 title={i18n._(item.label)}
                 aria-label={i18n._(item.label)}
                 aria-current={isActive(item.to) ? 'page' : undefined}
-                onClick={() => void navigate({ to: item.to })}
+                onClick={() =>
+                  item.to === '/search'
+                    ? openSearch()
+                    : void navigate({ to: item.to })
+                }
                 className={cn(
                   'pressable flex h-9 w-9 items-center justify-center rounded-[10px] transition-colors',
                   isActive(item.to)
@@ -161,7 +174,11 @@ export function Sidebar() {
               <button
                 key={item.to}
                 type="button"
-                onClick={() => void navigate({ to: item.to })}
+                onClick={() =>
+                  item.to === '/search'
+                    ? openSearch()
+                    : void navigate({ to: item.to })
+                }
                 className={cn(
                   'flex h-[30px] items-center gap-2.5 rounded-[10px] px-2.5 max-md:h-10 text-left text-[12.5px] transition-colors',
                   isActive(item.to)

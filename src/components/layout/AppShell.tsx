@@ -2,7 +2,6 @@ import { lazy, Suspense, useEffect, useRef, type ReactNode } from 'react'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { useRouterState } from '@tanstack/react-router'
-import { TitleBar } from './TitleBar'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
 import { PlayerBar } from '../player/PlayerBar'
@@ -280,9 +279,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [pathname, resetScrollOnEnter])
 
   return (
-    <div className="app-shell">
+    <div className="app-shell ">
       <div className="app-window">
-        <TitleBar />
+        <TopBar />
         <div
           className={[
             'app-body',
@@ -294,7 +293,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           <Sidebar />
           <div className="main-column relative overflow-hidden">
-            <TopBar />
             <main ref={contentRef} className="apple-content relative">
               {/* Keyed by route so each navigation fades in from scratch. */}
               <div key={pathname} className="route-fade">

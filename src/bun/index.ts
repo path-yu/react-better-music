@@ -297,9 +297,10 @@ function createMainWindow() {
     title: '声屿',
     url: mainViewUrl(),
     // The renderer draws its own title bar (drag region + window buttons).
-    // `hiddenInset` keeps the native traffic lights on macOS and, on Windows /
-    // Linux, removes the system caption while keeping the resize border.
-    titleBarStyle: 'hiddenInset',
+    // On Windows/Linux `hidden` is required so the native caption hit area
+    // cannot sit invisibly over the toolbar; macOS keeps its inset traffic
+    // lights and reserves space for them in the renderer.
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
     // Created hidden so the first visible frame is the inline boot shell from
     // index.html, never the white native WebView surface.
     hidden: true,

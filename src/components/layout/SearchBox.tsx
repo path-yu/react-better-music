@@ -30,10 +30,24 @@ interface SuggestState {
   playlists: Playlist[]
 }
 
-export function SearchBox() {
+interface SearchBoxProps {
+  /** Route keyword used when the standalone page mounts or navigates. */
+  initialKeyword?: string
+  autoFocus?: boolean
+  className?: string
+  /** Mirrors typed input into the keep-alive store. */
+  onKeywordChange?: (keyword: string) => void
+}
+
+export function SearchBox({
+  initialKeyword,
+  autoFocus = false,
+  className,
+  onKeywordChange,
+}: SearchBoxProps = {}) {
   const { i18n } = useLingui()
   const navigate = useNavigate()
-  const [keyword, setKeyword] = useState('')
+  const [keyword, setKeyword] = useState(initialKeyword ?? '')
   const [open, setOpen] = useState(false)
   // Empty until the API answers; the placeholder falls back to a static hint.
   // `defaultKeyword` is the display copy, `defaultQuery` the actual search term.
@@ -54,6 +68,14 @@ export function SearchBox() {
   const removeSearchHistory = useUserStore((state) => state.removeSearchHistory)
   const clearSearchHistory = useUserStore((state) => state.clearSearchHistory)
   const playSong = usePlayerStore((state) => state.playSong)
+
+  useEffect(() => {
+    if (initialKeyword !== undefined) setKeyword(initialKeyword)
+  }, [initialKeyword])
+
+  useEffect(() => {
+    onKeywordChange?.(keyword)
+  }, [keyword, onKeywordChange])
 
   useEffect(() => {
     fetchDefaultSearchKeyword()
@@ -186,8 +208,15 @@ export function SearchBox() {
   })
 
   return (
-    <div ref={wrapperRef} className="relative w-full max-w-[420px]">
+    <div
+      ref={wrapperRef}
+      className={cn(
+        'relative w-full',
+        className ?? 'max-w-[420px]',
+      )}
+    >
       <Input.Search
+        autoFocus={autoFocus}
         value={keyword}
         size="sm"
         placeholder={
@@ -240,7 +269,7 @@ export function SearchBox() {
           }
         }}
         wrapperClassName="w-full"
-        className="app-search-input h-9 rounded-full border border-[var(--app-border-strong)] bg-transparent pl-9 pr-9 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
+        className="app-search-input electrobun-webkit-app-region-no-drag h-8 rounded-full border border-[var(--app-border-strong)] bg-transparent pl-9 pr-9 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
       />
 
       {/* Own clear button: the slot provided by the input was not clickable and
@@ -256,7 +285,7 @@ export function SearchBox() {
           }}
           // Keep the caret in the field while clearing, like a native search box.
           onMouseDown={(event) => event.preventDefault()}
-          className="pressable absolute right-1.5 top-1/2 z-10 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-black/40 transition-colors hover:bg-black/10 hover:text-black/70 max-md:h-8 max-md:w-8"
+          className="electrobun-webkit-app-region-no-drag pressable absolute right-1.5 top-1/2 z-10 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-black/40 transition-colors hover:bg-black/10 hover:text-black/70 max-md:h-8 max-md:w-8"
         >
           <X className="h-3.5 w-3.5" />
         </button>

@@ -6,9 +6,10 @@
  * This script starts Vite (mode `electrobun`, so VITE_DESKTOP / API base are
  * present) and points the Electrobun window at it through QIMIAO_DEV_URL.
  */
-import { spawn } from 'node:child_process'
+import { execFileSync, spawn, spawnSync } from 'node:child_process'
 
 const DEV_URL = 'http://localhost:5173'
+const DEV_PORT = 5173
 const isWindows = process.platform === 'win32'
 const pnpm = isWindows ? 'pnpm.cmd' : 'pnpm'
 
@@ -55,6 +56,74 @@ function killTree(child) {
   }
 }
 
+function listeningPids(port) {
+  if (isWindows) {
+    try {
+      // Do not restrict to `-p tcp`: Vite may listen on the IPv6 loopback
+      // (`[::1]:5173`), which would be missed by the IPv4-only table.
+      const output = execFileSync('netstat', ['-ano'], {
+        encoding: 'utf8',
+      })
+      const pids = new Set()
+      for (const line of output.split(/\r?\n/)) {
+        if (!/LISTENING/i.test(line)) continue
+        const fields = line.trim().split(/\s+/)
+        if (!fields[1]?.endsWith(`:${port}`)) continue
+        const pid = Number(fields.at(-1))
+        if (Number.isInteger(pid) && pid > 0) pids.add(pid)
+      }
+      return [...pids]
+    } catch {
+      return []
+    }
+  }
+  try {
+    const output = execFileSync(
+      'lsof',
+      ['-tiTCP:' + port, '-sTCP:LISTEN'],
+      { encoding: 'utf8' },
+    )
+    return [...new Set(output.split(/\s+/).map(Number).filter(Boolean))]
+  } catch {
+    return []
+  }
+}
+
+function killPid(pid) {
+  if (isWindows) {
+    spawnSync('taskkill', ['/pid', String(pid), '/T', '/F'], {
+      stdio: 'ignore',
+    })
+  } else {
+    try {
+      process.kill(pid, 'SIGTERM')
+    } catch {
+      // Already gone.
+    }
+  }
+}
+
+/**
+ * A previous `desktop:dev` keeps Vite on :5173. Kill that listener first; its
+ * parent desktop-dev process notices Vite exiting and shuts down the old
+ * Electrobun window. Then wait for the port before StrictPort starts Vite.
+ */
+async function stopStaleDevServer() {
+  const pids = listeningPids(DEV_PORT)
+  if (!pids.length) return
+  console.log(
+    `[desktop-dev] stopping previous dev server on :${DEV_PORT} (pid ${pids.join(', ')})…`,
+  )
+  for (const pid of pids) killPid(pid)
+
+  const deadline = Date.now() + 5000
+  while (Date.now() < deadline) {
+    if (!listeningPids(DEV_PORT).length) return
+    await new Promise((resolve) => setTimeout(resolve, 200))
+  }
+  throw new Error(`Port ${DEV_PORT} is still in use after stopping old dev server`)
+}
+
 function shutdown(code = 0) {
   if (stopping) return
   stopping = true
@@ -68,6 +137,7 @@ process.on('SIGINT', () => shutdown(0))
 process.on('SIGTERM', () => shutdown(0))
 
 try {
+  await stopStaleDevServer()
   console.log('[desktop-dev] syncing Electrobun…')
   await run('hutch', ['electrobun', 'sync'], { shell: isWindows })
 
