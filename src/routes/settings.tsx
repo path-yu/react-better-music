@@ -337,7 +337,7 @@ function SettingsPage() {
       id: item.id,
       name: item.name,
       ar: [],
-      al: { id: 0, name: '' },
+      al: { id: 0, name: '', picUrl: item.picUrl ?? '' },
       dt: item.duration ?? 0,
       fee: 0,
     }))

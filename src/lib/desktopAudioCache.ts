@@ -9,6 +9,7 @@ export interface DesktopAudioCacheItem {
   duration?: number
   bitrate?: number
   trialEnd?: number
+  picUrl?: string
 }
 
 export interface DesktopAudioCacheList {

@@ -952,6 +952,8 @@ interface AudioCacheMeta {
   duration?: number
   bitrate?: number
   trialEnd?: number
+  /** Original artwork URL; sidecar file name is `<id>.cover.<ext>`. */
+  picUrl?: string
   /** Human-readable filename stored in the cache directory. */
   file?: string
 }
@@ -1387,9 +1389,21 @@ try {
         if (url.pathname === '/audio-cache' && request.method === 'GET') {
           const items = readAudioCacheIndex()
           if (syncAudioCacheFiles(items)) writeAudioCacheIndex(items)
+          const assets = readAudioAssetIndex()
+          const coversById = new Map<number, string>()
+          for (const [coverUrl, name] of Object.entries(assets)) {
+            const match = /^(\d+)\.cover\./.exec(name)
+            if (match) coversById.set(Number(match[1]), coverUrl)
+          }
           const live = items
             .filter((item) => existsSync(audioCachePath(item)))
             .sort((a, b) => b.createdAt - a.createdAt)
+            .map((item) => ({
+              ...item,
+              // Old cache entries did not store picUrl; recover it from the
+              // cover sidecar mapping so "play all cached" still has artwork.
+              picUrl: item.picUrl ?? coversById.get(item.id),
+            }))
           return Response.json({ dir: audioCacheDir, items: live }, { headers })
         }
         if (url.pathname === '/audio-cache/meta' && request.method === 'GET') {
@@ -1579,6 +1593,9 @@ try {
             duration: Number(meta.duration) || undefined,
             bitrate: Number(meta.bitrate) || undefined,
             trialEnd: Number(meta.trialEnd) || 0,
+            picUrl: meta.picUrl
+              ? String(meta.picUrl).slice(0, 1000)
+              : undefined,
             file,
           }
           const items = existing.filter((entry) => entry.id !== id)

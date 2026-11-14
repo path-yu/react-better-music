@@ -61,6 +61,8 @@ struct AudioCacheMeta {
     bitrate: Option<u32>,
     #[serde(rename = "trialEnd")]
     trial_end: Option<u64>,
+    #[serde(rename = "picUrl")]
+    pic_url: Option<String>,
     file: Option<String>,
 }
 

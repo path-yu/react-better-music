@@ -25,6 +25,7 @@ interface CacheMeta {
   bitrate?: number
   /** 0 = full track; >0 = cached audio is only a 30s preview. */
   trialEnd?: number
+  picUrl?: string
 }
 
 interface AudioRecord {
@@ -181,6 +182,7 @@ async function putCachedAudio(
     duration?: number
     bitrate?: number
     trialEnd?: number
+    picUrl?: string
   },
 ) {
   const maxBytes = cacheMaxBytes()
@@ -346,6 +348,7 @@ async function transcodeAndStore(song: CacheableSong, epoch: number, source?: Bl
       duration: song.duration,
       bitrate,
       trialEnd: song.trialEnd && song.trialEnd > 0 ? song.trialEnd : 0,
+      picUrl: song.picUrl,
     })
   } catch (error) {
     console.warn('[song cache] encode failed:', error)
@@ -399,6 +402,8 @@ export interface CachedAudioItem {
   artists?: string
   duration?: number
   bitrate?: number
+  /** Original artwork URL, also present as a sidecar cover in the cache dir. */
+  picUrl?: string
 }
 
 export async function listCachedAudio(): Promise<CachedAudioItem[]> {
