@@ -1660,7 +1660,7 @@ msgstr "暂无榜单"
 msgid "暂无歌单"
 msgstr "暂无歌单"
 
-#: src/components/player/LyricsPanel.tsx:182
+#: src/components/player/LyricsPanel.tsx:180
 #: src/components/player/LyricStage.tsx:304
 msgid "暂无歌词，请欣赏"
 msgstr "暂无歌词，请欣赏"
