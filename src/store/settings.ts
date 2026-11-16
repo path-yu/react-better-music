@@ -105,8 +105,6 @@ interface SettingsState {
   preferredSource: string
   /** Audio/video preference, persisted across tracks and app restarts. */
   nowPlayingMode: NowPlayingMode
-  /** Selected speaker/headphone sink for all media elements. */
-  audioOutputId: string
   /** Entrance animation for the full-screen now-playing page. */
   nowPlayingTransition: NowPlayingTransition
   /** Artwork treatment on the full-screen now-playing page. */
@@ -131,7 +129,6 @@ interface SettingsState {
   setLyricStageStyle: (value: LyricStageStyle) => void
   setPreferredSource: (value: string) => void
   setNowPlayingMode: (value: NowPlayingMode) => void
-  setAudioOutputId: (value: string) => void
   setNowPlayingTransition: (value: NowPlayingTransition) => void
   setPlayerStyle: (value: PlayerStyle) => void
   setVolumeNormalization: (value: boolean) => void
@@ -156,7 +153,6 @@ export const useSettingsStore = create<SettingsState>()(
       lyricStageStyle: 'flow',
       preferredSource: 'auto',
       nowPlayingMode: 'audio',
-      audioOutputId: 'default',
       nowPlayingTransition: 'fade',
       playerStyle: 'cover',
       // Matches the reference player's default: analyse and even out loudness
@@ -177,7 +173,6 @@ export const useSettingsStore = create<SettingsState>()(
       setLyricStageStyle: (lyricStageStyle) => set({ lyricStageStyle }),
       setPreferredSource: (preferredSource) => set({ preferredSource }),
       setNowPlayingMode: (nowPlayingMode) => set({ nowPlayingMode }),
-      setAudioOutputId: (audioOutputId) => set({ audioOutputId }),
       setNowPlayingTransition: (nowPlayingTransition) =>
         set({ nowPlayingTransition }),
       setPlayerStyle: (playerStyle) => set({ playerStyle }),

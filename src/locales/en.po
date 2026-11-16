@@ -183,6 +183,10 @@ msgstr "Automatically replace VIP sources"
 msgid "WebGL 雾化背景"
 msgstr "WebGL fog backdrop"
 
+#: src/components/player/OutputDevicePicker.tsx:162
+msgid "WebView 只暴露了默认设备。使用系统输出设备选择器可以选择其他扬声器。"
+msgstr ""
+
 #: src/components/common/Pager.tsx:61
 msgid "上一页"
 msgstr "Previous page"
@@ -389,8 +393,8 @@ msgid "倾诉"
 msgstr "Confession"
 
 #: src/components/player/OutputDevicePicker.tsx:112
-msgid "允许应用访问音频设备后，可显示完整设备名称。"
-msgstr "Allow audio device access to show full device names."
+#~ msgid "允许应用访问音频设备后，可显示完整设备名称。"
+#~ msgstr "Allow audio device access to show full device names."
 
 #: src/routes/settings.tsx:859
 #: src/routes/settings.tsx:866
@@ -603,12 +607,12 @@ msgstr "Switch to video"
 msgid "切换界面语言，立即生效。当前翻译覆盖导航、播放器与设置等主要界面，其余页面会逐步补齐。"
 msgstr "Changes take effect immediately. Navigation, player and settings are translated first; remaining pages will follow."
 
-#: src/store/player.ts:1356
+#: src/store/player.ts:1354
 msgid "切换音源失败，请稍后再试"
 msgstr "Failed to switch sources. Try again later."
 
-#: src/components/player/NowPlaying.tsx:1402
 #: src/components/player/NowPlaying.tsx:1403
+#: src/components/player/NowPlaying.tsx:1404
 msgid "列表视图"
 msgstr "List View"
 
@@ -702,7 +706,7 @@ msgstr "Songs"
 #: src/components/player/ImmersivePlayerBar.tsx:257
 #: src/components/player/NowPlayingTransport.tsx:139
 #: src/components/player/PlayerBar.tsx:1313
-#: src/store/player.ts:1171
+#: src/store/player.ts:1169
 msgid "单曲循环"
 msgstr "Repeat one"
 
@@ -907,8 +911,8 @@ msgstr "Official Charts"
 msgid "官方版"
 msgstr "Official"
 
-#: src/components/player/NowPlaying.tsx:1665
 #: src/components/player/NowPlaying.tsx:1666
+#: src/components/player/NowPlaying.tsx:1667
 msgid "定位到当前播放"
 msgstr "Locate current track"
 
@@ -979,11 +983,11 @@ msgstr "Developer tools enabled. Restart the app to apply fully."
 msgid "已关闭"
 msgstr "Off"
 
-#: src/store/player.ts:1179
+#: src/store/player.ts:1177
 msgid "已关闭心动模式"
 msgstr "Heart Mode turned off"
 
-#: src/store/player.ts:1354
+#: src/store/player.ts:1352
 msgid "已切换到其他音源"
 msgstr "Switched to another source"
 
@@ -1035,7 +1039,7 @@ msgid "已收藏到「{0}」"
 msgstr "Saved to \"{0}\""
 
 #. placeholder {0}: additions.length
-#: src/store/player.ts:1093
+#: src/store/player.ts:1091
 msgid "已添加 {0} 首歌曲到播放列表"
 msgstr "Added {0} tracks to the queue"
 
@@ -1067,6 +1071,10 @@ msgstr "When enabled, report one listen to NetEase after real playback reaches 5
 #: src/routes/settings.tsx:360
 msgid "开始播放缓存音乐"
 msgstr "Playing cached music"
+
+#: src/components/player/OutputDevicePicker.tsx:166
+msgid "当前 WebView2 不支持应用内枚举输出设备，请在 Windows 声音设置中为声屿选择输出设备。"
+msgstr ""
 
 #: src/components/player/SourcePicker.tsx:102
 msgid "当前：{currentLabel}"
@@ -1110,7 +1118,7 @@ msgstr "Visualizer"
 msgid "心动模式"
 msgstr "Heart Mode"
 
-#: src/store/player.ts:1193
+#: src/store/player.ts:1191
 msgid "心动模式已开启，将为你推荐歌曲"
 msgstr "Heart Mode is on; recommendations will be added"
 
@@ -1144,6 +1152,10 @@ msgstr "My Music"
 msgid "打开"
 msgstr "Open"
 
+#: src/components/player/OutputDevicePicker.tsx:205
+msgid "打开 Windows 音量合成器"
+msgstr ""
+
 #. placeholder {0}: album.name
 #. placeholder {0}: song.al.name
 #: src/components/cards/AlbumCard.tsx:28
@@ -1168,8 +1180,8 @@ msgstr "Open Daily Mix"
 msgid "扫码成功，请在手机上确认"
 msgstr "Scanned. Confirm on your phone."
 
-#: src/components/player/NowPlaying.tsx:1597
 #: src/components/player/NowPlaying.tsx:1598
+#: src/components/player/NowPlaying.tsx:1599
 msgid "拖动排序"
 msgstr "Drag to reorder"
 
@@ -1243,8 +1255,8 @@ msgstr "Search failed"
 msgid "搜索建议"
 msgstr "Search suggestions"
 
-#: src/components/player/NowPlaying.tsx:1376
 #: src/components/player/NowPlaying.tsx:1377
+#: src/components/player/NowPlaying.tsx:1378
 msgid "搜索待播歌曲"
 msgstr "Search upcoming songs"
 
@@ -1300,7 +1312,7 @@ msgstr "Play all"
 msgid "播放列表"
 msgstr "Queue"
 
-#: src/store/player.ts:1249
+#: src/store/player.ts:1247
 msgid "播放列表已清空"
 msgstr "Queue cleared"
 
@@ -1342,8 +1354,8 @@ msgstr "Playback options"
 msgid "播放队列"
 msgstr "Queue"
 
-#: src/components/player/NowPlaying.tsx:1647
-#: src/components/player/NowPlaying.tsx:1759
+#: src/components/player/NowPlaying.tsx:1648
+#: src/components/player/NowPlaying.tsx:1760
 msgid "播放队列为空"
 msgstr "The queue is empty"
 
@@ -1434,7 +1446,7 @@ msgid "收起侧栏"
 msgstr "Collapse sidebar"
 
 #: src/components/player/ImmersivePlayerBar.tsx:193
-#: src/components/player/NowPlaying.tsx:1785
+#: src/components/player/NowPlaying.tsx:1786
 #: src/components/player/PlayerBar.tsx:1120
 #: src/components/player/PlayerBar.tsx:1141
 #: src/components/player/PlayerBar.tsx:1180
@@ -1442,7 +1454,7 @@ msgid "收起播放页"
 msgstr "Close Now Playing"
 
 #: src/components/player/ImmersivePlayerBar.tsx:194
-#: src/components/player/NowPlaying.tsx:1786
+#: src/components/player/NowPlaying.tsx:1787
 #: src/components/player/PlayerBar.tsx:1121
 msgid "收起播放页（Esc）"
 msgstr "Collapse player (Esc)"
@@ -1455,13 +1467,18 @@ msgstr "Failed to load new songs"
 msgid "无动画"
 msgstr "None"
 
-#: src/components/player/OutputDevicePicker.tsx:82
+#: src/components/player/OutputDevicePicker.tsx:105
+#: src/components/player/OutputDevicePicker.tsx:123
 msgid "无法切换到该输出设备"
 msgstr "Unable to switch to this output device"
 
 #: src/routes/settings.tsx:320
 msgid "无法打开下载目录"
 msgstr "Cannot open the download folder"
+
+#: src/components/player/OutputDevicePicker.tsx:194
+#~ msgid "无法打开系统声音设置"
+#~ msgstr ""
 
 #: src/routes/settings.tsx:345
 msgid "无法打开缓存目录"
@@ -1470,6 +1487,10 @@ msgstr "Cannot open the cache folder"
 #: src/routes/songlists/$id.edit.tsx:108
 msgid "无法编辑该歌单"
 msgstr "This playlist cannot be edited"
+
+#: src/components/player/OutputDevicePicker.tsx:196
+msgid "无法自动打开，请前往 Windows 设置 → 系统 → 声音 → 音量合成器"
+msgstr ""
 
 #: src/routes/settings.tsx:310
 msgid "无法选择下载目录"
@@ -1556,7 +1577,7 @@ msgstr "No charts available"
 msgid "暂无歌单"
 msgstr "No playlists yet"
 
-#: src/components/player/LyricsPanel.tsx:180
+#: src/components/player/LyricsPanel.tsx:191
 #: src/components/player/LyricStage.tsx:304
 msgid "暂无歌词，请欣赏"
 msgstr "No lyrics. Enjoy the music."
@@ -1600,7 +1621,7 @@ msgstr "More playback options"
 msgid "更换头像"
 msgstr "Change avatar"
 
-#: src/store/player.ts:1333
+#: src/store/player.ts:1331
 msgid "未找到其他可用音源"
 msgstr "No alternative source found"
 
@@ -1797,7 +1818,7 @@ msgstr "Tracks"
 msgid "歌曲加载失败"
 msgstr "Failed to load track"
 
-#: src/store/player.ts:1088
+#: src/store/player.ts:1086
 msgid "歌曲已在播放列表中"
 msgstr "Track is already in the queue"
 
@@ -1805,11 +1826,11 @@ msgstr "Track is already in the queue"
 msgid "歌曲操作"
 msgstr "Song actions"
 
-#: src/components/player/NowPlaying.tsx:1770
+#: src/components/player/NowPlaying.tsx:1771
 msgid "歌曲评论"
 msgstr "Song comments"
 
-#: src/store/player.ts:1277
+#: src/store/player.ts:1275
 msgid "歌曲资源已失效"
 msgstr "Track source expired"
 
@@ -1832,7 +1853,7 @@ msgid "歌词显示"
 msgstr "Lyrics display"
 
 #: src/components/player/NowPlaying.tsx:1335
-#: src/components/player/NowPlaying.tsx:1353
+#: src/components/player/NowPlaying.tsx:1354
 msgid "正在加载歌词…"
 msgstr "Loading lyrics…"
 
@@ -1907,8 +1928,8 @@ msgstr "Daily Chinese and global new releases"
 msgid "每日歌曲推荐"
 msgstr "Daily song recommendations"
 
-#: src/components/player/NowPlaying.tsx:1642
-#: src/components/player/NowPlaying.tsx:1754
+#: src/components/player/NowPlaying.tsx:1643
+#: src/components/player/NowPlaying.tsx:1755
 #: src/routes/albums/$id.tsx:208
 #: src/routes/songlists/$id.tsx:517
 msgid "没有匹配的歌曲"
@@ -2011,7 +2032,7 @@ msgstr "Failed to clear recent plays"
 msgid "清除"
 msgstr "Clear"
 
-#: src/components/player/NowPlaying.tsx:1388
+#: src/components/player/NowPlaying.tsx:1389
 msgid "清除搜索"
 msgstr "Clear search"
 
@@ -2254,6 +2275,10 @@ msgstr "Featured playlists"
 msgid "精彩评论"
 msgstr "Top comments"
 
+#: src/components/player/OutputDevicePicker.tsx:154
+msgid "系统未允许媒体设备访问，请在 Windows 隐私设置中允许桌面应用使用麦克风。"
+msgstr ""
+
 #: src/routes/settings.tsx:627
 msgid "约 64kbps ≈ 1.9MB / 4 分钟，96kbps ≈ 2.9MB，128kbps ≈ 3.8MB。"
 msgstr "About 64 kbps ≈ 1.9 MB / 4 min, 96 kbps ≈ 2.9 MB, 128 kbps ≈ 3.8 MB."
@@ -2314,8 +2339,8 @@ msgstr "NetEase Cloud Music"
 msgid "网易出品"
 msgstr "NetEase Originals"
 
-#: src/components/player/NowPlaying.tsx:1417
 #: src/components/player/NowPlaying.tsx:1418
+#: src/components/player/NowPlaying.tsx:1419
 msgid "网格视图"
 msgstr "Grid View"
 
@@ -2383,7 +2408,7 @@ msgstr "Preview"
 msgid "试听结束，登录或开通会员可播放完整版"
 msgstr "Preview ended. Sign in or get VIP to play the full track."
 
-#: src/store/player.ts:987
+#: src/store/player.ts:985
 msgid "该列表暂无可播放歌曲"
 msgstr "No playable tracks in this list"
 
@@ -2412,7 +2437,7 @@ msgstr "This user hasn't saved any playlists"
 msgid "说点什么…"
 msgstr "Say something…"
 
-#: src/store/player.ts:1184
+#: src/store/player.ts:1182
 msgid "请先播放歌曲"
 msgstr "Play a track first"
 
@@ -2489,9 +2514,9 @@ msgstr "Higher · 96kbps"
 msgid "输入关键词后按回车开始搜索"
 msgstr "Enter a keyword and press Enter to search"
 
-#: src/components/player/OutputDevicePicker.tsx:91
-#: src/components/player/OutputDevicePicker.tsx:92
-#: src/components/player/OutputDevicePicker.tsx:107
+#: src/components/player/OutputDevicePicker.tsx:134
+#: src/components/player/OutputDevicePicker.tsx:135
+#: src/components/player/OutputDevicePicker.tsx:150
 msgid "输出设备"
 msgstr "Output Device"
 
@@ -2593,6 +2618,10 @@ msgstr "Choose how artwork appears on the song detail page. Changes apply immedi
 msgid "选择界面明暗与主题配色，立即生效，并会记住你的选择。"
 msgstr "Choose a light or dark appearance and theme color. Changes apply immediately and are remembered."
 
+#: src/components/player/OutputDevicePicker.tsx:185
+msgid "选择系统输出设备…"
+msgstr ""
+
 #: src/components/player/MorePlaybackOptions.tsx:374
 #: src/components/player/MorePlaybackOptions.tsx:421
 #: src/components/player/SourcePicker.tsx:65
@@ -2636,7 +2665,7 @@ msgstr "Retry"
 msgid "链接已复制"
 msgstr "Link copied"
 
-#: src/components/player/NowPlaying.tsx:1397
+#: src/components/player/NowPlaying.tsx:1398
 msgid "队列视图"
 msgstr "Queue View"
 
@@ -2644,7 +2673,7 @@ msgstr "Queue View"
 #: src/components/player/NowPlayingTransport.tsx:138
 #: src/components/player/PlayerBar.tsx:1312
 #: src/routes/daily.tsx:171
-#: src/store/player.ts:1170
+#: src/store/player.ts:1168
 msgid "随机播放"
 msgstr "Shuffle"
 
@@ -2720,7 +2749,7 @@ msgstr "Page not found"
 #: src/components/player/ImmersivePlayerBar.tsx:254
 #: src/components/player/NowPlayingTransport.tsx:136
 #: src/components/player/PlayerBar.tsx:1310
-#: src/store/player.ts:1168
+#: src/store/player.ts:1166
 msgid "顺序播放"
 msgstr "Play in order"
 
@@ -2744,6 +2773,6 @@ msgstr "Defaults to 200 MB; when exceeded, the oldest cached tracks are removed 
 msgid "默认使用轻量的 CSS 动态渐变；开启后在歌曲详情页使用 GPU 绘制封面色彩雾气，不支持 WebGL 时自动回退。"
 msgstr "Uses a lightweight CSS gradient by default. When enabled, the song detail page renders cover-coloured fog on the GPU and falls back automatically without WebGL."
 
-#: src/components/player/OutputDevicePicker.tsx:76
+#: src/components/player/OutputDevicePicker.tsx:99
 msgid "默认输出设备"
 msgstr "Default Output Device"

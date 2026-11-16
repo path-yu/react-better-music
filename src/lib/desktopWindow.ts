@@ -48,3 +48,5 @@ export function toggleMaximizeWindow() {
 export function closeWindow() {
   return windowAction('close')
 }
+
+
