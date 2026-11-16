@@ -17,7 +17,6 @@ import {
   Palette as PaletteIcon,
   Play,
   RefreshCw,
-  Settings2,
   Shield,
   Sun,
   Trash2,
@@ -99,6 +98,7 @@ function SettingsPage() {
   const [settingsQuery, setSettingsQuery] = useState('')
   const [items, setItems] = useState<CachedAudioItem[]>([])
   const [loading, setLoading] = useState(true)
+  const settingsPanelsRef = useRef<HTMLDivElement>(null)
   const [selected, setSelected] = useState<number[]>([])
   const [clearing, setClearing] = useState(false)
   const [confirmingClear, setConfirmingClear] = useState(false)
@@ -359,9 +359,13 @@ function SettingsPage() {
     toast.success(i18n._(msg`开始播放缓存音乐`))
   }
 
+  useEffect(() => {
+    settingsPanelsRef.current?.scrollTo({ top: 0 })
+  }, [activeTab])
+
   return (
-    <div className="mx-auto max-w-[1120px] px-8 pb-16 pt-7 max-md:px-5">
-      <div>
+    <div className="settings-page mx-auto max-w-[1120px] px-8 pb-4 pt-7 max-md:px-5">
+      {/* <div>
         <h1 className="headline-lg flex items-center gap-2">
           <Settings2 className="h-5 w-5 text-accent" />
           <Trans>设置</Trans>
@@ -369,7 +373,7 @@ function SettingsPage() {
         <p className="mt-1.5 text-[12px] text-black/35">
           <Trans>管理外观、播放、缓存与桌面功能</Trans>
         </p>
-      </div>
+      </div> */}
 
       <div className="settings-shell mt-6">
         <SettingsNav
@@ -378,7 +382,11 @@ function SettingsPage() {
           onQueryChange={setSettingsQuery}
           onSelect={setActiveTab}
         />
-        <div className="settings-panels" data-active={activeTab}>
+        <div
+          ref={settingsPanelsRef}
+          className="settings-panels"
+          data-active={activeTab}
+        >
           <div className="grid gap-5">
         <section className="apple-card p-6" data-settings-section="general">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

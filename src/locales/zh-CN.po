@@ -79,14 +79,14 @@ msgstr "{0} 粉丝"
 #: src/components/player/QueuePanel.tsx:150
 #: src/routes/daily.tsx:148
 #: src/routes/search.tsx:399
-#: src/routes/settings.tsx:651
+#: src/routes/settings.tsx:659
 #: src/routes/toplist.tsx:137
 msgid "{0} 首"
 msgstr "{0} 首"
 
 #. placeholder {0}: items.length
 #. placeholder {1}: formatBytes(totalBytes)
-#: src/routes/settings.tsx:808
+#: src/routes/settings.tsx:816
 msgid "{0} 首 · {1}"
 msgstr "{0} 首 · {1}"
 
@@ -170,16 +170,16 @@ msgstr "R&B/Soul"
 msgid "UNM 聚合"
 msgstr "UNM 聚合"
 
-#: src/routes/settings.tsx:728
+#: src/routes/settings.tsx:736
 msgid "VIP 歌曲无法播放或仅能试听时，自动尝试匹配其他音源；也可以在底部播放条点击 「切换其他音源」手动替换。"
 msgstr "VIP 歌曲无法播放或仅能试听时，自动尝试匹配其他音源；也可以在底部播放条点击 「切换其他音源」手动替换。"
 
-#: src/routes/settings.tsx:737
+#: src/routes/settings.tsx:745
 msgid "VIP 歌曲自动替换音源"
 msgstr "VIP 歌曲自动替换音源"
 
-#: src/routes/settings.tsx:466
-#: src/routes/settings.tsx:477
+#: src/routes/settings.tsx:474
+#: src/routes/settings.tsx:485
 msgid "WebGL 雾化背景"
 msgstr "WebGL 雾化背景"
 
@@ -215,15 +215,15 @@ msgstr "下一首播放"
 msgid "下午好"
 msgstr "下午好"
 
-#: src/routes/settings.tsx:918
+#: src/routes/settings.tsx:926
 msgid "下载会保存为 .opus 文件到上方设置的下载目录。"
 msgstr "下载会保存为 .opus 文件到上方设置的下载目录。"
 
-#: src/routes/settings.tsx:920
+#: src/routes/settings.tsx:928
 msgid "下载会导出为 .opus 文件；多选下载会打包为一个 ZIP 压缩包。"
 msgstr "下载会导出为 .opus 文件；多选下载会打包为一个 ZIP 压缩包。"
 
-#: src/routes/settings.tsx:897
+#: src/routes/settings.tsx:905
 msgid "下载到本地"
 msgstr "下载到本地"
 
@@ -231,7 +231,7 @@ msgstr "下载到本地"
 msgid "下载失败"
 msgstr "下载失败"
 
-#: src/routes/settings.tsx:668
+#: src/routes/settings.tsx:676
 msgid "下载目录"
 msgstr "下载目录"
 
@@ -239,12 +239,12 @@ msgstr "下载目录"
 msgid "下载目录已更新"
 msgstr "下载目录已更新"
 
-#: src/routes/settings.tsx:835
+#: src/routes/settings.tsx:843
 msgid "下载选中"
 msgstr "下载选中"
 
 #. placeholder {0}: selected.length
-#: src/routes/settings.tsx:833
+#: src/routes/settings.tsx:841
 msgid "下载选中 ({0})"
 msgstr "下载选中 ({0})"
 
@@ -388,8 +388,8 @@ msgstr "倾诉"
 msgid "允许应用访问音频设备后，可显示完整设备名称。"
 msgstr "允许应用访问音频设备后，可显示完整设备名称。"
 
-#: src/routes/settings.tsx:850
-#: src/routes/settings.tsx:857
+#: src/routes/settings.tsx:858
+#: src/routes/settings.tsx:865
 msgid "全选"
 msgstr "全选"
 
@@ -479,7 +479,7 @@ msgstr "关闭心动模式"
 msgid "关闭播放列表"
 msgstr "关闭播放列表"
 
-#: src/routes/settings.tsx:76
+#: src/routes/settings.tsx:75
 msgid "关闭播放页、播放列表、侧栏或搜索建议"
 msgstr "关闭播放页、播放列表、侧栏或搜索建议"
 
@@ -515,7 +515,7 @@ msgstr "最多可选三个标签"
 msgid "最大化"
 msgstr "最大化"
 
-#: src/routes/settings.tsx:625
+#: src/routes/settings.tsx:633
 msgid "最大缓存容量"
 msgstr "最大缓存容量"
 
@@ -595,7 +595,7 @@ msgstr "切换到深色模式"
 msgid "切换到视频播放"
 msgstr "切换到视频播放"
 
-#: src/routes/settings.tsx:517
+#: src/routes/settings.tsx:525
 msgid "切换界面语言，立即生效。当前翻译覆盖导航、播放器与设置等主要界面，其余页面会逐步补齐。"
 msgstr "切换界面语言，立即生效。当前翻译覆盖导航、播放器与设置等主要界面，其余页面会逐步补齐。"
 
@@ -636,7 +636,7 @@ msgid "删除歌单失败"
 msgstr "删除歌单失败"
 
 #: src/components/layout/LoginModal.tsx:356
-#: src/routes/settings.tsx:595
+#: src/routes/settings.tsx:603
 #: src/routes/songlists/$id.tsx:435
 msgid "刷新"
 msgstr "刷新"
@@ -651,7 +651,7 @@ msgstr "刷新最近播放"
 msgid "刷新歌单"
 msgstr "刷新歌单"
 
-#: src/routes/settings.tsx:594
+#: src/routes/settings.tsx:602
 msgid "刷新缓存信息"
 msgstr "刷新缓存信息"
 
@@ -703,7 +703,7 @@ msgid "单曲循环"
 msgstr "单曲循环"
 
 #. placeholder {0}: formatBytes(totalBytes)
-#: src/routes/settings.tsx:657
+#: src/routes/settings.tsx:665
 msgid "占用 {0}"
 msgstr "占用 {0}"
 
@@ -788,8 +788,8 @@ msgstr "向左浏览分类"
 msgid "听友评论"
 msgstr "听友评论"
 
-#: src/routes/settings.tsx:747
-#: src/routes/settings.tsx:758
+#: src/routes/settings.tsx:755
+#: src/routes/settings.tsx:766
 msgid "听歌打卡"
 msgstr "听歌打卡"
 
@@ -833,7 +833,7 @@ msgstr "回复失败"
 msgid "图片不能超过 5MB"
 msgstr "图片不能超过 5MB"
 
-#: src/routes/settings.tsx:75
+#: src/routes/settings.tsx:74
 msgid "在搜索建议中选择并进入"
 msgstr "在搜索建议中选择并进入"
 
@@ -841,7 +841,7 @@ msgstr "在搜索建议中选择并进入"
 msgid "在歌曲右侧点击心形，收藏会写入本地曲库。"
 msgstr "在歌曲右侧点击心形，收藏会写入本地曲库。"
 
-#: src/routes/settings.tsx:944
+#: src/routes/settings.tsx:952
 msgid "在页面任意位置可用（输入框内保留系统默认行为）。"
 msgstr "在页面任意位置可用（输入框内保留系统默认行为）。"
 
@@ -853,7 +853,7 @@ msgstr "地区"
 msgid "复制链接失败"
 msgstr "复制链接失败"
 
-#: src/routes/settings.tsx:388
+#: src/routes/settings.tsx:396
 msgid "外观"
 msgstr "外观"
 
@@ -915,7 +915,7 @@ msgstr "定位到当前播放"
 msgid "定位当前播放"
 msgstr "定位当前播放"
 
-#: src/routes/settings.tsx:565
+#: src/routes/settings.tsx:573
 msgid "实时分析播放响度，自动压低过响的部分并补足偏轻的歌曲，减少切歌时的音量跳变。部分设备或受保护音源可能无法分析。"
 msgstr "实时分析播放响度，自动压低过响的部分并补足偏轻的歌曲，减少切歌时的音量跳变。部分设备或受保护音源可能无法分析。"
 
@@ -1052,11 +1052,11 @@ msgid "已退出登录"
 msgstr "已退出登录"
 
 #. placeholder {0}: selected.length
-#: src/routes/settings.tsx:860
+#: src/routes/settings.tsx:868
 msgid "已选 {0} 首"
 msgstr "已选 {0} 首"
 
-#: src/routes/settings.tsx:750
+#: src/routes/settings.tsx:758
 msgid "开启后，真实播放达到歌曲的 50% 或 4 分钟后，向网易云上报一次听歌记录。默认关闭。"
 msgstr "开启后，真实播放达到歌曲的 50% 或 4 分钟后，向网易云上报一次听歌记录。默认关闭。"
 
@@ -1081,7 +1081,7 @@ msgstr "当前仅可试听 {trialEnd} 秒，登录或开通会员后可播放完
 msgid "当前环境不支持 Opus 编码"
 msgstr "当前环境不支持 Opus 编码"
 
-#: src/routes/settings.tsx:648
+#: src/routes/settings.tsx:656
 msgid "当前缓存"
 msgstr "当前缓存"
 
@@ -1114,7 +1114,7 @@ msgstr "心动模式已开启，将为你推荐歌曲"
 msgid "心动模式暂不可用，请先登录"
 msgstr "心动模式暂不可用，请先登录"
 
-#: src/routes/settings.tsx:941
+#: src/routes/settings.tsx:949
 msgid "快捷键"
 msgstr "快捷键"
 
@@ -1135,8 +1135,8 @@ msgstr "我喜欢的音乐"
 msgid "我的音乐"
 msgstr "我的音乐"
 
-#: src/routes/settings.tsx:683
-#: src/routes/settings.tsx:714
+#: src/routes/settings.tsx:691
+#: src/routes/settings.tsx:722
 msgid "打开"
 msgstr "打开"
 
@@ -1271,17 +1271,17 @@ msgstr "搜索音乐、歌单、专辑、歌手、用户、MV 或视频"
 #: src/components/settings/SettingsNav.tsx:16
 #: src/components/songs/SongTable.tsx:112
 #: src/routes/index.tsx:230
-#: src/routes/settings.tsx:539
+#: src/routes/settings.tsx:547
 msgid "播放"
 msgstr "播放"
 
-#: src/routes/settings.tsx:72
+#: src/routes/settings.tsx:71
 msgid "播放 / 暂停"
 msgstr "播放 / 暂停"
 
 #: src/components/songs/PlayAllButton.tsx:17
 #: src/routes/daily.tsx:161
-#: src/routes/settings.tsx:822
+#: src/routes/settings.tsx:830
 msgid "播放全部"
 msgstr "播放全部"
 
@@ -1300,7 +1300,7 @@ msgstr "播放列表"
 msgid "播放列表已清空"
 msgstr "播放列表已清空"
 
-#: src/routes/settings.tsx:551
+#: src/routes/settings.tsx:559
 msgid "播放器样式"
 msgstr "播放器样式"
 
@@ -1320,7 +1320,7 @@ msgstr "播放热门歌曲"
 msgid "播放过的歌曲会自动记录在这里。"
 msgstr "播放过的歌曲会自动记录在这里。"
 
-#: src/routes/settings.tsx:586
+#: src/routes/settings.tsx:594
 msgid "播放过的歌曲会转码为 Opus 并缓存到本地，用于加速之后的播放。修改品质只影响之后缓存的新歌曲， 已缓存的歌曲保持原品质。"
 msgstr "播放过的歌曲会转码为 Opus 并缓存到本地，用于加速之后的播放。修改品质只影响之后缓存的新歌曲， 已缓存的歌曲保持原品质。"
 
@@ -1360,7 +1360,7 @@ msgstr "播放音质已切换为{0}，正在重新加载"
 msgid "播放音质已切换为{label}，正在重新加载"
 msgstr "播放音质已切换为{label}，正在重新加载"
 
-#: src/routes/settings.tsx:484
+#: src/routes/settings.tsx:492
 msgid "播放页过渡动画"
 msgstr "播放页过渡动画"
 
@@ -1575,7 +1575,7 @@ msgstr "暂无相关视频"
 msgid "暂无简介"
 msgstr "暂无简介"
 
-#: src/routes/settings.tsx:843
+#: src/routes/settings.tsx:851
 msgid "暂无缓存音乐，播放歌曲后会自动缓存"
 msgstr "暂无缓存音乐，播放歌曲后会自动缓存"
 
@@ -1604,7 +1604,7 @@ msgstr "未找到其他可用音源"
 msgid "未找到相关视频"
 msgstr "未找到相关视频"
 
-#: src/routes/settings.tsx:882
+#: src/routes/settings.tsx:890
 msgid "未知歌手"
 msgstr "未知歌手"
 
@@ -1692,7 +1692,7 @@ msgstr "桌面服务请求失败 ({0})"
 msgid "桌面歌词"
 msgstr "桌面歌词"
 
-#: src/routes/settings.tsx:790
+#: src/routes/settings.tsx:798
 msgid "桌面歌词：Ctrl / ⌘ + Shift + L 显示或隐藏，窗口始终置顶，可拖动到任意位置。"
 msgstr "桌面歌词：Ctrl / ⌘ + Shift + L 显示或隐藏，窗口始终置顶，可拖动到任意位置。"
 
@@ -1700,7 +1700,7 @@ msgstr "桌面歌词：Ctrl / ⌘ + Shift + L 显示或隐藏，窗口始终置�
 msgid "桌面歌词窗口暂不可用"
 msgstr "桌面歌词窗口暂不可用"
 
-#: src/routes/settings.tsx:774
+#: src/routes/settings.tsx:782
 msgid "桌面端"
 msgstr "桌面端"
 
@@ -1861,9 +1861,9 @@ msgstr "正在获取 MV…"
 msgid "正在获取视频…"
 msgstr "正在获取视频…"
 
-#: src/routes/settings.tsx:655
-#: src/routes/settings.tsx:671
-#: src/routes/settings.tsx:696
+#: src/routes/settings.tsx:663
+#: src/routes/settings.tsx:679
+#: src/routes/settings.tsx:704
 msgid "正在读取…"
 msgstr "正在读取…"
 
@@ -1871,11 +1871,11 @@ msgstr "正在读取…"
 msgid "正在读取本地歌单…"
 msgstr "正在读取本地歌单…"
 
-#: src/routes/settings.tsx:806
+#: src/routes/settings.tsx:814
 msgid "正在读取缓存…"
 msgstr "正在读取缓存…"
 
-#: src/routes/settings.tsx:762
+#: src/routes/settings.tsx:770
 msgid "此功能使用第三方客户端上报协议，记录可能被忽略，也可能触发账号风控。仅在本人账号、真实播放时使用，失败不会自动重试。"
 msgstr "此功能使用第三方客户端上报协议，记录可能被忽略，也可能触发账号风控。仅在本人账号、真实播放时使用，失败不会自动重试。"
 
@@ -1954,7 +1954,7 @@ msgstr "流光"
 msgid "流行"
 msgstr "流行"
 
-#: src/routes/settings.tsx:406
+#: src/routes/settings.tsx:414
 msgid "浅色"
 msgstr "浅色"
 
@@ -1970,7 +1970,7 @@ msgstr "浏览"
 msgid "淡入"
 msgstr "淡入"
 
-#: src/routes/settings.tsx:419
+#: src/routes/settings.tsx:427
 msgid "深色"
 msgstr "深色"
 
@@ -2011,7 +2011,7 @@ msgstr "清除"
 msgid "清除搜索"
 msgstr "清除搜索"
 
-#: src/routes/settings.tsx:933
+#: src/routes/settings.tsx:941
 msgid "清除缓存"
 msgstr "清除缓存"
 
@@ -2128,7 +2128,7 @@ msgstr "相关视频加载失败"
 msgid "确定删除这个本地歌单吗？"
 msgstr "确定删除这个本地歌单吗？"
 
-#: src/routes/settings.tsx:933
+#: src/routes/settings.tsx:941
 msgid "确认清除？"
 msgstr "确认清除？"
 
@@ -2165,11 +2165,11 @@ msgstr "视频暂时无法播放，可能已下架或存在地区限制"
 msgid "视频评论"
 msgstr "视频评论"
 
-#: src/routes/settings.tsx:777
+#: src/routes/settings.tsx:785
 msgid "禁用后，右键菜单与 F12 / Ctrl+Shift+I 等入口不再打开开发者工具。 当前窗口立即生效，WebView2 层面需要重启应用。"
 msgstr "禁用后，右键菜单与 F12 / Ctrl+Shift+I 等入口不再打开开发者工具。 当前窗口立即生效，WebView2 层面需要重启应用。"
 
-#: src/routes/settings.tsx:786
+#: src/routes/settings.tsx:794
 msgid "禁用开发者工具"
 msgstr "禁用开发者工具"
 
@@ -2189,7 +2189,7 @@ msgstr "移除播放记录失败"
 msgid "移除歌曲失败"
 msgstr "移除歌曲失败"
 
-#: src/routes/settings.tsx:72
+#: src/routes/settings.tsx:71
 msgid "空格"
 msgstr "空格"
 
@@ -2230,8 +2230,8 @@ msgid "简介"
 msgstr "简介"
 
 #: src/routes/settings.tsx:370
-msgid "管理外观、播放、缓存与桌面功能"
-msgstr "管理外观、播放、缓存与桌面功能"
+#~ msgid "管理外观、播放、缓存与桌面功能"
+#~ msgstr "管理外观、播放、缓存与桌面功能"
 
 #: src/routes/latest-mv.tsx:118
 msgid "类型"
@@ -2254,7 +2254,7 @@ msgstr "精品歌单"
 msgid "精彩评论"
 msgstr "精彩评论"
 
-#: src/routes/settings.tsx:618
+#: src/routes/settings.tsx:626
 msgid "约 64kbps ≈ 1.9MB / 4 分钟，96kbps ≈ 2.9MB，128kbps ≈ 3.8MB。"
 msgstr "约 64kbps ≈ 1.9MB / 4 分钟，96kbps ≈ 2.9MB，128kbps ≈ 3.8MB。"
 
@@ -2262,15 +2262,15 @@ msgstr "约 64kbps ≈ 1.9MB / 4 分钟，96kbps ≈ 2.9MB，128kbps ≈ 3.8MB�
 msgid "缓存"
 msgstr "缓存"
 
-#: src/routes/settings.tsx:802
+#: src/routes/settings.tsx:810
 msgid "缓存列表"
 msgstr "缓存列表"
 
-#: src/routes/settings.tsx:606
+#: src/routes/settings.tsx:614
 msgid "缓存品质"
 msgstr "缓存品质"
 
-#: src/routes/settings.tsx:693
+#: src/routes/settings.tsx:701
 msgid "缓存目录"
 msgstr "缓存目录"
 
@@ -2343,8 +2343,7 @@ msgstr "获取歌曲播放地址失败"
 #: src/components/layout/TitleBar.tsx:27
 #: src/components/layout/TopBar.tsx:154
 #: src/components/layout/TopBar.tsx:155
-#: src/routes/settings.tsx:87
-#: src/routes/settings.tsx:367
+#: src/routes/settings.tsx:86
 msgid "设置"
 msgstr "设置"
 
@@ -2470,7 +2469,7 @@ msgstr "请输入歌单名"
 msgid "请选择图片文件"
 msgstr "请选择图片文件"
 
-#: src/routes/settings.tsx:542
+#: src/routes/settings.tsx:550
 msgid "调整歌曲详情页的唱片样式，并让不同歌曲以更接近的响度播放。"
 msgstr "调整歌曲详情页的唱片样式，并让不同歌曲以更接近的响度播放。"
 
@@ -2577,20 +2576,20 @@ msgstr "选择一首歌曲开始播放"
 msgid "选择后立即重新获取当前歌曲；自动匹配会按内置顺序尝试。"
 msgstr "选择后立即重新获取当前歌曲；自动匹配会按内置顺序尝试。"
 
-#: src/routes/settings.tsx:487
+#: src/routes/settings.tsx:495
 msgid "选择打开歌曲详情页时的入场方式。“从底部滑入”会像 macOS 面板一样从窗口下沿升起。"
 msgstr "选择打开歌曲详情页时的入场方式。“从底部滑入”会像 macOS 面板一样从窗口下沿升起。"
 
-#: src/routes/settings.tsx:680
-#: src/routes/settings.tsx:706
+#: src/routes/settings.tsx:688
+#: src/routes/settings.tsx:714
 msgid "选择文件夹"
 msgstr "选择文件夹"
 
-#: src/routes/settings.tsx:554
+#: src/routes/settings.tsx:562
 msgid "选择歌曲详情页的封面呈现方式，立即生效。"
 msgstr "选择歌曲详情页的封面呈现方式，立即生效。"
 
-#: src/routes/settings.tsx:391
+#: src/routes/settings.tsx:399
 msgid "选择界面明暗与主题配色，立即生效，并会记住你的选择。"
 msgstr "选择界面明暗与主题配色，立即生效，并会记住你的选择。"
 
@@ -2663,11 +2662,11 @@ msgstr "韩语"
 msgid "音乐"
 msgstr "音乐"
 
-#: src/routes/settings.tsx:583
+#: src/routes/settings.tsx:591
 msgid "音乐缓存"
 msgstr "音乐缓存"
 
-#: src/routes/settings.tsx:725
+#: src/routes/settings.tsx:733
 msgid "音源匹配"
 msgstr "音源匹配"
 
@@ -2678,11 +2677,11 @@ msgstr "音源匹配"
 msgid "音量"
 msgstr "音量"
 
-#: src/routes/settings.tsx:74
+#: src/routes/settings.tsx:73
 msgid "音量 +1 / -1"
 msgstr "音量 +1 / -1"
 
-#: src/routes/settings.tsx:73
+#: src/routes/settings.tsx:72
 msgid "音量 +5 / -5"
 msgstr "音量 +5 / -5"
 
@@ -2691,8 +2690,8 @@ msgstr "音量 +5 / -5"
 msgid "音量（Alt + ↑ / ↓）"
 msgstr "音量（Alt + ↑ / ↓）"
 
-#: src/routes/settings.tsx:562
-#: src/routes/settings.tsx:573
+#: src/routes/settings.tsx:570
+#: src/routes/settings.tsx:581
 msgid "音量均衡"
 msgstr "音量均衡"
 
@@ -2737,11 +2736,11 @@ msgstr "黑胶唱片"
 msgid "默认"
 msgstr "默认"
 
-#: src/routes/settings.tsx:643
+#: src/routes/settings.tsx:651
 msgid "默认 200 MB，超出后按缓存时间从旧到新清理。"
 msgstr "默认 200 MB，超出后按缓存时间从旧到新清理。"
 
-#: src/routes/settings.tsx:469
+#: src/routes/settings.tsx:477
 msgid "默认使用轻量的 CSS 动态渐变；开启后在歌曲详情页使用 GPU 绘制封面色彩雾气，不支持 WebGL 时自动回退。"
 msgstr "默认使用轻量的 CSS 动态渐变；开启后在歌曲详情页使用 GPU 绘制封面色彩雾气，不支持 WebGL 时自动回退。"
 
