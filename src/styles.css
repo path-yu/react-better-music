@@ -977,6 +977,85 @@ html.desktop .app-window {
   height: clamp(230px, min(36vw, 50vh), 380px);
 }
 
+/* Horizontal song-change transition, following the reference cover slide. */
+.now-art-stage {
+  width: clamp(230px, min(36vw, 50vh), 380px);
+  height: clamp(230px, min(36vw, 50vh), 380px);
+  flex: none;
+}
+
+.now-art-layer {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.now-art-layer--outgoing {
+  z-index: 2;
+  pointer-events: none;
+}
+
+.now-art-layer.is-enter-next {
+  animation: np-art-in-next 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.now-art-layer.is-enter-prev {
+  animation: np-art-in-prev 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.now-art-layer.is-exit-next {
+  animation: np-art-out-next 520ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+.now-art-layer.is-exit-prev {
+  animation: np-art-out-prev 520ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+@keyframes np-art-in-next {
+  from {
+    transform: translateX(50%) scale(0.92);
+  }
+  to {
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes np-art-in-prev {
+  from {
+    transform: translateX(-50%) scale(0.92);
+  }
+  to {
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes np-art-out-next {
+  from {
+    transform: translateX(0) scale(1);
+  }
+  to {
+    transform: translateX(-50%) scale(0.92);
+  }
+}
+
+@keyframes np-art-out-prev {
+  from {
+    transform: translateX(0) scale(1);
+  }
+  to {
+    transform: translateX(50%) scale(0.92);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .now-art-layer {
+    animation: none !important;
+  }
+}
+
 /* The scrubber/timeline uses exactly the artwork width on the detail page. */
 .np-transport-panel {
   width: clamp(230px, min(36vw, 50vh), 380px);

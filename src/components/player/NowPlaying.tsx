@@ -50,7 +50,7 @@ import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
 import { useLocalLibraryStore } from '../../store/localLibrary'
 import { useVideoPlaybackStore } from '../../store/videoPlayback'
-import { useSettingsStore } from '../../store/settings'
+import { useSettingsStore, type PlayerStyle } from '../../store/settings'
 import { findLyricIndex } from '../../lib/lyric'
 import { seekAudio } from '../../lib/audio'
 import {
@@ -67,6 +67,16 @@ import type { Song } from '../../types'
 
 type NowPlayingPanel = 'lyrics' | 'stage' | 'queue' | 'comments'
 type QueueView = 'list' | 'grid'
+
+type ArtSnapshot = {
+  song: Song
+  style: PlayerStyle
+  playing: boolean
+  position: number
+  liked: boolean
+  albumAvailable: boolean
+  glowRgb?: string
+}
 
 function formatCommentCount(value: number, locale: string) {
   if (value < 1000) return String(value)
@@ -99,6 +109,9 @@ export function NowPlaying() {
   const show = usePlayerStore((state) => state.showNowPlaying)
   const queue = usePlayerStore((state) => state.queue)
   const currentIndex = usePlayerStore((state) => state.currentIndex)
+  const lastStepDirection = usePlayerStore(
+    (state) => state.lastStepDirection,
+  )
   const currentSong = queue[currentIndex]
   // Backdrop follows the current cover; the colour wash is sampled from it.
   const artwork = currentSong?.al.picUrl
@@ -145,6 +158,14 @@ export function NowPlaying() {
   const growFromCover = nowPlayingTransition === 'cover'
   const [panel, setPanel] = useState<NowPlayingPanel>('lyrics')
   const [tabsVisible, setTabsVisible] = useState(true)
+  const [outgoingArt, setOutgoingArt] = useState<{
+    snapshot: ArtSnapshot
+    direction: number
+  } | null>(null)
+  const [artDirection, setArtDirection] = useState<number | null>(null)
+  const artSnapshotRef = useRef<ArtSnapshot | null>(null)
+  const lastArtSongRef = useRef(currentSong?.id)
+  const artExitTimerRef = useRef(0)
   const [queueContext, setQueueContext] = useState<{
     song: Song
     x: number
@@ -371,7 +392,9 @@ export function NowPlaying() {
     ).matches
     if (reduced) return
     const source = document.querySelector<HTMLElement>('[data-player-cover]')
-    const target = overlay.querySelector<HTMLElement>('.now-disc')
+    const target = overlay.querySelector<HTMLElement>(
+      '[data-now-playing-art] .now-disc',
+    )
     if (!source || !target) return
 
     const area = overlay.getBoundingClientRect()
@@ -770,6 +793,57 @@ export function NowPlaying() {
     if (cover && tint) cachePlayerMenuTint(cover, tint)
   }, [currentSong?.al.picUrl, palette.colors])
 
+  const artSnapshot: ArtSnapshot | null = currentSong
+    ? {
+        song: currentSong,
+        style: playerStyle,
+        playing,
+        position: currentTime,
+        liked,
+        albumAvailable: Boolean(currentSong.al.id),
+        glowRgb: palette.colors[0]
+          ? (() => {
+              const { r, g, b } = hexToRgb(palette.colors[0])
+              return `${r} ${g} ${b}`
+            })()
+          : undefined,
+      }
+    : null
+
+  // Song changes slide the artwork horizontally, in the same direction as the
+  // reference cover transition: next enters from the right, previous from the
+  // left; the outgoing card leaves on the opposite side.
+  useEffect(() => {
+    if (!currentSong) return
+    const previous = artSnapshotRef.current
+    const previousId = lastArtSongRef.current
+    if (
+      show &&
+      previous &&
+      previousId !== undefined &&
+      previousId !== currentSong.id
+    ) {
+      const direction = lastStepDirection
+      setOutgoingArt({
+        snapshot: previous,
+        direction,
+      })
+      setArtDirection(direction)
+      window.clearTimeout(artExitTimerRef.current)
+      artExitTimerRef.current = window.setTimeout(() => {
+        setOutgoingArt(null)
+        setArtDirection(null)
+      }, 540)
+    }
+    lastArtSongRef.current = currentSong.id
+    artSnapshotRef.current = artSnapshot
+  }, [currentSong?.id, currentIndex, lastStepDirection, queue.length, show])
+
+  useEffect(
+    () => () => window.clearTimeout(artExitTimerRef.current),
+    [],
+  )
+
   // Keep the overlay mounted so closing can play its exit animation. Video
   // mode already stays mounted to keep the decoder alive; audio mode remains
   // in the DOM but is hidden and non-interactive.
@@ -1134,28 +1208,56 @@ export function NowPlaying() {
               </div>
             </div>
 
-            <div className="relative mt-6 flex items-center justify-center">
-              <PlayerArtwork
-                song={currentSong}
-                style={playerStyle}
-                playing={playing}
-                position={currentTime}
-                liked={liked}
-                albumAvailable={Boolean(albumId)}
-                glowRgb={
-                  palette.colors[0]
-                    ? (() => {
-                        const { r, g, b } = hexToRgb(palette.colors[0])
-                        return `${r} ${g} ${b}`
-                      })()
-                    : undefined
-                }
-                onOpenAlbum={openAlbum}
-                onToggleLike={() => {
-                  if (isLogin) void likeSong(currentSong.id, !liked)
-                  else void toggleLocalFavorite(currentSong)
-                }}
-              />
+            <div className="now-art-stage relative mt-6 mx-auto">
+              {outgoingArt ? (
+                <div
+                  aria-hidden="true"
+                  className={cn(
+                    'now-art-layer now-art-layer--outgoing',
+                    outgoingArt.direction > 0
+                      ? 'is-exit-next'
+                      : 'is-exit-prev',
+                  )}
+                >
+                  <PlayerArtwork
+                    {...outgoingArt.snapshot}
+                    playing={false}
+                    onOpenAlbum={() => undefined}
+                    onToggleLike={() => undefined}
+                  />
+                </div>
+              ) : null}
+              <div
+                key={currentSong.id}
+                data-now-playing-art
+                className={cn(
+                  'now-art-layer',
+                  artDirection === 1 && 'is-enter-next',
+                  artDirection === -1 && 'is-enter-prev',
+                )}
+              >
+                <PlayerArtwork
+                  song={currentSong}
+                  style={playerStyle}
+                  playing={playing}
+                  position={currentTime}
+                  liked={liked}
+                  albumAvailable={Boolean(albumId)}
+                  glowRgb={
+                    palette.colors[0]
+                      ? (() => {
+                          const { r, g, b } = hexToRgb(palette.colors[0])
+                          return `${r} ${g} ${b}`
+                        })()
+                      : undefined
+                  }
+                  onOpenAlbum={openAlbum}
+                  onToggleLike={() => {
+                    if (isLogin) void likeSong(currentSong.id, !liked)
+                    else void toggleLocalFavorite(currentSong)
+                  }}
+                />
+              </div>
             </div>
             <div className="np-transport-panel mt-5">
               <NowPlayingTransport

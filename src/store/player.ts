@@ -46,6 +46,8 @@ export type PlayMode = 'order' | 'random' | 'singleLoop'
 interface PlayerState {
   queue: Song[]
   currentIndex: number
+  /** Direction of the most recent queue step, used by the artwork slide. */
+  lastStepDirection: 1 | -1
   playlistId: string
   playing: boolean
   mode: PlayMode
@@ -900,6 +902,7 @@ export const usePlayerStore = create<PlayerState>()(
           if (direction === 1) forcedNextSongId = null
           set((state) => ({
             currentIndex: nextIndex,
+            lastStepDirection: direction,
             playing: true,
             currentTime: 0,
             buffered: 0,
@@ -932,6 +935,7 @@ export const usePlayerStore = create<PlayerState>()(
           if (!song) continue
           set((state) => ({
             currentIndex: index,
+            lastStepDirection: direction,
             playing: true,
             currentTime: 0,
             buffered: 0,
@@ -955,6 +959,7 @@ export const usePlayerStore = create<PlayerState>()(
       return {
         queue: [],
         currentIndex: 0,
+        lastStepDirection: 1,
         playlistId: '',
         playing: false,
         mode: 'order',
@@ -1011,11 +1016,12 @@ export const usePlayerStore = create<PlayerState>()(
           // A manual selection starts a new intent; don't keep an old forced
           // next-selection around.
           forcedNextSongId = null
-          const { queue } = get()
+          const { queue, currentIndex } = get()
           const song = queue[index]
           if (!song) return false
           set((state) => ({
             currentIndex: index,
+            lastStepDirection: index >= currentIndex ? 1 : -1,
             playing: true,
             currentTime: 0,
             buffered: 0,
