@@ -77,6 +77,19 @@ function formatCommentCount(value: number, locale: string) {
 const SONG_TILE_MIN = 112
 const SONG_TILE_GAP = 14
 
+/** The player-bar cover and Now Playing share the same window coordinate space. */
+function coverInset(source: Element, overlay: HTMLElement, radius: number) {
+  const from = source.getBoundingClientRect()
+  const area = overlay.getBoundingClientRect()
+  return [
+    from.top - area.top,
+    area.right - from.right,
+    area.bottom - from.bottom,
+    from.left - area.left,
+  ].map((value) => `${Math.max(0, value)}px`).join(' ') +
+    ` round ${radius}px`
+}
+
 export function NowPlaying() {
   const { i18n } = useLingui()
   const navigate = useNavigate()
@@ -127,6 +140,7 @@ export function NowPlaying() {
   const nowPlayingTransition = useSettingsStore(
     (state) => state.nowPlayingTransition,
   )
+  const growFromCover = nowPlayingTransition === 'cover'
   const [panel, setPanel] = useState<NowPlayingPanel>('lyrics')
   const [queueContext, setQueueContext] = useState<{
     song: Song
@@ -180,6 +194,9 @@ export function NowPlaying() {
   const overlayRef = useRef<HTMLDivElement>(null)
   const exitTimerRef = useRef<number | null>(null)
   const exitCleanupRef = useRef<(() => void) | null>(null)
+  const coverMorphCleanupRef = useRef<(() => void) | null>(null)
+  const artworkRef = useRef(artwork)
+  artworkRef.current = artwork
   const exitingRef = useRef(false)
   const requestClose = useCallback(() => {
     if (exitingRef.current) return
@@ -190,12 +207,69 @@ export function NowPlaying() {
       fade: 240,
       'slide-up': 360,
       scale: 280,
+      cover: 360,
       none: 0,
     }
-    const duration = reduced ? 0 : durations[nowPlayingTransition]
+    const duration = reduced
+      ? 0
+      : growFromCover
+        ? 360
+        : durations[nowPlayingTransition]
     const overlay = overlayRef.current
     if (!duration || !overlay) {
       toggleNowPlaying(false)
+      return
+    }
+
+    if (growFromCover) {
+      const source = document.querySelector<HTMLElement>('[data-player-cover]')
+      if (!source) {
+        toggleNowPlaying(false)
+        return
+      }
+      coverMorphCleanupRef.current?.()
+      coverMorphCleanupRef.current = null
+      exitingRef.current = true
+      overlay.classList.remove(
+        'np-enter-fade',
+        'np-enter-slide-up',
+        'np-enter-scale',
+      )
+      overlay.style.transition = 'none'
+      overlay.style.clipPath = ''
+      overlay.style.opacity = ''
+      overlay.getBoundingClientRect()
+      const toCover = `inset(${coverInset(source, overlay, 10)})`
+      const animation = overlay.animate(
+        [
+          { clipPath: 'inset(0 0 0 0 round 18px)', opacity: 1 },
+          { clipPath: toCover, opacity: 0.88 },
+        ],
+        {
+          duration,
+          easing: 'cubic-bezier(0.4, 0, 1, 1)',
+          fill: 'both',
+        },
+      )
+      let finished = false
+      const finish = () => {
+        if (finished) return
+        finished = true
+        animation.cancel()
+        exitCleanupRef.current?.()
+        exitCleanupRef.current = null
+        exitingRef.current = false
+        toggleNowPlaying(false)
+      }
+      animation.addEventListener('finish', finish)
+      exitTimerRef.current = window.setTimeout(finish, duration + 150)
+      exitCleanupRef.current = () => {
+        animation.removeEventListener('finish', finish)
+        if (exitTimerRef.current !== null) {
+          window.clearTimeout(exitTimerRef.current)
+          exitTimerRef.current = null
+        }
+      }
       return
     }
 
@@ -257,17 +331,21 @@ export function NowPlaying() {
       overlay.style.transform = 'scale(0.965)'
       overlay.style.opacity = '0'
     }
-  }, [nowPlayingTransition, toggleNowPlaying])
+  }, [growFromCover, nowPlayingTransition, toggleNowPlaying])
 
   useEffect(() => {
     return () => {
       exitCleanupRef.current?.()
       exitCleanupRef.current = null
+      coverMorphCleanupRef.current?.()
+      coverMorphCleanupRef.current = null
       exitingRef.current = false
     }
   }, [])
 
   useLayoutEffect(() => {
+    coverMorphCleanupRef.current?.()
+    coverMorphCleanupRef.current = null
     if (show) {
       exitCleanupRef.current?.()
       exitCleanupRef.current = null
@@ -282,7 +360,95 @@ export function NowPlaying() {
     overlay.style.transition = ''
     overlay.style.transform = ''
     overlay.style.opacity = ''
-  }, [show, nowPlayingTransition])
+    overlay.style.clipPath = ''
+
+    if (!show || !growFromCover) return
+    const reduced = window.matchMedia?.(
+      '(prefers-reduced-motion: reduce)',
+    ).matches
+    if (reduced) return
+    const source = document.querySelector<HTMLElement>('[data-player-cover]')
+    const target = overlay.querySelector<HTMLElement>('.now-disc')
+    if (!source || !target) return
+
+    const area = overlay.getBoundingClientRect()
+    const from = source.getBoundingClientRect()
+    const to = target.getBoundingClientRect()
+    const startClip = `inset(${coverInset(source, overlay, 10)})`
+    const endClip = 'inset(0 0 0 0 round 18px)'
+    const local = (rect: DOMRect) => ({
+      left: `${rect.left - area.left}px`,
+      top: `${rect.top - area.top}px`,
+      width: `${rect.width}px`,
+      height: `${rect.height}px`,
+    })
+
+    overlay.style.transition = 'none'
+    const ghost = document.createElement('div')
+    Object.assign(ghost.style, {
+      position: 'absolute',
+      zIndex: '60',
+      overflow: 'hidden',
+      pointerEvents: 'none',
+      borderRadius: '10px',
+      backgroundColor: '#16161a',
+      backgroundImage: artworkRef.current
+        ? `url("${artworkRef.current}")`
+        : '',
+      backgroundPosition: 'center',
+      backgroundSize: 'cover',
+      boxShadow: '0 18px 54px -16px rgba(0, 0, 0, 0.7)',
+      ...local(from),
+    })
+    overlay.appendChild(ghost)
+
+    const grow = overlay.animate(
+      [
+        { clipPath: startClip, opacity: 0.94 },
+        { clipPath: endClip, opacity: 1 },
+      ],
+      {
+        duration: 420,
+        easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+        fill: 'both',
+      },
+    )
+    const ghostMove = ghost.animate(
+      [
+        { ...local(from), borderRadius: '10px', opacity: 1 },
+        { ...local(to), borderRadius: '18px', opacity: 1, offset: 0.78 },
+        { ...local(to), borderRadius: '18px', opacity: 0 },
+      ],
+      {
+        duration: 420,
+        easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+        fill: 'both',
+      },
+    )
+    let finished = false
+    let fallback = 0
+    const cleanup = () => {
+      grow.cancel()
+      ghostMove.cancel()
+      ghost.remove()
+      window.clearTimeout(fallback)
+      overlay.style.clipPath = ''
+      overlay.style.opacity = ''
+      overlay.style.transition = ''
+    }
+    const finish = () => {
+      if (finished) return
+      finished = true
+      cleanup()
+      coverMorphCleanupRef.current = null
+    }
+    grow.addEventListener('finish', finish)
+    fallback = window.setTimeout(finish, 650)
+    coverMorphCleanupRef.current = () => {
+      finished = true
+      cleanup()
+    }
+  }, [growFromCover, nowPlayingTransition, show])
 
   const rawMvId = currentSong?.mv ?? currentSong?.mvid
   // `mv: 0` is a valid "no MV" marker, not a nullish value.
@@ -736,6 +902,7 @@ export function NowPlaying() {
           ? 'np-open'
           : 'np-closed np-closed-hidden pointer-events-none',
         show &&
+          !growFromCover &&
           nowPlayingTransition !== 'none' &&
           `np-enter-${nowPlayingTransition}`,
       )}

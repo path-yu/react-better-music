@@ -259,9 +259,8 @@ function cassetteReel(fraction: number) {
 }
 
 /**
- * The reference cover is a horizontal draggable/flingable tile that also tilts
- * in 3D toward the pointer. Retro players sit inside the same wrapper, so the
- * turntable and cassette inherit those interactions rather than being static.
+ * The reference cover is a horizontal draggable/flingable tile. Hover only
+ * changes the artwork hint; dragging supplies the only transform.
  */
 function ArtworkFrame({
   children,
@@ -273,8 +272,6 @@ function ArtworkFrame({
   const [offset, setOffset] = useState(0)
   const [dragging, setDragging] = useState(false)
   const [flinging, setFlinging] = useState(false)
-  const [hover, setHover] = useState(false)
-  const [tilt, setTilt] = useState({ rx: 0, ry: 0 })
   const frameRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<{
     pointerId: number
@@ -309,7 +306,6 @@ function ArtworkFrame({
       else void usePlayerStore.getState().prev()
       setOffset(0)
       setFlinging(false)
-      setTilt({ rx: 0, ry: 0 })
       suppressClickRef.current = false
     }, 480)
   }
@@ -334,16 +330,6 @@ function ArtworkFrame({
   }
 
   const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect()
-    const tx = Math.min(
-      1,
-      Math.max(-1, ((event.clientX - rect.left) / rect.width) * 2 - 1),
-    )
-    const ty = Math.min(
-      1,
-      Math.max(-1, ((event.clientY - rect.top) / rect.height) * 2 - 1),
-    )
-    if (!reducedMotion) setTilt({ rx: -ty * 7, ry: tx * 7 })
     const drag = dragRef.current
     if (!drag) return
     const dx = event.clientX - drag.startX
@@ -403,13 +389,6 @@ function ArtworkFrame({
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
-      onPointerEnter={() => setHover(true)}
-      onPointerLeave={() => {
-        if (!dragRef.current) {
-          setHover(false)
-          setTilt({ rx: 0, ry: 0 })
-        }
-      }}
       onWheel={onWheel}
       onClickCapture={(event) => {
         if (suppressClickRef.current) {
@@ -422,7 +401,7 @@ function ArtworkFrame({
       <div
         className="retro-art-transform"
         style={{
-          transform: `perspective(900px) translate3d(${offset}px, 0, 0) rotateZ(${swing}deg) rotateY(${tilt.ry}deg) rotateX(${tilt.rx}deg) scale(${hover && !dragging ? 1.02 : 1})`,
+          transform: `translate3d(${offset}px, 0, 0) rotateZ(${swing}deg)`,
           opacity,
           transition: dragging ? 'none' : undefined,
         }}

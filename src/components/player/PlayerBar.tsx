@@ -1133,6 +1133,7 @@ export function PlayerBar() {
       >
         <button
           type="button"
+          data-player-cover
           onClick={() => toggleNowPlaying()}
           className="group pressable relative shrink-0"
           title={

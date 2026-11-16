@@ -30,7 +30,12 @@ export type LyricDisplayMode = 'both' | 'original' | 'translation'
 export type LyricFontSize = 'small' | 'medium' | 'large'
 export type NowPlayingMode = 'audio' | 'video'
 export type LyricStageStyle = 'flow' | 'partita' | 'tilt'
-export type NowPlayingTransition = 'fade' | 'slide-up' | 'scale' | 'none'
+export type NowPlayingTransition =
+  | 'fade'
+  | 'slide-up'
+  | 'scale'
+  | 'cover'
+  | 'none'
 export type PlayerStyle = 'cover' | 'vinyl' | 'cassette'
 
 export const PLAYER_STYLE_OPTIONS: Array<{
@@ -49,6 +54,7 @@ export const NOW_PLAYING_TRANSITION_OPTIONS: Array<{
   { value: 'fade', label: msg`淡入` },
   { value: 'slide-up', label: msg`从底部滑入` },
   { value: 'scale', label: msg`缩放淡入` },
+  { value: 'cover', label: msg`从封面展开` },
   { value: 'none', label: msg`无动画` },
 ]
 
@@ -187,7 +193,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'react-music-settings',
-      version: 5,
+      version: 6,
       // v1 stored a boolean translation switch; keep "off" users in original mode.
       migrate: (persisted, version) => {
         const previous = persisted as Partial<SettingsState> & {
@@ -204,17 +210,24 @@ export const useSettingsStore = create<SettingsState>()(
         // v4 moves the WebGL fog behind an explicit opt-in. Reset old persisted
         // true values once so existing installs also get the safer default.
         const withFog = version < 4 ? { ...next, fogBackdrop: false } : next
+        // v6 folds the old standalone "grow from cover" toggle into the
+        // transition choices.
+        const withCover =
+          version < 6 &&
+          (previous as { growFromCover?: boolean }).growFromCover
+            ? { ...withFog, nowPlayingTransition: 'cover' as NowPlayingTransition }
+            : withFog
         // v5 removes Lossless/Hi-Res. Keep existing installs on a valid level
         // instead of leaving a stale value that the quality picker cannot show.
         if (
           version < 5 &&
           !PLAY_QUALITY_OPTIONS.some(
-            (option) => option.value === withFog.playLevel,
+            (option) => option.value === withCover.playLevel,
           )
         ) {
-          return { ...withFog, playLevel: 'exhigh' as PlayLevel }
+          return { ...withCover, playLevel: 'exhigh' as PlayLevel }
         }
-        return withFog
+        return withCover
       },
     },
   ),

@@ -125,6 +125,7 @@ function SettingsPage() {
   const setNowPlayingTransition = useSettingsStore(
     (state) => state.setNowPlayingTransition,
   )
+
   const autoScrobble = useSettingsStore((state) => state.autoScrobble)
   const setAutoScrobble = useSettingsStore((state) => state.setAutoScrobble)
   const volumeNormalization = useSettingsStore(
