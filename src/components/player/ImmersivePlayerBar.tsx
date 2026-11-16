@@ -191,7 +191,6 @@ export function ImmersivePlayerBar({
               else toggleNowPlaying(false)
             }}
             aria-label={i18n._(msg`收起播放页`)}
-            title={i18n._(msg`收起播放页（Esc）`)}
             className="np-round-button pressable flex h-9 w-9 items-center justify-center rounded-full text-white/75"
           >
             <ChevronDown className="h-4 w-4" />

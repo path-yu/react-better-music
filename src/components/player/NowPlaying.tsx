@@ -992,6 +992,7 @@ export function NowPlaying() {
   return (
     <div
       ref={overlayRef}
+      inert={!show}
       className={cn(
         'nowplaying-overlay dark',
         // The closed geometry/fade lives in the transition classes; opening
