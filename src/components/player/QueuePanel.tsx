@@ -96,7 +96,7 @@ export function QueuePanel() {
         // height and must also cover the custom title bar's window buttons.
         immersive
           ? 'inset-0 z-[90]'
-          : 'inset-x-0 bottom-[76px] top-[var(--titlebar-height,44px)] z-[70]',
+          : 'inset-0 z-[70]',
       )}
     >
       <button

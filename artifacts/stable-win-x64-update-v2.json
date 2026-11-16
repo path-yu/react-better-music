@@ -1,1 +1,1 @@
-{"schemaVersion":1,"identifier":"com.qimiao.music","channel":"stable","version":"1.1","hash":"13jw1iy5lw8rn","platform":"win","arch":"x64","artifact":{"file":"stable-win-x64-声屿.tar.zst","tarSha256":"51a8b00a37b9697bdc2688b73f61a9fd6af986964695be71189615b17cb6b8e9","tarSize":108864512}}
+{"schemaVersion":1,"identifier":"com.qimiao.music","channel":"stable","version":"1.1","hash":"3szgjtane7hhz","platform":"win","arch":"x64","artifact":{"file":"stable-win-x64-声屿.tar.zst","tarSha256":"20ee9a2fc408351ba8a9d29639073d7a2b411c247289b5026a2b92c46eafec03","tarSize":108858368}}
