@@ -874,7 +874,7 @@ export const usePlayerStore = create<PlayerState>()(
         if (state.queue.length - 1 - state.currentIndex < 3) void appendHeartSongs()
       }
 
-      const step = async (direction: 1 | -1, auto = false) => {
+      const step = async (direction: 1 | -1) => {
         const { queue, currentIndex, mode } = get()
         if (!queue.length) return
         if (mode === 'random' && queue.length > 1) {
@@ -923,12 +923,10 @@ export const usePlayerStore = create<PlayerState>()(
           // not leave the player silently stuck on an empty source.
         }
         let index = currentIndex
-        // A natural end in sequential mode stops; pressing next (or using a
-        // media key) always advances, wrapping to the first track at the end.
-        const maxSteps =
-          direction === 1 && mode === 'order' && auto
-            ? queue.length - 1 - currentIndex
-            : queue.length
+        // Both a manual "next" and natural playback completion wrap around.
+        // Scan the whole queue so an unplayable track cannot strand playback,
+        // then stop only when every entry has been tried.
+        const maxSteps = queue.length
         for (let attempt = 0; attempt < maxSteps; attempt += 1) {
           index = (index + direction + queue.length) % queue.length
           const song = queue[index]
@@ -1143,7 +1141,7 @@ export const usePlayerStore = create<PlayerState>()(
           set({ playing: true })
         },
 
-        next: (options) => step(1, options?.auto ?? false),
+        next: () => step(1),
         prev: () => step(-1),
 
         setPlaying(value) {

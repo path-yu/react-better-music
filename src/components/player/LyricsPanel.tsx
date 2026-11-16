@@ -150,6 +150,7 @@ export const LyricsPanel = memo(function LyricsPanel({
   const containerRef = useRef<HTMLDivElement>(null)
   const lineRefs = useRef<Record<number, HTMLElement | null>>({})
   const lastActiveRef = useRef(-1)
+  const linesRef = useRef(lines)
   const displayMode = useSettingsStore((state) => state.lyricDisplayMode)
   const lyricFontSize = useSettingsStore((state) => state.lyricFontSize)
   const wordByWordLyrics = useSettingsStore((state) => state.wordByWordLyrics)
@@ -161,18 +162,28 @@ export const LyricsPanel = memo(function LyricsPanel({
     const container = containerRef.current
     const active = lineRefs.current[activeIndex]
     if (!container || !active) return
+    // A new song means every node below is new; jump immediately instead of
+    // animating from the previous song's scroll offset.
+    const linesChanged = linesRef.current !== lines
+    linesRef.current = lines
+    if (linesChanged) lastActiveRef.current = -1
     // A seek can jump many lines; scrolling smoothly across a long distance
     // fights the next update and makes the whole panel look shaky.
     const jump = Math.abs(activeIndex - lastActiveRef.current)
     lastActiveRef.current = activeIndex
-    const behavior: ScrollBehavior = jump > 2 ? 'auto' : 'smooth'
+    const behavior: ScrollBehavior =
+      linesChanged || jump > 2 ? 'auto' : 'smooth'
     // On mobile the viewport is not scrollable on purpose (the whole page is).
     // Do not scroll the active line into view there: it yanks the whole detail
     // page upward and hides the artwork/transport above the tabs.
     if (container.scrollHeight <= container.clientHeight + 1) return
     const top = active.offsetTop - container.clientHeight / 2 + active.offsetHeight / 2
     container.scrollTo({ top: Math.max(0, top), behavior })
-  }, [activeIndex])
+    // `lines` is intentionally a dependency: auto-advancing to the next song
+    // can keep the same activeIndex (usually 0) while replacing every lyric
+    // node. Without this the panel kept the previous song's scrollTop and
+    // opened somewhere in the middle of the new lyrics.
+  }, [activeIndex, lines])
 
   if (!lines.length) {
     return (

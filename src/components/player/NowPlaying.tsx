@@ -1336,6 +1336,7 @@ export function NowPlaying() {
                   </div>
                 ) : (
                   <LyricsPanel
+                    key={currentSong.id}
                     lines={lyricLines}
                     activeIndex={activeIndex}
                     onSeek={handleSeek}
