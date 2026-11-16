@@ -170,6 +170,54 @@ export function PlayerBar() {
 
 
   const [moreOpen, setMoreOpen] = useState(false)
+  const nowPlayingOpen = usePlayerStore((state) => state.showNowPlaying)
+  const pointerRef = useRef({ x: 0, y: 0 })
+  const wasNowPlayingOpenRef = useRef(nowPlayingOpen)
+  const [resumeHint, setResumeHint] = useState<{
+    x: number
+    y: number
+  } | null>(null)
+
+  // Pointer position is needed when the detail overlay disappears without the
+  // user moving: hover/title tooltips are not re-evaluated under a stationary
+  // cursor after the element above it is removed.
+  useEffect(() => {
+    const track = (event: PointerEvent) => {
+      pointerRef.current = { x: event.clientX, y: event.clientY }
+    }
+    window.addEventListener('pointermove', track, { passive: true })
+    return () => window.removeEventListener('pointermove', track)
+  }, [])
+
+  useEffect(() => {
+    const wasOpen = wasNowPlayingOpenRef.current
+    wasNowPlayingOpenRef.current = nowPlayingOpen
+    if (nowPlayingOpen) {
+      setResumeHint(null)
+      return
+    }
+    if (!wasOpen) return
+    const frame = window.requestAnimationFrame(() => {
+      const { x, y } = pointerRef.current
+      const target = document
+        .elementFromPoint(x, y)
+        ?.closest('[data-player-open-target]')
+      if (target) setResumeHint({ x, y })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [nowPlayingOpen])
+
+  useEffect(() => {
+    if (!resumeHint) return
+    const hide = () => setResumeHint(null)
+    window.addEventListener('pointermove', hide, { once: true })
+    window.addEventListener('pointerdown', hide, { once: true })
+    return () => {
+      window.removeEventListener('pointermove', hide)
+      window.removeEventListener('pointerdown', hide)
+    }
+  }, [resumeHint])
+
   // Real duration reported by the media element; trial clips are shorter than
   // the catalogue duration in song.dt.
   const [mediaDuration, setMediaDuration] = useState(0)
@@ -1095,6 +1143,17 @@ export function PlayerBar() {
         if (showQueue) toggleQueue(false)
       }}
     >
+      {resumeHint ? (
+        <span
+          className="pointer-events-none fixed z-[80] rounded-[5px] bg-black/80 px-2 py-1 text-[11px] text-white shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
+          style={{
+            left: Math.min(resumeHint.x + 12, window.innerWidth - 100),
+            top: Math.min(resumeHint.y + 18, window.innerHeight - 32),
+          }}
+        >
+          <Trans>打开播放页</Trans>
+        </span>
+      ) : null}
       {videoActive ? (
         <ImmersiveProgressBar
           value={playbackPercent}
@@ -1110,7 +1169,6 @@ export function PlayerBar() {
             type="button"
             onClick={() => toggleNowPlaying(false)}
             aria-label={i18n._(msg`收起播放页`)}
-            title={i18n._(msg`收起播放页（Esc）`)}
             className="np-round-button pressable flex h-9 w-9 items-center justify-center rounded-full text-white/75"
           >
             <ChevronDown className="h-4 w-4" />
@@ -1126,13 +1184,10 @@ export function PlayerBar() {
         <button
           type="button"
           data-player-cover
+          data-player-open-target
           onClick={() => toggleNowPlaying()}
-          className="group pressable relative shrink-0"
-          title={
-            showNowPlaying
-              ? i18n._(msg`收起播放页`)
-              : i18n._(msg`打开播放页`)
-          }
+          className="group pressable relative shrink-0 cursor-pointer"
+          title={i18n._(msg`打开播放页`)}
         >
           <ImageWithFallback
             src={currentSong.al.picUrl}
@@ -1154,6 +1209,7 @@ export function PlayerBar() {
         <div
           role="button"
           tabIndex={0}
+          data-player-open-target
           className="min-w-0 flex-1 cursor-pointer"
           onClick={(event) => {
             // Do not let nested controls open the immersive player.
@@ -1167,11 +1223,7 @@ export function PlayerBar() {
               toggleNowPlaying()
             }
           }}
-          title={
-            showNowPlaying
-              ? i18n._(msg`收起播放页`)
-              : i18n._(msg`打开播放页`)
-          }
+          title={i18n._(msg`打开播放页`)}
         >
           <div className="flex items-center gap-2">
             <span className="min-w-0 truncate text-[12.5px] font-medium text-black/80 hover:text-accent">
@@ -1325,10 +1377,10 @@ export function PlayerBar() {
         </div>
 
         {!videoActive ? (
-          <div className="mt-1.5 flex w-full items-center gap-2.5 max-md:absolute max-md:inset-x-0 max-md:top-0 max-md:mt-0 max-md:px-3">
+          <div className="mt-1.5 grid h-5 w-full grid-cols-[36px_minmax(0,1fr)_36px] items-center gap-2.5 max-md:absolute max-md:inset-x-0 max-md:top-0 max-md:mt-0 max-md:px-3">
             <span
               data-testid="elapsed-time"
-              className="w-9 shrink-0 text-right text-[11px] tabular-nums text-black/35 max-md:hidden"
+              className="text-right text-[11px] leading-none tabular-nums text-black/35 max-md:hidden"
             >
               {formatDuration(playbackTime * 1000)}
             </span>
@@ -1339,7 +1391,7 @@ export function PlayerBar() {
               onChange={handleSeek}
               valueText={`${formatDuration(playbackTime * 1000)} / ${formatDuration(playbackDurationMs)}`}
             />
-            <span className="w-9 shrink-0 text-[11px] tabular-nums text-black/35 max-md:hidden">
+            <span className="text-[11px] leading-none tabular-nums text-black/35 max-md:hidden">
               {formatDuration(playbackDurationMs)}
             </span>
           </div>

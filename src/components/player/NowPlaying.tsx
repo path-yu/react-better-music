@@ -1155,7 +1155,7 @@ export function NowPlaying() {
         {/* Desktop: the columns own their scrolling (lyrics/comments), so the
             page itself never scrolls and the wheel target stays predictable.
             Mobile: one single scroll container for the whole page. */}
-        <div className="grid flex-1 grid-cols-1 gap-4 px-6 pb-5 max-md:auto-rows-max max-md:content-start max-md:overflow-y-auto md:grid-cols-[minmax(220px,0.9fr)_minmax(250px,1.1fr)] md:overflow-hidden xl:gap-6 xl:px-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="grid flex-1 grid-cols-1 gap-4 px-6  max-md:auto-rows-max max-md:content-start max-md:overflow-y-auto md:grid-cols-[minmax(220px,0.9fr)_minmax(250px,1.1fr)] md:overflow-hidden xl:gap-6 xl:px-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <div className="flex min-h-0 flex-col items-center justify-center max-md:h-fit max-md:min-h-fit max-md:justify-start">
             <div className="max-w-[360px] text-center">
               <div className="flex min-w-0 items-center justify-center gap-1.5">
@@ -1265,6 +1265,7 @@ export function NowPlaying() {
                 videoLoading={videoLoading}
               />
             </div>
+
           </div>
           <div className="relative flex min-h-0 flex-col max-md:min-h-[420px]">
             <div
@@ -1781,15 +1782,16 @@ export function NowPlaying() {
       </div>
 
       {!mvMode ? (
-        <button
-          type="button"
-          aria-label={i18n._(msg`收起播放页`)}
-          title={i18n._(msg`收起播放页（Esc）`)}
-          onClick={requestClose}
-          className="np-round-button pressable absolute bottom-5 left-6 z-50 flex h-9 w-9 items-center justify-center rounded-full text-white/75"
-        >
-          <ChevronDown className="h-4 w-4" />
-        </button>
+        <div className="nowplaying-close-control electrobun-webkit-app-region-no-drag absolute left-4 top-4 z-[210] max-md:fixed max-md:left-4 max-md:top-4">
+          <button
+            type="button"
+            aria-label={i18n._(msg`收起播放页`)}
+            onClick={requestClose}
+            className="np-round-button pressable flex h-9 w-9 items-center justify-center rounded-full text-white/75"
+          >
+            <ChevronDown className="h-4 w-4" />
+          </button>
+        </div>
       ) : null}
 
       {videoActive ? (

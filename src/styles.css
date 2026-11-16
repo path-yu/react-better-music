@@ -2144,6 +2144,34 @@ html.desktop .app-window {
   transform: scale(0.94);
 }
 
+/* The collapse affordance follows the pointer: it is hidden while the cursor
+ * is outside the immersive page and fades back in as soon as the overlay is
+ * hovered. Focus keeps it available for keyboard users. */
+.nowplaying-close-control {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.nowplaying-overlay:hover .nowplaying-close-control,
+.nowplaying-close-control:focus-within {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (max-width: 767px) {
+  .nowplaying-close-control {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nowplaying-close-control {
+    transition: none;
+  }
+}
+
 /*
  * Comment composer. It used `bg-white`, which the dark theme turns into an
  * opaque #232325 block — pasted on top of a translucent panel. Keep it a real
@@ -3287,6 +3315,30 @@ html.desktop .app-window {
   height: 6px;
 }
 
+/*
+ * The normal player bar previously pinned the track to the top of its 14px
+ * hit area, which made the centred time labels look several pixels low.
+ * Keep the top-edge treatment for the immersive transport only.
+ */
+.player-glass:not(.player-glass--immersive) .seek-slider__track,
+.player-glass:not(.player-glass--immersive) .seek-slider__buffer,
+.player-glass:not(.player-glass--immersive) .seek-slider__fill {
+  top: 50%;
+  margin-top: -1.5px;
+}
+
+.player-glass:not(.player-glass--immersive)
+  .seek-slider:hover
+  .seek-slider__track,
+.player-glass:not(.player-glass--immersive)
+  .seek-slider:hover
+  .seek-slider__buffer,
+.player-glass:not(.player-glass--immersive)
+  .seek-slider:hover
+  .seek-slider__fill {
+  margin-top: -3px;
+}
+
 .player-glass--immersive .seek-slider:hover .seek-slider__track {
   background: linear-gradient(
     90deg,
@@ -3360,6 +3412,24 @@ html.desktop .app-window {
   top: 3px;
   opacity: 1;
   transform: scale(1.5);
+}
+
+/* The normal player now centres its 3px line in the 14px hit area, so the
+ * knob must centre on the same line instead of using the immersive top offset. */
+.player-glass:not(.player-glass--immersive) .seek-slider__thumb {
+  top: 50%;
+  margin-top: -4.5px;
+}
+
+.player-glass:not(.player-glass--immersive)
+  .seek-slider:hover
+  .seek-slider__thumb,
+.player-glass:not(.player-glass--immersive)
+  .seek-slider__thumb.is-dragging,
+.player-glass:not(.player-glass--immersive)
+  .seek-slider:has(.seek-slider__input:focus-visible)
+  .seek-slider__thumb {
+  top: 50%;
 }
 
 /* The knob is always visible; it only grows under the pointer/while scrubbing. */
