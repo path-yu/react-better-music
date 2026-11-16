@@ -462,7 +462,7 @@ export function PlayerArtwork({
   const progress = duration > 0 ? clamp01(smoothPosition / duration) : 0
   const vinylSpin = reducedMotion
     ? 0
-    : ((smoothPosition * 25) % 360 + 360) % 360
+    : ((smoothPosition * 35) % 360 + 360) % 360
   const reelSpin = reducedMotion
     ? 0
     : ((smoothPosition * 150) % 360 + 360) % 360
