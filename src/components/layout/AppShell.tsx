@@ -299,6 +299,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {children}
               </div>
             </main>
+            {hasQueue && <PlayerBar />}
           </div>
         </div>
         {sidebarOpen ? (
@@ -315,7 +316,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             <QueuePanel />
           </Suspense>
         ) : null}
-        {hasQueue && <PlayerBar />}
         {loginOpen ? (
           <Suspense fallback={null}>
             <LoginModal open onOpenChange={(open) => !open && closeLogin()} />

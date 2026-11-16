@@ -758,7 +758,7 @@ html.desktop .app-window {
    it with `visibility` here: in fade mode that made it vanish on the first
    frame while the overlay was still transparent, which read as a flash. The
    z-85 overlay now fades over it naturally; only hit-testing is disabled. */
-.app-window:has(.nowplaying-overlay.np-open) > .player-glass {
+.app-window:has(.nowplaying-overlay.np-open) .main-column > .player-glass {
   pointer-events: none;
 }
 
@@ -2395,13 +2395,20 @@ html.desktop .app-window {
 .lyric-line {
   color: var(--lyric-active);
   font-weight: 600;
-  opacity: var(--lyric-opacity, 1);
-  padding-block: 0.72em;
+  padding: 10px 12px;
+  border-radius: 12px;
   transform-origin: left center;
   transition:
-    opacity 0.34s cubic-bezier(0.16, 1, 0.3, 1),
     filter 0.34s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+    transform 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.18s ease-out;
+}
+
+/* The native lyric rows are buttons with a 10×12 px inset and a 12 px
+   radius; hovering paints the same faint white pill. */
+.lyric-line:hover,
+.lyric-line:focus-visible {
+  background-color: rgba(255, 255, 255, 0.06);
 }
 
 /* Browser default focus rings are a hard black rectangle over the artwork.
@@ -2425,9 +2432,10 @@ html.desktop .app-window {
   filter: blur(var(--lyric-blur, 0px));
 }
 
-/* Hovering a faded line brightens it before seeking (Apple uses #ffffffa3). */
-.lyric-line:not(.is-active):hover {
-  opacity: 0.75;
+/* Hovering a faded line lifts it to the reference renderer's 55% opacity. */
+.lyric-line:not(.is-active):hover .lyric-line__text,
+.lyric-line:not(.is-active):hover .lyric-line__translate {
+  opacity: 0.55;
 }
 
 .lyric-line.is-blurred:hover {
@@ -2437,6 +2445,12 @@ html.desktop .app-window {
 /* Our lyrics column is narrower than Apple's 40vw stage. Keep the desktop
    reading size stable while resizing the window: below ~1410px the 24px floor
    takes over, so shrinking the window no longer makes every lyric smaller. */
+.lyric-line__text,
+.lyric-line__translate {
+  opacity: var(--lyric-opacity, 1);
+  transition: opacity 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .lyric-line__text {
   font-size: calc(
     clamp(24px, 1.7vw, 28px) * var(--lyric-font-scale, 1)

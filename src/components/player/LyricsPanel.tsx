@@ -257,17 +257,11 @@ export const LyricsPanel = memo(function LyricsPanel({
               key={`${line.time}-${index}`}
               ref={setLineRef}
               type="button"
-              onClick={(event) => {
-                // The line button spans the full lyrics column so the text can
-                // wrap. Only clicks on the actual text/translation should seek;
-                // empty space to the right of a short line must do nothing.
-                const target = event.target as HTMLElement
-                if (
-                  event.detail === 0 ||
-                  target.closest('.lyric-line__text, .lyric-line__translate')
-                ) {
-                  onSeek(line.time)
-                }
+              onClick={() => {
+                // The reference renderer makes the whole padded lyric row a
+                // button. Hover paints the full row, so clicking anywhere in
+                // that pill must seek, not only directly on a glyph.
+                onSeek(line.time)
               }}
               style={style}
               className={className}
