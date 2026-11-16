@@ -5,7 +5,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
 } from 'react'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
@@ -37,6 +36,7 @@ import { LyricStage } from './LyricStage'
 import AmbientBackground from './AmbientBackground'
 import { FogBackground } from './FogBackground'
 import { MvVideoPlayer } from '../mv/MvVideoPlayer'
+import { PlayerArtwork } from './PlayerArtwork'
 import { ImmersivePlayerBar } from './ImmersivePlayerBar'
 import { NowPlayingTitleBar } from './NowPlayingTitleBar'
 import { NowPlayingTransport } from './NowPlayingTransport'
@@ -119,6 +119,7 @@ export function NowPlaying() {
   const bindVideo = useVideoPlaybackStore((state) => state.bind)
   const videoActive = useVideoPlaybackStore((state) => state.active)
   const nowPlayingMode = useSettingsStore((state) => state.nowPlayingMode)
+  const playerStyle = useSettingsStore((state) => state.playerStyle)
   const setNowPlayingMode = useSettingsStore(
     (state) => state.setNowPlayingMode,
   )
@@ -941,64 +942,27 @@ export function NowPlaying() {
             </div>
 
             <div className="relative mt-6 flex items-center justify-center">
-              <div
-                className="now-disc relative"
-                style={
+              <PlayerArtwork
+                song={currentSong}
+                style={playerStyle}
+                playing={playing}
+                position={currentTime}
+                liked={liked}
+                albumAvailable={Boolean(albumId)}
+                glowRgb={
                   palette.colors[0]
-                    ? ({
-                        '--album-glow-rgb': (() => {
-                          const { r, g, b } = hexToRgb(palette.colors[0])
-                          return `${r} ${g} ${b}`
-                        })(),
-                      } as CSSProperties)
+                    ? (() => {
+                        const { r, g, b } = hexToRgb(palette.colors[0])
+                        return `${r} ${g} ${b}`
+                      })()
                     : undefined
                 }
-              >
-                <button
-                  type="button"
-                  onClick={openAlbum}
-                  disabled={!albumId}
-                  aria-label={
-                    albumId
-                      ? i18n._(msg`打开专辑 ${currentSong.al.name}`)
-                      : undefined
-                  }
-                  className="album-cover group relative block h-full w-full cursor-pointer disabled:cursor-default"
-                >
-                  <ImageWithFallback
-                    src={currentSong.al.picUrl}
-                    alt={currentSong.name}
-                    rounded="rounded-[14px]"
-                    className="h-full w-full"
-                    resize="640y640"
-                  />
-                  {/* Hover hint so the cover reads as a link into the album. */}
-                  <span className="pointer-events-none absolute inset-0 flex items-end justify-center bg-black/25 p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100">
-                    <span className="flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-[11px] font-medium text-black/80 shadow-sm">
-                      <Disc3 className="h-3.5 w-3.5" />
-                      <Trans>查看专辑</Trans>
-                    </span>
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  aria-label={liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)}
-                  aria-pressed={liked}
-                  title={liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)}
-                  onClick={() => {
-                    if (isLogin) void likeSong(currentSong.id, !liked)
-                    else void toggleLocalFavorite(currentSong)
-                  }}
-                  className="pressable absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/35 text-white/80 shadow-[0_4px_14px_rgba(0,0,0,0.28)] backdrop-blur-md transition-colors hover:bg-black/50 hover:text-white max-md:hidden"
-                >
-                  <Heart
-                    className={cn(
-                      'h-4 w-4',
-                      liked && 'fill-[#ff2d55] text-[#ff2d55]',
-                    )}
-                  />
-                </button>
-              </div>
+                onOpenAlbum={openAlbum}
+                onToggleLike={() => {
+                  if (isLogin) void likeSong(currentSong.id, !liked)
+                  else void toggleLocalFavorite(currentSong)
+                }}
+              />
             </div>
             <div className="np-transport-panel mt-5">
               <NowPlayingTransport

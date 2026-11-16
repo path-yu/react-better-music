@@ -31,6 +31,16 @@ export type LyricFontSize = 'small' | 'medium' | 'large'
 export type NowPlayingMode = 'audio' | 'video'
 export type LyricStageStyle = 'flow' | 'partita' | 'tilt'
 export type NowPlayingTransition = 'fade' | 'slide-up' | 'scale' | 'none'
+export type PlayerStyle = 'cover' | 'vinyl' | 'cassette'
+
+export const PLAYER_STYLE_OPTIONS: Array<{
+  value: PlayerStyle
+  label: MessageDescriptor
+}> = [
+  { value: 'cover', label: msg`封面` },
+  { value: 'vinyl', label: msg`黑胶唱片` },
+  { value: 'cassette', label: msg`磁带` },
+]
 
 export const NOW_PLAYING_TRANSITION_OPTIONS: Array<{
   value: NowPlayingTransition
@@ -93,6 +103,10 @@ interface SettingsState {
   audioOutputId: string
   /** Entrance animation for the full-screen now-playing page. */
   nowPlayingTransition: NowPlayingTransition
+  /** Artwork treatment on the full-screen now-playing page. */
+  playerStyle: PlayerStyle
+  /** Dynamically even out per-track loudness during playback. */
+  volumeNormalization: boolean
   /** Desktop only: block right-click / F12 / DevTools shortcuts. */
   disableDevTools: boolean
   /** Prefer a matched provider for VIP tracks (manual switch is always available). */
@@ -113,6 +127,8 @@ interface SettingsState {
   setNowPlayingMode: (value: NowPlayingMode) => void
   setAudioOutputId: (value: string) => void
   setNowPlayingTransition: (value: NowPlayingTransition) => void
+  setPlayerStyle: (value: PlayerStyle) => void
+  setVolumeNormalization: (value: boolean) => void
   setDisableDevTools: (value: boolean) => void
   setAutoReplaceVipSource: (value: boolean) => void
   setAutoScrobble: (value: boolean) => void
@@ -136,6 +152,10 @@ export const useSettingsStore = create<SettingsState>()(
       nowPlayingMode: 'audio',
       audioOutputId: 'default',
       nowPlayingTransition: 'fade',
+      playerStyle: 'cover',
+      // Matches the reference player's default: analyse and even out loudness
+      // without requiring ReplayGain tags in every file.
+      volumeNormalization: true,
       disableDevTools: false,
       autoReplaceVipSource: false,
       // Reporting private listening logs is opt-in and never automatic.
@@ -154,6 +174,9 @@ export const useSettingsStore = create<SettingsState>()(
       setAudioOutputId: (audioOutputId) => set({ audioOutputId }),
       setNowPlayingTransition: (nowPlayingTransition) =>
         set({ nowPlayingTransition }),
+      setPlayerStyle: (playerStyle) => set({ playerStyle }),
+      setVolumeNormalization: (volumeNormalization) =>
+        set({ volumeNormalization }),
       setDisableDevTools: (disableDevTools) => set({ disableDevTools }),
       setAutoReplaceVipSource: (autoReplaceVipSource) => set({ autoReplaceVipSource }),
       setAutoScrobble: (autoScrobble) => set({ autoScrobble }),

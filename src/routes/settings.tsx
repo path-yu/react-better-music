@@ -8,6 +8,7 @@ import {
   Download,
   FolderOpen,
   HardDrive,
+  Headphones,
   Keyboard,
   ListMusic,
   Languages,
@@ -31,6 +32,11 @@ import {
 } from '../store/settings'
 import { useUiStore } from '../store/ui'
 import { PALETTE_OPTIONS } from '../lib/theme'
+import {
+  SettingsNav,
+  type SettingsTab,
+} from '../components/settings/SettingsNav'
+import { PlayerStylePicker } from '../components/settings/PlayerStylePicker'
 import {
   clearAudioCache,
   downloadCachedAudio,
@@ -89,6 +95,8 @@ function SettingsPage() {
   )
   const locale = useSettingsStore((state) => state.locale)
   const setLocale = useSettingsStore((state) => state.setLocale)
+  const [activeTab, setActiveTab] = useState<SettingsTab>('general')
+  const [settingsQuery, setSettingsQuery] = useState('')
   const [items, setItems] = useState<CachedAudioItem[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<number[]>([])
@@ -119,6 +127,12 @@ function SettingsPage() {
   )
   const autoScrobble = useSettingsStore((state) => state.autoScrobble)
   const setAutoScrobble = useSettingsStore((state) => state.setAutoScrobble)
+  const volumeNormalization = useSettingsStore(
+    (state) => state.volumeNormalization,
+  )
+  const setVolumeNormalization = useSettingsStore(
+    (state) => state.setVolumeNormalization,
+  )
 
   useEffect(() => {
     if (!desktop) return
@@ -346,19 +360,27 @@ function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[900px] px-8 pb-16 pt-7">
+    <div className="mx-auto max-w-[1120px] px-8 pb-16 pt-7 max-md:px-5">
       <div>
         <h1 className="headline-lg flex items-center gap-2">
           <Settings2 className="h-5 w-5 text-accent" />
           <Trans>设置</Trans>
         </h1>
         <p className="mt-1.5 text-[12px] text-black/35">
-          <Trans>管理外观、语言与本地音乐缓存</Trans>
+          <Trans>管理外观、播放、缓存与桌面功能</Trans>
         </p>
       </div>
 
-      <div className="mt-6 grid gap-5">
-        <section className="apple-card p-6">
+      <div className="settings-shell mt-6">
+        <SettingsNav
+          active={activeTab}
+          query={settingsQuery}
+          onQueryChange={setSettingsQuery}
+          onSelect={setActiveTab}
+        />
+        <div className="settings-panels" data-active={activeTab}>
+          <div className="grid gap-5">
+        <section className="apple-card p-6" data-settings-section="general">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
@@ -484,7 +506,7 @@ function SettingsPage() {
           </div>
         </section>
 
-        <section className="apple-card p-6">
+        <section className="apple-card p-6" data-settings-section="general">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
@@ -509,7 +531,51 @@ function SettingsPage() {
           </div>
         </section>
 
-        <section className="apple-card p-6">
+        <section className="apple-card p-6" data-settings-section="playback">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
+                <Headphones className="h-4 w-4 text-accent" />
+                <Trans>播放</Trans>
+              </h2>
+              <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-black/40">
+                <Trans>
+                  调整歌曲详情页的唱片样式，并让不同歌曲以更接近的响度播放。
+                </Trans>
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <p className="text-[13px] font-medium text-black/75">
+              <Trans>播放器样式</Trans>
+            </p>
+            <p className="mt-1 max-w-[560px] text-[11px] leading-relaxed text-black/40">
+              <Trans>选择歌曲详情页的封面呈现方式，立即生效。</Trans>
+            </p>
+            <PlayerStylePicker />
+          </div>
+
+          <div className="mt-5 flex items-center justify-between gap-4 border-t border-[var(--app-border)] pt-4">
+            <div>
+              <p className="text-[13px] font-medium text-black/75">
+                <Trans>音量均衡</Trans>
+              </p>
+              <p className="mt-1 max-w-[560px] text-[11px] leading-relaxed text-black/40">
+                <Trans>
+                  实时分析播放响度，自动压低过响的部分并补足偏轻的歌曲，减少切歌时的音量跳变。部分设备或受保护音源可能无法分析。
+                </Trans>
+              </p>
+            </div>
+            <Switch
+              checked={volumeNormalization}
+              onChange={setVolumeNormalization}
+              aria-label={i18n._(msg`音量均衡`)}
+            />
+          </div>
+        </section>
+
+        <section className="apple-card p-6" data-settings-section="cache">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
@@ -651,7 +717,7 @@ function SettingsPage() {
           ) : null}
         </section>
 
-        <section className="apple-card p-6">
+        <section className="apple-card p-6" data-settings-section="playback">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
@@ -673,7 +739,7 @@ function SettingsPage() {
           </div>
         </section>
 
-        <section className="apple-card p-6">
+        <section className="apple-card p-6" data-settings-section="playback">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
@@ -700,7 +766,7 @@ function SettingsPage() {
         </section>
 
         {desktop ? (
-          <section className="apple-card p-6">
+          <section className="apple-card p-6" data-settings-section="desktop">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
@@ -728,7 +794,7 @@ function SettingsPage() {
           </section>
         ) : null}
 
-        <section className="apple-card overflow-hidden">
+        <section className="apple-card overflow-hidden" data-settings-section="cache">
           <div className="flex items-center justify-between gap-3 border-b border-black/6 px-6 py-4">
             <div>
               <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
@@ -869,7 +935,7 @@ function SettingsPage() {
           </div>
         </section>
 
-        <section className="apple-card p-6">
+        <section className="apple-card p-6" data-settings-section="desktop">
           <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
             <Keyboard className="h-4 w-4 text-accent" />
             <Trans>快捷键</Trans>
@@ -903,6 +969,8 @@ function SettingsPage() {
             ))}
           </dl>
         </section>
+          </div>
+        </div>
       </div>
     </div>
   )

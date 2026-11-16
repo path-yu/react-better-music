@@ -7,6 +7,7 @@ type CapturableAudio = HTMLAudioElement & {
 let audioContext: AudioContext | null = null
 let analyser: AnalyserNode | null = null
 let frequencyData: Uint8Array<ArrayBuffer> | null = null
+let timeData: Uint8Array<ArrayBuffer> | null = null
 const attached = new Map<
   HTMLAudioElement,
   { stream: MediaStream; source: MediaStreamAudioSourceNode }
@@ -29,6 +30,7 @@ function ensureAnalyser() {
   frequencyData = new Uint8Array(
     new ArrayBuffer(analyser.frequencyBinCount),
   )
+  timeData = new Uint8Array(new ArrayBuffer(analyser.fftSize))
 
   // The capture is only used for analysis; route it through a silent gain so
   // the media element's own output remains the audible one.
@@ -92,6 +94,30 @@ export function resumeAudioAnalyser() {
   if (audioContext?.state === 'suspended') {
     void audioContext.resume().catch(() => undefined)
   }
+}
+
+/**
+ * Full-band RMS of the current element, used for gentle loudness leveling.
+ * The capture is analysis-only; it never reroutes the audible media element.
+ */
+export function getAudioRmsLevel() {
+  const audio = getAudio()
+  if (
+    audio &&
+    !attached.has(audio) &&
+    !waiting.has(audio) &&
+    !failed.has(audio)
+  ) {
+    attachAudioAnalyser(audio)
+  }
+  if (!analyser || !timeData) return null
+  analyser.getByteTimeDomainData(timeData)
+  let sum = 0
+  for (const value of timeData) {
+    const centered = (value - 128) / 128
+    sum += centered * centered
+  }
+  return Math.sqrt(sum / timeData.length)
 }
 
 /** Returns a smoothed 0–1 low-frequency level, or null without an analyser. */

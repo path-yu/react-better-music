@@ -46,6 +46,7 @@ import { useSettingsStore } from '../../store/settings'
 import { getAudio, registerAudio, seekAudio } from '../../lib/audio'
 import {
   attachAudioAnalyser,
+  getAudioRmsLevel,
   resumeAudioAnalyser,
 } from '../../lib/audioAnalyser'
 import { cacheSong, cacheSongFromBlob } from '../../lib/songCache'
@@ -92,6 +93,8 @@ export function PlayerBar() {
   const fadeEndTimerRef = useRef<number | null>(null)
   const fadeFrameRef = useRef(0)
   const masterVolumeRef = useRef(0.8)
+  const normalizationGainRef = useRef(1)
+  const normalizationEnabledRef = useRef(false)
   const retriedRef = useRef<number | null>(null)
   const lastPlayTokenRef = useRef<number | null>(null)
   const lastSongIdRef = useRef<number | null>(null)
@@ -136,6 +139,9 @@ export function PlayerBar() {
   const prev = usePlayerStore((state) => state.prev)
   const cycleMode = usePlayerStore((state) => state.cycleMode)
   const toggleHeartMode = usePlayerStore((state) => state.toggleHeartMode)
+  const volumeNormalization = useSettingsStore(
+    (state) => state.volumeNormalization,
+  )
   const setVolume = usePlayerStore((state) => state.setVolume)
   const setCurrentTime = usePlayerStore((state) => state.setCurrentTime)
   const setBuffered = usePlayerStore((state) => state.setBuffered)
@@ -190,10 +196,16 @@ export function PlayerBar() {
       : localFavorites.some((song) => song.id === currentSong.id)
     : false
 
-  /** Apply the master volume scaled by a fade gain to one element. */
+  /** Apply master volume, fade and loudness leveling to one element. */
   const applyGain = (element: HTMLAudioElement | null, gain: number) => {
     if (!element) return
-    element.volume = Math.min(1, Math.max(0, masterVolumeRef.current * gain))
+    const leveling = normalizationEnabledRef.current
+      ? normalizationGainRef.current
+      : 1
+    element.volume = Math.min(
+      1,
+      Math.max(0, masterVolumeRef.current * gain * leveling),
+    )
   }
 
   const clearFade = () => {
@@ -241,7 +253,7 @@ export function PlayerBar() {
     prefetchNext()
 
     if (!outgoing || outgoing === incoming || outgoing.paused) {
-      incoming.volume = masterVolumeRef.current
+      applyGain(incoming, 1)
       if (outgoing && outgoing !== incoming) settleElement(outgoing)
       outgoingRef.current = null
       return
@@ -256,7 +268,7 @@ export function PlayerBar() {
       clearFade()
       settleElement(outgoing)
       outgoingRef.current = null
-      incoming.volume = masterVolumeRef.current
+      applyGain(incoming, 1)
     }
     const started = performance.now()
     const step = (now: number) => {
@@ -333,6 +345,36 @@ export function PlayerBar() {
     // Keep the waiting incoming track silent until its fade starts.
     if (other && other !== incomingRef.current) applyGain(other, 1)
   }, [volume])
+
+  // Loudness leveling uses the existing captureStream analyser and only changes
+  // the element's volume; it never reroutes audio through Web Audio.
+  useEffect(() => {
+    normalizationEnabledRef.current = volumeNormalization
+    if (!volumeNormalization) {
+      normalizationGainRef.current = 1
+      applyGain(audioRef.current, 1)
+      applyGain(incomingRef.current, 1)
+      return
+    }
+
+    const targetRms = 0.16
+    const timer = window.setInterval(() => {
+      const audio = audioRef.current
+      if (!audio || audio.paused) return
+      // A running crossfade owns both element gains; apply the new level after
+      // the hand-off instead of stepping on its fade curve.
+      if (fadeFrameRef.current) return
+      attachAudioAnalyser(audio)
+      const rms = getAudioRmsLevel()
+      if (rms == null || !Number.isFinite(rms) || rms < 0.008) return
+      const desired = Math.min(1.25, Math.max(0.55, targetRms / rms))
+      normalizationGainRef.current +=
+        (desired - normalizationGainRef.current) * 0.18
+      applyGain(audio, 1)
+    }, 750)
+
+    return () => window.clearInterval(timer)
+  }, [volumeNormalization])
 
   // Every play request (previous / next / pick a song / replay) bumps
   // playToken. Stop the old track synchronously on that commit; the source
@@ -429,7 +471,7 @@ export function PlayerBar() {
     switchingRef.current = true
     audio.pause()
     audio.currentTime = 0
-    audio.volume = masterVolumeRef.current
+    applyGain(audio, 1)
 
     if (!usePlayerStore.getState().playing) return
   }, [playToken, audioUrl, currentSong?.id, setAudioReady, setBuffered, setCurrentTime])
@@ -440,6 +482,8 @@ export function PlayerBar() {
   useEffect(() => {
     pendingSeekRef.current = null
     retriedRef.current = null
+    normalizationGainRef.current = 1
+    applyGain(audioRef.current, 1)
     setPendingSeek(null)
   }, [currentSong?.id])
 
@@ -465,7 +509,7 @@ export function PlayerBar() {
 
     if (crossfade) {
       incomingRef.current = target
-      target.volume = 0
+      applyGain(target, 0)
       // Lyrics and seek helpers follow the incoming track as soon as it owns
       // the new url, even while the previous element is still audible.
       registerAudio(target)
@@ -476,7 +520,7 @@ export function PlayerBar() {
       outgoingRef.current = null
       if (fading && fading !== target) settleElement(fading)
       incomingRef.current = null
-      target.volume = masterVolumeRef.current
+      applyGain(target, 1)
       registerAudio(target)
       switchingRef.current = true
       setCurrentTime(0)
@@ -529,7 +573,7 @@ export function PlayerBar() {
     const current = audioRef.current
     if (current) {
       // A fade interrupted mid-way left the gain below the master volume.
-      current.volume = masterVolumeRef.current
+      applyGain(current, 1)
       current.pause()
     }
     incomingRef.current?.pause()
