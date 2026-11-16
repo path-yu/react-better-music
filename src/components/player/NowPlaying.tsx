@@ -44,6 +44,8 @@ import { CommentSection, useCommentTotal } from '../comments/CommentSection'
 import { SongContextMenu } from '../songs/SongContextMenu'
 import { fetchMvUrl, fetchRelatedVideos } from '../../api'
 import { useDelayedBusy } from '../../lib/useDelayedBusy'
+import { isDesktopShell } from '../../lib/desktop'
+import { isTauriApp } from '../../lib/platform'
 import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
 import { useLocalLibraryStore } from '../../store/localLibrary'
@@ -142,6 +144,7 @@ export function NowPlaying() {
   )
   const growFromCover = nowPlayingTransition === 'cover'
   const [panel, setPanel] = useState<NowPlayingPanel>('lyrics')
+  const [tabsVisible, setTabsVisible] = useState(true)
   const [queueContext, setQueueContext] = useState<{
     song: Song
     x: number
@@ -538,6 +541,29 @@ export function NowPlaying() {
   }, [panel, queueView, queueColumns, queueRowHeight, measureQueue])
 
 
+
+  // On desktop, the reference fades the pane tabs out when the pointer leaves
+  // the window and back in when it returns. Only do this for the actual window
+  // shells; a normal browser tab should keep the controls visible.
+  useEffect(() => {
+    const desktop = isDesktopShell() || isTauriApp()
+    if (!desktop || !show) {
+      setTabsVisible(true)
+      return
+    }
+    const root = document.documentElement
+    const revealTabs = () => setTabsVisible(true)
+    const hideTabs = () => setTabsVisible(false)
+    setTabsVisible(root.matches(':hover'))
+    root.addEventListener('pointerenter', revealTabs)
+    root.addEventListener('pointerleave', hideTabs)
+    window.addEventListener('blur', hideTabs)
+    return () => {
+      root.removeEventListener('pointerenter', revealTabs)
+      root.removeEventListener('pointerleave', hideTabs)
+      window.removeEventListener('blur', hideTabs)
+    }
+  }, [show])
 
   // The overlay is lazy-mounted only while open, so the first effect run is the
   // mount itself — not a navigation. Only close on a real pathname change.
@@ -1139,7 +1165,14 @@ export function NowPlaying() {
             </div>
           </div>
           <div className="relative flex min-h-0 flex-col max-md:min-h-[420px]">
-            <div className="flex flex-none items-center px-2 pb-1 pt-6">
+            <div
+              className={cn(
+                'np-tabs-reveal flex flex-none items-center px-2 pb-1 pt-6',
+                !tabsVisible && 'is-hidden',
+              )}
+              aria-hidden={!tabsVisible}
+              inert={!tabsVisible}
+            >
               <div
                 className="np-tabs"
                 role="tablist"

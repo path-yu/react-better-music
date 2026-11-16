@@ -1415,6 +1415,17 @@ html.desktop .app-window {
   display: none;
 }
 
+/* Desktop window chrome: the tab row leaves with the pointer, matching the
+   reference's reveal(e, pointerIn) fade. */
+.np-tabs-reveal {
+  transition: opacity 200ms ease;
+}
+
+.np-tabs-reveal.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* Mirrors MyGO's tab row: 28px high, 6px gap, individual pills without a
    surrounding track. The active pill is a translucent white fill. */
 .np-tabs {
