@@ -396,9 +396,6 @@ function SettingsPage() {
                 <PaletteIcon className="h-4 w-4 text-accent" />
                 <Trans>外观</Trans>
               </h2>
-              <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-black/40">
-                <Trans>选择界面明暗与主题配色，立即生效，并会记住你的选择。</Trans>
-              </p>
             </div>
             <div className="flex shrink-0 items-center rounded-full border border-black/8 bg-black/4 p-0.5">
               <button
@@ -492,12 +489,6 @@ function SettingsPage() {
               <p className="text-[13px] font-medium text-black/75">
                 <Trans>播放页过渡动画</Trans>
               </p>
-              <p className="mt-1 max-w-[560px] text-[11px] leading-relaxed text-black/40">
-                <Trans>
-                  选择打开歌曲详情页时的入场方式。“从底部滑入”会像 macOS
-                  面板一样从窗口下沿升起。
-                </Trans>
-              </p>
             </div>
             <Select
               value={nowPlayingTransition}
@@ -522,11 +513,6 @@ function SettingsPage() {
                 <Languages className="h-4 w-4 text-accent" />
                 语言 / Language
               </h2>
-              <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-black/40">
-                <Trans>
-                  切换界面语言，立即生效。当前翻译覆盖导航、播放器与设置等主要界面，其余页面会逐步补齐。
-                </Trans>
-              </p>
             </div>
             <Select
               value={locale}
@@ -767,11 +753,6 @@ function SettingsPage() {
               aria-label={i18n._(msg`听歌打卡`)}
             />
           </div>
-          <p className="mt-4 rounded-[10px] bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-700/80 dark:text-amber-200/70">
-            <Trans>
-              此功能使用第三方客户端上报协议，记录可能被忽略，也可能触发账号风控。仅在本人账号、真实播放时使用，失败不会自动重试。
-            </Trans>
-          </p>
         </section>
 
         {desktop ? (

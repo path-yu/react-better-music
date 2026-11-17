@@ -9,7 +9,6 @@ import {
   ChevronRight,
   Loader2,
   RefreshCw,
-  Sparkles,
 } from 'lucide-react'
 import {
   Button,
@@ -154,10 +153,6 @@ function SonglistsPage() {
           >
             <RefreshCw className="h-3.5 w-3.5" />
           </button>
-          <span className="flex items-center gap-1.5 rounded-full border border-black/8 bg-white px-3 py-1.5 text-[11px] text-black/40">
-            <Sparkles className="h-3.5 w-3.5 text-accent" />
-            <Trans>精品歌单</Trans>
-          </span>
         </div>
       </div>
 

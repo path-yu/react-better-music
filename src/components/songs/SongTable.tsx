@@ -253,6 +253,8 @@ export function SongTable({
     x: number
     y: number
   } | null>(null)
+  const [showLocate, setShowLocate] = useState(false)
+  const locateTimerRef = useRef<number | null>(null)
 
   // Keep row callbacks referentially stable so memoized rows do not repaint
   // when only the parent component re-renders.
@@ -324,6 +326,44 @@ export function SongTable({
     scrollRef.current.scrollTop = 0
   }, [isVirtual, songs])
 
+  // The locate affordance belongs to scrolling, not to the idle table. Show it
+  // for two seconds after the list (or its page) scrolls, then let it fade out.
+  useEffect(() => {
+    setShowLocate(false)
+    if (loading) return
+    let target: HTMLElement | null = scrollRef.current
+    if (!target) {
+      let parent = listRef.current?.parentElement ?? null
+      while (parent && parent !== document.body) {
+        if (/(auto|scroll)/.test(getComputedStyle(parent).overflowY)) {
+          target = parent
+          break
+        }
+        parent = parent.parentElement
+      }
+    }
+    if (!target) return
+
+    const reveal = () => {
+      setShowLocate(true)
+      if (locateTimerRef.current !== null) {
+        window.clearTimeout(locateTimerRef.current)
+      }
+      locateTimerRef.current = window.setTimeout(() => {
+        setShowLocate(false)
+        locateTimerRef.current = null
+      }, 2000)
+    }
+    target.addEventListener('scroll', reveal, { passive: true })
+    return () => {
+      target?.removeEventListener('scroll', reveal)
+      if (locateTimerRef.current !== null) {
+        window.clearTimeout(locateTimerRef.current)
+        locateTimerRef.current = null
+      }
+    }
+  }, [isVirtual, loading, songs.length])
+
   const locateCurrent = () => {
     if (currentIndexInList < 0) return
     if (isVirtual) {
@@ -345,8 +385,15 @@ export function SongTable({
         type="button"
         aria-label={i18n._(msg`定位当前播放`)}
         title={i18n._(msg`定位当前播放`)}
+        aria-hidden={!showLocate}
+        tabIndex={showLocate ? 0 : -1}
         onClick={locateCurrent}
-        className="pressable fixed bottom-[88px] right-5 z-40 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--app-border-strong)] bg-[var(--app-glass)] text-accent shadow-[0_10px_30px_rgba(0,0,0,0.22)] backdrop-blur-xl transition-colors hover:bg-accent/15 max-md:right-4"
+        className={cn(
+          'pressable fixed bottom-[88px] right-5 z-40 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--app-border-strong)] bg-[var(--app-glass)] text-accent shadow-[0_10px_30px_rgba(0,0,0,0.22)] backdrop-blur-xl transition-[opacity,background-color] duration-200 hover:bg-accent/15 max-md:right-4',
+          showLocate
+            ? 'opacity-100'
+            : 'pointer-events-none opacity-0',
+        )}
       >
         <LocateFixed className="h-4 w-4" strokeWidth={1.8} />
       </button>

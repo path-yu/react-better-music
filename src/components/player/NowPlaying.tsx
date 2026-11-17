@@ -173,6 +173,8 @@ export function NowPlaying() {
   } | null>(null)
   const queueScrollRef = useRef<HTMLDivElement>(null)
   const queueListRef = useRef<HTMLDivElement>(null)
+  const queueLocateTimerRef = useRef<number | null>(null)
+  const [showQueueLocate, setShowQueueLocate] = useState(false)
   const [queueWidth, setQueueWidth] = useState(0)
   const [queueView, setQueueView] = useState<QueueView>('list')
   const [queueSearch, setQueueSearch] = useState('')
@@ -557,6 +559,32 @@ export function NowPlaying() {
     estimateSize: () => 58,
     overscan: 8,
   })
+
+  useEffect(() => {
+    setShowQueueLocate(false)
+    if (!show || panel !== 'queue' || queueView !== 'list') return
+    const target = queueListRef.current
+    if (!target) return
+    const reveal = () => {
+      setShowQueueLocate(true)
+      if (queueLocateTimerRef.current !== null) {
+        window.clearTimeout(queueLocateTimerRef.current)
+      }
+      queueLocateTimerRef.current = window.setTimeout(() => {
+        setShowQueueLocate(false)
+        queueLocateTimerRef.current = null
+      }, 2000)
+    }
+    target.addEventListener('scroll', reveal, { passive: true })
+    return () => {
+      target.removeEventListener('scroll', reveal)
+      if (queueLocateTimerRef.current !== null) {
+        window.clearTimeout(queueLocateTimerRef.current)
+        queueLocateTimerRef.current = null
+      }
+    }
+  }, [panel, queue.length, queueView, show])
+
   const measureQueue = queueVirtualizer.measure
   useEffect(() => {
     if (panel !== 'queue' || queueView !== 'grid') return
@@ -1667,7 +1695,14 @@ export function NowPlaying() {
                       }}
                       aria-label={i18n._(msg`定位到当前播放`)}
                       title={i18n._(msg`定位到当前播放`)}
-                      className="pressable absolute bottom-1.5 right-1.5 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-black/30 text-white/75 shadow-[0_6px_18px_rgba(0,0,0,0.28)] backdrop-blur-xl transition-colors hover:bg-white/15 hover:text-white"
+                      aria-hidden={!showQueueLocate}
+                      tabIndex={showQueueLocate ? 0 : -1}
+                      className={cn(
+                        'pressable absolute bottom-1.5 right-1.5 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-black/30 text-white/75 shadow-[0_6px_18px_rgba(0,0,0,0.28)] backdrop-blur-xl transition-[opacity,background-color] duration-200 hover:bg-white/15 hover:text-white',
+                        showQueueLocate
+                          ? 'opacity-100'
+                          : 'pointer-events-none opacity-0',
+                      )}
                     >
                       <LocateFixed className="h-3.5 w-3.5" strokeWidth={1.8} />
                     </button>

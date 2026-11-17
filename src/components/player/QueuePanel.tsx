@@ -1,4 +1,4 @@
-import { useEffect, useRef, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
@@ -28,6 +28,8 @@ export function QueuePanel() {
   const togglePlay = usePlayerStore((state) => state.togglePlay)
   const clearQueue = usePlayerStore((state) => state.clearQueue)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const locateTimerRef = useRef<number | null>(null)
+  const [showLocate, setShowLocate] = useState(false)
   const queueTint = usePlayerMenuTint(
     immersive && show,
     currentSong?.al.picUrl,
@@ -57,6 +59,31 @@ export function QueuePanel() {
       trigger?.focus()
     }
   }, [show, toggleQueue])
+
+  useEffect(() => {
+    setShowLocate(false)
+    if (!show) return
+    const target = scrollRef.current
+    if (!target) return
+    const reveal = () => {
+      setShowLocate(true)
+      if (locateTimerRef.current !== null) {
+        window.clearTimeout(locateTimerRef.current)
+      }
+      locateTimerRef.current = window.setTimeout(() => {
+        setShowLocate(false)
+        locateTimerRef.current = null
+      }, 2000)
+    }
+    target.addEventListener('scroll', reveal, { passive: true })
+    return () => {
+      target.removeEventListener('scroll', reveal)
+      if (locateTimerRef.current !== null) {
+        window.clearTimeout(locateTimerRef.current)
+        locateTimerRef.current = null
+      }
+    }
+  }, [queue.length, show])
 
   if (!show) return null
 
@@ -311,6 +338,8 @@ export function QueuePanel() {
             type="button"
             aria-label={i18n._(msg`定位当前播放`)}
             title={i18n._(msg`定位当前播放`)}
+            aria-hidden={!showLocate}
+            tabIndex={showLocate ? 0 : -1}
             onClick={() =>
               virtualizer.scrollToIndex(currentIndex, {
                 align: 'center',
@@ -318,10 +347,11 @@ export function QueuePanel() {
               })
             }
             className={cn(
-              'pressable absolute bottom-[58px] right-4 z-10 flex h-9 w-9 items-center justify-center rounded-full text-accent shadow-[0_8px_24px_rgba(0,0,0,0.2)] backdrop-blur-xl transition-colors hover:bg-accent/15 max-md:h-11 max-md:w-11',
+              'pressable absolute bottom-[58px] right-4 z-10 flex h-9 w-9 items-center justify-center rounded-full text-accent shadow-[0_8px_24px_rgba(0,0,0,0.2)] backdrop-blur-xl transition-[opacity,background-color] duration-200 hover:bg-accent/15 max-md:h-11 max-md:w-11',
               immersive
                 ? 'border-0 bg-white/10'
                 : 'border border-[var(--app-border-strong)] bg-[var(--app-glass)]',
+              showLocate ? 'opacity-100' : 'pointer-events-none opacity-0',
             )}
           >
             <LocateFixed className="h-4 w-4" strokeWidth={1.8} />
