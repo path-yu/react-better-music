@@ -172,6 +172,22 @@ export interface CommentUser {
   avatarUrl: string
 }
 
+export interface CommentIpLocation {
+  ip?: string | null
+  location?: string | null
+  userId?: number
+}
+
+export interface CommentContentResource {
+  resourceType?: number
+  resourceId?: string
+  url?: string | null
+  duration?: number
+  coverUrl?: string
+  title?: string
+  subTitle?: string
+}
+
 export interface Comment {
   commentId: number
   content: string
@@ -181,6 +197,10 @@ export interface Comment {
   user: CommentUser
   beReplied: Comment[]
   beRepliedUser?: CommentUser
+  /** NetEase attaches the public IP region to most comments. */
+  ipLocation?: CommentIpLocation | null
+  /** Voice comments keep their playable media here, outside `content`. */
+  contentResource?: CommentContentResource | null
 }
 
 export interface CommentResponse {

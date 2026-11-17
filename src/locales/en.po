@@ -52,7 +52,7 @@ msgid "{0} 张专辑 · {1} 个 MV"
 msgstr "{0} albums · {1} MVs"
 
 #. placeholder {0}: data.total
-#: src/components/comments/CommentSection.tsx:512
+#: src/components/comments/CommentSection.tsx:765
 msgid "{0} 条"
 msgstr "{0}"
 
@@ -182,10 +182,6 @@ msgstr "Automatically replace VIP sources"
 #: src/routes/settings.tsx:486
 msgid "WebGL 雾化背景"
 msgstr "WebGL fog backdrop"
-
-#: src/components/player/OutputDevicePicker.tsx:162
-#~ msgid "WebView 只暴露了默认设备。使用系统输出设备选择器可以选择其他扬声器。"
-#~ msgstr ""
 
 #: src/components/common/Pager.tsx:61
 msgid "上一页"
@@ -392,10 +388,6 @@ msgstr "Failed to save file ({0})"
 msgid "倾诉"
 msgstr "Confession"
 
-#: src/components/player/OutputDevicePicker.tsx:112
-#~ msgid "允许应用访问音频设备后，可显示完整设备名称。"
-#~ msgstr "Allow audio device access to show full device names."
-
 #: src/routes/settings.tsx:859
 #: src/routes/settings.tsx:866
 msgid "全选"
@@ -550,7 +542,7 @@ msgstr "Latest MVs"
 msgid "最新MV"
 msgstr "New MVs"
 
-#: src/components/comments/CommentSection.tsx:558
+#: src/components/comments/CommentSection.tsx:811
 msgid "最新评论"
 msgstr "Latest comments"
 
@@ -672,7 +664,7 @@ msgstr "Forward"
 msgid "加入于 {0}"
 msgstr "Joined {0}"
 
-#: src/components/comments/CommentSection.tsx:574
+#: src/components/comments/CommentSection.tsx:827
 #: src/routes/songlists/index.tsx:306
 msgid "加载更多"
 msgstr "Load more"
@@ -685,7 +677,7 @@ msgstr "Load more albums"
 msgid "加载更多失败"
 msgstr "Failed to load more"
 
-#: src/components/comments/CommentSection.tsx:266
+#: src/components/comments/CommentSection.tsx:505
 msgid "加载更多评论失败"
 msgstr "Failed to load more comments"
 
@@ -740,7 +732,7 @@ msgstr "Discover"
 msgid "发生未知错误"
 msgstr "An unknown error occurred"
 
-#: src/components/comments/CommentSection.tsx:599
+#: src/components/comments/CommentSection.tsx:852
 #: src/components/layout/Sidebar.tsx:294
 #: src/routes/local/playlists/$id.tsx:126
 msgid "取消"
@@ -814,25 +806,25 @@ msgstr "Scrobble"
 msgid "喜欢"
 msgstr "Like"
 
-#: src/components/comments/CommentSection.tsx:496
-#: src/components/comments/CommentSection.tsx:608
+#: src/components/comments/CommentSection.tsx:749
+#: src/components/comments/CommentSection.tsx:861
 msgid "回复"
 msgstr "Reply"
 
 #. placeholder {0}: replyTarget?.user?.nickname ?? ''
-#: src/components/comments/CommentSection.tsx:584
+#: src/components/comments/CommentSection.tsx:837
 msgid "回复 {0}"
 msgstr "Reply to {0}"
 
-#: src/components/comments/CommentSection.tsx:593
+#: src/components/comments/CommentSection.tsx:846
 msgid "回复内容"
 msgstr "Reply"
 
-#: src/components/comments/CommentSection.tsx:326
+#: src/components/comments/CommentSection.tsx:565
 msgid "回复内容不能为空"
 msgstr "Reply cannot be empty"
 
-#: src/components/comments/CommentSection.tsx:339
+#: src/components/comments/CommentSection.tsx:578
 msgid "回复失败"
 msgstr "Failed to reply"
 
@@ -1072,10 +1064,6 @@ msgstr "When enabled, report one listen to NetEase after real playback reaches 5
 msgid "开始播放缓存音乐"
 msgstr "Playing cached music"
 
-#: src/components/player/OutputDevicePicker.tsx:166
-#~ msgid "当前 WebView2 不支持应用内枚举输出设备，请在 Windows 声音设置中为声屿选择输出设备。"
-#~ msgstr ""
-
 #: src/components/player/SourcePicker.tsx:102
 msgid "当前：{currentLabel}"
 msgstr "Current: {currentLabel}"
@@ -1151,10 +1139,6 @@ msgstr "My Music"
 #: src/routes/settings.tsx:723
 msgid "打开"
 msgstr "Open"
-
-#: src/components/player/OutputDevicePicker.tsx:205
-#~ msgid "打开 Windows 音量合成器"
-#~ msgstr ""
 
 #. placeholder {0}: album.name
 #. placeholder {0}: song.al.name
@@ -1333,6 +1317,11 @@ msgstr "Play this page"
 msgid "播放热门歌曲"
 msgstr "Play popular tracks"
 
+#: src/components/comments/CommentSection.tsx:203
+#: src/components/comments/CommentSection.tsx:210
+msgid "播放语音"
+msgstr "Play voice comment"
+
 #: src/routes/recent.tsx:132
 msgid "播放过的歌曲会自动记录在这里。"
 msgstr "Played songs are recorded here automatically."
@@ -1381,8 +1370,8 @@ msgstr "Playback quality switched to {label}. Reloading."
 msgid "播放页过渡动画"
 msgstr "Now Playing Transition"
 
-#: src/components/comments/CommentSection.tsx:361
-#: src/components/comments/CommentSection.tsx:391
+#: src/components/comments/CommentSection.tsx:600
+#: src/components/comments/CommentSection.tsx:630
 #: src/routes/songlists/$id.tsx:265
 #: src/store/user.ts:242
 #: src/store/user.ts:254
@@ -1452,10 +1441,6 @@ msgstr "Collapse sidebar"
 msgid "收起播放页"
 msgstr "Close Now Playing"
 
-#: src/components/player/ImmersivePlayerBar.tsx:194
-#~ msgid "收起播放页（Esc）"
-#~ msgstr "Collapse player (Esc)"
-
 #: src/routes/latest-music.tsx:44
 msgid "新歌加载失败"
 msgstr "Failed to load new songs"
@@ -1464,18 +1449,9 @@ msgstr "Failed to load new songs"
 msgid "无动画"
 msgstr "None"
 
-#: src/components/player/OutputDevicePicker.tsx:105
-#: src/components/player/OutputDevicePicker.tsx:123
-#~ msgid "无法切换到该输出设备"
-#~ msgstr "Unable to switch to this output device"
-
 #: src/routes/settings.tsx:320
 msgid "无法打开下载目录"
 msgstr "Cannot open the download folder"
-
-#: src/components/player/OutputDevicePicker.tsx:194
-#~ msgid "无法打开系统声音设置"
-#~ msgstr ""
 
 #: src/routes/settings.tsx:345
 msgid "无法打开缓存目录"
@@ -1484,10 +1460,6 @@ msgstr "Cannot open the cache folder"
 #: src/routes/songlists/$id.edit.tsx:108
 msgid "无法编辑该歌单"
 msgstr "This playlist cannot be edited"
-
-#: src/components/player/OutputDevicePicker.tsx:196
-#~ msgid "无法自动打开，请前往 Windows 设置 → 系统 → 声音 → 音量合成器"
-#~ msgstr ""
 
 #: src/routes/settings.tsx:310
 msgid "无法选择下载目录"
@@ -1530,6 +1502,11 @@ msgstr "Good evening"
 #: src/components/songs/SongTable.tsx:112
 msgid "暂停"
 msgstr "Pause"
+
+#: src/components/comments/CommentSection.tsx:202
+#: src/components/comments/CommentSection.tsx:209
+msgid "暂停语音"
+msgstr "Pause voice comment"
 
 #: src/routes/latest-mv.tsx:149
 msgid "暂无 MV"
@@ -1653,7 +1630,7 @@ msgid "极高"
 msgstr "Ultra"
 
 #. placeholder {0}: comment.user?.nickname ?? ''
-#: src/components/comments/CommentSection.tsx:417
+#: src/components/comments/CommentSection.tsx:656
 msgid "查看 {0} 的主页"
 msgstr "View {0}'s profile"
 
@@ -2058,7 +2035,7 @@ msgstr "Trending"
 msgid "热议"
 msgstr "Hot"
 
-#: src/components/comments/CommentSection.tsx:442
+#: src/components/comments/CommentSection.tsx:681
 msgid "热门"
 msgstr "Hot"
 
@@ -2103,7 +2080,7 @@ msgstr "Sign-in QR code"
 msgid "登录后为你专属生成"
 msgstr "Sign in for a mix made for you"
 
-#: src/components/comments/CommentSection.tsx:524
+#: src/components/comments/CommentSection.tsx:777
 msgid "登录后参与评论"
 msgstr "Sign in to comment"
 
@@ -2268,13 +2245,9 @@ msgstr "Cantonese"
 msgid "精品歌单"
 msgstr "Featured playlists"
 
-#: src/components/comments/CommentSection.tsx:556
+#: src/components/comments/CommentSection.tsx:809
 msgid "精彩评论"
 msgstr "Top comments"
-
-#: src/components/player/OutputDevicePicker.tsx:154
-#~ msgid "系统未允许媒体设备访问，请在 Windows 隐私设置中允许桌面应用使用麦克风。"
-#~ msgstr ""
 
 #: src/routes/settings.tsx:627
 msgid "约 64kbps ≈ 1.9MB / 4 分钟，96kbps ≈ 2.9MB，128kbps ≈ 3.8MB。"
@@ -2373,27 +2346,27 @@ msgstr "Settings"
 msgid "设置分类"
 msgstr "Settings categories"
 
-#: src/components/comments/CommentSection.tsx:154
-#: src/components/comments/CommentSection.tsx:541
+#: src/components/comments/CommentSection.tsx:393
+#: src/components/comments/CommentSection.tsx:794
 #: src/components/player/NowPlaying.tsx:1319
 #: src/routes/songlists/$id.tsx:477
 msgid "评论"
 msgstr "Comments"
 
-#: src/components/comments/CommentSection.tsx:309
+#: src/components/comments/CommentSection.tsx:548
 msgid "评论不能为空"
 msgstr "Comment cannot be empty"
 
-#: src/components/comments/CommentSection.tsx:230
+#: src/components/comments/CommentSection.tsx:469
 msgid "评论加载失败"
 msgstr "Failed to load comments"
 
-#: src/components/comments/CommentSection.tsx:289
-#: src/components/comments/CommentSection.tsx:317
+#: src/components/comments/CommentSection.tsx:528
+#: src/components/comments/CommentSection.tsx:556
 msgid "评论失败"
 msgstr "Failed to post the comment"
 
-#: src/components/comments/CommentSection.tsx:300
+#: src/components/comments/CommentSection.tsx:539
 msgid "评论成功"
 msgstr "Comment posted"
 
@@ -2430,7 +2403,17 @@ msgstr "This user hasn't created any playlists"
 msgid "该用户还没有收藏歌单"
 msgstr "This user hasn't saved any playlists"
 
-#: src/components/comments/CommentSection.tsx:523
+#: src/components/comments/CommentSection.tsx:82
+#: src/components/comments/CommentSection.tsx:200
+#: src/components/comments/CommentSection.tsx:207
+msgid "语音加载失败"
+msgstr "Could not load voice comment"
+
+#: src/components/comments/CommentSection.tsx:225
+msgid "语音播放进度"
+msgstr "Voice comment progress"
+
+#: src/components/comments/CommentSection.tsx:776
 msgid "说点什么…"
 msgstr "Say something…"
 
@@ -2438,9 +2421,9 @@ msgstr "Say something…"
 msgid "请先播放歌曲"
 msgstr "Play a track first"
 
-#: src/components/comments/CommentSection.tsx:305
-#: src/components/comments/CommentSection.tsx:347
-#: src/components/comments/CommentSection.tsx:489
+#: src/components/comments/CommentSection.tsx:544
+#: src/components/comments/CommentSection.tsx:586
+#: src/components/comments/CommentSection.tsx:742
 #: src/store/user.ts:236
 msgid "请先登录"
 msgstr "Please sign in first"
@@ -2511,12 +2494,6 @@ msgstr "Higher · 96kbps"
 msgid "输入关键词后按回车开始搜索"
 msgstr "Enter a keyword and press Enter to search"
 
-#: src/components/player/OutputDevicePicker.tsx:134
-#: src/components/player/OutputDevicePicker.tsx:135
-#: src/components/player/OutputDevicePicker.tsx:150
-#~ msgid "输出设备"
-#~ msgstr "Output Device"
-
 #: src/lib/tagLabels.ts:20
 msgid "运动"
 msgstr "Workout"
@@ -2562,7 +2539,7 @@ msgstr "No recent plays yet"
 msgid "还没有收藏专辑"
 msgstr "No saved albums yet"
 
-#: src/components/comments/CommentSection.tsx:561
+#: src/components/comments/CommentSection.tsx:814
 msgid "还没有评论，快来抢沙发～"
 msgstr "No comments yet. Be the first!"
 
@@ -2614,10 +2591,6 @@ msgstr "Choose how artwork appears on the song detail page. Changes apply immedi
 #: src/routes/settings.tsx:400
 msgid "选择界面明暗与主题配色，立即生效，并会记住你的选择。"
 msgstr "Choose a light or dark appearance and theme color. Changes apply immediately and are remembered."
-
-#: src/components/player/OutputDevicePicker.tsx:185
-#~ msgid "选择系统输出设备…"
-#~ msgstr ""
 
 #: src/components/player/MorePlaybackOptions.tsx:374
 #: src/components/player/MorePlaybackOptions.tsx:421
@@ -2769,7 +2742,3 @@ msgstr "Defaults to 200 MB; when exceeded, the oldest cached tracks are removed 
 #: src/routes/settings.tsx:478
 msgid "默认使用轻量的 CSS 动态渐变；开启后在歌曲详情页使用 GPU 绘制封面色彩雾气，不支持 WebGL 时自动回退。"
 msgstr "Uses a lightweight CSS gradient by default. When enabled, the song detail page renders cover-coloured fog on the GPU and falls back automatically without WebGL."
-
-#: src/components/player/OutputDevicePicker.tsx:99
-#~ msgid "默认输出设备"
-#~ msgstr "Default Output Device"
