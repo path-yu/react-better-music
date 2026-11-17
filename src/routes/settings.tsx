@@ -5,6 +5,7 @@ import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import {
+  Check,
   Download,
   FolderOpen,
   HardDrive,
@@ -21,7 +22,7 @@ import {
   Sun,
   Trash2,
 } from 'lucide-react'
-import { Button, Checkbox, Select, Switch } from '@pikoloo/darwin-ui'
+import { Button, Select, Switch } from '@pikoloo/darwin-ui'
 import {
   CACHE_MAX_MB_OPTIONS,
   CACHE_QUALITY_OPTIONS,
@@ -365,7 +366,7 @@ function SettingsPage() {
   }, [activeTab])
 
   return (
-    <div className="settings-page mx-auto max-w-[1120px] px-8 pb-4 pt-7 max-md:px-5">
+    <div className="settings-page mx-auto max-w-[1200px] px-8 pb-4 pt-7 max-md:px-5">
       {/* <div>
         <h1 className="headline-lg flex items-center gap-2">
           <Settings2 className="h-5 w-5 text-accent" />
@@ -389,7 +390,7 @@ function SettingsPage() {
           data-active={activeTab}
         >
           <div className="grid gap-5">
-        <section className="apple-card p-6" data-settings-section="general">
+        <section className="apple-card p-5 sm:p-6" data-settings-section="general">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
@@ -427,102 +428,133 @@ function SettingsPage() {
             </div>
           </div>
 
-          <div className="mt-5 grid gap-1.5 sm:grid-cols-2">
-            {PALETTE_OPTIONS.map((option) => {
-              const selected = palette === option.id
-              const preview = theme === 'dark' ? option.dark : option.light
-              return (
-                <div
-                  key={option.id}
-                  title={option.description}
-                  onClick={() => setPalette(option.id)}
-                  className={`group flex cursor-pointer items-center gap-3 rounded-[11px] px-3 py-2.5 transition-colors ${
-                    selected
-                      ? 'bg-accent/8 ring-1 ring-inset ring-accent/20'
-                      : 'hover:bg-black/4 dark:hover:bg-white/5'
-                  }`}
-                >
-                  <span
-                    aria-hidden="true"
-                    className="h-5 w-5 shrink-0 rounded-full border border-black/10 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.18)] dark:border-white/15"
-                    style={{ backgroundColor: preview.accent }}
-                  />
-                  <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-black/75">
-                    {option.label}
-                  </span>
-                  <Checkbox
-                    checked={selected}
-                    onChange={() => setPalette(option.id)}
-                    aria-label={option.label}
-                    className={`palette-checkbox shrink-0 transition-opacity ${
+          <div className="mt-6">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[12px] font-medium text-black/65">
+                <Trans>配色方案</Trans>
+              </p>
+              <span className="text-[10.5px] text-black/30">
+                <Trans>点击色点立即切换</Trans>
+              </span>
+            </div>
+            <div
+              className="settings-palette-grid mt-3"
+              role="group"
+              aria-label={i18n._(msg`配色方案`)}
+            >
+              {PALETTE_OPTIONS.map((option) => {
+                const selected = palette === option.id
+                const preview = theme === 'dark' ? option.dark : option.light
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    title={option.description}
+                    aria-pressed={selected}
+                    onClick={() => setPalette(option.id)}
+                    className={`group flex min-w-0 flex-col items-center gap-2 rounded-xl border px-2 py-3 transition-colors ${
                       selected
-                        ? 'opacity-100'
-                        : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
+                        ? 'border-accent/25 bg-accent/5'
+                        : 'border-transparent hover:bg-black/4 dark:hover:bg-white/5'
                     }`}
-                    boxClassName="h-4 w-4 rounded-[5px]"
-                  />
-                </div>
-              )
-            })}
-          </div>
-
-          <div className="mt-5 flex items-center justify-between gap-4 border-t border-[var(--app-border)] pt-4">
-            <div>
-              <p className="text-[13px] font-medium text-black/75">
-                <Trans>WebGL 雾化背景</Trans>
-              </p>
-              <p className="mt-1 max-w-[560px] text-[11px] leading-relaxed text-black/40">
-                <Trans>
-                  默认使用轻量的 CSS 动态渐变；开启后在歌曲详情页使用 GPU 绘制封面色彩雾气，不支持 WebGL 时自动回退。
-                </Trans>
-              </p>
-            </div>
-            <Switch
-              checked={fogBackdrop}
-              onChange={setFogBackdrop}
-              aria-label={i18n._(msg`WebGL 雾化背景`)}
-            />
-          </div>
-
-          <div className="mt-4 flex items-center justify-between gap-4 border-t border-[var(--app-border)] pt-4">
-            <div>
-              <p className="text-[13px] font-medium text-black/75">
-                <Trans>播放页过渡动画</Trans>
-              </p>
-            </div>
-            <Select
-              value={nowPlayingTransition}
-              onChange={(event) =>
-                setNowPlayingTransition(
-                  event.target.value as NowPlayingTransition,
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-black/10 transition-transform duration-200 group-hover:scale-105 dark:border-white/15"
+                      style={{
+                        backgroundColor: preview.accent,
+                        boxShadow: selected
+                          ? `inset 0 1px 2px rgba(255,255,255,0.4), 0 4px 10px -4px rgba(0,0,0,0.35), 0 0 0 2px var(--app-card), 0 0 0 4px ${preview.accent}66, 0 0 18px ${preview.accent}55`
+                          : 'inset 0 1px 2px rgba(255,255,255,0.4), 0 4px 10px -4px rgba(0,0,0,0.3)',
+                      }}
+                    >
+                      {selected ? (
+                        <Check
+                          className="h-4 w-4 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]"
+                          strokeWidth={2.5}
+                        />
+                      ) : null}
+                    </span>
+                    <span
+                      className={`min-w-0 max-w-full truncate text-[11px] ${
+                        selected
+                          ? 'font-medium text-black/80'
+                          : 'text-black/55'
+                      }`}
+                    >
+                      {option.label}
+                    </span>
+                  </button>
                 )
-              }
-              options={NOW_PLAYING_TRANSITION_OPTIONS.map((option) => ({
-                value: option.value,
-                label: i18n._(option.label),
-              }))}
-              className="w-[150px] text-[12px]"
-            />
-          </div>
-        </section>
-
-        <section className="apple-card p-6" data-settings-section="general">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
-                <Languages className="h-4 w-4 text-accent" />
-                语言 / Language
-              </h2>
+              })}
             </div>
-            <Select
-              value={locale}
-              onChange={(event) => setLocale(event.target.value as Locale)}
-              options={locales.map((item) => ({
-                value: item.value,
-                label: item.label,
-              }))}
-              className="w-[150px] text-[12px]"
-            />
+          </div>
+
+          <div className="mt-5 divide-y divide-[var(--app-border)] overflow-hidden rounded-xl border border-[var(--app-border)] bg-black/[0.018] dark:bg-white/[0.025]">
+            <div className="flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-[13px] font-medium text-black/75">
+                  <Trans>WebGL 雾化背景</Trans>
+                </p>
+                <p className="mt-1 max-w-[560px] text-[11px] leading-relaxed text-black/40">
+                  <Trans>
+                    默认使用轻量的 CSS 动态渐变；开启后在歌曲详情页使用 GPU 绘制封面色彩雾气，不支持 WebGL 时自动回退。
+                  </Trans>
+                </p>
+              </div>
+              <Switch
+                checked={fogBackdrop}
+                onChange={setFogBackdrop}
+                aria-label={i18n._(msg`WebGL 雾化背景`)}
+              />
+            </div>
+
+            <div className="flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-[13px] font-medium text-black/75">
+                  <Trans>播放页过渡动画</Trans>
+                </p>
+                <p className="mt-1 text-[11px] leading-relaxed text-black/40">
+                  <Trans>进入和离开歌曲详情页时使用的动画效果。</Trans>
+                </p>
+              </div>
+              <Select
+                value={nowPlayingTransition}
+                onChange={(event) =>
+                  setNowPlayingTransition(
+                    event.target.value as NowPlayingTransition,
+                  )
+                }
+                options={NOW_PLAYING_TRANSITION_OPTIONS.map((option) => ({
+                  value: option.value,
+                  label: i18n._(option.label),
+                }))}
+                className="w-[160px] shrink-0 text-[12px]"
+              />
+            </div>
+
+            <div className="flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="flex items-center gap-2 text-[13px] font-medium text-black/75">
+                  <Languages className="h-3.5 w-3.5 text-accent" />
+                  <span>语言 / Language</span>
+                </p>
+                <p className="mt-1 text-[11px] leading-relaxed text-black/40">
+                  <Trans>切换界面语言，语言资源加载后立即生效。</Trans>
+                </p>
+              </div>
+              <Select
+                value={locale}
+                onChange={(event) =>
+                  setLocale(event.target.value as Locale)
+                }
+                options={locales.map((item) => ({
+                  value: item.value,
+                  label: item.label,
+                }))}
+                className="w-[160px] shrink-0 text-[12px]"
+              />
+            </div>
           </div>
         </section>
 
