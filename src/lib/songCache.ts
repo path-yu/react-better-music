@@ -26,6 +26,7 @@ interface CacheMeta {
   /** 0 = full track; >0 = cached audio is only a 30s preview. */
   trialEnd?: number
   picUrl?: string
+  albumId?: number
 }
 
 interface AudioRecord {
@@ -42,6 +43,8 @@ export interface CacheableSong {
   trialEnd?: number | null
   /** Artwork URL persisted alongside the audio for offline playback. */
   picUrl?: string
+  /** Album id so cached tracks can open their album without a detail request. */
+  albumId?: number
 }
 
 const DB_NAME = 'react-music-audio'
@@ -183,6 +186,7 @@ async function putCachedAudio(
     bitrate?: number
     trialEnd?: number
     picUrl?: string
+    albumId?: number
   },
 ) {
   const maxBytes = cacheMaxBytes()
@@ -349,6 +353,7 @@ async function transcodeAndStore(song: CacheableSong, epoch: number, source?: Bl
       bitrate,
       trialEnd: song.trialEnd && song.trialEnd > 0 ? song.trialEnd : 0,
       picUrl: song.picUrl,
+      albumId: song.albumId,
     })
   } catch (error) {
     console.warn('[song cache] encode failed:', error)
@@ -404,6 +409,7 @@ export interface CachedAudioItem {
   bitrate?: number
   /** Original artwork URL, also present as a sidecar cover in the cache dir. */
   picUrl?: string
+  albumId?: number
 }
 
 export async function listCachedAudio(): Promise<CachedAudioItem[]> {

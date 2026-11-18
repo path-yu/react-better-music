@@ -83,6 +83,7 @@ const DESKTOP_MODULE_FILES = new Set([
   'scrobble_v1.js',
   'simi_artist.js',
   'simi_mv.js',
+  'song_detail.js',
   'song_url_match.js',
   'song_url_v1.js',
   'top_playlist_highquality.js',

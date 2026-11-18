@@ -10,6 +10,7 @@ export interface DesktopAudioCacheItem {
   bitrate?: number
   trialEnd?: number
   picUrl?: string
+  albumId?: number
 }
 
 export interface DesktopAudioCacheList {

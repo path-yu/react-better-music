@@ -42,7 +42,7 @@ import { NowPlayingTitleBar } from './NowPlayingTitleBar'
 import { NowPlayingTransport } from './NowPlayingTransport'
 import { CommentSection, useCommentTotal } from '../comments/CommentSection'
 import { SongContextMenu } from '../songs/SongContextMenu'
-import { fetchMvUrl, fetchRelatedVideos } from '../../api'
+import { fetchMvUrl, fetchRelatedVideos, fetchSongDetail } from '../../api'
 import { useDelayedBusy } from '../../lib/useDelayedBusy'
 import { isDesktopShell } from '../../lib/desktop'
 import { isTauriApp } from '../../lib/platform'
@@ -224,6 +224,7 @@ export function NowPlaying() {
   const artworkRef = useRef(artwork)
   artworkRef.current = artwork
   const exitingRef = useRef(false)
+  const albumResolveRef = useRef(false)
   const requestClose = useCallback(() => {
     if (exitingRef.current) return
     const reduced = window.matchMedia?.(
@@ -894,14 +895,35 @@ export function NowPlaying() {
   const showAlbumMeta =
     Boolean(currentSong.al.name.trim()) &&
     currentSong.al.name.trim().toLowerCase() !== artistLabel
+  const albumAvailable = Boolean(albumId) || currentSong.id > 0
   const openAlbum = () => {
-    if (!albumId) return
-    // Close first: the router may commit the album route only after its data
-    // resolves, so relying on the pathname effect would leave this overlay on
-    // top of the page the user just asked for (and it never fires when the
-    // album is already the current path).
-    toggleNowPlaying(false)
-    void navigate({ to: '/albums/$id', params: { id: String(albumId) } })
+    if (!albumAvailable || albumResolveRef.current) return
+    void (async () => {
+      let resolvedId = albumId
+      if (!resolvedId) {
+        // Cached audio is rebuilt from the cache index, which only has the
+        // song id/cover. Fetch the song once to recover its album id.
+        albumResolveRef.current = true
+        try {
+          const detail = await fetchSongDetail(currentSong.id)
+          resolvedId = detail?.al.id ?? 0
+        } catch {
+          resolvedId = 0
+        } finally {
+          albumResolveRef.current = false
+        }
+        if (!resolvedId) {
+          toast.error(i18n._(msg`无法获取专辑信息`))
+          return
+        }
+      }
+      // Close first: the router may commit the album route only after its data
+      // resolves, so relying on the pathname effect would leave this overlay on
+      // top of the page the user just asked for (and it never fires when the
+      // album is already the current path).
+      toggleNowPlaying(false)
+      void navigate({ to: '/albums/$id', params: { id: String(resolvedId) } })
+    })()
   }
 
   const closeMvMode = (resumeAudio = true, rememberAudio = true) => {
@@ -1272,7 +1294,7 @@ export function NowPlaying() {
                   playing={playing}
                   position={currentTime}
                   liked={liked}
-                  albumAvailable={Boolean(albumId)}
+                  albumAvailable={albumAvailable}
                   glowRgb={
                     palette.colors[0]
                       ? (() => {

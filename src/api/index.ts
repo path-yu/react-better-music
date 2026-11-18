@@ -286,6 +286,12 @@ export async function updatePlaylistSubscribe(params: { id: string | number; t: 
 
 /* ---------------------------------- song --------------------------------- */
 
+/** Resolve the full song metadata when only an id survives (cached audio). */
+export async function fetchSongDetail(id: number | string) {
+  const res = await get<{ songs?: Song[] }>('/song/detail', { ids: id })
+  return res.songs?.[0] ?? null
+}
+
 export async function fetchSongUrlInfo(id: number | string, level: PlayLevel = 'exhigh') {
   const res = await get<{
     data?: Array<{

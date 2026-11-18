@@ -63,6 +63,8 @@ struct AudioCacheMeta {
     trial_end: Option<u64>,
     #[serde(rename = "picUrl")]
     pic_url: Option<String>,
+    #[serde(rename = "albumId")]
+    album_id: Option<u64>,
     file: Option<String>,
 }
 

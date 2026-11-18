@@ -326,7 +326,9 @@ function ArtworkFrame({
       startOffset: offset,
       moved: false,
     }
-    event.currentTarget.setPointerCapture(event.pointerId)
+    // Do not capture the pointer before it moves. Capturing on pointerdown
+    // retargets the click to the frame, which silently swallows clicks on the
+    // album button underneath.
     setDragging(true)
   }
 
@@ -335,6 +337,12 @@ function ArtworkFrame({
     if (!drag) return
     const dx = event.clientX - drag.startX
     if (Math.abs(dx) > 4) drag.moved = true
+    if (
+      drag.moved &&
+      !event.currentTarget.hasPointerCapture(drag.pointerId)
+    ) {
+      event.currentTarget.setPointerCapture(drag.pointerId)
+    }
     setOffset(drag.startOffset + dx)
   }
 
