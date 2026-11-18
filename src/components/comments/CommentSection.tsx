@@ -432,10 +432,20 @@ export function CommentSection({
   useEffect(() => {
     const requestId = ++requestIdRef.current
     const cached = commentCache.get(key)
+    // An empty cached page can be a transient API result (or the first page
+    // arrived before the resource id settled). Never let it suppress the next
+    // song's request for the full two-minute TTL.
+    const hasContent = Boolean(
+      cached &&
+        ((cached.data.total ?? 0) > 0 ||
+          (cached.data.comments?.length ?? 0) > 0),
+    )
     const fresh =
-      cached && Date.now() - cached.updatedAt < COMMENT_CACHE_TTL
+      cached &&
+      hasContent &&
+      Date.now() - cached.updatedAt < COMMENT_CACHE_TTL
     setLoadingMore(false)
-    if (cached) {
+    if (cached && hasContent) {
       // Hydrate immediately, even if slightly stale; a stale entry refreshes
       // silently below without replacing the list with a spinner.
       setData(cached.data)
@@ -465,7 +475,7 @@ export function CommentSection({
         setData(next)
       })
       .catch(() => {
-        if (requestIdRef.current === requestId && !cached) {
+        if (requestIdRef.current === requestId && !hasContent) {
           toast.error(i18n._(msg`评论加载失败`))
         }
       })

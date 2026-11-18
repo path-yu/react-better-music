@@ -633,7 +633,8 @@ export function NowPlaying() {
   }, [show, ensureLyrics])
 
   useEffect(() => {
-    setPanel('lyrics')
+    // Keep the active pane when the track changes. In particular, comments
+    // must not be unmounted just because the user pressed next/previous.
     if (mvMode && mvWasPlayingRef.current) {
       // Leaving video mode by changing tracks should continue with the new
       // song's audio rather than leaving playback paused.
@@ -1803,6 +1804,7 @@ export function NowPlaying() {
               ) : (
                 <div className="h-full overflow-y-auto px-5 pb-8 pt-4 max-md:h-auto max-md:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   <CommentSection
+                    key={currentSong.id}
                     type={0}
                     resourceId={currentSong.id}
                     title={i18n._(msg`歌曲评论`)}
