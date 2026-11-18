@@ -17,7 +17,8 @@ import { getAudio } from '../../lib/audio'
 import { usePlayerStore } from '../../store/player'
 import type { PlayerStyle } from '../../store/settings'
 import type { Song } from '../../types'
-import deckArt from '../../assets/retro/deck.png'
+import deckArt from '../../assets/retro/deck-base.png'
+import recordArt from '../../assets/retro/record.png'
 import armArt from '../../assets/retro/arm.png'
 import armShadowArt from '../../assets/retro/arm-shadow.png'
 import cassetteArt from '../../assets/retro/cassette.png'
@@ -496,6 +497,15 @@ export function PlayerArtwork({
             src={deckArt}
             alt=""
             draggable={false}
+          />
+          <img
+            className="retro-record"
+            src={recordArt}
+            alt=""
+            draggable={false}
+            style={{
+              transform: `translate(-50%, -50%) rotate(${vinylSpin}deg)`,
+            }}
           />
           <button
             type="button"

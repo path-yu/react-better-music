@@ -5262,10 +5262,29 @@ html.dark[data-theme='dark'] body {
 
 .retro-deck-image {
   display: block;
+  position: relative;
+  z-index: 0;
   width: 100%;
   height: 100%;
   object-fit: fill;
   user-select: none;
+}
+
+/* The vinyl is a separate transparent layer over the empty platter, so the
+   whole disc turns with the centre label instead of feeling like a sticker. */
+.retro-record {
+  position: absolute;
+  z-index: 1;
+  left: 44.5%;
+  top: 50%;
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+  transform-origin: 50% 50%;
+  clip-path: circle(50%);
+  pointer-events: none;
+  user-select: none;
+  will-change: transform;
 }
 
 /* The record and hub are driven exclusively by playback position in React.

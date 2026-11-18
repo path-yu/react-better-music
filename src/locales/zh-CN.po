@@ -746,8 +746,8 @@ msgstr "取消"
 #: src/components/player/ImmersivePlayerBar.tsx:213
 #: src/components/player/NowPlaying.tsx:1088
 #: src/components/player/NowPlaying.tsx:1090
-#: src/components/player/PlayerArtwork.tsx:640
-#: src/components/player/PlayerArtwork.tsx:642
+#: src/components/player/PlayerArtwork.tsx:650
+#: src/components/player/PlayerArtwork.tsx:652
 #: src/components/player/PlayerBar.tsx:1263
 #: src/components/player/PlayerBar.tsx:1265
 #: src/components/songs/SongContextMenu.tsx:357
@@ -801,8 +801,8 @@ msgstr "听歌打卡"
 #: src/components/player/ImmersivePlayerBar.tsx:213
 #: src/components/player/NowPlaying.tsx:1088
 #: src/components/player/NowPlaying.tsx:1090
-#: src/components/player/PlayerArtwork.tsx:640
-#: src/components/player/PlayerArtwork.tsx:642
+#: src/components/player/PlayerArtwork.tsx:650
+#: src/components/player/PlayerArtwork.tsx:652
 #: src/components/player/PlayerBar.tsx:1263
 #: src/components/player/PlayerBar.tsx:1265
 #: src/components/songs/SongContextMenu.tsx:357
@@ -1147,7 +1147,7 @@ msgstr "打开"
 #. placeholder {0}: album.name
 #. placeholder {0}: song.al.name
 #: src/components/cards/AlbumCard.tsx:28
-#: src/components/player/PlayerArtwork.tsx:475
+#: src/components/player/PlayerArtwork.tsx:476
 msgid "打开专辑 {0}"
 msgstr "打开专辑 {0}"
 
@@ -1638,7 +1638,7 @@ msgstr "极高"
 msgid "查看 {0} 的主页"
 msgstr "查看 {0} 的主页"
 
-#: src/components/player/PlayerArtwork.tsx:659
+#: src/components/player/PlayerArtwork.tsx:669
 msgid "查看专辑"
 msgstr "查看专辑"
 
