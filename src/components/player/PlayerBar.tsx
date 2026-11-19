@@ -1223,17 +1223,32 @@ export function PlayerBar() {
       ) : null}
       <div
         className={cn(
-          'flex min-w-0 items-center gap-3',
+          'flex min-w-0 cursor-pointer items-center gap-3',
           showNowPlaying && 'hidden',
         )}
+        onClick={(event) => {
+          const target = event.target as HTMLElement
+          // Cover/title have their own handlers; links/artists and the
+          // utility controls must keep their native actions. Everything else
+          // in this block (cover/title gaps, badges, empty space) opens the
+          // immersive player.
+          if (
+            target.closest(
+              'button, a, input, select, textarea, [role="button"], [contenteditable="true"]',
+            )
+          ) {
+            return
+          }
+          toggleNowPlaying()
+        }}
       >
         <button
           type="button"
           data-player-cover
           data-player-open-target
           onClick={() => toggleNowPlaying()}
+          aria-label={i18n._(msg`打开播放页`)}
           className="group pressable relative shrink-0 cursor-pointer"
-          title={i18n._(msg`打开播放页`)}
         >
           <ImageWithFallback
             src={currentSong.al.picUrl}
@@ -1256,6 +1271,7 @@ export function PlayerBar() {
           role="button"
           tabIndex={0}
           data-player-open-target
+          aria-label={i18n._(msg`打开播放页`)}
           className="min-w-0 flex-1 cursor-pointer"
           onClick={(event) => {
             // Do not let nested controls open the immersive player.
@@ -1269,7 +1285,6 @@ export function PlayerBar() {
               toggleNowPlaying()
             }
           }}
-          title={i18n._(msg`打开播放页`)}
         >
           <div className="flex items-center gap-2">
             <span className="min-w-0 truncate text-[12.5px] font-medium text-black/80 hover:text-accent">

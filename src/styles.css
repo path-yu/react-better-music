@@ -9,6 +9,50 @@
  */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Registered colours make the Oklab gradient itself interpolate when the
+   track changes. Animating `background` alone would jump: gradients are
+   images, not interpolable colours. */
+@property --ambient-bg-top {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: #1b1b20;
+}
+
+@property --ambient-bg-foot {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: #141419;
+}
+
+.ambient-backdrop {
+  transition:
+    --ambient-bg-top 760ms cubic-bezier(0.22, 1, 0.36, 1),
+    --ambient-bg-foot 760ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ambient-art {
+  animation: ambient-art-in 680ms ease both;
+}
+
+@keyframes ambient-art-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient-backdrop {
+    transition: none;
+  }
+
+  .ambient-art {
+    animation: none;
+  }
+}
+
 /*
  * Design tokens for Tailwind utilities. They resolve through the runtime
  * variables below, so `text-accent` / `text-ink-2` follow the light/dark theme
@@ -137,6 +181,16 @@ input,
 textarea,
 select {
   font-family: inherit;
+}
+
+/* Tailwind v4 resets native buttons to cursor: default. Keep every enabled
+   control discoverable while allowing explicit cursor-* utilities to win. */
+:where(button:not(:disabled), [role='button']:not([aria-disabled='true'])) {
+  cursor: pointer;
+}
+
+:where(button:disabled, [role='button'][aria-disabled='true']) {
+  cursor: default;
 }
 
 /* Chromium's default focus ring is a hard black rectangle that looks wrong on

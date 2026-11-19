@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, type CSSProperties } from 'react'
 import { cn } from '../../lib/format'
 import { FALLBACK_PALETTE, hexToRgb, type Palette } from '../../lib/color'
 
@@ -79,19 +79,25 @@ export default function AmbientBackground({
   return (
     <div
       className={cn(
-        'pointer-events-none absolute inset-0 overflow-hidden',
+        'ambient-backdrop pointer-events-none absolute inset-0 overflow-hidden',
         className,
       )}
-      style={{
-        background: `linear-gradient(in oklab, ${colors.top} 0%, ${colors.foot} 100%)`,
-      }}
+      style={
+        {
+          '--ambient-bg-top': colors.top,
+          '--ambient-bg-foot': colors.foot,
+          background:
+            'linear-gradient(in oklab, var(--ambient-bg-top) 0%, var(--ambient-bg-foot) 100%)',
+        } as CSSProperties
+      }
     >
       {artwork ? (
         <img
+          key={artwork}
           src={artwork}
           alt=""
           aria-hidden
-          className="absolute inset-0 h-full w-full scale-[1.25] object-cover opacity-[0.1] blur-[56px] saturate-[1.15]"
+          className="ambient-art absolute inset-0 h-full w-full scale-[1.25] object-cover opacity-[0.1] blur-[56px] saturate-[1.15]"
         />
       ) : null}
       <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_55%,rgba(0,0,0,0.18)_100%)]" />
@@ -104,10 +110,15 @@ export function FallbackWash({ palette }: { palette: Palette }) {
   const colors = backdropColors(palette.colors[0] ?? FALLBACK_PALETTE.colors[0])
   return (
     <div
-      className="absolute inset-0"
-      style={{
-        background: `linear-gradient(in oklab, ${colors.top} 0%, ${colors.foot} 100%)`,
-      }}
+      className="ambient-backdrop absolute inset-0"
+      style={
+        {
+          '--ambient-bg-top': colors.top,
+          '--ambient-bg-foot': colors.foot,
+          background:
+            'linear-gradient(in oklab, var(--ambient-bg-top) 0%, var(--ambient-bg-foot) 100%)',
+        } as CSSProperties
+      }
     />
   )
 }
