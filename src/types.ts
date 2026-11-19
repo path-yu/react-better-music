@@ -83,6 +83,9 @@ export interface Song {
   urlFetchedAt?: number
   /** URL resolved by `/song/url/match` (third-party provider, not NetEase CDN). */
   unblocked?: boolean
+  /** Official playable edition recommended for a grey track. */
+  alternativeSongId?: number
+  alternativeVersion?: boolean
   /** Provider module that produced the matched URL (e.g. `unm`, `gdmusic`). */
   matchedSource?: string
   /** Trial length in seconds when NetEase only returns a preview clip. */

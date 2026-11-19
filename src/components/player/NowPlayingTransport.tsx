@@ -52,6 +52,7 @@ export function NowPlayingTransport({
   const sourceReady = usePlayerStore((state) => state.sourceReady)
   const audioReady = usePlayerStore((state) => state.audioReady)
   const currentTime = usePlayerStore((state) => state.currentTime)
+  const mediaDuration = usePlayerStore((state) => state.mediaDuration)
   const mode = usePlayerStore((state) => state.mode)
   const volume = usePlayerStore((state) => state.volume)
   const heartMode = usePlayerStore((state) => state.heartMode)
@@ -83,7 +84,9 @@ export function NowPlayingTransport({
     ? videoDuration * 1000
     : currentSong.trialEnd && currentSong.trialEnd > 0
       ? currentSong.trialEnd * 1000
-      : currentSong.dt || 0
+      : sourceReady && mediaDuration > 0
+        ? mediaDuration
+        : currentSong.dt || 0
   const playbackMs = videoActive ? videoTime * 1000 : currentTime * 1000
   const percent = durationMs
     ? Math.min(100, Math.max(0, (playbackMs / durationMs) * 100))

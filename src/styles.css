@@ -3290,6 +3290,8 @@ html.desktop .app-window {
   box-shadow: 0 0 10px color-mix(in srgb, var(--slider-fill) 28%, transparent);
 }
 
+
+
 .seek-slider__thumb,
 .volume-slider__thumb {
   position: absolute;
@@ -3307,6 +3309,7 @@ html.desktop .app-window {
 .seek-slider__thumb {
   top: 50%;
   margin-top: -6.5px;
+  z-index: 3;
 }
 
 /* The player bar's seek line hugs its top edge, edge to edge, in both the

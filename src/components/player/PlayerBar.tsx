@@ -97,6 +97,7 @@ export function PlayerBar() {
   const retriedRef = useRef<number | null>(null)
   const lastPlayTokenRef = useRef<number | null>(null)
   const lastSongIdRef = useRef<number | null>(null)
+  const lastSourceReloadTokenRef = useRef(0)
   const autoNextTriggeredRef = useRef(false)
   const switchingRef = useRef(false)
   const trialNotifiedRef = useRef(false)
@@ -129,6 +130,9 @@ export function PlayerBar() {
   const currentTime = usePlayerStore((state) => state.currentTime)
   const buffered = usePlayerStore((state) => state.buffered)
   const playToken = usePlayerStore((state) => state.playToken)
+  const sourceReloadToken = usePlayerStore(
+    (state) => state.sourceReloadToken ?? 0,
+  )
   const audioUrl = usePlayerStore((state) => state.audioUrl)
   const sourceReady = usePlayerStore((state) => state.sourceReady)
   const audioReady = usePlayerStore((state) => state.audioReady)
@@ -150,6 +154,7 @@ export function PlayerBar() {
   )
   const setVolume = usePlayerStore((state) => state.setVolume)
   const setCurrentTime = usePlayerStore((state) => state.setCurrentTime)
+  const setMediaDuration = usePlayerStore((state) => state.setMediaDuration)
   const setBuffered = usePlayerStore((state) => state.setBuffered)
   const setAudioReady = usePlayerStore((state) => state.setAudioReady)
   const toggleNowPlaying = usePlayerStore((state) => state.toggleNowPlaying)
@@ -227,7 +232,7 @@ export function PlayerBar() {
 
   // Real duration reported by the media element; trial clips are shorter than
   // the catalogue duration in song.dt.
-  const [mediaDuration, setMediaDuration] = useState(0)
+  const [mediaDuration, setLocalMediaDuration] = useState(0)
   // Keeps the thumb at the clicked position while a deferred seek waits for
   // metadata, instead of snapping back to the audio element's current 0.
   const [pendingSeek, setPendingSeek] = useState<number | null>(null)
@@ -538,7 +543,10 @@ export function PlayerBar() {
     if (!audioUrl) return
     const current = audioRef.current
     if (!current) return
-    if (current.getAttribute('src') === audioUrl) {
+    const forcedReload =
+      lastSourceReloadTokenRef.current !== sourceReloadToken
+    lastSourceReloadTokenRef.current = sourceReloadToken
+    if (current.getAttribute('src') === audioUrl && !forcedReload) {
       attachAudioAnalyser(current)
       if (usePlayerStore.getState().playing && current.paused) {
         void current.play().catch(() => undefined)
@@ -575,6 +583,7 @@ export function PlayerBar() {
       clearBufferingTimer()
       seekingRef.current = false
       setAudioReady(false)
+      setLocalMediaDuration(0)
       setMediaDuration(0)
     }
 
@@ -593,7 +602,14 @@ export function PlayerBar() {
     if (usePlayerStore.getState().playing) {
       void target.play().catch(() => undefined)
     }
-  }, [audioUrl, setAudioReady, setBuffered, setCurrentTime])
+  }, [
+    audioUrl,
+    sourceReloadToken,
+    setAudioReady,
+    setBuffered,
+    setCurrentTime,
+    setMediaDuration,
+  ])
 
   useEffect(() => {
     if (playing) {
@@ -642,7 +658,14 @@ export function PlayerBar() {
           : audioRef.current
       if (target && target.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
         if (target.paused) {
-          void target.play().catch(() => undefined)
+          void target
+            .play()
+            .then(() => setAudioReady(true))
+            .catch(() => {
+              void refreshCurrentUrl()
+            })
+        } else {
+          setAudioReady(true)
         }
         return
       }
@@ -662,7 +685,16 @@ export function PlayerBar() {
       void refreshCurrentUrl()
     }, 12_000)
     return () => window.clearTimeout(timer)
-  }, [audioReady, audioUrl, currentSong?.id, playing, refreshCurrentUrl, sourceReady])
+  }, [
+    audioReady,
+    audioUrl,
+    currentSong?.id,
+    playing,
+    refreshCurrentUrl,
+    setAudioReady,
+    sourceReady,
+    sourceReloadToken,
+  ])
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
@@ -976,7 +1008,9 @@ export function PlayerBar() {
       if (audio !== audioRef.current && audio !== incomingRef.current) return
       if (!audioUrl || audio.getAttribute('src') !== audioUrl) return
       const value = audio.duration
-      setMediaDuration(Number.isFinite(value) && value > 0 ? value * 1000 : 0)
+      const durationMs = Number.isFinite(value) && value > 0 ? value * 1000 : 0
+      setLocalMediaDuration(durationMs)
+      setMediaDuration(durationMs)
       // A manual source switch keeps the position the user was at.
       if (resumeAt != null) {
         const target = Math.min(
@@ -1068,6 +1102,15 @@ export function PlayerBar() {
       // flashed the loading state and shifted the now-playing layout.
       if (event.currentTarget !== audioRef.current) return
       if (usePlayerStore.getState().playing) markBuffering()
+    },
+    onDurationChange: (event: SyntheticEvent<HTMLAudioElement>) => {
+      const audio = event.currentTarget
+      if (audio !== audioRef.current && audio !== incomingRef.current) return
+      if (!audioUrl || audio.getAttribute('src') !== audioUrl) return
+      const value = audio.duration
+      const durationMs = Number.isFinite(value) && value > 0 ? value * 1000 : 0
+      setLocalMediaDuration(durationMs)
+      setMediaDuration(durationMs)
     },
     onWaiting: (event: SyntheticEvent<HTMLAudioElement>) => {
       if (event.currentTarget !== audioRef.current) return
@@ -1295,7 +1338,14 @@ export function PlayerBar() {
                 <Trans>试听</Trans>
               </span>
             ) : null}
-            {currentSong.unblocked ? (
+            {currentSong.alternativeVersion ? (
+              <span
+                className="shrink-0 rounded-[6px] bg-accent/10 px-1 text-[11px] text-accent"
+                title={i18n._(msg`当前使用网易云推荐的其他可播放版本`)}
+              >
+                <Trans>其他版本</Trans>
+              </span>
+            ) : currentSong.unblocked ? (
               <span
                 className="shrink-0 rounded-[6px] bg-accent/10 px-1 text-[11px] text-accent"
                 title={i18n._(msg`该歌曲没有官方音源，当前使用匹配到的其他音源`)}

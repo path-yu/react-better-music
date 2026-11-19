@@ -368,6 +368,15 @@ export async function fetchSongDetail(id: number | string) {
   return res.songs?.[0] ?? null
 }
 
+/** NetEase's recommended playable edition for a grey copyright track. */
+export async function fetchSongCopyrightRecommendation(id: number | string) {
+  const res = await get<{ data?: { rcmd?: Song | null } }>(
+    '/song/copyright/rcmd',
+    { songid: id },
+  )
+  return res.data?.rcmd ?? null
+}
+
 export async function fetchSongUrlInfo(id: number | string, level: PlayLevel = 'exhigh') {
   const res = await get<{
     data?: Array<{

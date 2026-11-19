@@ -7,6 +7,8 @@ import {
   fetchLyric,
   fetchMatchedSongUrl,
   fetchPersonalFm,
+  fetchSongCopyrightRecommendation,
+  fetchSongDetail,
   fetchSongUrlInfo,
 } from '../api'
 import { buildLyricLines, isEmptyLyric, type LyricLine } from '../lib/lyric'
@@ -53,8 +55,12 @@ interface PlayerState {
   mode: PlayMode
   volume: number
   currentTime: number
+  /** Duration reported by the active media element, in milliseconds. */
+  mediaDuration: number
   buffered: number
   playToken: number
+  /** Forces the source effect to reload even when the signed URL is unchanged. */
+  sourceReloadToken: number
   audioReady: boolean
   audioUrl: string
   sourceReady: boolean
@@ -90,6 +96,7 @@ interface PlayerState {
   toggleHeartMode: () => Promise<void>
   setVolume: (value: number) => void
   setCurrentTime: (value: number) => void
+  setMediaDuration: (value: number) => void
   setBuffered: (value: number) => void
   setAudioReady: (value: boolean) => void
   toggleNowPlaying: (value?: boolean) => void
@@ -115,6 +122,11 @@ type SongSource = {
   available: boolean
   /** Which provider module produced the matched URL. */
   matchedSource?: string
+  /** Official playable edition recommended by `/song/copyright/rcmd`. */
+  alternativeSongId?: number
+  alternativeVersion?: boolean
+  /** Fresh metadata of the recommended edition (duration, cover, artists). */
+  alternativeSong?: Song
 }
 
 /**
@@ -147,6 +159,40 @@ async function resolveSongSource(song: Song): Promise<SongSource> {
 
   // Cache the match attempt so a VIP-first lookup and a trial fallback don't
   // request the same matcher twice in one resolution.
+  // NetEase's own recommendation is preferred over the third-party matcher:
+  // it is the same catalogue/edition and usually keeps lyrics and timing sane.
+  let alternativePromise: Promise<SongSource | null> | null = null
+  const getAlternative = () => {
+    if (!alternativePromise) {
+      alternativePromise = (async () => {
+        try {
+          const recommendation = await fetchSongCopyrightRecommendation(song.id)
+          if (!recommendation || recommendation.id === song.id) return null
+          // A new song id means a different duration/cover/lyric timeline. Pull
+          // fresh metadata instead of reusing the grey track's fields.
+          const detail =
+            (await fetchSongDetail(recommendation.id).catch(() => null)) ??
+            recommendation
+          const info = await fetchSongUrlInfo(detail.id, level)
+          if (!info.url) return null
+          return {
+            url: info.url,
+            trialEnd: info.trialEnd,
+            unblocked: false,
+            available: true,
+            matchedSource: 'copyright-rcmd',
+            alternativeSongId: detail.id,
+            alternativeVersion: true,
+            alternativeSong: detail,
+          } satisfies SongSource
+        } catch {
+          return null
+        }
+      })()
+    }
+    return alternativePromise
+  }
+
   let matchedPromise: Promise<{ url: string; source: string }> | null = null
   const getMatched = () => {
     if (!matchedPromise) {
@@ -158,6 +204,8 @@ async function resolveSongSource(song: Song): Promise<SongSource> {
   }
   const autoMatchedSource = async (): Promise<SongSource | null> => {
     if (!autoReplace) return null
+    const alternative = await getAlternative()
+    if (alternative) return alternative
     const matched = await getMatched()
     return matched.url
       ? {
@@ -221,6 +269,11 @@ async function resolveSongSource(song: Song): Promise<SongSource> {
     if (urlError) throw urlError
     return { url: null, trialEnd: null, unblocked: false, available: true }
   }
+
+  // Prefer the official "other playable edition" recommendation over the
+  // third-party grey-track matcher.
+  const alternative = await getAlternative()
+  if (alternative) return alternative
 
   // Reuse the cached matcher attempt. When auto matching was already enabled
   // this is a failed result, so we don't hit the provider twice.
@@ -288,13 +341,29 @@ async function enrichSong(song: Song): Promise<Song> {
         : i18n._(msg`亲爱的，暂无版权，已为你跳过`),
     )
   }
-  const lyricData = await fetchLyric(song.id)
+  // Downloaded/streamed audio may come from the recommended edition. Prefer
+  // its lyrics/timing, but fall back to the original when it has none.
+  const lyricSongId = source.alternativeSongId ?? song.id
+  let lyricData = await fetchLyric(lyricSongId)
+  if (
+    source.alternativeSongId &&
+    source.alternativeSongId !== song.id &&
+    isEmptyLyric(lyricData.lyric) &&
+    !lyricData.yrc
+  ) {
+    lyricData = await fetchLyric(song.id).catch(() => lyricData)
+  }
   const lyrics = buildLyricLines(lyricData)
+  const effectiveSong = source.alternativeSong
+    ? { ...song, ...source.alternativeSong, id: song.id }
+    : song
   return {
-    ...song,
+    ...effectiveSong,
     url: source.url,
     unblocked: source.unblocked,
     matchedSource: source.matchedSource,
+    alternativeSongId: source.alternativeSongId,
+    alternativeVersion: source.alternativeVersion,
     urlFetchedAt: Date.now(),
     trialEnd: source.trialEnd,
     lyric: lyricData.lyric,
@@ -647,8 +716,10 @@ export const usePlayerStore = create<PlayerState>()(
       }
 
       const resolveLyrics = async (index: number, song: Song, requestId: number) => {
+        // Recommended editions have their own duration and lyric timeline.
+        const lyricsSongId = song.alternativeSongId ?? song.id
         if (song.lyric || song.yrc || song.isNotLyric) {
-          void saveCachedLyrics(song.id, {
+          void saveCachedLyrics(lyricsSongId, {
             lyric: song.lyric ?? '',
             tlyric: song.tlyric ?? '',
             yrc: song.yrc ?? '',
@@ -660,7 +731,7 @@ export const usePlayerStore = create<PlayerState>()(
         try {
           // Neighbour prefetch may already have filled the queue, or the
           // persistent cache may have lyrics from an earlier session.
-          const patch = await loadLyricsPatch(song.id)
+          const patch = await loadLyricsPatch(lyricsSongId)
           if (get().loadRequestId !== requestId) return
           if (!patch) {
             set({ lyricLoading: false })
@@ -749,7 +820,10 @@ export const usePlayerStore = create<PlayerState>()(
           let trialEnd: number | null = fresh ? (song.trialEnd ?? null) : null
           let unblocked = fresh ? Boolean(song.unblocked) : false
           let matchedSource = fresh ? song.matchedSource : undefined
+          let alternativeSongId = fresh ? song.alternativeSongId : undefined
+          let alternativeVersion = fresh ? song.alternativeVersion : undefined
           let available = true
+          let effectiveSong = song
           if (!url) {
             const source = await resolveSongSource(song)
             if (get().loadRequestId !== requestId) return true
@@ -757,14 +831,41 @@ export const usePlayerStore = create<PlayerState>()(
             trialEnd = source.trialEnd
             unblocked = source.unblocked
             matchedSource = source.matchedSource
+            alternativeSongId = source.alternativeSongId
+            alternativeVersion = source.alternativeVersion
             available = source.available
+            const alternativePatch = source.alternativeSong
+              ? {
+                  ...source.alternativeSong,
+                  // Keep the queue identity, but replace duration/cover/artists
+                  // with the edition that is actually being streamed.
+                  id: song.id,
+                  url: '',
+                  urlFetchedAt: 0,
+                  lyric: '',
+                  tlyric: '',
+                  yrc: '',
+                  isNotLyric: false,
+                }
+              : null
+            if (alternativePatch) {
+              effectiveSong = {
+                ...song,
+                ...alternativePatch,
+                alternativeSongId,
+                alternativeVersion,
+              }
+            }
             if (url) {
               patchSong(index, {
+                ...(alternativePatch ?? {}),
                 url,
                 urlFetchedAt: Date.now(),
                 trialEnd,
                 unblocked,
                 matchedSource,
+                alternativeSongId,
+                alternativeVersion,
               })
             }
           }
@@ -783,23 +884,31 @@ export const usePlayerStore = create<PlayerState>()(
             // notice would be noise over the MV. Keep it for audio playback.
             if (!useVideoPlaybackStore.getState().active) {
               toast.info(
-                song.fee === 0
-                  ? i18n._(msg`「${song.name}」暂无官方音源，已为你匹配其他音源播放`)
-                  : i18n._(msg`「${song.name}」VIP 歌曲已为你匹配其他音源播放`),
+                effectiveSong.fee === 0
+                  ? i18n._(msg`「${effectiveSong.name}」暂无官方音源，已为你匹配其他音源播放`)
+                  : i18n._(msg`「${effectiveSong.name}」VIP 歌曲已为你匹配其他音源播放`),
               )
+            }
+          } else if (
+            alternativeVersion &&
+            !unblockAnnounced.has(song.id)
+          ) {
+            unblockAnnounced.add(song.id)
+            if (!useVideoPlaybackStore.getState().active) {
+              toast.info(i18n._(msg`「${effectiveSong.name}」已为你切换到其他可播放版本`))
             }
           }
           // Stream through the local API: the WebView cannot load the CDN
           // media URL directly (it answers 403 for cross-origin media).
           set({ audioUrl: playbackUrl(url, unblocked), sourceReady: true })
-          void useLocalLibraryStore.getState().recordRecent(song)
+          void useLocalLibraryStore.getState().recordRecent(effectiveSong)
           if (trialEnd && trialEnd > 0) {
             toast.warning(
               i18n._(msg`当前仅可试听 ${trialEnd} 秒，登录或开通会员后可播放完整版`),
             )
           }
           prefetchNeighbors(index)
-          await resolveLyrics(index, song, requestId)
+          await resolveLyrics(index, effectiveSong, requestId)
           return true
         } catch (error) {
           if (get().loadRequestId !== requestId) return true
@@ -963,8 +1072,10 @@ export const usePlayerStore = create<PlayerState>()(
         mode: 'order',
         volume: 80,
         currentTime: 0,
+        mediaDuration: 0,
         buffered: 0,
         playToken: 0,
+        sourceReloadToken: 0,
         audioReady: false,
         audioUrl: '',
         sourceReady: false,
@@ -1199,6 +1310,10 @@ export const usePlayerStore = create<PlayerState>()(
           set({ currentTime: value })
         },
 
+        setMediaDuration(value) {
+          set({ mediaDuration: value })
+        },
+
         setBuffered(value) {
           set({ buffered: value })
         },
@@ -1232,7 +1347,9 @@ export const usePlayerStore = create<PlayerState>()(
             currentIndex: 0,
             playing: false,
             currentTime: 0,
+            mediaDuration: 0,
             buffered: 0,
+            sourceReloadToken: 0,
             playlistId: '',
             lyricLines: [],
             audioUrl: '',
@@ -1262,6 +1379,10 @@ export const usePlayerStore = create<PlayerState>()(
                 ? playbackUrl(freshUrl, Boolean(fresh.unblocked))
                 : '',
               sourceReady: true,
+              sourceReloadToken: get().sourceReloadToken + 1,
+              // A recovery reload should keep the position instead of jumping
+              // back to the beginning.
+              resumeAt: get().currentTime,
               audioFromCache: false,
               audioBlob: null,
               lyricLines: readLyrics(fresh),
@@ -1302,7 +1423,8 @@ export const usePlayerStore = create<PlayerState>()(
           const requestId = state.loadRequestId
           set({ lyricLoading: true })
           try {
-            const patch = await loadLyricsPatch(song.id)
+            const lyricsSongId = song.alternativeSongId ?? song.id
+            const patch = await loadLyricsPatch(lyricsSongId)
             // A track switch (or a newer load) owns the state now.
             if (get().loadRequestId !== requestId) return
             const active = get().queue[get().currentIndex]
