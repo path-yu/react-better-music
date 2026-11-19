@@ -56,11 +56,24 @@ function PlaylistDetailPage() {
   const [detail, setDetail] = useState<Playlist | null>(null)
   const [songs, setSongs] = useState<Song[]>([])
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState('songs')
+  const tabStorageKey = `songlist-tab:${id}`
+  const [tab, setTab] = useState(
+    () => sessionStorage.getItem(tabStorageKey) ?? 'songs',
+  )
   const [keyword, setKeyword] = useState('')
   const [subscribing, setSubscribing] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
   useDocumentTitle(detail?.name ?? i18n._(msg`歌单`))
+
+  // The route remounts when returning from a user profile. Keep the selected
+  // pane per playlist so comments do not fall back to the song list.
+  useEffect(() => {
+    sessionStorage.setItem(tabStorageKey, tab)
+  }, [tab, tabStorageKey])
+
+  useEffect(() => {
+    setTab(sessionStorage.getItem(tabStorageKey) ?? 'songs')
+  }, [tabStorageKey])
 
   const isLogin = useUserStore((state) => state.isLogin)
   const profile = useUserStore((state) => state.profile)

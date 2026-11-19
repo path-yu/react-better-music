@@ -29,7 +29,7 @@ msgid "{0} 位粉丝"
 msgstr "{0} 位粉丝"
 
 #. placeholder {0}: formatDate(detail.createTime)
-#: src/routes/songlists/$id.tsx:372
+#: src/routes/songlists/$id.tsx:385
 msgid "{0} 创建"
 msgstr "{0} 创建"
 
@@ -57,7 +57,7 @@ msgid "{0} 条"
 msgstr "{0} 条"
 
 #. placeholder {0}: formatNumber(detail.playCount)
-#: src/routes/songlists/$id.tsx:379
+#: src/routes/songlists/$id.tsx:392
 msgid "{0} 次播放"
 msgstr "{0} 次播放"
 
@@ -103,7 +103,7 @@ msgstr "{0} 首单曲"
 #. placeholder {0}: detail.trackCount
 #. placeholder {0}: songs.length
 #: src/routes/albums/$id.tsx:144
-#: src/routes/songlists/$id.tsx:376
+#: src/routes/songlists/$id.tsx:389
 msgid "{0} 首歌曲"
 msgstr "{0} 首歌曲"
 
@@ -593,7 +593,7 @@ msgstr "最近播放加载失败"
 msgid "出错了"
 msgstr "出错了"
 
-#: src/routes/songlists/$id.tsx:462
+#: src/routes/songlists/$id.tsx:475
 msgid "分享"
 msgstr "分享"
 
@@ -662,7 +662,7 @@ msgstr "删除歌单失败"
 
 #: src/components/layout/LoginModal.tsx:356
 #: src/routes/settings.tsx:622
-#: src/routes/songlists/$id.tsx:435
+#: src/routes/songlists/$id.tsx:448
 msgid "刷新"
 msgstr "刷新"
 
@@ -783,7 +783,7 @@ msgstr "取消全选"
 msgid "取消喜欢"
 msgstr "取消喜欢"
 
-#: src/routes/songlists/$id.tsx:251
+#: src/routes/songlists/$id.tsx:264
 msgid "取消收藏失败"
 msgstr "取消收藏失败"
 
@@ -816,7 +816,7 @@ msgstr "向右浏览分类"
 msgid "向左浏览分类"
 msgstr "向左浏览分类"
 
-#: src/routes/songlists/$id.tsx:527
+#: src/routes/songlists/$id.tsx:540
 msgid "听友评论"
 msgstr "听友评论"
 
@@ -881,7 +881,7 @@ msgstr "在页面任意位置可用（输入框内保留系统默认行为）。
 msgid "地区"
 msgstr "地区"
 
-#: src/routes/songlists/$id.tsx:276
+#: src/routes/songlists/$id.tsx:289
 msgid "复制链接失败"
 msgstr "复制链接失败"
 
@@ -1044,8 +1044,8 @@ msgstr "已切换到其他音源"
 msgid "已取消喜欢"
 msgstr "已取消喜欢"
 
-#: src/routes/songlists/$id.tsx:237
-#: src/routes/songlists/$id.tsx:262
+#: src/routes/songlists/$id.tsx:250
+#: src/routes/songlists/$id.tsx:275
 msgid "已取消收藏"
 msgstr "已取消收藏"
 
@@ -1081,7 +1081,7 @@ msgstr "已开启"
 msgid "已开始下载「{0}」"
 msgstr "已开始下载「{0}」"
 
-#: src/routes/songlists/$id.tsx:450
+#: src/routes/songlists/$id.tsx:463
 msgid "已收藏"
 msgstr "已收藏"
 
@@ -1314,7 +1314,7 @@ msgstr "搜索建议"
 msgid "搜索待播歌曲"
 msgstr "搜索待播歌曲"
 
-#: src/routes/songlists/$id.tsx:487
+#: src/routes/songlists/$id.tsx:500
 msgid "搜索歌单歌曲"
 msgstr "搜索歌单歌曲"
 
@@ -1441,13 +1441,13 @@ msgstr "播放页过渡动画"
 
 #: src/components/comments/CommentSection.tsx:610
 #: src/components/comments/CommentSection.tsx:640
-#: src/routes/songlists/$id.tsx:265
+#: src/routes/songlists/$id.tsx:278
 #: src/store/user.ts:242
 #: src/store/user.ts:254
 msgid "操作失败"
 msgstr "操作失败"
 
-#: src/routes/songlists/$id.tsx:450
+#: src/routes/songlists/$id.tsx:463
 msgid "收藏"
 msgstr "收藏"
 
@@ -1472,15 +1472,15 @@ msgstr "收藏到歌单"
 #: src/components/player/PlaylistPicker.tsx:116
 #: src/components/songs/SongContextMenu.tsx:171
 #: src/components/songs/SongContextMenu.tsx:179
-#: src/routes/songlists/$id.tsx:251
+#: src/routes/songlists/$id.tsx:264
 #: src/store/localLibrary.ts:127
 #: src/store/localLibrary.ts:158
 #: src/store/localLibrary.ts:182
 msgid "收藏失败"
 msgstr "收藏失败"
 
-#: src/routes/songlists/$id.tsx:237
-#: src/routes/songlists/$id.tsx:262
+#: src/routes/songlists/$id.tsx:250
+#: src/routes/songlists/$id.tsx:275
 msgid "收藏成功"
 msgstr "收藏成功"
 
@@ -1735,7 +1735,7 @@ msgstr "标准"
 msgid "标准 · 64kbps"
 msgstr "标准 · 64kbps"
 
-#: src/routes/songlists/$id.tsx:386
+#: src/routes/songlists/$id.tsx:399
 msgid "标签"
 msgstr "标签"
 
@@ -1791,13 +1791,13 @@ msgstr "欧美"
 #: src/components/layout/SearchBox.tsx:442
 #: src/components/layout/TitleBar.tsx:20
 #: src/routes/search.tsx:304
-#: src/routes/songlists/$id.tsx:63
-#: src/routes/songlists/$id.tsx:333
+#: src/routes/songlists/$id.tsx:66
+#: src/routes/songlists/$id.tsx:346
 #: src/routes/users/$id.tsx:246
 msgid "歌单"
 msgstr "歌单"
 
-#: src/routes/songlists/$id.tsx:186
+#: src/routes/songlists/$id.tsx:199
 msgid "歌单不存在或无法访问"
 msgstr "歌单不存在或无法访问"
 
@@ -1809,7 +1809,7 @@ msgstr "歌单信息已保存"
 #: src/components/songs/SongContextMenu.tsx:143
 #: src/routes/search.tsx:362
 #: src/routes/songlists/$id.edit.tsx:68
-#: src/routes/songlists/$id.tsx:110
+#: src/routes/songlists/$id.tsx:123
 #: src/routes/songlists/index.tsx:100
 #: src/routes/songlists/index.tsx:266
 #: src/routes/users/$id.tsx:72
@@ -1833,7 +1833,7 @@ msgstr "歌单名称"
 msgid "歌单导入失败"
 msgstr "歌单导入失败"
 
-#: src/routes/songlists/$id.tsx:518
+#: src/routes/songlists/$id.tsx:531
 msgid "歌单暂时没有歌曲"
 msgstr "歌单暂时没有歌曲"
 
@@ -1870,7 +1870,7 @@ msgid "歌手简介"
 msgstr "歌手简介"
 
 #: src/routes/albums/$id.tsx:186
-#: src/routes/songlists/$id.tsx:473
+#: src/routes/songlists/$id.tsx:486
 msgid "歌曲列表"
 msgstr "歌曲列表"
 
@@ -2024,7 +2024,7 @@ msgstr "没有匹配到可导入的歌曲"
 #: src/components/player/NowPlaying.tsx:1696
 #: src/components/player/NowPlaying.tsx:1815
 #: src/routes/albums/$id.tsx:208
-#: src/routes/songlists/$id.tsx:517
+#: src/routes/songlists/$id.tsx:530
 msgid "没有匹配的歌曲"
 msgstr "没有匹配的歌曲"
 
@@ -2100,7 +2100,7 @@ msgstr "深色模式"
 msgid "添加全部到播放列表"
 msgstr "添加全部到播放列表"
 
-#: src/routes/songlists/$id.tsx:415
+#: src/routes/songlists/$id.tsx:428
 msgid "添加简介"
 msgstr "添加简介"
 
@@ -2154,7 +2154,7 @@ msgstr "点击色点立即切换"
 msgid "热搜榜"
 msgstr "热搜榜"
 
-#: src/routes/songlists/$id.tsx:479
+#: src/routes/songlists/$id.tsx:492
 msgid "热议"
 msgstr "热议"
 
@@ -2414,7 +2414,7 @@ msgid "编辑「{0}」"
 msgstr "编辑「{0}」"
 
 #: src/routes/songlists/$id.edit.tsx:49
-#: src/routes/songlists/$id.tsx:340
+#: src/routes/songlists/$id.tsx:353
 msgid "编辑歌单"
 msgstr "编辑歌单"
 
@@ -2484,7 +2484,7 @@ msgstr "设置分类"
 #: src/components/comments/CommentSection.tsx:393
 #: src/components/comments/CommentSection.tsx:804
 #: src/components/player/NowPlaying.tsx:1370
-#: src/routes/songlists/$id.tsx:477
+#: src/routes/songlists/$id.tsx:490
 msgid "评论"
 msgstr "评论"
 
@@ -2649,7 +2649,7 @@ msgstr "返回"
 msgid "返回上一页"
 msgstr "返回上一页"
 
-#: src/routes/songlists/$id.tsx:194
+#: src/routes/songlists/$id.tsx:207
 msgid "返回推荐歌单"
 msgstr "返回推荐歌单"
 
@@ -2686,7 +2686,7 @@ msgstr "还没有评论，快来抢沙发～"
 msgid "这个歌单还没有歌曲"
 msgstr "这个歌单还没有歌曲"
 
-#: src/routes/songlists/$id.tsx:535
+#: src/routes/songlists/$id.tsx:548
 msgid "这是你的「我喜欢的音乐」"
 msgstr "这是你的「我喜欢的音乐」"
 
@@ -2775,7 +2775,7 @@ msgstr "重新解析"
 msgid "重试"
 msgstr "重试"
 
-#: src/routes/songlists/$id.tsx:274
+#: src/routes/songlists/$id.tsx:287
 msgid "链接已复制"
 msgstr "链接已复制"
 
