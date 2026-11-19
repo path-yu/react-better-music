@@ -112,6 +112,13 @@ export function PlayerBar() {
   // Ignore those events until `seeked` so the progress click never flashes the
   // buffering state.
   const seekingRef = useRef(false)
+  // A stalled media request can stay in `waiting` forever (no `error` event).
+  // Track recovery attempts per song so a single stalled switch self-heals
+  // instead of requiring a full page refresh.
+  const bufferRecoveryRef = useRef<{
+    songId: number
+    attempts: number
+  } | null>(null)
 
   const queue = usePlayerStore((state) => state.queue)
   const currentIndex = usePlayerStore((state) => state.currentIndex)
@@ -618,6 +625,44 @@ export function PlayerBar() {
     }
     incomingRef.current?.pause()
   }, [playing, sourceReady, audioUrl])
+
+  useEffect(() => {
+    if (!playing || !sourceReady || audioReady) {
+      bufferRecoveryRef.current = null
+      return
+    }
+    const songId = currentSong?.id
+    const timer = window.setTimeout(() => {
+      const state = usePlayerStore.getState()
+      if (!state.playing) return
+      const incoming = incomingRef.current
+      const target =
+        incoming && incoming.getAttribute('src') === audioUrl
+          ? incoming
+          : audioRef.current
+      if (target && target.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
+        if (target.paused) {
+          void target.play().catch(() => undefined)
+        }
+        return
+      }
+      const attempts =
+        bufferRecoveryRef.current?.songId === songId
+          ? bufferRecoveryRef.current.attempts + 1
+          : 1
+      bufferRecoveryRef.current = {
+        songId: songId ?? 0,
+        attempts,
+      }
+      if (attempts >= 2) {
+        usePlayerStore.getState().setPlaying(false)
+        toast.warning(i18n._(msg`歌曲加载超时，请重新播放`))
+        return
+      }
+      void refreshCurrentUrl()
+    }, 12_000)
+    return () => window.clearTimeout(timer)
+  }, [audioReady, audioUrl, currentSong?.id, playing, refreshCurrentUrl, sourceReady])
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
