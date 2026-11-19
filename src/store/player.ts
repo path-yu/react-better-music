@@ -245,8 +245,14 @@ async function resolveSongSource(song: Song): Promise<SongSource> {
     urlError = error
   }
 
-  // No official URL at all: if auto matching is on, try it before deciding the
-  // track is unavailable.
+  // No official URL at all. NetEase's recommended playable edition is not a
+  // third-party source match, so try it even when `autoReplaceVipSource` is
+  // disabled; only `/song/url/match` is gated by that setting.
+  const alternative = await getAlternative()
+  if (alternative) return alternative
+
+  // If automatic matching is enabled, the external provider remains a second
+  // fallback after the official recommendation.
   if (!vipAccess && autoReplace) {
     const matched = await autoMatchedSource()
     if (matched) return matched
@@ -269,11 +275,6 @@ async function resolveSongSource(song: Song): Promise<SongSource> {
     if (urlError) throw urlError
     return { url: null, trialEnd: null, unblocked: false, available: true }
   }
-
-  // Prefer the official "other playable edition" recommendation over the
-  // third-party grey-track matcher.
-  const alternative = await getAlternative()
-  if (alternative) return alternative
 
   // Reuse the cached matcher attempt. When auto matching was already enabled
   // this is a failed result, so we don't hit the provider twice.
