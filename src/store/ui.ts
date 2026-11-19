@@ -16,6 +16,7 @@ export type Palette =
 
 interface UiState {
   loginOpen: boolean
+  importPlaylistOpen: boolean
   sidebarOpen: boolean
   /** Desktop-only icon-free collapse; the mobile drawer uses sidebarOpen. */
   sidebarCollapsed: boolean
@@ -24,6 +25,8 @@ interface UiState {
   palette: Palette
   openLogin: () => void
   closeLogin: () => void
+  openImportPlaylist: () => void
+  closeImportPlaylist: () => void
   toggleSidebar: () => void
   closeSidebar: () => void
   toggleSidebarCollapsed: () => void
@@ -36,12 +39,15 @@ export const useUiStore = create<UiState>()(
   persist(
     (set) => ({
       loginOpen: false,
+      importPlaylistOpen: false,
       sidebarOpen: false,
       sidebarCollapsed: false,
       theme: 'light',
       palette: 'ocean',
       openLogin: () => set({ loginOpen: true }),
       closeLogin: () => set({ loginOpen: false }),
+      openImportPlaylist: () => set({ importPlaylistOpen: true }),
+      closeImportPlaylist: () => set({ importPlaylistOpen: false }),
       toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
       closeSidebar: () => set({ sidebarOpen: false }),
       toggleSidebarCollapsed: () =>

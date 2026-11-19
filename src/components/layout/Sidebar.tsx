@@ -6,6 +6,7 @@ import { Trans } from '@lingui/react/macro'
 import {
   CalendarHeart,
   ChartNoAxesColumnIncreasing,
+  Download,
   Film,
   Heart,
   History,
@@ -52,6 +53,7 @@ export function Sidebar() {
   const localFavorites = useLocalLibraryStore((state) => state.favorites)
   const localRecent = useLocalLibraryStore((state) => state.recent)
   const createLocalPlaylist = useLocalLibraryStore((state) => state.createPlaylist)
+  const openImportPlaylist = useUiStore((state) => state.openImportPlaylist)
   const [creatingPlaylist, setCreatingPlaylist] = useState(false)
   const [playlistName, setPlaylistName] = useState('')
 
@@ -201,9 +203,20 @@ export function Sidebar() {
 
         <div className="my-3 h-px bg-black/8" />
 
-        <p className="eyebrow px-2.5 pb-1.5 pt-2">
-          <Trans>我的音乐</Trans>
-        </p>
+        <div className="flex items-center justify-between px-2.5 pb-1.5 pt-2">
+          <p className="eyebrow">
+            <Trans>我的音乐</Trans>
+          </p>
+          <button
+            type="button"
+            aria-label={i18n._(msg`导入歌单`)}
+            title={i18n._(msg`导入歌单`)}
+            onClick={openImportPlaylist}
+            className="pressable flex h-4 w-4 items-center justify-center rounded-full text-black/35 hover:text-black/70"
+          >
+            <Download className="h-3.5 w-3.5" />
+          </button>
+        </div>
 
         {!isLogin ? (
           <div className="flex flex-col gap-0.5">

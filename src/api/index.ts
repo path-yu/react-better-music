@@ -165,6 +165,82 @@ export async function fetchPlaylistDetail(id: string | number, signal?: AbortSig
   return normalizePlaylist(res.playlist)
 }
 
+/** Resolve a 163cn.tv share link to its final playlist URL. */
+export async function resolvePlaylistLink(url: string, proxy?: string) {
+  return get<{ code?: number; url?: string; msg?: string }>(
+    '/link/resolve',
+    proxy ? { url, proxy } : { url },
+  )
+}
+
+export type ApplePlaylistTrack = {
+  id: string
+  name: string
+  artist: string
+  album: string
+  duration: number
+  artwork: string
+}
+
+/** Read an Apple Music playlist through the desktop API. */
+export async function fetchApplePlaylist(url: string, proxy?: string) {
+  return get<{
+    code?: number
+    title?: string
+    coverUrl?: string
+    tracks?: ApplePlaylistTrack[]
+    msg?: string
+  }>('/apple/playlist', proxy ? { url, proxy } : { url })
+}
+
+/** Read a QQ Music playlist through the desktop API. */
+export async function fetchQqPlaylist(url: string, proxy?: string) {
+  return get<{
+    code?: number
+    title?: string
+    coverUrl?: string
+    tracks?: ApplePlaylistTrack[]
+    msg?: string
+  }>('/qq/playlist', proxy ? { url, proxy } : { url })
+}
+
+/** Read a YouTube Music playlist through the desktop API. */
+export async function fetchYoutubePlaylist(url: string, proxy?: string) {
+  return get<{
+    code?: number
+    title?: string
+    coverUrl?: string
+    tracks?: ApplePlaylistTrack[]
+    msg?: string
+  }>('/youtube/playlist', proxy ? { url, proxy } : { url })
+}
+
+/** Create a playlist in the signed-in user's NetEase account. */
+export async function createPlaylist(name: string) {
+  return get<{
+    code?: number
+    id?: number
+    playlist?: { id?: number }
+  }>('/playlist/create', { name, timestamp: Date.now() })
+}
+
+/** Add one or more tracks to a signed-in user's playlist. */
+export async function addTracksToPlaylist(
+  playlistId: number | string,
+  trackIds: Array<number | string>,
+) {
+  return get<{
+    code?: number
+    status?: number
+    body?: { code?: number; message?: string }
+  }>('/playlist/tracks', {
+    op: 'add',
+    pid: playlistId,
+    tracks: trackIds.join(','),
+    timestamp: Date.now(),
+  })
+}
+
 /** Add a track to one of the signed-in user's playlists. */
 export async function addSongToPlaylist(
   playlistId: number | string,

@@ -29,6 +29,11 @@ const QueuePanel = lazy(() =>
 const LoginModal = lazy(() =>
   import('./LoginModal').then((module) => ({ default: module.LoginModal })),
 )
+const ImportPlaylistDialog = lazy(() =>
+  import('../playlists/ImportPlaylistDialog').then((module) => ({
+    default: module.ImportPlaylistDialog,
+  })),
+)
 
 /** Rotate the login cookie every few hours so the persisted session never dies. */
 const LOGIN_REFRESH_INTERVAL = 6 * 60 * 60 * 1000
@@ -45,6 +50,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     pathname.startsWith('/users/')
   const contentRef = useRef<HTMLElement>(null)
   const loginOpen = useUiStore((state) => state.loginOpen)
+  const importPlaylistOpen = useUiStore((state) => state.importPlaylistOpen)
+  const closeImportPlaylist = useUiStore((state) => state.closeImportPlaylist)
   const closeLogin = useUiStore((state) => state.closeLogin)
   const sidebarOpen = useUiStore((state) => state.sidebarOpen)
   const sidebarCollapsed = useUiStore((state) => state.sidebarCollapsed)
@@ -319,6 +326,14 @@ export function AppShell({ children }: { children: ReactNode }) {
         {loginOpen ? (
           <Suspense fallback={null}>
             <LoginModal open onOpenChange={(open) => !open && closeLogin()} />
+          </Suspense>
+        ) : null}
+        {importPlaylistOpen ? (
+          <Suspense fallback={null}>
+            <ImportPlaylistDialog
+              open
+              onOpenChange={(open) => !open && closeImportPlaylist()}
+            />
           </Suspense>
         ) : null}
       </div>

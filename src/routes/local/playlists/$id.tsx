@@ -4,6 +4,17 @@ import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { ArrowLeft, Check, ListMusic, Pencil, Trash2, X } from 'lucide-react'
+import {
+  Button,
+  Checkbox,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@pikoloo/darwin-ui'
 import { SongTable } from '../../../components/songs/SongTable'
 import { PlayAllButton } from '../../../components/songs/PlayAllButton'
 import { EmptyState } from '../../../components/common/EmptyState'
@@ -27,6 +38,11 @@ function LocalPlaylistPage() {
   const removeSong = useLocalLibraryStore((state) => state.removeSong)
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState('')
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [dontAskDelete, setDontAskDelete] = useState(false)
+  const [skipDeleteConfirm, setSkipDeleteConfirm] = useState(
+    () => localStorage.getItem('react-music-skip-local-playlist-delete-confirm') === '1',
+  )
   const playlistId = playlist?.id
   const playlistName = playlist?.name
 
@@ -74,10 +90,27 @@ function LocalPlaylistPage() {
   }
 
   const deletePlaylist = async () => {
-    if (!window.confirm(i18n._(msg`确定删除这个本地歌单吗？`))) return
+    const shouldSkip = dontAskDelete
     if (await removePlaylist(playlist.id)) {
+      if (shouldSkip) {
+        localStorage.setItem(
+          'react-music-skip-local-playlist-delete-confirm',
+          '1',
+        )
+        setSkipDeleteConfirm(true)
+      }
+      setDeleteOpen(false)
       void navigate({ to: '/local/favorites' })
     }
+  }
+
+  const requestDelete = () => {
+    if (skipDeleteConfirm) {
+      void deletePlaylist()
+      return
+    }
+    setDontAskDelete(false)
+    setDeleteOpen(true)
   }
 
   return (
@@ -151,7 +184,7 @@ function LocalPlaylistPage() {
           <PlayAllButton songs={playlist.songs} playlistId={`local-${playlist.id}`} />
           <button
             type="button"
-            onClick={() => void deletePlaylist()}
+            onClick={requestDelete}
             aria-label={i18n._(msg`删除歌单`)}
             title={i18n._(msg`删除歌单`)}
             className="pressable flex h-8 w-8 items-center justify-center rounded-full border border-black/8 text-black/35 hover:border-[#ff2d55]/30 hover:text-[#ff2d55]"
@@ -173,6 +206,42 @@ function LocalPlaylistPage() {
           }}
         />
       </div>
+
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent size="sm" glass>
+          <DialogHeader>
+            <DialogTitle>
+              <Trans>删除歌单</Trans>
+            </DialogTitle>
+            <DialogDescription>
+              <Trans>确定删除这个本地歌单吗？此操作无法撤销。</Trans>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody>
+            <Checkbox
+              checked={dontAskDelete}
+              onChange={setDontAskDelete}
+              label={i18n._(msg`不再提示`)}
+            />
+          </DialogBody>
+          <DialogFooter>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setDeleteOpen(false)}
+            >
+              <Trans>取消</Trans>
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => void deletePlaylist()}
+            >
+              <Trans>删除</Trans>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
