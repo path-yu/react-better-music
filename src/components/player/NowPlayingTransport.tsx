@@ -26,6 +26,7 @@ import { MorePlaybackOptions } from './MorePlaybackOptions'
 import { ProgressSlider } from './ProgressSlider'
 
 import {
+  TRANSPORT_BUSY_ICON,
   TRANSPORT_PAUSE_ICON,
   TRANSPORT_PLAY_ICON,
 } from './transportIcons'
@@ -48,6 +49,8 @@ export function NowPlayingTransport({
   const currentIndex = usePlayerStore((state) => state.currentIndex)
   const currentSong = queue[currentIndex]
   const playing = usePlayerStore((state) => state.playing)
+  const sourceReady = usePlayerStore((state) => state.sourceReady)
+  const audioReady = usePlayerStore((state) => state.audioReady)
   const currentTime = usePlayerStore((state) => state.currentTime)
   const mode = usePlayerStore((state) => state.mode)
   const volume = usePlayerStore((state) => state.volume)
@@ -73,7 +76,14 @@ export function NowPlayingTransport({
   if (!currentSong) return null
 
   const playbackPlaying = videoActive ? videoPlaying : playing
-  const durationMs = videoActive ? videoDuration * 1000 : currentSong.dt || 0
+  const playbackBusy = videoActive
+    ? false
+    : playbackPlaying && (!sourceReady || !audioReady)
+  const durationMs = videoActive
+    ? videoDuration * 1000
+    : currentSong.trialEnd && currentSong.trialEnd > 0
+      ? currentSong.trialEnd * 1000
+      : currentSong.dt || 0
   const playbackMs = videoActive ? videoTime * 1000 : currentTime * 1000
   const percent = durationMs
     ? Math.min(100, Math.max(0, (playbackMs / durationMs) * 100))
@@ -157,14 +167,28 @@ export function NowPlayingTransport({
         </button>
         <button
           type="button"
-          aria-label={playbackPlaying ? i18n._(msg`暂停`) : i18n._(msg`播放`)}
+          aria-label={
+            videoActive
+              ? playbackPlaying
+                ? i18n._(msg`暂停`)
+                : i18n._(msg`播放`)
+              : playbackBusy
+                ? sourceReady
+                  ? i18n._(msg`正在缓冲`)
+                  : i18n._(msg`正在加载音源`)
+                : playbackPlaying
+                  ? i18n._(msg`暂停`)
+                  : i18n._(msg`播放`)
+          }
           onClick={() => {
             if (videoActive) toggleVideo()
             else void togglePlay()
           }}
           className="pressable flex h-11 w-11 items-center justify-center rounded-full text-white hover:text-white/80"
         >
-          {playbackPlaying ? (
+          {playbackBusy ? (
+            <Loader2 className={TRANSPORT_BUSY_ICON} />
+          ) : playbackPlaying ? (
             <Pause className={TRANSPORT_PAUSE_ICON} />
           ) : (
             <Play className={TRANSPORT_PLAY_ICON} />
@@ -224,7 +248,7 @@ export function NowPlayingTransport({
               use the full width of the artwork column. */}
           <div className="mt-0.5 flex items-center justify-between px-0.5 text-[10.5px] tabular-nums text-white/45">
             <span>{clock(playbackMs)}</span>
-            <span>-{clock(durationMs - playbackMs)}</span>
+            <span>-{clock(Math.max(0, durationMs - playbackMs))}</span>
           </div>
         </div>
       ) : null}

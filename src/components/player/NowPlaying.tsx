@@ -1212,6 +1212,11 @@ export function NowPlaying() {
             <div className="max-w-[360px] text-center">
               <div className="flex min-w-0 items-center justify-center gap-1.5">
                 <h2 className="headline-lg np-track-heading min-w-0 truncate text-[24px]">{currentSong.name}</h2>
+                {currentSong.trialEnd ? (
+                  <span className="shrink-0 rounded-[6px] bg-[#ff9500]/12 px-1.5 py-0.5 text-[10px] font-semibold text-[#b36b00]">
+                    <Trans>试听</Trans>
+                  </span>
+                ) : null}
                 {hasMv ? (
                   <button
                     type="button"
