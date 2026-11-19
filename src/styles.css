@@ -244,7 +244,12 @@ input[type='search']::-webkit-search-decoration {
       .pill,
       .disc-spindle,
       .seek-slider__thumb,
-      .volume-slider__thumb
+      .seek-slider__track,
+      .seek-slider__buffer,
+      .seek-slider__fill,
+      .volume-slider__thumb,
+      .immersive-progress__track,
+      .immersive-progress__fill
     ) {
     corner-shape: round;
   }
@@ -3258,6 +3263,11 @@ html.desktop .app-window {
 }
 
 /* Match the normal player seek bar's palette on the custom immersive line. */
+[data-testid='immersive-progress'] .immersive-progress__track,
+[data-testid='immersive-progress'] .immersive-progress__fill {
+  border-radius: 9999px;
+}
+
 [data-testid='immersive-progress'] .immersive-progress__track {
   background: linear-gradient(
     90deg,
@@ -3301,9 +3311,11 @@ html.desktop .app-window {
 .player-glass .seek-slider__buffer,
 .player-glass .seek-slider__fill {
   top: 0;
-  height: 3px;
+  height: 4px;
   margin-top: 0;
-  border-radius: 0;
+  /* A pill-shaped track: the radius exceeds the 4px line height so both ends
+     are fully round instead of relying on a browser-specific infinity value. */
+  border-radius: 9999px;
   transition:
     height 0.18s ease,
     background 0.18s ease;
@@ -3324,7 +3336,7 @@ html.desktop .app-window {
 .player-glass:not(.player-glass--immersive) .seek-slider__buffer,
 .player-glass:not(.player-glass--immersive) .seek-slider__fill {
   top: 50%;
-  margin-top: -1.5px;
+  margin-top: -2px;
 }
 
 .player-glass:not(.player-glass--immersive)
