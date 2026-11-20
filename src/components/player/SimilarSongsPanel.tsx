@@ -3,6 +3,7 @@ import { Trans } from '@lingui/react/macro'
 import { Loader2, Play } from 'lucide-react'
 import { fetchSimilarSongs } from '../../api'
 import { ImageWithFallback } from '../common/ImageWithFallback'
+import { ArtistLinks } from '../common/ArtistLinks'
 import { formatDuration } from '../../lib/format'
 import { usePlayerStore } from '../../store/player'
 import type { Song } from '../../types'
@@ -88,12 +89,19 @@ export function SimilarSongsPanel({
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {songs.map((song, index) => (
-            <button
+            <div
               key={`${song.id}-${index}`}
-              type="button"
+              role="button"
+              tabIndex={0}
               title={song.name}
               onClick={() => void playSong(song)}
-              className="group flex w-full items-center gap-3 rounded-[10px] px-2 py-2 text-left transition-colors hover:bg-white/7"
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  void playSong(song)
+                }
+              }}
+              className="group flex w-full cursor-pointer items-center gap-3 rounded-[10px] px-2 py-2 text-left transition-colors hover:bg-white/7 focus-visible:bg-white/7 focus-visible:outline-none"
             >
               <span className="w-5 shrink-0 text-right text-[10px] tabular-nums text-white/25">
                 {String(index + 1).padStart(2, '0')}
@@ -114,14 +122,15 @@ export function SimilarSongsPanel({
                 <span className="block truncate text-[12px] text-white/85">
                   {song.name}
                 </span>
-                <span className="mt-0.5 block truncate text-[10.5px] text-white/40">
-                  {song.ar.map((artist) => artist.name).join(' / ')}
-                </span>
+                <ArtistLinks
+                  artists={song.ar}
+                  className="mt-0.5 block truncate text-[10.5px] text-white/40"
+                />
               </span>
               <span className="shrink-0 text-[10px] tabular-nums text-white/30">
                 {formatDuration(song.dt)}
               </span>
-            </button>
+            </div>
           ))}
         </div>
       </div>

@@ -410,12 +410,12 @@ msgstr "Select all"
 
 #: src/routes/latest-music.tsx:20
 #: src/routes/latest-mv.tsx:29
-#: src/routes/songlists/index.tsx:207
-#: src/routes/songlists/index.tsx:264
+#: src/routes/songlists/index.tsx:275
+#: src/routes/songlists/index.tsx:332
 msgid "全部"
 msgstr "All"
 
-#: src/routes/songlists/index.tsx:248
+#: src/routes/songlists/index.tsx:316
 msgid "全部分类"
 msgstr "All categories"
 
@@ -680,8 +680,8 @@ msgstr "Refresh"
 msgid "刷新最近播放"
 msgstr "Refresh Recently Played"
 
-#: src/routes/songlists/index.tsx:163
-#: src/routes/songlists/index.tsx:164
+#: src/routes/songlists/index.tsx:231
+#: src/routes/songlists/index.tsx:232
 msgid "刷新歌单"
 msgstr "Refresh Playlists"
 
@@ -699,7 +699,7 @@ msgid "加入于 {0}"
 msgstr "Joined {0}"
 
 #: src/components/comments/CommentSection.tsx:837
-#: src/routes/songlists/index.tsx:314
+#: src/routes/songlists/index.tsx:382
 msgid "加载更多"
 msgstr "Load more"
 
@@ -707,7 +707,7 @@ msgstr "Load more"
 msgid "加载更多专辑"
 msgstr "Load more albums"
 
-#: src/routes/songlists/index.tsx:142
+#: src/routes/songlists/index.tsx:158
 msgid "加载更多失败"
 msgstr "Failed to load more"
 
@@ -817,11 +817,11 @@ msgstr "Back"
 msgid "向下还原"
 msgstr "Restore Down"
 
-#: src/routes/songlists/index.tsx:217
+#: src/routes/songlists/index.tsx:285
 msgid "向右浏览分类"
 msgstr "Browse categories to the right"
 
-#: src/routes/songlists/index.tsx:176
+#: src/routes/songlists/index.tsx:244
 msgid "向左浏览分类"
 msgstr "Browse categories to the left"
 
@@ -1265,8 +1265,14 @@ msgid "授权登录成功"
 msgstr "Authorized"
 
 #: src/routes/latest-mv.tsx:124
+#: src/routes/songlists/index.tsx:191
 msgid "排序"
 msgstr "Sort"
+
+#: src/routes/songlists/index.tsx:180
+#: src/routes/songlists/index.tsx:181
+msgid "排序歌单"
+msgstr "Sort playlists"
 
 #: src/components/layout/Sidebar.tsx:34
 #: src/components/layout/TitleBar.tsx:19
@@ -1278,8 +1284,8 @@ msgstr "Charts"
 #: src/components/layout/Sidebar.tsx:33
 #: src/components/layout/TitleBar.tsx:21
 #: src/routes/index.tsx:473
-#: src/routes/songlists/index.tsx:36
-#: src/routes/songlists/index.tsx:153
+#: src/routes/songlists/index.tsx:40
+#: src/routes/songlists/index.tsx:169
 msgid "推荐歌单"
 msgstr "Playlists"
 
@@ -1422,6 +1428,14 @@ msgstr "Playback progress"
 #: src/components/player/MorePlaybackOptions.tsx:244
 msgid "播放选项"
 msgstr "Playback options"
+
+#: src/routes/songlists/index.tsx:205
+msgid "播放量从低到高"
+msgstr "Play count: low to high"
+
+#: src/routes/songlists/index.tsx:204
+msgid "播放量从高到低"
+msgstr "Play count: high to low"
 
 #: src/components/player/NowPlaying.tsx:1372
 msgid "播放队列"
@@ -1652,7 +1666,7 @@ msgstr "No popular tracks yet"
 msgid "暂无相似歌单"
 msgstr "No similar playlists yet"
 
-#: src/components/player/SimilarSongsPanel.tsx:72
+#: src/components/player/SimilarSongsPanel.tsx:73
 msgid "暂无相似歌曲"
 msgstr "No similar songs yet"
 
@@ -1674,7 +1688,7 @@ msgstr "No bio yet"
 msgid "暂无缓存音乐，播放歌曲后会自动缓存"
 msgstr "No cached music yet. Songs are cached automatically after playback."
 
-#: src/routes/songlists/index.tsx:236
+#: src/routes/songlists/index.tsx:304
 msgid "更多"
 msgstr "More"
 
@@ -1770,7 +1784,7 @@ msgstr "Title"
 msgid "根据你的音乐口味生成，每天 6:00 更新"
 msgstr "Generated from your listening taste, refreshed daily at 6:00."
 
-#: src/components/player/SimilarSongsPanel.tsx:83
+#: src/components/player/SimilarSongsPanel.tsx:84
 msgid "根据当前歌曲推荐"
 msgstr "Based on the current track"
 
@@ -1837,8 +1851,8 @@ msgstr "Playlist saved"
 #: src/routes/search.tsx:362
 #: src/routes/songlists/$id.edit.tsx:68
 #: src/routes/songlists/$id.tsx:137
-#: src/routes/songlists/index.tsx:111
-#: src/routes/songlists/index.tsx:279
+#: src/routes/songlists/index.tsx:119
+#: src/routes/songlists/index.tsx:347
 #: src/routes/users/$id.tsx:72
 msgid "歌单加载失败"
 msgstr "Failed to load the playlist"
@@ -1956,7 +1970,7 @@ msgstr "Creating the NetEase playlist…"
 msgid "正在加载歌词…"
 msgstr "Loading lyrics…"
 
-#: src/components/player/SimilarSongsPanel.tsx:52
+#: src/components/player/SimilarSongsPanel.tsx:53
 msgid "正在加载相似歌曲…"
 msgstr "Loading similar songs…"
 
@@ -2282,7 +2296,7 @@ msgstr "Similar artists"
 msgid "相似歌曲"
 msgstr "Similar songs"
 
-#: src/components/player/SimilarSongsPanel.tsx:62
+#: src/components/player/SimilarSongsPanel.tsx:63
 msgid "相似歌曲加载失败"
 msgstr "Could not load similar songs"
 
@@ -2468,7 +2482,7 @@ msgstr "Edit 「{0}」"
 msgid "编辑歌单"
 msgstr "Edit playlist"
 
-#: src/routes/songlists/index.tsx:156
+#: src/routes/songlists/index.tsx:172
 msgid "编辑精选的华语、欧美与器乐歌单"
 msgstr "Editor-picked Chinese, Western and instrumental playlists"
 
@@ -2625,7 +2639,7 @@ msgstr "Please sign in and try again"
 #: src/routes/search.tsx:519
 #: src/routes/search.tsx:551
 #: src/routes/search.tsx:587
-#: src/routes/songlists/index.tsx:280
+#: src/routes/songlists/index.tsx:348
 #: src/routes/toplist.tsx:84
 #: src/routes/users/$id.tsx:335
 msgid "请检查网络或本地 API 服务后重试"
@@ -2937,3 +2951,7 @@ msgstr "Defaults to 200 MB; when exceeded, the oldest cached tracks are removed 
 #: src/routes/settings.tsx:500
 msgid "默认使用轻量的 CSS 动态渐变；开启后在歌曲详情页使用 GPU 绘制封面色彩雾气，不支持 WebGL 时自动回退。"
 msgstr "Uses a lightweight CSS gradient by default. When enabled, the song detail page renders cover-coloured fog on the GPU and falls back automatically without WebGL."
+
+#: src/routes/songlists/index.tsx:203
+msgid "默认排序"
+msgstr "Default order"

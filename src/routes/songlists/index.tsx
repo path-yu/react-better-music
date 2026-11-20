@@ -1,9 +1,13 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import {
+  ArrowDownWideNarrow,
+  ArrowUpDown,
+  ArrowUpNarrowWide,
+  Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -47,6 +51,10 @@ function SonglistsPage() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [more, setMore] = useState(false)
   const [tagMenuOpen, setTagMenuOpen] = useState(false)
+  const [sortMenuOpen, setSortMenuOpen] = useState(false)
+  const [sortOrder, setSortOrder] = useState<'default' | 'desc' | 'asc'>(
+    'default',
+  )
   const [canScrollTagsLeft, setCanScrollTagsLeft] = useState(false)
   const [canScrollTagsRight, setCanScrollTagsRight] = useState(false)
   const tagScrollerRef = useRef<HTMLDivElement>(null)
@@ -126,6 +134,14 @@ function SonglistsPage() {
     setAttempt((value) => value + 1)
   }
 
+  const sortedPlaylists = useMemo(() => {
+    if (sortOrder === 'default') return playlists
+    return [...playlists].sort((a, b) => {
+      const difference = (a.playCount ?? 0) - (b.playCount ?? 0)
+      return sortOrder === 'asc' ? difference : -difference
+    })
+  }, [playlists, sortOrder])
+
   const loadMore = async () => {
     const last = getArrLast(playlists)
     if (!last || loadingMore) return
@@ -157,6 +173,58 @@ function SonglistsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Popover open={sortMenuOpen} onOpenChange={setSortMenuOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                aria-label={i18n._(msg`排序歌单`)}
+                title={i18n._(msg`排序歌单`)}
+                className="pressable flex h-8 items-center gap-1.5 rounded-full border border-black/8 px-3 text-[11.5px] text-black/45 hover:border-accent/30 hover:text-accent"
+              >
+                {sortOrder === 'desc' ? (
+                  <ArrowDownWideNarrow className="h-3.5 w-3.5" />
+                ) : sortOrder === 'asc' ? (
+                  <ArrowUpNarrowWide className="h-3.5 w-3.5" />
+                ) : (
+                  <ArrowUpDown className="h-3.5 w-3.5" />
+                )}
+                <Trans>排序</Trans>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              side="bottom"
+              align="end"
+              sideOffset={8}
+              glass
+              className="w-44 p-1.5"
+            >
+              {(
+                [
+                  ['default', msg`默认排序`],
+                  ['desc', msg`播放量从高到低`],
+                  ['asc', msg`播放量从低到高`],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => {
+                    setSortOrder(value)
+                    setSortMenuOpen(false)
+                  }}
+                  className={cn(
+                    'flex w-full items-center justify-between rounded-[7px] px-2.5 py-1.5 text-left text-[11.5px] transition-colors',
+                    sortOrder === value
+                      ? 'bg-accent/10 text-accent'
+                      : 'text-[var(--ink-2)] hover:bg-accent/10 hover:text-[var(--ink-1)]',
+                  )}
+                >
+                  {i18n._(label)}
+                  {sortOrder === value ? <Check className="h-3.5 w-3.5" /> : null}
+                </button>
+              ))}
+            </PopoverContent>
+          </Popover>
           <button
             type="button"
             onClick={retry}
@@ -291,7 +359,7 @@ function SonglistsPage() {
         </div>
       ) : (
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {playlists.map((playlist, index) => (
+          {sortedPlaylists.map((playlist, index) => (
             <PlaylistCard
               key={`${playlist.id}-${playlist.updateTime ?? ''}`}
               playlist={playlist}

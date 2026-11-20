@@ -410,12 +410,12 @@ msgstr "全选"
 
 #: src/routes/latest-music.tsx:20
 #: src/routes/latest-mv.tsx:29
-#: src/routes/songlists/index.tsx:207
-#: src/routes/songlists/index.tsx:264
+#: src/routes/songlists/index.tsx:275
+#: src/routes/songlists/index.tsx:332
 msgid "全部"
 msgstr "全部"
 
-#: src/routes/songlists/index.tsx:248
+#: src/routes/songlists/index.tsx:316
 msgid "全部分类"
 msgstr "全部分类"
 
@@ -680,8 +680,8 @@ msgstr "刷新"
 msgid "刷新最近播放"
 msgstr "刷新最近播放"
 
-#: src/routes/songlists/index.tsx:163
-#: src/routes/songlists/index.tsx:164
+#: src/routes/songlists/index.tsx:231
+#: src/routes/songlists/index.tsx:232
 msgid "刷新歌单"
 msgstr "刷新歌单"
 
@@ -699,7 +699,7 @@ msgid "加入于 {0}"
 msgstr "加入于 {0}"
 
 #: src/components/comments/CommentSection.tsx:837
-#: src/routes/songlists/index.tsx:314
+#: src/routes/songlists/index.tsx:382
 msgid "加载更多"
 msgstr "加载更多"
 
@@ -707,7 +707,7 @@ msgstr "加载更多"
 msgid "加载更多专辑"
 msgstr "加载更多专辑"
 
-#: src/routes/songlists/index.tsx:142
+#: src/routes/songlists/index.tsx:158
 msgid "加载更多失败"
 msgstr "加载更多失败"
 
@@ -817,11 +817,11 @@ msgstr "后退"
 msgid "向下还原"
 msgstr "向下还原"
 
-#: src/routes/songlists/index.tsx:217
+#: src/routes/songlists/index.tsx:285
 msgid "向右浏览分类"
 msgstr "向右浏览分类"
 
-#: src/routes/songlists/index.tsx:176
+#: src/routes/songlists/index.tsx:244
 msgid "向左浏览分类"
 msgstr "向左浏览分类"
 
@@ -1265,8 +1265,14 @@ msgid "授权登录成功"
 msgstr "授权登录成功"
 
 #: src/routes/latest-mv.tsx:124
+#: src/routes/songlists/index.tsx:191
 msgid "排序"
 msgstr "排序"
+
+#: src/routes/songlists/index.tsx:180
+#: src/routes/songlists/index.tsx:181
+msgid "排序歌单"
+msgstr "排序歌单"
 
 #: src/components/layout/Sidebar.tsx:34
 #: src/components/layout/TitleBar.tsx:19
@@ -1278,8 +1284,8 @@ msgstr "排行榜"
 #: src/components/layout/Sidebar.tsx:33
 #: src/components/layout/TitleBar.tsx:21
 #: src/routes/index.tsx:473
-#: src/routes/songlists/index.tsx:36
-#: src/routes/songlists/index.tsx:153
+#: src/routes/songlists/index.tsx:40
+#: src/routes/songlists/index.tsx:169
 msgid "推荐歌单"
 msgstr "推荐歌单"
 
@@ -1422,6 +1428,14 @@ msgstr "播放进度"
 #: src/components/player/MorePlaybackOptions.tsx:244
 msgid "播放选项"
 msgstr "播放选项"
+
+#: src/routes/songlists/index.tsx:205
+msgid "播放量从低到高"
+msgstr "播放量从低到高"
+
+#: src/routes/songlists/index.tsx:204
+msgid "播放量从高到低"
+msgstr "播放量从高到低"
 
 #: src/components/player/NowPlaying.tsx:1372
 msgid "播放队列"
@@ -1652,7 +1666,7 @@ msgstr "暂无热门单曲"
 msgid "暂无相似歌单"
 msgstr "暂无相似歌单"
 
-#: src/components/player/SimilarSongsPanel.tsx:72
+#: src/components/player/SimilarSongsPanel.tsx:73
 msgid "暂无相似歌曲"
 msgstr "暂无相似歌曲"
 
@@ -1674,7 +1688,7 @@ msgstr "暂无简介"
 msgid "暂无缓存音乐，播放歌曲后会自动缓存"
 msgstr "暂无缓存音乐，播放歌曲后会自动缓存"
 
-#: src/routes/songlists/index.tsx:236
+#: src/routes/songlists/index.tsx:304
 msgid "更多"
 msgstr "更多"
 
@@ -1770,7 +1784,7 @@ msgstr "标题"
 msgid "根据你的音乐口味生成，每天 6:00 更新"
 msgstr "根据你的音乐口味生成，每天 6:00 更新"
 
-#: src/components/player/SimilarSongsPanel.tsx:83
+#: src/components/player/SimilarSongsPanel.tsx:84
 msgid "根据当前歌曲推荐"
 msgstr "根据当前歌曲推荐"
 
@@ -1837,8 +1851,8 @@ msgstr "歌单信息已保存"
 #: src/routes/search.tsx:362
 #: src/routes/songlists/$id.edit.tsx:68
 #: src/routes/songlists/$id.tsx:137
-#: src/routes/songlists/index.tsx:111
-#: src/routes/songlists/index.tsx:279
+#: src/routes/songlists/index.tsx:119
+#: src/routes/songlists/index.tsx:347
 #: src/routes/users/$id.tsx:72
 msgid "歌单加载失败"
 msgstr "歌单加载失败"
@@ -1956,7 +1970,7 @@ msgstr "正在创建网易云歌单…"
 msgid "正在加载歌词…"
 msgstr "正在加载歌词…"
 
-#: src/components/player/SimilarSongsPanel.tsx:52
+#: src/components/player/SimilarSongsPanel.tsx:53
 msgid "正在加载相似歌曲…"
 msgstr "正在加载相似歌曲…"
 
@@ -2282,7 +2296,7 @@ msgstr "相似歌手"
 msgid "相似歌曲"
 msgstr "相似歌曲"
 
-#: src/components/player/SimilarSongsPanel.tsx:62
+#: src/components/player/SimilarSongsPanel.tsx:63
 msgid "相似歌曲加载失败"
 msgstr "相似歌曲加载失败"
 
@@ -2468,7 +2482,7 @@ msgstr "编辑「{0}」"
 msgid "编辑歌单"
 msgstr "编辑歌单"
 
-#: src/routes/songlists/index.tsx:156
+#: src/routes/songlists/index.tsx:172
 msgid "编辑精选的华语、欧美与器乐歌单"
 msgstr "编辑精选的华语、欧美与器乐歌单"
 
@@ -2625,7 +2639,7 @@ msgstr "请先登录后再试"
 #: src/routes/search.tsx:519
 #: src/routes/search.tsx:551
 #: src/routes/search.tsx:587
-#: src/routes/songlists/index.tsx:280
+#: src/routes/songlists/index.tsx:348
 #: src/routes/toplist.tsx:84
 #: src/routes/users/$id.tsx:335
 msgid "请检查网络或本地 API 服务后重试"
@@ -2937,3 +2951,7 @@ msgstr "默认 200 MB，超出后按缓存时间从旧到新清理。"
 #: src/routes/settings.tsx:500
 msgid "默认使用轻量的 CSS 动态渐变；开启后在歌曲详情页使用 GPU 绘制封面色彩雾气，不支持 WebGL 时自动回退。"
 msgstr "默认使用轻量的 CSS 动态渐变；开启后在歌曲详情页使用 GPU 绘制封面色彩雾气，不支持 WebGL 时自动回退。"
+
+#: src/routes/songlists/index.tsx:203
+msgid "默认排序"
+msgstr "默认排序"
