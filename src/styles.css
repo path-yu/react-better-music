@@ -5415,23 +5415,6 @@ html.dark[data-theme='dark'] body {
     radial-gradient(circle, transparent 0 82%, rgba(0,0,0,0.35) 100%);
 }
 
-.retro-spindle {
-  position: absolute;
-  z-index: 3;
-  left: 44.5%;
-  top: 50%;
-  width: 2.2%;
-  aspect-ratio: 1;
-  transform: translate(-50%, -50%);
-  border-radius: 999px;
-  clip-path: circle(50%);
-  background: radial-gradient(circle at 35% 30%, #fff 0 8%, #a5a5ac 45%, #34343a 100%);
-  box-shadow:
-    2px 3px 5px rgba(0,0,0,0.55),
-    0 0 0 1px rgba(255,255,255,0.08);
-  pointer-events: none;
-}
-
 .retro-lamp-glow {
   position: absolute;
   z-index: 1;

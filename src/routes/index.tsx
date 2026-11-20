@@ -17,6 +17,7 @@ import { ImageWithFallback } from '../components/common/ImageWithFallback'
 import { EmptyState } from '../components/common/EmptyState'
 import {
   fetchAllDailyRecommendSongs,
+  fetchDailyRecommendPlaylists,
   fetchPersonalized,
   fetchTopPlaylists,
   fetchToplists,
@@ -103,7 +104,7 @@ function loadPersonalized() {
   return fetchPersonalized(15)
 }
 
-function loadFeatured() {
+function loadCuratedPlaylists() {
   return fetchTopPlaylists({ limit: 15 }).then((result) => result.playlists)
 }
 
@@ -341,7 +342,20 @@ function DiscoveryPage() {
   const { i18n } = useLingui()
   useDocumentTitle(i18n._(msg`发现音乐`))
   const profile = useUserStore((state) => state.profile)
+  const isLogin = useUserStore((state) => state.isLogin)
   const dailyRefreshKey = useDailyRefreshKey()
+  const loadFeatured = useCallback(async () => {
+    if (isLogin) {
+      try {
+        const daily = await fetchDailyRecommendPlaylists(15)
+        if (daily.length) return daily
+      } catch {
+        // Fall through to the public curated list when the account daily
+        // recommendation is unavailable.
+      }
+    }
+    return loadCuratedPlaylists()
+  }, [isLogin])
   const [now, setNow] = useState(() => new Date())
   useEffect(() => {
     setNow(new Date())
@@ -379,7 +393,7 @@ function DiscoveryPage() {
     loading: featuredLoading,
     failed: featuredFailed,
     retry: retryFeatured,
-  } = useSection(loadFeatured, [] as Playlist[])
+  } = useSection(loadFeatured, [] as Playlist[], dailyRefreshKey)
 
   return (
     <div className="px-10 pb-16 pt-8 max-md:px-5">

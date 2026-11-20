@@ -538,7 +538,6 @@ export function PlayerArtwork({
             </span>
             <span className="retro-label-shade" aria-hidden="true" />
           </button>
-          <span className="retro-spindle" aria-hidden="true" />
           <span
             className="retro-lamp-glow"
             style={{ opacity: armOn }}

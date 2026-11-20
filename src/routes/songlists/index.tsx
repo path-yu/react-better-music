@@ -40,6 +40,10 @@ function SonglistsPage() {
   const [loading, setLoading] = useState(true)
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
+  // High-quality playlists are cursor-paginated by their last updateTime.
+  // Refresh intentionally advances the cursor instead of requesting page one
+  // again, which would always return the same curated set.
+  const [cursor, setCursor] = useState<number | undefined>(undefined)
   const [loadingMore, setLoadingMore] = useState(false)
   const [more, setMore] = useState(false)
   const [tagMenuOpen, setTagMenuOpen] = useState(false)
@@ -68,6 +72,7 @@ function SonglistsPage() {
 
   const selectTag = (tag: string, closeMenu = false) => {
     setActiveTag(tag)
+    setCursor(undefined)
     if (closeMenu) setTagMenuOpen(false)
     const buttons = tagScrollerRef.current?.querySelectorAll<HTMLButtonElement>('[data-tag]')
     buttons?.forEach((button) => {
@@ -88,9 +93,15 @@ function SonglistsPage() {
     setLoading(true)
     setFailed(false)
     setPlaylists([])
-    fetchTopPlaylists({ cat: activeTag, limit: 40 })
+    fetchTopPlaylists({ cat: activeTag, limit: 40, before: cursor })
       .then((result) => {
         if (cancelled) return
+        // The last cursor page can be empty. Wrap to the first page rather
+        // than leaving the recommended list blank.
+        if (!result.playlists.length && cursor !== undefined) {
+          setCursor(undefined)
+          return
+        }
         setPlaylists(result.playlists)
         setMore(result.more)
       })
@@ -105,11 +116,13 @@ function SonglistsPage() {
     return () => {
       cancelled = true
     }
-  }, [activeTag, attempt])
+  }, [activeTag, attempt, cursor])
 
   const retry = () => {
     // /top/playlist is cached for two minutes; a refresh button must bypass it.
     invalidateApiCache(['/top/playlist'])
+    const last = getArrLast(playlists)
+    setCursor(last?.updateTime)
     setAttempt((value) => value + 1)
   }
 

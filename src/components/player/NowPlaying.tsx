@@ -33,6 +33,7 @@ import {
 } from '../../lib/menuSurface'
 import { LyricsPanel } from './LyricsPanel'
 import { LyricStage } from './LyricStage'
+import { SimilarSongsPanel } from './SimilarSongsPanel'
 import AmbientBackground from './AmbientBackground'
 import { FogBackground } from './FogBackground'
 import { MvVideoPlayer } from '../mv/MvVideoPlayer'
@@ -65,7 +66,12 @@ import { toast } from '../../lib/toast'
 import { cn, formatDuration, matchesKeyword } from '../../lib/format'
 import type { Song } from '../../types'
 
-type NowPlayingPanel = 'lyrics' | 'stage' | 'queue' | 'comments'
+type NowPlayingPanel =
+  | 'lyrics'
+  | 'stage'
+  | 'queue'
+  | 'comments'
+  | 'related'
 type QueueView = 'list' | 'grid'
 
 type ArtSnapshot = {
@@ -1336,7 +1342,7 @@ export function NowPlaying() {
               <div
                 className="np-tabs"
                 role="tablist"
-                aria-label={i18n._(msg`歌词、律动、播放队列与评论`)}
+                aria-label={i18n._(msg`歌词、律动、播放队列、评论与相似歌曲`)}
               >
                 <button
                   type="button"
@@ -1378,6 +1384,15 @@ export function NowPlaying() {
                       {formatCommentCount(commentTotal, i18n.locale)}
                     </span>
                   ) : null}
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={panel === 'related'}
+                  onClick={() => setPanel('related')}
+                  className={cn('np-tab', panel === 'related' && 'is-active')}
+                >
+                  <Trans>相似歌曲</Trans>
                 </button>
               </div>
             </div>
@@ -1828,6 +1843,12 @@ export function NowPlaying() {
                     </div>
                   )}
                 </div>
+              ) : panel === 'related' ? (
+                <SimilarSongsPanel
+                  key={currentSong.id}
+                  songId={currentSong.id}
+                  className="h-full"
+                />
               ) : (
                 <div className="h-full overflow-y-auto px-5 pb-8 pt-4 max-md:h-auto max-md:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   <CommentSection

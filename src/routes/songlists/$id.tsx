@@ -25,12 +25,14 @@ import {
 import { ImageWithFallback } from '../../components/common/ImageWithFallback'
 import { EmptyState } from '../../components/common/EmptyState'
 import { ExpandableDescription } from '../../components/common/ExpandableDescription'
+import { PlaylistCard } from '../../components/cards/PlaylistCard'
 import { TAG_LABELS } from '../../lib/tagLabels'
 import { SongTable } from '../../components/songs/SongTable'
 import { PlayAllButton } from '../../components/songs/PlayAllButton'
 import { CommentSection } from '../../components/comments/CommentSection'
 import {
   fetchPlaylistDetail,
+  fetchPlaylistRecommendations,
   fetchPlaylistTracks,
   fetchRemainingPlaylistTracks,
   removeSongFromPlaylist,
@@ -46,8 +48,15 @@ import { formatDate, formatNumber, matchesKeyword } from '../../lib/format'
 import type { Playlist, Song } from '../../types'
 
 export const Route = createFileRoute('/songlists/$id')({
-  component: PlaylistDetailPage,
+  component: PlaylistDetailRoute,
 })
+
+function PlaylistDetailRoute() {
+  const { id } = Route.useParams()
+  // A new playlist id must get a fresh tab state. Without this key, the
+  // previous tab was persisted under the new id before the restore effect ran.
+  return <PlaylistDetailPage key={id} />
+}
 
 function PlaylistDetailPage() {
   const { i18n } = useLingui()
@@ -63,6 +72,11 @@ function PlaylistDetailPage() {
   const [keyword, setKeyword] = useState('')
   const [subscribing, setSubscribing] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [recommended, setRecommended] = useState<{
+    title: string
+    playlists: Playlist[]
+  } | null>(null)
+  const [recommendationsLoading, setRecommendationsLoading] = useState(true)
   useDocumentTitle(detail?.name ?? i18n._(msg`歌单`))
 
   // The route remounts when returning from a user profile. Keep the selected
@@ -128,6 +142,25 @@ function PlaylistDetailPage() {
 
     return () => controller.abort()
   }, [id, refreshKey])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    setRecommendationsLoading(true)
+    setRecommended(null)
+    void fetchPlaylistRecommendations(id, controller.signal)
+      .then((result) => {
+        if (!controller.signal.aborted) setRecommended(result)
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setRecommended({ title: '', playlists: [] })
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setRecommendationsLoading(false)
+      })
+    return () => controller.abort()
+  }, [id])
 
   // Guests who favorited this playlist before track snapshots were stored get
   // backfilled automatically as soon as the detail page has song data.
@@ -492,6 +525,14 @@ function PlaylistDetailPage() {
                 <Trans>热议</Trans>
               </span>
             </TabsTrigger>
+            <TabsTrigger value="related">
+              <Trans>相似歌单</Trans>
+              {recommended?.playlists.length ? (
+                <span className="ml-1 text-[11px] text-black/30">
+                  {recommended.playlists.length}
+                </span>
+              ) : null}
+            </TabsTrigger>
           </TabsList>
           {tab === 'songs' ? (
             <Input.Search
@@ -539,6 +580,41 @@ function PlaylistDetailPage() {
             resourceId={Number(detail.id)}
             title={i18n._(msg`听友评论`)}
           />
+        </TabsContent>
+
+        <TabsContent value="related" className="mt-6">
+          {recommendationsLoading ? (
+            <div className="grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div key={index}>
+                  <Skeleton className="aspect-square w-full rounded-[10px]" />
+                  <Skeleton className="mt-2 h-3 w-4/5 rounded-full" />
+                </div>
+              ))}
+            </div>
+          ) : recommended?.playlists.length ? (
+            <div>
+              <div className="mb-4 flex items-end justify-between">
+                <h2 className="section-title text-[16px]">
+                  {recommended.title || i18n._(msg`相似歌单`)}
+                </h2>
+                <span className="text-[11px] tabular-nums text-black/25">
+                  {recommended.playlists.length}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                {recommended.playlists.map((playlist, index) => (
+                  <PlaylistCard
+                    key={playlist.id}
+                    playlist={playlist}
+                    priority={index < 5}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <EmptyState title={i18n._(msg`暂无相似歌单`)} />
+          )}
         </TabsContent>
       </Tabs>
 

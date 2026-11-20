@@ -48,6 +48,12 @@ export async function fetchPersonalized(limit = 15) {
   return (res.result ?? []).map(normalizePlaylist)
 }
 
+/** Daily recommended playlists for the signed-in account. */
+export async function fetchDailyRecommendPlaylists(limit = 15) {
+  const res = await get<{ recommend?: Playlist[] }>('/recommend/resource')
+  return (res.recommend ?? []).map(normalizePlaylist).slice(0, limit)
+}
+
 async function fetchDailySongs() {
   const res = await get<{ data?: { dailySongs?: Parameters<typeof normalizeSongs>[0] } }>(
     '/recommend/songs',
@@ -163,6 +169,37 @@ export async function fetchPlaylistDetail(id: string | number, signal?: AbortSig
     signal,
   )
   return normalizePlaylist(res.playlist)
+}
+
+export async function fetchPlaylistRecommendations(
+  id: string | number,
+  signal?: AbortSignal,
+) {
+  const res = await get<{
+    data?: {
+      rcmdTitle?: string
+      recPlaylist?: Array<{ playlist?: Partial<Playlist> }>
+    }
+  }>('/playlist/detail/rcmd/get', { id }, signal)
+  const playlists = (res.data?.recPlaylist ?? [])
+    .map((entry) => entry.playlist)
+    .filter((item): item is Partial<Playlist> => Boolean(item?.id && item.name))
+    .map((item) =>
+      normalizePlaylist({
+        ...item,
+        id: Number(item.id),
+        name: item.name ?? '',
+        trackCount: item.trackCount ?? 0,
+        playCount: item.playCount ?? 0,
+        creator:
+          item.creator ?? { userId: 0, nickname: '' },
+        coverImgUrl: item.coverImgUrl ?? item.picUrl ?? '',
+      } as Playlist),
+    )
+  return {
+    title: res.data?.rcmdTitle?.trim() ?? '',
+    playlists,
+  }
 }
 
 /** Resolve a 163cn.tv share link to its final playlist URL. */
@@ -943,6 +980,16 @@ export async function fetchArtistMvs(
 export async function fetchSimilarArtists(id: number | string, signal?: AbortSignal) {
   const res = await get<{ artists?: ArtistSummary[] }>('/simi/artist', { id }, signal)
   return res.artists ?? []
+}
+
+export async function fetchSimilarSongs(
+  id: number | string,
+  signal?: AbortSignal,
+) {
+  const res = await get<{
+    songs?: Parameters<typeof normalizeSongs>[0]
+  }>('/simi/song', { id }, signal)
+  return normalizeSongs(res.songs)
 }
 
 export async function fetchIntelligenceList(params: {
