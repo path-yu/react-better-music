@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import {
@@ -104,6 +104,11 @@ export function NowPlayingTransport({
   )
 
   const [moreOpen, setMoreOpen] = useState(false)
+  const lastStemToggleRef = useRef(0)
+
+  const smartActiveThisSong = Boolean(currentSong) &&
+    smartActiveSong === currentSong?.id &&
+    smartStatus === 'ready'
 
   useEffect(() => {
     // Do not compete with the home page's first data requests while the
@@ -116,11 +121,24 @@ export function NowPlayingTransport({
   }, [checkSmartEnvironment, stemMode, videoActive])
 
   // Without Spleeter there is no accompaniment mode; return to the original.
+  // Keep an already-cached stem usable even if the runtime disappears.
   useEffect(() => {
-    if (stemMode !== 'smart' || smartInstalled !== false) return
+    if (
+      stemMode !== 'smart' ||
+      smartInstalled !== false ||
+      smartActiveThisSong
+    ) {
+      return
+    }
     setStemMode('off')
     toast.info(i18n._(msg`未检测到 Spleeter，请在设置中一键安装`))
-  }, [i18n, setStemMode, smartInstalled, stemMode])
+  }, [
+    i18n,
+    setStemMode,
+    smartActiveThisSong,
+    smartInstalled,
+    stemMode,
+  ])
 
   if (!currentSong) return null
 
@@ -143,8 +161,6 @@ export function NowPlayingTransport({
     formatDuration(Math.max(0, ms)).replace(/^0(?=\d:)/, '')
   const smartGeneratingThisSong =
     smartGeneratingSong === currentSong.id && smartStatus === 'generating'
-  const smartActiveThisSong =
-    smartActiveSong === currentSong.id && smartStatus === 'ready'
   const etaSeconds = Math.max(0, Math.round(smartEtaMs / 1000))
   const etaText =
     etaSeconds >= 60
@@ -152,6 +168,11 @@ export function NowPlayingTransport({
       : `${etaSeconds}秒`
 
   const handleStemMode = async () => {
+    // A click on the freshly-expanded stem selector can otherwise land on the
+    // same control again and immediately turn smart mode back off.
+    const now = Date.now()
+    if (now - lastStemToggleRef.current < 600) return
+    lastStemToggleRef.current = now
     if (stemMode === 'off') {
       const installed =
         smartInstalled ?? (await checkSmartEnvironment())

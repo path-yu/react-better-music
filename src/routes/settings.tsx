@@ -54,6 +54,10 @@ import { usePlayerStore } from '../store/player'
 import { useSmartStemStore } from '../store/smartStem'
 import {
   getSpleeterStatus,
+  pickSpleeterInstallDir,
+  pickSpleeterLibraryDir,
+  setSpleeterInstallRoot,
+  setSpleeterLibraryRoot,
   startSpleeterInstall,
   type SpleeterStatus,
 } from '../lib/spleeter'
@@ -147,6 +151,8 @@ function SettingsPage() {
   const [spleeterStatus, setSpleeterStatus] =
     useState<SpleeterStatus | null>(null)
   const [spleeterBusy, setSpleeterBusy] = useState(false)
+  const [spleeterPicking, setSpleeterPicking] = useState(false)
+  const [libraryPicking, setLibraryPicking] = useState(false)
   const [spleeterError, setSpleeterError] = useState('')
   const disableDevTools = useSettingsStore((state) => state.disableDevTools)
   const setDisableDevTools = useSettingsStore((state) => state.setDisableDevTools)
@@ -198,6 +204,60 @@ function SettingsPage() {
       window.clearInterval(timer)
     }
   }, [desktop])
+
+  const handlePickSpleeterDir = async () => {
+    if (spleeterPicking) return
+    setSpleeterPicking(true)
+    setSpleeterError('')
+    try {
+      const result = await pickSpleeterInstallDir()
+      if (result.status) setSpleeterStatus(result.status)
+    } catch (error) {
+      setSpleeterError(String(error))
+    } finally {
+      setSpleeterPicking(false)
+    }
+  }
+
+  const handleResetSpleeterDir = async () => {
+    if (!spleeterStatus) return
+    setSpleeterError('')
+    try {
+      const status = await setSpleeterInstallRoot(
+        spleeterStatus.defaultInstallRoot,
+      )
+      setSpleeterStatus(status)
+    } catch (error) {
+      setSpleeterError(String(error))
+    }
+  }
+
+  const handlePickLibraryDir = async () => {
+    if (libraryPicking) return
+    setLibraryPicking(true)
+    setSpleeterError('')
+    try {
+      const result = await pickSpleeterLibraryDir()
+      if (result.status) setSpleeterStatus(result.status)
+    } catch (error) {
+      setSpleeterError(String(error))
+    } finally {
+      setLibraryPicking(false)
+    }
+  }
+
+  const handleResetLibraryDir = async () => {
+    if (!spleeterStatus) return
+    setSpleeterError('')
+    try {
+      const status = await setSpleeterLibraryRoot(
+        spleeterStatus.defaultLibraryRoot,
+      )
+      setSpleeterStatus(status)
+    } catch (error) {
+      setSpleeterError(String(error))
+    }
+  }
 
   const handleInstallSpleeter = async () => {
     if (spleeterBusy || spleeterStatus?.install?.installing) return
@@ -725,7 +785,8 @@ function SettingsPage() {
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-wrap items-center gap-2">
-                  {!spleeterStatus?.available ? (
+                  {!spleeterStatus?.available ||
+                  !spleeterStatus.venvInInstallRoot ? (
                     <Button
                       variant="secondary"
                       size="sm"
@@ -733,9 +794,93 @@ function SettingsPage() {
                       disabled={spleeterStatus?.install?.installing}
                       onClick={() => void handleInstallSpleeter()}
                     >
-                      <Trans>一键安装 Spleeter</Trans>
+                      {spleeterStatus?.available
+                        ? i18n._(msg`安装到当前目录`)
+                        : i18n._(msg`一键安装 Spleeter`)}
                     </Button>
                   ) : null}
+                </div>
+              </div>
+
+              <div className="mt-3 rounded-lg border border-[var(--app-border)] bg-black/[0.02] p-2.5 dark:bg-white/[0.025]">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-medium text-black/45">
+                      <Trans>安装目录</Trans>
+                    </p>
+                    <p
+                      className="mt-0.5 truncate font-mono text-[10.5px] text-black/65 dark:text-white/65"
+                      title={spleeterStatus?.installRoot}
+                    >
+                      {spleeterStatus?.installRoot ||
+                        i18n._(msg`正在读取…`)}
+                    </p>
+                    <p className="mt-0.5 text-[9.5px] text-black/32">
+                      <Trans>
+                        默认安装到应用所在目录下的 spleeter-runtime
+                      </Trans>
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {spleeterStatus?.customInstallRoot ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => void handleResetSpleeterDir()}
+                      >
+                        <Trans>恢复默认</Trans>
+                      </Button>
+                    ) : null}
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      loading={spleeterPicking}
+                      onClick={() => void handlePickSpleeterDir()}
+                    >
+                      <Trans>更改目录</Trans>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-3 rounded-lg border border-[var(--app-border)] bg-black/[0.02] p-2.5 dark:bg-white/[0.025]">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-medium text-black/45">
+                      <Trans>伴奏保存目录</Trans>
+                    </p>
+                    <p
+                      className="mt-0.5 truncate font-mono text-[10.5px] text-black/65 dark:text-white/65"
+                      title={spleeterStatus?.libraryRoot}
+                    >
+                      {spleeterStatus?.libraryRoot ||
+                        i18n._(msg`正在读取…`)}
+                    </p>
+                    <p className="mt-0.5 text-[9.5px] text-black/32">
+                      <Trans>
+                        每首歌生成独立文件夹，默认在应用目录下的 spleeter-library
+                      </Trans>
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {spleeterStatus?.customLibraryRoot ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => void handleResetLibraryDir()}
+                      >
+                        <Trans>恢复默认</Trans>
+                      </Button>
+                    ) : null}
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      loading={libraryPicking}
+                      onClick={() => void handlePickLibraryDir()}
+                    >
+                      <Trans>更改目录</Trans>
+                    </Button>
+                  </div>
                 </div>
               </div>
 

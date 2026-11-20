@@ -26,6 +26,13 @@ export type SpleeterInstallState = {
 export type SpleeterStatus = {
   available: boolean
   venv: string | null
+  installRoot: string
+  defaultInstallRoot: string
+  customInstallRoot: boolean
+  venvInInstallRoot: boolean
+  libraryRoot: string
+  defaultLibraryRoot: string
+  customLibraryRoot: boolean
   model: string
   note: string
   install?: SpleeterInstallState
@@ -39,6 +46,42 @@ export function startSpleeterInstall() {
   return requestJson<SpleeterInstallState>('/spleeter/install', {
     method: 'POST',
   })
+}
+
+export function setSpleeterInstallRoot(path: string) {
+  return requestJson<SpleeterStatus>('/spleeter/install-root', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path }),
+  })
+}
+
+export async function pickSpleeterInstallDir() {
+  return pickSpleeterDir('/spleeter/pick-dir')
+}
+
+export function setSpleeterLibraryRoot(path: string) {
+  return requestJson<SpleeterStatus>('/spleeter/library-root', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path }),
+  })
+}
+
+export function pickSpleeterLibraryDir() {
+  return pickSpleeterDir('/spleeter/pick-library-dir')
+}
+
+async function pickSpleeterDir(path: string) {
+  const response = await bridgeFetch(path, {
+    method: 'POST',
+  })
+  if (!response.ok) throw new Error(`选择目录失败 (${response.status})`)
+  return (await response.json()) as {
+    cancelled?: boolean
+    status?: SpleeterStatus
+    error?: string
+  }
 }
 
 export async function createSpleeterJob(

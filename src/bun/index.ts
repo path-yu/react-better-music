@@ -29,6 +29,8 @@ import {
   createSpleeterJob,
   getSpleeterJob,
   getSpleeterStem,
+  setSpleeterInstallRoot,
+  setSpleeterLibraryRoot,
   spleeterStatus,
   startSpleeterInstall,
 } from './spleeter'
@@ -1374,6 +1376,96 @@ try {
         }
         if (url.pathname === '/spleeter/install' && request.method === 'POST') {
           return Response.json(startSpleeterInstall(), { headers })
+        }
+        if (
+          url.pathname === '/spleeter/install-root' &&
+          request.method === 'POST'
+        ) {
+          try {
+            const body = (await request.json()) as { path?: unknown }
+            const path = typeof body.path === 'string' ? body.path : ''
+            return Response.json(setSpleeterInstallRoot(path), { headers })
+          } catch (error) {
+            return Response.json(
+              { error: String(error) },
+              { status: 400, headers },
+            )
+          }
+        }
+        if (
+          url.pathname === '/spleeter/library-root' &&
+          request.method === 'POST'
+        ) {
+          try {
+            const body = (await request.json()) as { path?: unknown }
+            const path = typeof body.path === 'string' ? body.path : ''
+            return Response.json(setSpleeterLibraryRoot(path), { headers })
+          } catch (error) {
+            return Response.json(
+              { error: String(error) },
+              { status: 400, headers },
+            )
+          }
+        }
+        if (
+          url.pathname === '/spleeter/pick-library-dir' &&
+          request.method === 'POST'
+        ) {
+          const current = spleeterStatus()
+          const chosen = await Utils.openFileDialog({
+            startingFolder: current.libraryRoot,
+            canChooseFiles: false,
+            canChooseDirectory: true,
+            allowsMultipleSelection: false,
+          })
+          const picked = chosen?.[0]
+          if (!picked) {
+            return Response.json(
+              { cancelled: true, status: current },
+              { headers },
+            )
+          }
+          try {
+            return Response.json(
+              setSpleeterLibraryRoot(picked),
+              { headers },
+            )
+          } catch (error) {
+            return Response.json(
+              { error: String(error) },
+              { status: 400, headers },
+            )
+          }
+        }
+        if (
+          url.pathname === '/spleeter/pick-dir' &&
+          request.method === 'POST'
+        ) {
+          const current = spleeterStatus()
+          const chosen = await Utils.openFileDialog({
+            startingFolder: current.installRoot,
+            canChooseFiles: false,
+            canChooseDirectory: true,
+            allowsMultipleSelection: false,
+          })
+          const picked = chosen?.[0]
+          if (!picked) {
+            return Response.json(
+              { cancelled: true, status: current },
+              { headers },
+            )
+          }
+          try {
+            return Response.json(
+              setSpleeterInstallRoot(picked),
+              { headers },
+            )
+          } catch (error) {
+            return Response.json(
+              { error: String(error) },
+              { status: 400, headers },
+            )
+          }
         }
         if (url.pathname === '/spleeter/jobs' && request.method === 'POST') {
           try {

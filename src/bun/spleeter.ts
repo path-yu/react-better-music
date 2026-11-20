@@ -1,5 +1,17 @@
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
-import { dirname, extname, join, resolve } from 'node:path'
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
+import {
+  basename,
+  dirname,
+  extname,
+  join,
+  resolve,
+} from 'node:path'
 
 type SpleeterStatus = 'queued' | 'processing' | 'done' | 'error'
 type SpleeterCodec = 'wav' | 'mp3' | 'ogg' | 'm4a' | 'flac'
@@ -24,6 +36,7 @@ type SpleeterJobOptions = {
   songName?: string
   codec?: string
   bitrate?: string
+  libraryRoot?: string
 }
 
 const CODECS = new Set<SpleeterCodec>([
@@ -68,6 +81,79 @@ const pending: string[] = []
 let running = false
 let appDataRoot = ''
 
+type SpleeterConfig = {
+  installRoot?: string
+  libraryRoot?: string
+}
+
+let spleeterConfig: SpleeterConfig | null = null
+
+function configPath() {
+  return join(appDataRoot, 'spleeter-config.json')
+}
+
+function readConfig() {
+  if (spleeterConfig) return spleeterConfig
+  try {
+    spleeterConfig = JSON.parse(
+      readFileSync(configPath(), 'utf8'),
+    ) as SpleeterConfig
+  } catch {
+    spleeterConfig = {}
+  }
+  return spleeterConfig
+}
+
+function persistConfig(config: SpleeterConfig) {
+  spleeterConfig = config
+  try {
+    mkdirSync(appDataRoot, { recursive: true })
+    writeFileSync(configPath(), JSON.stringify(config, null, 2), 'utf8')
+  } catch {
+    // The setting remains active for this process even if persistence fails.
+  }
+}
+
+function applicationRoot() {
+  const executableDir = dirname(process.execPath)
+  if (basename(executableDir).toLowerCase() === 'bin') {
+    return dirname(executableDir)
+  }
+  return resolve(import.meta.dir, '..', '..', '..')
+}
+
+export function defaultSpleeterInstallRoot() {
+  return join(applicationRoot(), 'spleeter-runtime')
+}
+
+export function currentSpleeterInstallRoot() {
+  const configured = readConfig().installRoot
+  return configured ? resolve(configured) : defaultSpleeterInstallRoot()
+}
+
+export function setSpleeterInstallRoot(path: string) {
+  const next = path.trim()
+  if (!next) throw new Error('安装目录不能为空')
+  persistConfig({ ...readConfig(), installRoot: resolve(next) })
+  return spleeterStatus()
+}
+
+export function defaultSpleeterLibraryRoot() {
+  return join(applicationRoot(), 'spleeter-library')
+}
+
+export function currentSpleeterLibraryRoot() {
+  const configured = readConfig().libraryRoot
+  return configured ? resolve(configured) : defaultSpleeterLibraryRoot()
+}
+
+export function setSpleeterLibraryRoot(path: string) {
+  const next = path.trim()
+  if (!next) throw new Error('伴奏保存目录不能为空')
+  persistConfig({ ...readConfig(), libraryRoot: resolve(next) })
+  return spleeterStatus()
+}
+
 let installState: {
   installing: boolean
   progress: number
@@ -101,7 +187,8 @@ function installScriptPath() {
 
 export function startSpleeterInstall() {
   if (installState.installing) return installState
-  if (spleeterStatus().available) {
+  const existing = spleeterStatus()
+  if (existing.available && existing.venvInInstallRoot) {
     installState = {
       installing: false,
       progress: 100,
@@ -120,7 +207,7 @@ export function startSpleeterInstall() {
     }
     return installState
   }
-  const target = join(appDataRoot || process.cwd(), 'spleeter-runtime')
+  const target = currentSpleeterInstallRoot()
   installState = {
     installing: true,
     progress: 1,
@@ -228,24 +315,43 @@ function venvRoot() {
       return configured
     }
   }
+  const selected = findVenv(currentSpleeterInstallRoot())
+  if (selected) return selected
   if (appDataRoot) {
-    const installed = findVenv(join(appDataRoot, 'spleeter-runtime'))
-    if (installed) return installed
+    const legacy = findVenv(join(appDataRoot, 'spleeter-runtime'))
+    if (legacy) return legacy
   }
   return findVenv(process.cwd()) ?? findVenv(import.meta.dir)
 }
 
 export function spleeterStatus() {
   const venv = venvRoot()
+  const installRoot = currentSpleeterInstallRoot()
+  const defaultInstallRoot = defaultSpleeterInstallRoot()
+  const libraryRoot = currentSpleeterLibraryRoot()
+  const defaultLibraryRoot = defaultSpleeterLibraryRoot()
   const complete = Boolean(
     venv &&
       existsSync(join(venv, 'Scripts', 'spleeter.exe')) &&
       existsSync(join(venv, 'Scripts', 'ffmpeg.exe')) &&
       existsSync(join(venv, 'Scripts', 'ffprobe.exe')),
   )
+  const venvInInstallRoot = Boolean(
+    venv &&
+      resolve(venv)
+        .toLowerCase()
+        .startsWith(resolve(installRoot).toLowerCase()),
+  )
   return {
     available: complete,
     venv,
+    installRoot,
+    defaultInstallRoot,
+    customInstallRoot: installRoot !== defaultInstallRoot,
+    venvInInstallRoot,
+    libraryRoot,
+    defaultLibraryRoot,
+    customLibraryRoot: libraryRoot !== defaultLibraryRoot,
     model: 'spleeter:2stems',
     install: installState,
     note: complete
@@ -321,7 +427,12 @@ export function createSpleeterJob(
     options.songId !== undefined
       ? `${safeSongName(options.songName)}_${options.songId}`
       : `${safeSongName(options.songName)}_${id}`
-  const outputDir = join(tempRoot, 'spleeter-library', libraryKey)
+  const outputDir = join(
+    options.libraryRoot
+      ? resolve(options.libraryRoot)
+      : currentSpleeterLibraryRoot(),
+    libraryKey,
+  )
   const job: SpleeterJob = {
     id,
     status: 'queued',
