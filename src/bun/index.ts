@@ -315,9 +315,6 @@ function revealMainWindow() {
   revealCurrentWindow?.()
 }
 
-/** Below this the three-column player bar and sidebar start to collide. */
-const MIN_MAIN_WINDOW = { width: 1100, height: 720 }
-
 function createMainWindow() {
   const window = new BrowserWindow({
     title: '声屿',
@@ -378,12 +375,6 @@ function createMainWindow() {
       closeEvent.response = { allow: true }
     }
   })
-
-  // Electrobun's BrowserWindow options do not expose a native minimum size, so
-  // clamp after a resize instead. Deferring with setTimeout avoids fighting the
-  // native drag loop on every intermediate frame.
-  let clampTimer: ReturnType<typeof setTimeout> | null = null
-
 
   applyWindowIcon()
   enableNativeWindowControls('声屿')
@@ -1016,7 +1007,8 @@ function persistAudioCacheDir(dir: string) {
 
 function audioCacheStem(name: string, id: number) {
   const safe = name
-    .replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_')
+    .replace(/[\\/:*?"<>|]/g, '_')
+    .replace(/\p{Cc}/gu, '_')
     .replace(/[. ]+$/g, '')
     .trim()
   return (safe || `cached-song-${id}`).slice(0, 120)

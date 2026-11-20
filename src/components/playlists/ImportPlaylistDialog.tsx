@@ -114,7 +114,7 @@ async function resolvePlaylistInput(
   if (!sharedUrl) return ''
   const embedded = playlistIdFromUrl(sharedUrl)
   if (embedded) return embedded
-  let host = ''
+  let host: string
   try {
     host = new URL(sharedUrl).hostname
   } catch {

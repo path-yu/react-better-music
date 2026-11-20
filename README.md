@@ -20,9 +20,13 @@ A macOS-style third-party NetEase Cloud Music client rewritten with React 19 + T
 | --- | --- |
 | ![Playlists](assets/screenshots/02-songlists.png) | ![Search](assets/screenshots/04-search.png) |
 
-| Artist | Settings & cache |
+| Artist | Settings |
 | --- | --- |
 | ![Artist](assets/screenshots/05-artist.png) | ![Settings](assets/screenshots/07-settings.png) |
+
+| Smart stem separation | Queue |
+| --- | --- |
+| ![Spleeter settings](assets/screenshots/10-spleeter.png) | ![Queue](assets/screenshots/11-queue.png) |
 
 | Phone remote / PWA |
 | :---: |
@@ -38,6 +42,7 @@ A macOS-style third-party NetEase Cloud Music client rewritten with React 19 + T
 - Playlist category filters, featured playlists, pagination
 - New music / new MV filters by region, type and order
 - Search songs, playlists, artists, MVs and videos with keyboard navigation and Enter to open
+- Recent playback search by song, artist or album
 - Playlist, artist, album and MV detail pages, plus video playback
 
 ### Playback
@@ -49,6 +54,7 @@ A macOS-style third-party NetEase Cloud Music client rewritten with React 19 + T
 - Heartbeat mode powered by NetEase recommendations
 - Manual VIP source switching; optional automatic replacement in Settings
 - Playback position is preserved when switching sources
+- Smart stem mode: original / vocals / accompaniment, with seamless position-preserving switches
 
 ### Lyrics & player
 
@@ -68,6 +74,16 @@ A macOS-style third-party NetEase Cloud Music client rewritten with React 19 + T
 - Login cookie persisted locally; expired sessions refresh via `/login/refresh`
 - Guest cookie when signed out
 - Playlists, liked songs and profile sync after sign-in
+
+### Smart stem separation
+
+- Local [Spleeter](https://github.com/deezer/spleeter) 2-stem separation (vocals + accompaniment), running outside the renderer
+- One-click install of Python 3.9, TensorFlow 2.9, Spleeter 2.4, FFmpeg and FFprobe
+- Runtime and stem-library folders default to the application directory and are configurable in Settings
+- Default output is compressed M4A/AAC at 192 kbps; OGG, MP3, FLAC and WAV plus 128–320 kbps are selectable
+- Background jobs with progress, ETA, duplicate-job protection and automatic recovery after a page refresh
+- Both stems and the original mix are available from the song detail page; results are cached in IndexedDB for instant reuse
+- The last selected stem is remembered; changing output settings only affects future generations
 
 ### Local cache
 
@@ -115,6 +131,7 @@ A macOS-style third-party NetEase Cloud Music client rewritten with React 19 + T
 | i18n | Lingui 6 (`@lingui/core`, `@lingui/react`, `@lingui/vite-plugin`, `@lingui/cli`) |
 | Fonts | SF Pro / PingFang SC on macOS; bundled Inter + Noto Sans SC on Windows |
 | Audio cache | WebCodecs + mediabunny + IndexedDB |
+| Stem separation | Spleeter 2.4, TensorFlow 2.9, Python 3.9, FFmpeg |
 | Backend | NetEaseCloudMusicApiEnhanced (`server/`) |
 | Desktop | Electrobun + Hutch + Bun |
 | Phone remote | Node HTTP, Web App Manifest, Service Worker |
@@ -163,6 +180,7 @@ Phone ──LAN──> http://<PC-IP>:13000/remote/
   - [Hutch CLI](https://hutch.blackboard.sh/) on `PATH`
   - Windows 10/11 with **WebView2 Runtime** (usually preinstalled)
   - Optional: Inno Setup 6, only for the custom install-directory installer
+  - Optional: the in-app Spleeter installer for local vocals/accompaniment separation
 
 Hutch is not an npm dependency; install it separately:
 
@@ -461,6 +479,10 @@ Common causes: WebCodecs unavailable, audio decode failure, IndexedDB quota exha
 | Cache quality | 64 / 96 / 128 kbps, affecting only future cache entries |
 | Download folder | Desktop cache export directory |
 | Auto-replace VIP sources | Prefer matched sources for VIP tracks |
+| Spleeter install directory | Runtime location; defaults to `<app>/spleeter-runtime` |
+| Spleeter library directory | Generated stem location; defaults to `<app>/spleeter-library` |
+| Stem output format | M4A/AAC (default), OGG, MP3, FLAC or WAV |
+| Stem bitrate | 128 / 192 / 256 / 320 kbps; ignored for WAV/FLAC |
 | Listening report | Off by default; reports one real listen after 50% or 4 minutes. Uses a third-party client protocol and may be ignored or trigger risk controls |
 | Disable DevTools | Shown in dev builds only; packaged builds force DevTools off |
 

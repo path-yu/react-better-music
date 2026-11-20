@@ -42,9 +42,13 @@
 | --- | --- |
 | ![推荐歌单](assets/screenshots/02-songlists.png) | ![搜索结果](assets/screenshots/04-search.png) |
 
-| 歌手详情 | 设置与缓存管理 |
+| 歌手详情 | 设置 |
 | --- | --- |
 | ![歌手详情](assets/screenshots/05-artist.png) | ![设置](assets/screenshots/07-settings.png) |
+
+| 智能伴奏与 Spleeter | 待播清单 |
+| --- | --- |
+| ![Spleeter 设置](assets/screenshots/10-spleeter.png) | ![待播清单](assets/screenshots/11-queue.png) |
 
 | 手机遥控 / PWA |
 | :---: |
@@ -60,6 +64,7 @@
 - 推荐歌单分类筛选、精品歌单、分页加载
 - 最新音乐 / 最新 MV 的地区、类型、排序筛选与分页
 - 单曲 / 歌单 / 歌手 / MV / 视频搜索，支持键盘上下选择与回车进入
+- 最近播放支持按歌曲、歌手、专辑关键字检索
 - 歌单详情、歌手详情、专辑详情、MV 详情与视频播放
 
 ### 播放
@@ -71,6 +76,7 @@
 - 心动模式（基于网易云智能推荐）
 - VIP 歌曲手动切换其他音源；可在设置中开启「自动替换 VIP 音源」
 - 切源时保留当前播放进度
+- 智能伴奏：原曲 / 人声 / 伴奏三种音轨，切换时保留播放位置
 
 ### 歌词与播放页
 
@@ -90,6 +96,16 @@
 - 登录 Cookie 本地持久化，过期自动调用 `/login/refresh`
 - 未登录时使用游客 Cookie
 - 登录后同步歌单、喜欢的音乐、个人资料
+
+### 智能人声分离
+
+- 本地 [Spleeter](https://github.com/deezer/spleeter) 2stems 分离（人声 + 伴奏），推理运行在渲染层之外
+- 设置页一键安装 Python 3.9、TensorFlow 2.9、Spleeter 2.4、FFmpeg 和 FFprobe
+- 运行环境与伴奏库默认放在应用目录，可在设置中分别自定义
+- 默认输出 M4A/AAC 192kbps，也可选 OGG、MP3、FLAC、WAV 与 128–320kbps
+- 后台任务带进度、预计剩余时间、重复任务保护，并支持刷新页面后恢复
+- 歌曲详情页可切换原曲 / 人声 / 伴奏；结果缓存到 IndexedDB，下次播放直接复用
+- 记住上次选择的音轨；修改输出参数只影响之后新生成的伴奏
 
 ### 本地缓存
 
@@ -136,6 +152,7 @@
 | 国际化 | Lingui 6（`@lingui/core`、`@lingui/react`、`@lingui/vite-plugin`、`@lingui/cli`） |
 | 字体 | macOS 使用系统 SF Pro / PingFang SC；Windows 捆绑 Inter + Noto Sans SC |
 | 音频缓存 | WebCodecs + mediabunny + IndexedDB |
+| 人声分离 | Spleeter 2.4、TensorFlow 2.9、Python 3.9、FFmpeg |
 | 后端 | NetEaseCloudMusicApiEnhanced（`server/`） |
 | 桌面端 | Electrobun + Hutch + Bun |
 | 手机遥控 | Node HTTP、PWA Manifest、Service Worker |
@@ -185,6 +202,7 @@
   - [Hutch CLI](https://hutch.blackboard.sh/)（PATH 中可用）
   - Windows 10/11 与 **WebView2 Runtime**（系统通常自带）
   - 可选：Inno Setup 6（仅自定义安装目录安装包需要）
+  - 可选：在设置中一键安装 Spleeter，用于本地人声 / 伴奏分离
 
 Hutch 不是 npm 依赖，需要单独安装：
 
@@ -513,6 +531,10 @@ pnpm i18n:extract
 | 缓存品质 | 64 / 96 / 128kbps，只影响后续缓存 |
 | 下载目录 | 桌面端缓存导出目录 |
 | VIP 歌曲自动替换音源 | 开启后 VIP 歌曲优先尝试其他音源 |
+| Spleeter 安装目录 | 运行环境位置，默认 `<应用目录>/spleeter-runtime` |
+| 伴奏保存目录 | 生成音轨位置，默认 `<应用目录>/spleeter-library` |
+| 输出格式 | M4A/AAC（默认）、OGG、MP3、FLAC、WAV |
+| 输出码率 | 128 / 192 / 256 / 320kbps；WAV/FLAC 忽略 |
 | 听歌打卡 | 默认关闭；真实播放达到 50% 或 4 分钟后上报一次。使用第三方客户端协议，记录可能被忽略或触发风控 |
 | 禁用开发者工具 | 仅开发版显示；打包版强制启用 WebView2 DevTools 禁用 |
 
