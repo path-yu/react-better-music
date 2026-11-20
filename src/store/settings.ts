@@ -37,6 +37,11 @@ export type NowPlayingTransition =
   | 'cover'
   | 'none'
 export type PlayerStyle = 'cover' | 'vinyl' | 'cassette'
+/** Original audio or Spleeter-backed smart accompaniment. */
+export type StemMode = 'off' | 'smart'
+export type StemKind = 'accompaniment' | 'vocals'
+export type SpleeterCodec = 'm4a' | 'ogg' | 'mp3' | 'flac' | 'wav'
+export type SpleeterBitrate = '128k' | '192k' | '256k' | '320k'
 
 export const PLAYER_STYLE_OPTIONS: Array<{
   value: PlayerStyle
@@ -111,6 +116,13 @@ interface SettingsState {
   playerStyle: PlayerStyle
   /** Dynamically even out per-track loudness during playback. */
   volumeNormalization: boolean
+  /** Instant approximation vs. cached Spleeter accompaniment. */
+  stemMode: StemMode
+  /** Which separated stem smart mode should play. */
+  stemKind: StemKind
+  /** Spleeter output container/codec. Defaults to compressed AAC. */
+  spleeterCodec: SpleeterCodec
+  spleeterBitrate: SpleeterBitrate
   /** Desktop only: block right-click / F12 / DevTools shortcuts. */
   disableDevTools: boolean
   /** Prefer a matched provider for VIP tracks (manual switch is always available). */
@@ -132,6 +144,10 @@ interface SettingsState {
   setNowPlayingTransition: (value: NowPlayingTransition) => void
   setPlayerStyle: (value: PlayerStyle) => void
   setVolumeNormalization: (value: boolean) => void
+  setStemMode: (value: StemMode) => void
+  setStemKind: (value: StemKind) => void
+  setSpleeterCodec: (value: SpleeterCodec) => void
+  setSpleeterBitrate: (value: SpleeterBitrate) => void
   setDisableDevTools: (value: boolean) => void
   setAutoReplaceVipSource: (value: boolean) => void
   setAutoScrobble: (value: boolean) => void
@@ -158,6 +174,10 @@ export const useSettingsStore = create<SettingsState>()(
       // Matches the reference player's default: analyse and even out loudness
       // without requiring ReplayGain tags in every file.
       volumeNormalization: true,
+      stemMode: 'off',
+      stemKind: 'accompaniment',
+      spleeterCodec: 'm4a',
+      spleeterBitrate: '192k',
       disableDevTools: false,
       autoReplaceVipSource: false,
       // Reporting private listening logs is opt-in and never automatic.
@@ -178,6 +198,11 @@ export const useSettingsStore = create<SettingsState>()(
       setPlayerStyle: (playerStyle) => set({ playerStyle }),
       setVolumeNormalization: (volumeNormalization) =>
         set({ volumeNormalization }),
+      setStemMode: (stemMode) => set({ stemMode }),
+      setStemKind: (stemKind) => set({ stemKind }),
+      setSpleeterCodec: (spleeterCodec) => set({ spleeterCodec }),
+      setSpleeterBitrate: (spleeterBitrate) =>
+        set({ spleeterBitrate }),
       setDisableDevTools: (disableDevTools) => set({ disableDevTools }),
       setAutoReplaceVipSource: (autoReplaceVipSource) => set({ autoReplaceVipSource }),
       setAutoScrobble: (autoScrobble) => set({ autoScrobble }),
@@ -188,7 +213,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'react-music-settings',
-      version: 6,
+      version: 7,
       // v1 stored a boolean translation switch; keep "off" users in original mode.
       migrate: (persisted, version) => {
         const previous = persisted as Partial<SettingsState> & {
@@ -212,17 +237,24 @@ export const useSettingsStore = create<SettingsState>()(
           (previous as { growFromCover?: boolean }).growFromCover
             ? { ...withFog, nowPlayingTransition: 'cover' as NowPlayingTransition }
             : withFog
+        // v7 removes the realtime band-pass mode; existing fast users move to
+        // the Spleeter path (or fall back to off if the environment is absent).
+        const withStem =
+          version < 7 &&
+          (withCover as { stemMode?: string }).stemMode === 'fast'
+            ? { ...withCover, stemMode: 'smart' as StemMode }
+            : withCover
         // v5 removes Lossless/Hi-Res. Keep existing installs on a valid level
         // instead of leaving a stale value that the quality picker cannot show.
         if (
           version < 5 &&
           !PLAY_QUALITY_OPTIONS.some(
-            (option) => option.value === withCover.playLevel,
+            (option) => option.value === withStem.playLevel,
           )
         ) {
-          return { ...withCover, playLevel: 'exhigh' as PlayLevel }
+          return { ...withStem, playLevel: 'exhigh' as PlayLevel }
         }
-        return withCover
+        return withStem
       },
     },
   ),

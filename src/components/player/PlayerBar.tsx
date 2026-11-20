@@ -27,6 +27,7 @@ import { ArtistLinks } from '../common/ArtistLinks'
 import { MorePlaybackOptions } from './MorePlaybackOptions'
 import { PlaylistPicker } from './PlaylistPicker'
 import { useDelayedBusy } from '../../lib/useDelayedBusy'
+import { useSmartStemStore } from '../../store/smartStem'
 import { ImmersiveProgressBar } from './ImmersiveProgressBar'
 import { ProgressSlider } from './ProgressSlider'
 import {
@@ -100,6 +101,8 @@ export function PlayerBar() {
   const lastSourceReloadTokenRef = useRef(0)
   const autoNextTriggeredRef = useRef(false)
   const switchingRef = useRef(false)
+  const stemSwitchRef = useRef(false)
+  const stemSwitchTimerRef = useRef<number | null>(null)
   const trialNotifiedRef = useRef(false)
   // A seek that arrives before the media is seekable (restored queue after a
   // refresh, or metadata still loading) is applied once metadata is available.
@@ -151,6 +154,16 @@ export function PlayerBar() {
   const toggleHeartMode = usePlayerStore((state) => state.toggleHeartMode)
   const volumeNormalization = useSettingsStore(
     (state) => state.volumeNormalization,
+  )
+  const stemMode = useSettingsStore((state) => state.stemMode)
+  const smartStemActiveSong = useSmartStemStore(
+    (state) => state.activeSongId,
+  )
+  const prepareSmartStem = useSmartStemStore(
+    (state) => state.prepareForSong,
+  )
+  const restoreSmartStem = useSmartStemStore(
+    (state) => state.restoreOriginal,
   )
   const setVolume = usePlayerStore((state) => state.setVolume)
   const setCurrentTime = usePlayerStore((state) => state.setCurrentTime)
@@ -428,6 +441,37 @@ export function PlayerBar() {
     return () => window.clearInterval(timer)
   }, [volumeNormalization])
 
+  const usingSmartStem = smartStemActiveSong === currentSong?.id
+
+  useEffect(() => {
+    if (
+      stemMode !== 'smart' ||
+      !playing ||
+      videoActive ||
+      !currentSong ||
+      !sourceReady ||
+      !audioUrl
+    ) {
+      return
+    }
+    if (usingSmartStem) return
+    void prepareSmartStem(currentSong.id)
+  }, [
+    audioUrl,
+    currentSong,
+    playing,
+    prepareSmartStem,
+    sourceReady,
+    stemMode,
+    usingSmartStem,
+    videoActive,
+  ])
+
+  useEffect(() => {
+    if (stemMode === 'smart' || !usingSmartStem) return
+    void restoreSmartStem()
+  }, [restoreSmartStem, stemMode, usingSmartStem])
+
   // Every play request (previous / next / pick a song / replay) bumps
   // playToken. Stop the old track synchronously on that commit; the source
   // effect starts the new track once its URL/blob is ready.
@@ -543,6 +587,11 @@ export function PlayerBar() {
     if (!audioUrl) return
     const current = audioRef.current
     if (!current) return
+    const preservePlaybackUi =
+      usePlayerStore.getState().sourceTransition === 'stem'
+    if (preservePlaybackUi) {
+      usePlayerStore.setState({ sourceTransition: 'none' })
+    }
     const forcedReload =
       lastSourceReloadTokenRef.current !== sourceReloadToken
     lastSourceReloadTokenRef.current = sourceReloadToken
@@ -578,13 +627,26 @@ export function PlayerBar() {
       applyGain(target, 1)
       registerAudio(target)
       switchingRef.current = true
-      setCurrentTime(0)
-      setBuffered(0)
       clearBufferingTimer()
       seekingRef.current = false
-      setAudioReady(false)
-      setLocalMediaDuration(0)
-      setMediaDuration(0)
+      if (preservePlaybackUi) {
+        // Original/vocals/accompaniment are the same playback session. Keep
+        // the progress and pause button stable while the new WAV is loading.
+        stemSwitchRef.current = true
+        if (stemSwitchTimerRef.current) {
+          window.clearTimeout(stemSwitchTimerRef.current)
+        }
+        stemSwitchTimerRef.current = window.setTimeout(() => {
+          stemSwitchRef.current = false
+          stemSwitchTimerRef.current = null
+        }, 2500)
+      } else {
+        setCurrentTime(0)
+        setBuffered(0)
+        setAudioReady(false)
+        setLocalMediaDuration(0)
+        setMediaDuration(0)
+      }
     }
 
     target.pause()
@@ -1043,6 +1105,11 @@ export function PlayerBar() {
       const audio = event.currentTarget
       if (audio !== audioRef.current && audio !== incomingRef.current) return
       if (!audioUrl || audio.getAttribute('src') !== audioUrl) return
+      if (stemSwitchTimerRef.current) {
+        window.clearTimeout(stemSwitchTimerRef.current)
+        stemSwitchTimerRef.current = null
+      }
+      stemSwitchRef.current = false
       seekingRef.current = false
       markAudioReady()
       if (audio === audioRef.current) {
@@ -1054,6 +1121,11 @@ export function PlayerBar() {
       const audio = event.currentTarget
       if (audio !== audioRef.current && audio !== incomingRef.current) return
       if (!audioUrl || audio.getAttribute('src') !== audioUrl) return
+      if (stemSwitchTimerRef.current) {
+        window.clearTimeout(stemSwitchTimerRef.current)
+        stemSwitchTimerRef.current = null
+      }
+      stemSwitchRef.current = false
       markAudioReady()
       if (audio === audioRef.current) {
         switchingRef.current = false
@@ -1068,6 +1140,11 @@ export function PlayerBar() {
       const audio = event.currentTarget
       if (audio !== audioRef.current && audio !== incomingRef.current) return
       if (!audioUrl || audio.getAttribute('src') !== audioUrl) return
+      if (stemSwitchTimerRef.current) {
+        window.clearTimeout(stemSwitchTimerRef.current)
+        stemSwitchTimerRef.current = null
+      }
+      stemSwitchRef.current = false
       if (audio === incomingRef.current) {
         maybeStartCrossfade(audio)
         return
@@ -1101,6 +1178,7 @@ export function PlayerBar() {
       // made the next resume look like buffering for a few frames, which
       // flashed the loading state and shifted the now-playing layout.
       if (event.currentTarget !== audioRef.current) return
+      if (stemSwitchRef.current || switchingRef.current) return
       if (usePlayerStore.getState().playing) markBuffering()
     },
     onDurationChange: (event: SyntheticEvent<HTMLAudioElement>) => {
@@ -1114,12 +1192,12 @@ export function PlayerBar() {
     },
     onWaiting: (event: SyntheticEvent<HTMLAudioElement>) => {
       if (event.currentTarget !== audioRef.current) return
-      if (seekingRef.current) return
+      if (seekingRef.current || stemSwitchRef.current) return
       markBuffering()
     },
     onStalled: (event: SyntheticEvent<HTMLAudioElement>) => {
       if (event.currentTarget !== audioRef.current) return
-      if (seekingRef.current) return
+      if (seekingRef.current || stemSwitchRef.current) return
       markBuffering()
     },
     onTimeUpdate: (event: SyntheticEvent<HTMLAudioElement>) => {

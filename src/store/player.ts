@@ -61,6 +61,8 @@ interface PlayerState {
   playToken: number
   /** Forces the source effect to reload even when the signed URL is unchanged. */
   sourceReloadToken: number
+  /** Preserve progress/play state while swapping original → vocals/accompaniment. */
+  sourceTransition: 'none' | 'stem'
   audioReady: boolean
   audioUrl: string
   sourceReady: boolean
@@ -767,6 +769,7 @@ export const usePlayerStore = create<PlayerState>()(
           lyricLines: hasKnownLyrics ? readLyrics(song) : [],
           audioUrl: '',
           sourceReady: false,
+          sourceTransition: 'none',
           audioFromCache: false,
           audioBlob: null,
           resumeAt: null,
@@ -1077,6 +1080,7 @@ export const usePlayerStore = create<PlayerState>()(
         buffered: 0,
         playToken: 0,
         sourceReloadToken: 0,
+        sourceTransition: 'none',
         audioReady: false,
         audioUrl: '',
         sourceReady: false,
@@ -1351,6 +1355,7 @@ export const usePlayerStore = create<PlayerState>()(
             mediaDuration: 0,
             buffered: 0,
             sourceReloadToken: 0,
+            sourceTransition: 'none',
             playlistId: '',
             lyricLines: [],
             audioUrl: '',

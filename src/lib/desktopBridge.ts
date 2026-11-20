@@ -50,14 +50,21 @@ function bridgeAuthHeaders(): Record<string, string> {
 }
 
 /** The main process may be busy (or restarting); never leave the UI waiting. */
-export async function bridgeFetch(path: string, init?: RequestInit) {
+export async function bridgeFetch(
+  path: string,
+  init?: RequestInit,
+  timeoutMs = BRIDGE_TIMEOUT,
+) {
   const controller = new AbortController()
-  const timer = window.setTimeout(() => controller.abort(), BRIDGE_TIMEOUT)
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs)
   try {
     return await fetch(`${BRIDGE_BASE}${path}`, {
       ...init,
       mode: 'cors',
-      headers: bridgeAuthHeaders(),
+      headers: {
+        ...bridgeAuthHeaders(),
+        ...(init?.headers as Record<string, string> | undefined),
+      },
       signal: controller.signal,
     })
   } catch (error) {

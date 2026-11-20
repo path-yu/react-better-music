@@ -21,6 +21,10 @@ const TABS: Array<{
 const SEARCH_TERMS: Record<SettingsTab, string[]> = {
   general: ['外观', '主题', '配色', '语言', 'appearance', 'theme', 'palette', 'language'],
   playback: [
+    'Spleeter',
+    '智能伴奏',
+    '人声分离',
+    '一键安装',
     '播放器样式',
     '封面',
     '黑胶',

@@ -21,6 +21,7 @@ import {
   Shield,
   Sun,
   Trash2,
+  WandSparkles,
 } from 'lucide-react'
 import { Button, Select, Switch } from '@pikoloo/darwin-ui'
 import {
@@ -50,6 +51,12 @@ import {
   pickDesktopAudioCacheDir,
 } from '../lib/desktopAudioCache'
 import { usePlayerStore } from '../store/player'
+import { useSmartStemStore } from '../store/smartStem'
+import {
+  getSpleeterStatus,
+  startSpleeterInstall,
+  type SpleeterStatus,
+} from '../lib/spleeter'
 import {
   getDownloadDir,
   isDesktopApp,
@@ -82,9 +89,34 @@ function formatBytes(bytes: number) {
   return mb >= 1 ? `${mb.toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`
 }
 
+const SPLEETER_CODEC_OPTIONS = [
+  { value: 'm4a', label: 'M4A / AAC（推荐）' },
+  { value: 'ogg', label: 'OGG / Vorbis' },
+  { value: 'mp3', label: 'MP3' },
+  { value: 'flac', label: 'FLAC（无损）' },
+  { value: 'wav', label: 'WAV（未压缩）' },
+] as const
+
+const SPLEETER_BITRATE_OPTIONS = [
+  { value: '128k', label: '128 kbps（更小）' },
+  { value: '192k', label: '192 kbps（推荐）' },
+  { value: '256k', label: '256 kbps' },
+  { value: '320k', label: '320 kbps（最高）' },
+] as const
+
 function SettingsPage() {
   const { i18n } = useLingui()
   useDocumentTitle(i18n._(msg`设置`))
+  const spleeterCodec = useSettingsStore((state) => state.spleeterCodec)
+  const spleeterBitrate = useSettingsStore(
+    (state) => state.spleeterBitrate,
+  )
+  const setSpleeterCodec = useSettingsStore(
+    (state) => state.setSpleeterCodec,
+  )
+  const setSpleeterBitrate = useSettingsStore(
+    (state) => state.setSpleeterBitrate,
+  )
   const cacheBitrate = useSettingsStore((state) => state.cacheBitrate)
   const cacheMaxMb = useSettingsStore((state) => state.cacheMaxMb)
   const setCacheMaxMb = useSettingsStore((state) => state.setCacheMaxMb)
@@ -112,6 +144,10 @@ function SettingsPage() {
   const [cacheDir, setCacheDir] = useState('')
   const [canPickCacheDir, setCanPickCacheDir] = useState(false)
   const [pickingCacheDir, setPickingCacheDir] = useState(false)
+  const [spleeterStatus, setSpleeterStatus] =
+    useState<SpleeterStatus | null>(null)
+  const [spleeterBusy, setSpleeterBusy] = useState(false)
+  const [spleeterError, setSpleeterError] = useState('')
   const disableDevTools = useSettingsStore((state) => state.disableDevTools)
   const setDisableDevTools = useSettingsStore((state) => state.setDisableDevTools)
   const theme = useUiStore((state) => state.theme)
@@ -135,6 +171,49 @@ function SettingsPage() {
   const setVolumeNormalization = useSettingsStore(
     (state) => state.setVolumeNormalization,
   )
+
+  useEffect(() => {
+    if (!desktop) return
+    let active = true
+    const load = () => {
+      void getSpleeterStatus()
+        .then((status) => {
+          if (!active) return
+          setSpleeterStatus(status)
+          if (status.available) {
+            // Enable the smart button without requiring a page reload.
+            useSmartStemStore.setState({
+              installed: true,
+              status: 'idle',
+              error: '',
+            })
+          }
+        })
+        .catch(() => undefined)
+    }
+    load()
+    const timer = window.setInterval(load, 2500)
+    return () => {
+      active = false
+      window.clearInterval(timer)
+    }
+  }, [desktop])
+
+  const handleInstallSpleeter = async () => {
+    if (spleeterBusy || spleeterStatus?.install?.installing) return
+    setSpleeterBusy(true)
+    setSpleeterError('')
+    try {
+      const state = await startSpleeterInstall()
+      setSpleeterStatus((current) =>
+        current ? { ...current, install: state } : current,
+      )
+    } catch (error) {
+      setSpleeterError(String(error))
+    } finally {
+      setSpleeterBusy(false)
+    }
+  }
 
   useEffect(() => {
     if (!desktop) return
@@ -601,6 +680,162 @@ function SettingsPage() {
             />
           </div>
         </section>
+
+        {desktop ? (
+          <section className="apple-card p-5 sm:p-6" data-settings-section="playback">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
+                  <WandSparkles className="h-4 w-4 text-accent" />
+                  <Trans>智能伴奏 · Spleeter</Trans>
+                </h2>
+                <p className="mt-1 max-w-[620px] text-[11px] leading-relaxed text-black/40">
+                  <Trans>
+                    安装本地 Spleeter 后，可在歌曲详情页生成并切换原曲、人声或伴奏，结果会缓存到本机。
+                  </Trans>
+                </p>
+              </div>
+              <span
+                className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium ${
+                  spleeterStatus?.available
+                    ? 'bg-emerald-500/10 text-emerald-700'
+                    : spleeterStatus?.install?.installing
+                      ? 'bg-accent/10 text-accent'
+                      : 'bg-black/5 text-black/40'
+                }`}
+              >
+                {spleeterStatus?.available
+                  ? i18n._(msg`Spleeter 已就绪`)
+                  : spleeterStatus?.install?.installing
+                    ? i18n._(msg`正在安装`)
+                    : i18n._(msg`未安装`)}
+              </span>
+            </div>
+
+            <div className="mt-4 rounded-xl border border-[var(--app-border)] bg-black/[0.018] p-4 dark:bg-white/[0.025]">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="text-[12px] font-medium text-black/75">
+                    Python 3.9 · TensorFlow 2.9 · Spleeter 2.4
+                  </p>
+                  <p className="mt-1 text-[10.5px] leading-relaxed text-black/40">
+                    <Trans>
+                      安装约 1 GB，需要联网，通常耗时数分钟。模型会在第一次生成伴奏时下载。
+                    </Trans>
+                  </p>
+                </div>
+                <div className="flex shrink-0 flex-wrap items-center gap-2">
+                  {!spleeterStatus?.available ? (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      loading={spleeterBusy || spleeterStatus?.install?.installing}
+                      disabled={spleeterStatus?.install?.installing}
+                      onClick={() => void handleInstallSpleeter()}
+                    >
+                      <Trans>一键安装 Spleeter</Trans>
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-[10.5px] font-medium text-black/50">
+                    <Trans>输出格式</Trans>
+                  </span>
+                  <select
+                    value={spleeterCodec}
+                    onChange={(event) =>
+                      setSpleeterCodec(
+                        event.target.value as typeof spleeterCodec,
+                      )
+                    }
+                    className="h-8 w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-card)] px-2 text-[11px] text-black/72 outline-none transition-colors focus:border-accent/50 dark:bg-white/[0.04] dark:text-white/72"
+                  >
+                    {SPLEETER_CODEC_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-[10.5px] font-medium text-black/50">
+                    <Trans>输出码率</Trans>
+                  </span>
+                  <select
+                    value={spleeterBitrate}
+                    disabled={
+                      spleeterCodec === 'wav' || spleeterCodec === 'flac'
+                    }
+                    onChange={(event) =>
+                      setSpleeterBitrate(
+                        event.target.value as typeof spleeterBitrate,
+                      )
+                    }
+                    className="h-8 w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-card)] px-2 text-[11px] text-black/72 outline-none transition-colors focus:border-accent/50 disabled:opacity-40 dark:bg-white/[0.04] dark:text-white/72"
+                  >
+                    {SPLEETER_BITRATE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <p className="mt-2 text-[10px] leading-relaxed text-black/35">
+                {spleeterCodec === 'wav'
+                  ? i18n._(msg`WAV 为未压缩 PCM，两条音轨约 70–100 MB/首。`)
+                  : spleeterCodec === 'flac'
+                    ? i18n._(msg`FLAC 为无损压缩，两条音轨约 40–60 MB/首。`)
+                    : i18n._(msg`有损压缩，两条音轨合计约 6–14 MB/首。`)}
+                {' '}
+                <Trans>修改后仅影响之后新生成的伴奏，已缓存音轨不会重新编码。</Trans>
+              </p>
+
+              {spleeterStatus?.venv ? (
+                <p
+                  className="mt-3 truncate rounded-lg bg-black/[0.035] px-2.5 py-1.5 text-[10.5px] text-black/45 dark:bg-white/[0.045]"
+                  title={spleeterStatus.venv}
+                >
+                  {spleeterStatus.venv}
+                </p>
+              ) : null}
+
+              {spleeterStatus?.install?.installing ? (
+                <div className="mt-3">
+                  <div className="mb-1.5 flex items-center justify-between text-[10.5px] text-black/45">
+                    <span className="truncate">
+                      {spleeterStatus.install.log || i18n._(msg`准备安装…`)}
+                    </span>
+                    <span>{spleeterStatus.install.progress}%</span>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-black/8">
+                    <div
+                      className="h-full rounded-full bg-accent transition-[width] duration-300"
+                      style={{ width: `${spleeterStatus.install.progress}%` }}
+                    />
+                  </div>
+                </div>
+              ) : spleeterError || spleeterStatus?.install?.error ? (
+                <p className="mt-3 text-[10.5px] text-amber-700">
+                  {spleeterError || spleeterStatus?.install?.error}
+                </p>
+              ) : spleeterStatus?.available ? (
+                <p className="mt-3 text-[10.5px] text-emerald-700">
+                  <Trans>
+                    智能模式可在歌曲详情页的心动模式按钮旁开启。生成过的伴奏会自动缓存。
+                  </Trans>
+                </p>
+              ) : (
+                <p className="mt-3 text-[10.5px] text-black/40">
+                  {spleeterStatus?.note || i18n._(msg`正在检查运行环境…`)}
+                </p>
+              )}
+            </div>
+          </section>
+        ) : null}
 
         <section className="apple-card p-6" data-settings-section="cache">
           <div className="flex items-start justify-between gap-4">

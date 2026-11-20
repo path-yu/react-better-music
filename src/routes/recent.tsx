@@ -4,12 +4,14 @@ import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { History, Loader2, RefreshCw, Trash2 } from 'lucide-react'
+import { Input } from '@pikoloo/darwin-ui'
 import { SongTable } from '../components/songs/SongTable'
 import { PlayAllButton } from '../components/songs/PlayAllButton'
 import { EmptyState } from '../components/common/EmptyState'
 import { fetchRecentSongs } from '../api'
 import { useUserStore } from '../store/user'
 import { useLocalLibraryStore } from '../store/localLibrary'
+import { matchesKeyword } from '../lib/format'
 import { useDocumentTitle } from '../lib/title'
 import type { Song } from '../types'
 
@@ -25,6 +27,7 @@ function RecentSongsPage() {
   const removeRecent = useLocalLibraryStore((state) => state.removeRecent)
   const clearRecent = useLocalLibraryStore((state) => state.clearRecent)
   const [songs, setSongs] = useState<Song[]>([])
+  const [keyword, setKeyword] = useState('')
   const [loading, setLoading] = useState(false)
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
@@ -72,6 +75,14 @@ function RecentSongsPage() {
   const displaySongs = isLogin
     ? songs
     : localRecent.map((entry) => entry.song)
+  const filteredSongs = displaySongs.filter((song) =>
+    matchesKeyword(
+      keyword,
+      song.name,
+      song.al?.name,
+      song.ar?.map((artist) => artist.name).join(' '),
+    ),
+  )
 
   return (
     <div className="px-8 pb-14 pt-6">
@@ -90,7 +101,7 @@ function RecentSongsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <PlayAllButton songs={displaySongs} playlistId="recent-songs" />
+          <PlayAllButton songs={filteredSongs} playlistId="recent-songs" />
           {isLogin ? (
             <button
               type="button"
@@ -116,13 +127,30 @@ function RecentSongsPage() {
         </div>
       </div>
 
-      <div className="mt-5">
+      <div className="mt-5 flex items-center justify-between gap-3">
+        <Input.Search
+          value={keyword}
+          onChange={(event) => setKeyword(event.target.value)}
+          placeholder={i18n._(msg`搜索歌曲、歌手或专辑`)}
+          size="sm"
+          className="w-[240px] rounded-full text-[12px]"
+        />
+        {keyword.trim() ? (
+          <span className="shrink-0 text-[11px] tabular-nums text-black/35">
+            <Trans>找到 {filteredSongs.length} 首</Trans>
+          </span>
+        ) : null}
+      </div>
+
+      <div className="mt-3">
         {!isLogin ? (
           displaySongs.length ? (
             <SongTable
-              songs={displaySongs}
+              songs={filteredSongs}
               playlistId="recent-songs"
-              emptyText={i18n._(msg`还没有播放记录`)}
+              emptyText={i18n._(
+                keyword.trim() ? msg`没有匹配的歌曲` : msg`还没有播放记录`,
+              )}
               onRemoveSong={(song) => void removeRecent(song.id)}
             />
           ) : (
@@ -146,10 +174,12 @@ function RecentSongsPage() {
           </div>
         ) : (
           <SongTable
-            songs={songs}
+            songs={filteredSongs}
             playlistId="recent-songs"
             loading={loading}
-            emptyText={i18n._(msg`还没有播放记录`)}
+            emptyText={i18n._(
+              keyword.trim() ? msg`没有匹配的歌曲` : msg`还没有播放记录`,
+            )}
           />
         )}
       </div>

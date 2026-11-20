@@ -20,5 +20,9 @@ dist-electrobun
 dist-tauri
 src-tauri/target
 
-
+.venv-spleeter/
+.venv-spleeter39/
+.python39/
+pretrained_models/
 src-tauri/gen
+

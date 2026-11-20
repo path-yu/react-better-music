@@ -1,10 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import {
+  AudioLines,
   Ellipsis,
   ListMusic,
   Loader2,
+  MicVocal,
+  Music2,
   Pause,
   Play,
   Repeat,
@@ -21,7 +24,10 @@ import { Popover, PopoverTrigger } from '@pikoloo/darwin-ui'
 import { cn, formatDuration } from '../../lib/format'
 import { seekAudio } from '../../lib/audio'
 import { usePlayerStore } from '../../store/player'
+import { useSettingsStore } from '../../store/settings'
+import { useSmartStemStore } from '../../store/smartStem'
 import { useVideoPlaybackStore } from '../../store/videoPlayback'
+import { toast } from '../../lib/toast'
 import { MorePlaybackOptions } from './MorePlaybackOptions'
 import { ProgressSlider } from './ProgressSlider'
 
@@ -71,8 +77,50 @@ export function NowPlayingTransport({
   const videoTime = useVideoPlaybackStore((state) => state.currentTime)
   const videoDuration = useVideoPlaybackStore((state) => state.duration)
   const toggleVideo = useVideoPlaybackStore((state) => state.toggle)
+  const stemMode = useSettingsStore((state) => state.stemMode)
+  const setStemMode = useSettingsStore((state) => state.setStemMode)
+  const smartInstalled = useSmartStemStore((state) => state.installed)
+  const smartStatus = useSmartStemStore((state) => state.status)
+  const smartProgress = useSmartStemStore((state) => state.progress)
+  const smartEtaMs = useSmartStemStore((state) => state.etaMs)
+  const smartError = useSmartStemStore((state) => state.error)
+  const smartGeneratingSong = useSmartStemStore(
+    (state) => state.generatingSongId,
+  )
+  const smartActiveSong = useSmartStemStore((state) => state.activeSongId)
+  const smartActiveStem = useSmartStemStore((state) => state.activeStem)
+  const switchSmartStem = useSmartStemStore((state) => state.switchStem)
+  const selectSmartOriginal = useSmartStemStore(
+    (state) => state.selectOriginal,
+  )
+  const checkSmartEnvironment = useSmartStemStore(
+    (state) => state.checkEnvironment,
+  )
+  const prepareSmartStem = useSmartStemStore(
+    (state) => state.prepareForSong,
+  )
+  const restoreSmartStem = useSmartStemStore(
+    (state) => state.restoreOriginal,
+  )
 
   const [moreOpen, setMoreOpen] = useState(false)
+
+  useEffect(() => {
+    // Do not compete with the home page's first data requests while the
+    // player is paused. The button checks on demand when smart mode is enabled.
+    if (videoActive || stemMode === 'off') return
+    const timer = window.setTimeout(() => {
+      void checkSmartEnvironment()
+    }, 900)
+    return () => window.clearTimeout(timer)
+  }, [checkSmartEnvironment, stemMode, videoActive])
+
+  // Without Spleeter there is no accompaniment mode; return to the original.
+  useEffect(() => {
+    if (stemMode !== 'smart' || smartInstalled !== false) return
+    setStemMode('off')
+    toast.info(i18n._(msg`未检测到 Spleeter，请在设置中一键安装`))
+  }, [i18n, setStemMode, smartInstalled, stemMode])
 
   if (!currentSong) return null
 
@@ -93,6 +141,64 @@ export function NowPlayingTransport({
     : 0
   const clock = (ms: number) =>
     formatDuration(Math.max(0, ms)).replace(/^0(?=\d:)/, '')
+  const smartGeneratingThisSong =
+    smartGeneratingSong === currentSong.id && smartStatus === 'generating'
+  const smartActiveThisSong =
+    smartActiveSong === currentSong.id && smartStatus === 'ready'
+  const etaSeconds = Math.max(0, Math.round(smartEtaMs / 1000))
+  const etaText =
+    etaSeconds >= 60
+      ? `${Math.floor(etaSeconds / 60)}分${String(etaSeconds % 60).padStart(2, '0')}秒`
+      : `${etaSeconds}秒`
+
+  const handleStemMode = async () => {
+    if (stemMode === 'off') {
+      const installed =
+        smartInstalled ?? (await checkSmartEnvironment())
+      if (!installed) {
+        toast.info(
+          i18n._(msg`未检测到 Spleeter，请先在设置中一键安装`),
+        )
+        return
+      }
+      setStemMode('smart')
+      const player = usePlayerStore.getState()
+      if (currentSong && player.sourceReady && player.audioUrl) {
+        void prepareSmartStem(currentSong.id)
+      }
+      return
+    }
+    setStemMode('off')
+    void restoreSmartStem()
+  }
+
+  const stemTitle =
+    stemMode === 'off'
+      ? smartInstalled === false
+        ? i18n._(msg`Spleeter 未安装，请先在设置中安装`)
+        : i18n._(msg`智能伴奏关闭：点击开启`)
+      : smartStatus === 'checking'
+        ? i18n._(msg`正在检查 Spleeter 环境…`)
+        : smartGeneratingThisSong
+          ? i18n._(
+              msg`智能伴奏生成中 ${Math.round(smartProgress * 100)}% · 预计剩余 ${etaText}`,
+            )
+          : smartActiveThisSong
+            ? smartActiveStem === 'original'
+              ? i18n._(msg`智能伴奏已开启：当前播放原曲`)
+              : i18n._(msg`智能伴奏已启用：点击关闭`)
+            : smartStatus === 'error'
+              ? i18n._(
+                  msg`智能伴奏生成失败：${smartError || '未知错误'}`,
+                )
+              : i18n._(msg`智能伴奏已开启：播放时生成`)
+
+  const smartLoading =
+    stemMode === 'smart' &&
+    !smartActiveThisSong &&
+    (smartStatus === 'checking' ||
+      (smartStatus === 'generating' && smartGeneratingThisSong))
+
   const modeIcon =
     mode === 'random' ? (
       <Shuffle className="h-[18px] w-[18px]" />
@@ -141,6 +247,91 @@ export function NowPlayingTransport({
             <Sparkles className="h-4 w-4" />
           )}
         </button>
+        {!videoActive ? (
+          <button
+            type="button"
+            title={stemTitle}
+            aria-label={stemTitle}
+            aria-pressed={stemMode !== 'off'}
+            aria-busy={smartLoading}
+            disabled={smartLoading}
+            onClick={() => void handleStemMode()}
+            className={cn(
+              'pressable flex h-7 w-7 items-center justify-center rounded-full transition-colors disabled:cursor-default',
+              stemMode === 'off'
+                ? 'text-white/45 hover:text-white/80'
+                : smartActiveThisSong
+                  ? 'bg-emerald-400/12 text-emerald-300'
+                  : 'bg-white/10 text-accent hover:text-white',
+            )}
+          >
+            {smartLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <AudioLines className="h-4 w-4" />
+            )}
+          </button>
+        ) : null}
+        {smartLoading ? (
+          <span className="hidden items-center gap-1 whitespace-nowrap text-[10px] tabular-nums text-white/45 lg:inline-flex">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            {Math.round(smartProgress * 100)}%
+            {etaSeconds > 0 ? ` · 约 ${etaText}` : ''}
+          </span>
+        ) : null}
+        {!videoActive &&
+        stemMode === 'smart' &&
+        smartActiveThisSong ? (
+          <div className="flex items-center rounded-full bg-white/8 p-0.5">
+            <button
+              type="button"
+              title={i18n._(msg`播放原曲`)}
+              aria-label={i18n._(msg`播放原曲`)}
+              aria-pressed={smartActiveStem === 'original'}
+              onClick={() => void selectSmartOriginal()}
+              className={cn(
+                'pressable flex h-6 w-6 items-center justify-center rounded-full transition-colors',
+                smartActiveStem === 'original'
+                  ? 'bg-white/16 text-white'
+                  : 'text-white/40 hover:text-white/75',
+              )}
+            >
+              <Music2 className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              title={i18n._(msg`播放伴奏`)}
+              aria-label={i18n._(msg`播放伴奏`)}
+              aria-pressed={smartActiveStem === 'accompaniment'}
+              onClick={() =>
+                void switchSmartStem('accompaniment')
+              }
+              className={cn(
+                'pressable flex h-6 w-6 items-center justify-center rounded-full transition-colors',
+                smartActiveStem === 'accompaniment'
+                  ? 'bg-white/16 text-accent'
+                  : 'text-white/40 hover:text-white/75',
+              )}
+            >
+              <AudioLines className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              title={i18n._(msg`播放人声`)}
+              aria-label={i18n._(msg`播放人声`)}
+              aria-pressed={smartActiveStem === 'vocals'}
+              onClick={() => void switchSmartStem('vocals')}
+              className={cn(
+                'pressable flex h-6 w-6 items-center justify-center rounded-full transition-colors',
+                smartActiveStem === 'vocals'
+                  ? 'bg-rose-400/12 text-rose-300'
+                  : 'text-white/40 hover:text-white/75',
+              )}
+            >
+              <MicVocal className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        ) : null}
         <button
           type="button"
           title={

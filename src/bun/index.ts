@@ -19,13 +19,37 @@ import {
   writeFileSync,
 } from 'node:fs'
 import { homedir } from 'node:os'
-import { join } from 'node:path'
+import { extname, join } from 'node:path'
 import { acquireInstanceLock, releaseInstanceLock } from './instanceLock'
 import { LYRICS_WINDOW_HTML } from './lyricsWindowHtml'
 import { MINI_PLAYER_HTML } from './miniPlayerHtml'
 import { applyWindowIcon } from './windowIcon'
+import {
+  configureSpleeter,
+  createSpleeterJob,
+  getSpleeterJob,
+  getSpleeterStem,
+  spleeterStatus,
+  startSpleeterInstall,
+} from './spleeter'
 
 const APP_DATA_DIR = join(process.env.LOCALAPPDATA ?? homedir(), 'com.qimiao.music')
+configureSpleeter(APP_DATA_DIR)
+
+function spleeterAudioType(path: string) {
+  switch (extname(path).toLowerCase()) {
+    case '.mp3':
+      return 'audio/mpeg'
+    case '.ogg':
+      return 'audio/ogg'
+    case '.m4a':
+      return 'audio/mp4'
+    case '.flac':
+      return 'audio/flac'
+    default:
+      return 'audio/wav'
+  }
+}
 const BRIDGE_TOKEN = crypto.randomUUID()
 const STARTED_AT = Date.now()
 const STARTUP_LOG = join(APP_DATA_DIR, 'startup.log')
@@ -1344,6 +1368,150 @@ try {
           }
           persistDownloadDir(picked)
           return Response.json({ dir: picked }, { headers })
+        }
+        if (url.pathname === '/spleeter/status' && request.method === 'GET') {
+          return Response.json(spleeterStatus(), { headers })
+        }
+        if (url.pathname === '/spleeter/install' && request.method === 'POST') {
+          return Response.json(startSpleeterInstall(), { headers })
+        }
+        if (url.pathname === '/spleeter/jobs' && request.method === 'POST') {
+          try {
+            const audio = new Uint8Array(await request.arrayBuffer())
+            const filename = url.searchParams.get('filename') || 'audio.bin'
+            const duration = Number(url.searchParams.get('duration') ?? 900)
+            const songId = Number(url.searchParams.get('songId'))
+            const songName = url.searchParams.get('songName') || ''
+            const job = createSpleeterJob(
+              audio,
+              filename,
+              APP_DATA_DIR,
+              Number.isFinite(duration) ? duration : 900,
+              {
+                songId: Number.isFinite(songId) ? songId : undefined,
+                songName,
+                codec: url.searchParams.get('codec') || undefined,
+                bitrate: url.searchParams.get('bitrate') || undefined,
+              },
+            )
+            return Response.json(job, { headers })
+          } catch (error) {
+            return Response.json(
+              { error: String(error) },
+              { status: 400, headers },
+            )
+          }
+        }
+        if (
+          url.pathname === '/spleeter/jobs/from-url' &&
+          request.method === 'POST'
+        ) {
+          try {
+            const body = (await request.json()) as {
+              url?: unknown
+              filename?: unknown
+              duration?: unknown
+              songId?: unknown
+              songName?: unknown
+              codec?: unknown
+              bitrate?: unknown
+            }
+            const audioUrl = typeof body.url === 'string' ? body.url : ''
+            if (!/^https?:\/\//i.test(audioUrl)) {
+              throw new Error('invalid audio url')
+            }
+            const response = await fetch(audioUrl, {
+              signal: AbortSignal.timeout(120_000),
+            })
+            if (!response.ok) {
+              throw new Error(`audio request failed (${response.status})`)
+            }
+            const audio = new Uint8Array(await response.arrayBuffer())
+            const filename =
+              typeof body.filename === 'string' ? body.filename : 'audio.bin'
+            const duration =
+              typeof body.duration === 'number' ? body.duration : 900
+            const job = createSpleeterJob(
+              audio,
+              filename,
+              APP_DATA_DIR,
+              Number.isFinite(duration) ? duration : 900,
+              {
+                songId:
+                  typeof body.songId === 'number'
+                    ? body.songId
+                    : undefined,
+                songName:
+                  typeof body.songName === 'string'
+                    ? body.songName
+                    : '',
+                codec:
+                  typeof body.codec === 'string'
+                    ? body.codec
+                    : undefined,
+                bitrate:
+                  typeof body.bitrate === 'string'
+                    ? body.bitrate
+                    : undefined,
+              },
+            )
+            return Response.json(job, { headers })
+          } catch (error) {
+            return Response.json(
+              { error: String(error) },
+              { status: 400, headers },
+            )
+          }
+        }
+        const spleeterStemMatch = url.pathname.match(
+          /^\/spleeter\/jobs\/([^/]+)\/stems\/(vocals|accompaniment)$/,
+        )
+        if (spleeterStemMatch && request.method === 'GET') {
+          const [, id, stem] = spleeterStemMatch
+          const stemPath = getSpleeterStem(id, stem)
+          if (!stemPath) {
+            return Response.json(
+              { error: '分离结果不存在或尚未完成' },
+              { status: 404, headers },
+            )
+          }
+          return new Response(Bun.file(stemPath), {
+            headers: {
+              ...headers,
+              'Content-Type': spleeterAudioType(stemPath),
+            },
+          })
+        }
+        const spleeterJobMatch = url.pathname.match(
+          /^\/spleeter\/jobs\/([^/]+)$/,
+        )
+        if (spleeterJobMatch && request.method === 'GET') {
+          const job = getSpleeterJob(spleeterJobMatch[1])
+          if (!job) {
+            return Response.json(
+              { error: 'Spleeter 任务不存在' },
+              { status: 404, headers },
+            )
+          }
+          return Response.json(
+            {
+              id: job.id,
+              status: job.status,
+              progress: job.progress,
+              error: job.error,
+              libraryPath: job.outputDir,
+              codec: job.codec,
+              bitrate: job.bitrate,
+              stems:
+                job.status === 'done'
+                  ? {
+                      vocals: `/spleeter/jobs/${job.id}/stems/vocals`,
+                      accompaniment: `/spleeter/jobs/${job.id}/stems/accompaniment`,
+                    }
+                  : null,
+            },
+            { headers },
+          )
         }
         if (url.pathname === '/open-dir' && request.method === 'POST') {
           mkdirSync(downloadDir, { recursive: true })

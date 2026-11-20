@@ -31,6 +31,8 @@ export default {
       'assets/tray.ps1': 'tray.ps1',
       'assets/hide-taskbar.ps1': 'hide-taskbar.ps1',
       'assets/window-controls.ps1': 'window-controls.ps1',
+      'scripts/install-spleeter.ps1': 'install-spleeter.ps1',
+      'scripts/check-spleeter.ps1': 'check-spleeter.ps1',
     },
     watchIgnore: ['dist-electrobun/**'],
     mac: {
