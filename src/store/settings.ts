@@ -40,6 +40,11 @@ export type PlayerStyle = 'cover' | 'vinyl' | 'cassette'
 /** Original audio or Spleeter-backed smart accompaniment. */
 export type StemMode = 'off' | 'smart'
 export type StemKind = 'accompaniment' | 'vocals'
+export type SongStemKind = StemKind | 'karaoke'
+export type SongStemState = {
+  enabled: boolean
+  kind: SongStemKind
+}
 export type SpleeterCodec = 'm4a' | 'ogg' | 'mp3' | 'flac' | 'wav'
 export type SpleeterBitrate = '128k' | '192k' | '256k' | '320k'
 
@@ -120,6 +125,10 @@ interface SettingsState {
   stemMode: StemMode
   /** Which separated stem smart mode should play. */
   stemKind: StemKind
+  /** Per-song smart mode + selected stem; switching tracks never converts other songs. */
+  stemSongs: Record<string, SongStemState>
+  /** Vocal level used by the karaoke mix (0–1); default is intentionally low. */
+  karaokeVocalLevel: number
   /** Spleeter output container/codec. Defaults to compressed AAC. */
   spleeterCodec: SpleeterCodec
   spleeterBitrate: SpleeterBitrate
@@ -148,6 +157,13 @@ interface SettingsState {
   setVolumeNormalization: (value: boolean) => void
   setStemMode: (value: StemMode) => void
   setStemKind: (value: StemKind) => void
+  setSongStemEnabled: (
+    songId: number,
+    enabled: boolean,
+    kind?: SongStemKind,
+  ) => void
+  setSongStemKind: (songId: number, kind: SongStemKind) => void
+  setKaraokeVocalLevel: (value: number) => void
   setSpleeterCodec: (value: SpleeterCodec) => void
   setSpleeterBitrate: (value: SpleeterBitrate) => void
   setSpleeterProxyUrl: (value: string) => void
@@ -179,6 +195,8 @@ export const useSettingsStore = create<SettingsState>()(
       volumeNormalization: true,
       stemMode: 'off',
       stemKind: 'accompaniment',
+      stemSongs: {},
+      karaokeVocalLevel: 0.08,
       spleeterCodec: 'm4a',
       spleeterBitrate: '192k',
       spleeterProxyUrl: '',
@@ -204,6 +222,43 @@ export const useSettingsStore = create<SettingsState>()(
         set({ volumeNormalization }),
       setStemMode: (stemMode) => set({ stemMode }),
       setStemKind: (stemKind) => set({ stemKind }),
+      setSongStemEnabled: (songId, enabled, kind) =>
+        set((state) => {
+          const stemSongs = state.stemSongs ?? {}
+          return {
+            stemSongs: {
+              ...stemSongs,
+              [songId]: {
+                enabled,
+                kind:
+                  kind ??
+                  stemSongs[songId]?.kind ??
+                  state.stemKind,
+              },
+            },
+          }
+        }),
+      setSongStemKind: (songId, kind) =>
+        set((state) => {
+          const stemSongs = state.stemSongs ?? {}
+          return {
+            stemSongs: {
+              ...stemSongs,
+              [songId]: {
+                enabled: stemSongs[songId]?.enabled ?? true,
+                kind,
+              },
+            },
+            ...(kind === 'karaoke' ? {} : { stemKind: kind }),
+          }
+        }),
+      setKaraokeVocalLevel: (karaokeVocalLevel) =>
+        set({
+          karaokeVocalLevel: Math.min(
+            1,
+            Math.max(0, karaokeVocalLevel),
+          ),
+        }),
       setSpleeterCodec: (spleeterCodec) => set({ spleeterCodec }),
       setSpleeterBitrate: (spleeterBitrate) =>
         set({ spleeterBitrate }),
@@ -219,7 +274,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'react-music-settings',
-      version: 7,
+      version: 9,
       // v1 stored a boolean translation switch; keep "off" users in original mode.
       migrate: (persisted, version) => {
         const previous = persisted as Partial<SettingsState> & {
@@ -250,17 +305,50 @@ export const useSettingsStore = create<SettingsState>()(
           (withCover as { stemMode?: string }).stemMode === 'fast'
             ? { ...withCover, stemMode: 'smart' as StemMode }
             : withCover
+        // v8 moves smart mode to an explicit per-song switch. Old global smart
+        // mode no longer auto-separates every song.
+        const withSongStem =
+          version < 8
+            ? {
+                ...withStem,
+                stemMode: 'off' as StemMode,
+                stemSongs: {} as Record<string, SongStemState>,
+              }
+            : withStem
+        // v9 replaces the original-only option with the karaoke mix.
+        const withKaraoke =
+          version < 9
+            ? {
+                ...withSongStem,
+                karaokeVocalLevel: 0.08,
+                stemSongs: Object.fromEntries(
+                  Object.entries(
+                    (withSongStem as Partial<SettingsState>)
+                      .stemSongs ?? {},
+                  ).map(([id, value]) => [
+                    id,
+                    {
+                      ...value,
+                      kind:
+                        (value.kind as string) === 'original'
+                          ? ('karaoke' as SongStemKind)
+                          : value.kind,
+                    },
+                  ]),
+                ),
+              }
+            : withSongStem
         // v5 removes Lossless/Hi-Res. Keep existing installs on a valid level
         // instead of leaving a stale value that the quality picker cannot show.
         if (
           version < 5 &&
           !PLAY_QUALITY_OPTIONS.some(
-            (option) => option.value === withStem.playLevel,
+            (option) => option.value === withKaraoke.playLevel,
           )
         ) {
-          return { ...withStem, playLevel: 'exhigh' as PlayLevel }
+          return { ...withKaraoke, playLevel: 'exhigh' as PlayLevel }
         }
-        return withStem
+        return withKaraoke
       },
     },
   ),

@@ -1,11 +1,36 @@
 import { describe, expect, it } from 'vitest'
 import type { Mv, Playlist } from '../types'
 import {
+  isInstrumentalSong,
   normalizeMv,
   normalizePlaylist,
   normalizeSong,
   normalizeSongs,
 } from './songs'
+
+describe('isInstrumentalSong', () => {
+  it('detects NetEase instrumental placeholders', () => {
+    expect(
+      isInstrumentalSong({
+        lyric: '[00:00.00]纯音乐，请欣赏',
+      }),
+    ).toBe(true)
+  })
+
+  it('detects the isNotLyric flag', () => {
+    expect(isInstrumentalSong({ isNotLyric: true })).toBe(true)
+  })
+
+  it('keeps songs with real lyrics', () => {
+    expect(
+      isInstrumentalSong({
+        lyric: '[00:00.00]故事的小黄花',
+        isNotLyric: false,
+      }),
+    ).toBe(false)
+    expect(isInstrumentalSong(undefined)).toBe(false)
+  })
+})
 
 describe('normalizeSong', () => {
   it('unwraps nested song payloads', () => {

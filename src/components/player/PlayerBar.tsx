@@ -155,12 +155,19 @@ export function PlayerBar() {
   const volumeNormalization = useSettingsStore(
     (state) => state.volumeNormalization,
   )
-  const stemMode = useSettingsStore((state) => state.stemMode)
+  const songStemEnabled = useSettingsStore((state) =>
+    currentSong
+      ? Boolean(state.stemSongs?.[String(currentSong.id)]?.enabled)
+      : false,
+  )
   const smartStemActiveSong = useSmartStemStore(
     (state) => state.activeSongId,
   )
   const prepareSmartStem = useSmartStemStore(
     (state) => state.prepareForSong,
+  )
+  const releaseInactiveSmartSong = useSmartStemStore(
+    (state) => state.releaseInactiveSong,
   )
   const setVolume = usePlayerStore((state) => state.setVolume)
   const setCurrentTime = usePlayerStore((state) => state.setCurrentTime)
@@ -441,8 +448,12 @@ export function PlayerBar() {
   const usingSmartStem = smartStemActiveSong === currentSong?.id
 
   useEffect(() => {
+    releaseInactiveSmartSong(currentSong?.id ?? null)
+  }, [currentSong?.id, releaseInactiveSmartSong])
+
+  useEffect(() => {
     if (
-      stemMode !== 'smart' ||
+      !songStemEnabled ||
       !playing ||
       videoActive ||
       !currentSong ||
@@ -458,8 +469,8 @@ export function PlayerBar() {
     currentSong,
     playing,
     prepareSmartStem,
+    songStemEnabled,
     sourceReady,
-    stemMode,
     usingSmartStem,
     videoActive,
   ])

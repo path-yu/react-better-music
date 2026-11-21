@@ -223,12 +223,11 @@ function SettingsPage() {
           if (!active) return
           setSpleeterStatus(status)
           if (status.available) {
-            // Enable the smart button without requiring a page reload.
-            useSmartStemStore.setState({
-              installed: true,
-              status: 'idle',
-              error: '',
-            })
+            // Enable the smart button without requiring a page reload. Do not
+            // overwrite an in-flight generation or an already-active stem: this
+            // effect polls every 2.5s and the settings route can stay mounted
+            // underneath the now-playing overlay.
+            useSmartStemStore.setState({ installed: true })
           }
         })
         .catch(() => undefined)

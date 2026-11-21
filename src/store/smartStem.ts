@@ -13,19 +13,26 @@ import {
   putCachedStems,
   type CachedStemKind,
 } from '../lib/smartStemCache'
+import { isInstrumentalSong } from '../lib/songs'
 import { toast } from '../lib/toast'
+import {
+  detachKaraokeVocals,
+  setKaraokeVocalVolume,
+  startKaraokeVocals,
+} from '../lib/karaoke'
 import { usePlayerStore } from './player'
-import { useSettingsStore } from './settings'
+import { useSettingsStore, type SongStemKind } from './settings'
 
 type SmartStemStatus =
   | 'idle'
   | 'checking'
   | 'generating'
   | 'ready'
+  | 'instrumental'
   | 'unavailable'
   | 'error'
 
-type ActiveStem = CachedStemKind | 'original'
+type ActiveStem = SongStemKind
 
 type SmartStemState = {
   installed: boolean | null
@@ -43,9 +50,10 @@ type SmartStemState = {
   error: string
   checkEnvironment: (force?: boolean) => Promise<boolean>
   prepareForSong: (songId: number) => Promise<void>
-  switchStem: (kind: CachedStemKind) => Promise<void>
-  selectOriginal: () => Promise<void>
+  switchStem: (kind: SongStemKind) => Promise<void>
+  setVocalLevel: (level: number) => void
   restoreOriginal: () => Promise<void>
+  releaseInactiveSong: (currentSongId: number | null) => void
 }
 
 let activeUrl = ''
@@ -111,12 +119,14 @@ function currentSongId() {
 function applyStemBlob(
   songId: number,
   blob: Blob,
-  kind: CachedStemKind,
+  kind: SongStemKind,
+  vocalsBlob?: Blob,
 ) {
   const playbackAudio = getAudio()
   const player = usePlayerStore.getState()
   const resumeAt = playbackAudio?.currentTime ?? player.currentTime
   const wasPlaying = playbackAudio ? !playbackAudio.paused : player.playing
+  detachKaraokeVocals()
   clearActiveUrl()
   activeUrl = URL.createObjectURL(blob)
   usePlayerStore.setState({
@@ -129,6 +139,7 @@ function applyStemBlob(
     resumeAt,
     playing: wasPlaying,
   })
+  useSettingsStore.getState().setSongStemKind(songId, kind)
   useSmartStemStore.setState({
     status: 'ready',
     progress: 1,
@@ -138,6 +149,12 @@ function applyStemBlob(
     generatingSongId: null,
     error: '',
   })
+  if (kind === 'karaoke' && vocalsBlob) {
+    startKaraokeVocals(
+      vocalsBlob,
+      useSettingsStore.getState().karaokeVocalLevel,
+    )
+  }
 }
 
 async function pollSpleeterJob(
@@ -181,10 +198,9 @@ async function finishSpleeterJob(
   await putCachedStems(songId, { accompaniment, vocals })
   clearPendingJob()
   if (token !== generationToken) return false
-  if (
-    currentSongId() !== songId ||
-    useSettingsStore.getState().stemMode !== 'smart'
-  ) {
+  const settings = useSettingsStore.getState()
+  const songSetting = settings.stemSongs?.[String(songId)]
+  if (currentSongId() !== songId || !songSetting?.enabled) {
     useSmartStemStore.setState({
       status: 'idle',
       progress: 0,
@@ -193,12 +209,15 @@ async function finishSpleeterJob(
     })
     return true
   }
-  const kind = useSettingsStore.getState().stemKind
-  applyStemBlob(
-    songId,
-    kind === 'vocals' ? vocals : accompaniment,
-    kind,
-  )
+  if (songSetting.kind === 'karaoke') {
+    applyStemBlob(songId, accompaniment, 'karaoke', vocals)
+  } else {
+    applyStemBlob(
+      songId,
+      songSetting.kind === 'vocals' ? vocals : accompaniment,
+      songSetting.kind,
+    )
+  }
   return true
 }
 
@@ -216,23 +235,58 @@ export const useSmartStemStore = create<SmartStemState>((set, get) => ({
   async checkEnvironment(force = false) {
     if (!force && get().installed !== null) return Boolean(get().installed)
     if (checkingPromise) return checkingPromise
-    set({ checking: true, status: 'checking', error: '' })
+    const before = get()
+    const busy =
+      before.activeSongId !== null ||
+      before.generatingSongId !== null ||
+      before.status === 'ready' ||
+      before.status === 'generating' ||
+      before.status === 'instrumental'
+    set({
+      checking: true,
+      status: busy ? before.status : 'checking',
+      error: busy ? before.error : '',
+    })
     checkingPromise = getSpleeterStatus()
       .then((status) => {
+        const current = get()
+        const stillBusy =
+          current.activeSongId !== null ||
+          current.generatingSongId !== null ||
+          current.status === 'ready' ||
+          current.status === 'generating' ||
+          current.status === 'instrumental'
         set({
           installed: status.available,
           checking: false,
-          status: status.available ? 'idle' : 'unavailable',
-          error: status.available ? '' : status.note,
+          status: status.available
+            ? stillBusy
+              ? current.status
+              : 'idle'
+            : stillBusy
+              ? current.status
+              : 'unavailable',
+          error: status.available
+            ? stillBusy
+              ? current.error
+              : ''
+            : status.note,
         })
         return status.available
       })
       .catch(() => {
+        const current = get()
+        const stillBusy =
+          current.activeSongId !== null ||
+          current.generatingSongId !== null ||
+          current.status === 'ready' ||
+          current.status === 'generating' ||
+          current.status === 'instrumental'
         set({
           installed: false,
           checking: false,
-          status: 'unavailable',
-          error: '无法检测 Spleeter 环境',
+          status: stillBusy ? current.status : 'unavailable',
+          error: stillBusy ? current.error : '无法检测 Spleeter 环境',
         })
         return false
       })
@@ -248,19 +302,91 @@ export const useSmartStemStore = create<SmartStemState>((set, get) => ({
     if (preparingSongs.has(songId)) return
     preparingSongs.add(songId)
     try {
+    const playerState = usePlayerStore.getState()
+    const queuedSong = playerState.queue[playerState.currentIndex]
+    if (
+      queuedSong?.id === songId &&
+      isInstrumentalSong(queuedSong)
+    ) {
+      // Invalidate any poll started for the previous track.
+      generationToken += 1
+      const current = get()
+      if (
+        current.activeSongId !== null &&
+        current.activeSongId !== songId
+      ) {
+        clearActiveUrl()
+      }
+      set({
+        status: 'instrumental',
+        progress: 0,
+        etaMs: 0,
+        activeSongId: null,
+        activeStem: null,
+        generatingSongId: null,
+        error: '',
+      })
+      return
+    }
     const state = get()
     if (state.generatingSongId === songId) return
     if (state.activeSongId === songId) return
+
+    const songSetting =
+      useSettingsStore.getState().stemSongs?.[String(songId)]
+    if (!songSetting?.enabled) return
+
+    // Cache is independent of the Spleeter runtime. Check it first so a
+    // previously separated song switches instantly, without a checking flash.
+    if (songSetting.kind === 'karaoke') {
+      const [accompaniment, vocals] = await Promise.all([
+        getCachedStem(songId, 'accompaniment'),
+        getCachedStem(songId, 'vocals'),
+      ])
+      if (accompaniment && vocals) {
+        if (
+          useSettingsStore.getState().stemSongs?.[String(songId)]?.enabled &&
+          currentSongId() === songId
+        ) {
+          applyStemBlob(songId, accompaniment, 'karaoke', vocals)
+        } else {
+          set({ status: 'idle', progress: 0, generatingSongId: null })
+        }
+        return
+      }
+    } else {
+      const preferred: CachedStemKind =
+        songSetting.kind === 'vocals' ? 'vocals' : 'accompaniment'
+      let cachedKind: CachedStemKind = preferred
+      let cached = await getCachedStem(songId, preferred)
+      if (!cached && preferred === 'vocals') {
+        cached = await getCachedStem(songId, 'accompaniment')
+        cachedKind = 'accompaniment'
+      }
+      if (cached) {
+        if (
+          useSettingsStore.getState().stemSongs?.[String(songId)]?.enabled &&
+          currentSongId() === songId
+        ) {
+          applyStemBlob(songId, cached, cachedKind)
+        } else {
+          set({ status: 'idle', progress: 0, generatingSongId: null })
+        }
+        return
+      }
+    }
+
     const installed = await get().checkEnvironment()
     if (currentSongId() !== songId) return
     if (!installed) {
       set({ status: 'unavailable', progress: 0 })
       return
     }
-    if (useSettingsStore.getState().stemMode !== 'smart') return
-
-    // Claim the job before the cache lookup so the UI can immediately show
-    // "generating" instead of appearing unresponsive while IndexedDB opens.
+    if (
+      !useSettingsStore.getState().stemSongs?.[String(songId)]?.enabled
+    ) {
+      return
+    }
     set({
       status: 'generating',
       progress: 0.01,
@@ -268,25 +394,6 @@ export const useSmartStemStore = create<SmartStemState>((set, get) => ({
       generatingSongId: songId,
       error: '',
     })
-
-    const preferred = useSettingsStore.getState().stemKind
-    let cachedKind: CachedStemKind = preferred
-    let cached = await getCachedStem(songId, preferred)
-    if (!cached && preferred === 'vocals') {
-      cached = await getCachedStem(songId, 'accompaniment')
-      cachedKind = 'accompaniment'
-    }
-    if (cached) {
-      if (
-        useSettingsStore.getState().stemMode === 'smart' &&
-        currentSongId() === songId
-      ) {
-        applyStemBlob(songId, cached, cachedKind)
-      } else {
-        set({ status: 'idle', progress: 0, generatingSongId: null })
-      }
-      return
-    }
 
     // A previous page may have reloaded while the Bun job kept running.
     const pending = readPendingJob()
@@ -461,6 +568,20 @@ export const useSmartStemStore = create<SmartStemState>((set, get) => ({
   async switchStem(kind) {
     const songId = get().activeSongId
     if (!songId || get().activeStem === kind) return
+    if (kind === 'karaoke') {
+      const [accompaniment, vocals] = await Promise.all([
+        getCachedStem(songId, 'accompaniment'),
+        getCachedStem(songId, 'vocals'),
+      ])
+      if (!accompaniment || !vocals) {
+        toast.info('当前歌曲缺少完整人声或伴奏缓存，无法开启随心唱')
+        return
+      }
+      if (currentSongId() !== songId) return
+      useSettingsStore.getState().setSongStemKind(songId, 'karaoke')
+      applyStemBlob(songId, accompaniment, 'karaoke', vocals)
+      return
+    }
     const cached = await getCachedStem(songId, kind)
     if (!cached) {
       toast.info(
@@ -471,30 +592,40 @@ export const useSmartStemStore = create<SmartStemState>((set, get) => ({
       return
     }
     if (currentSongId() !== songId) return
-    useSettingsStore.getState().setStemKind(kind)
+    useSettingsStore.getState().setSongStemKind(songId, kind)
     applyStemBlob(songId, cached, kind)
   },
 
-  async selectOriginal() {
-    const songId = get().activeSongId
-    if (!songId) return
-    set({
-      status: 'ready',
-      progress: 1,
-      activeStem: 'original',
-      error: '',
-    })
-    try {
-      usePlayerStore.setState({ sourceTransition: 'stem' })
-      await usePlayerStore.getState().refreshCurrentUrl()
-    } catch {
-      toast.warning('恢复原曲失败')
+  setVocalLevel(level) {
+    useSettingsStore.getState().setKaraokeVocalLevel(level)
+    setKaraokeVocalVolume(level)
+  },
+
+  releaseInactiveSong(currentSongId) {
+    const state = get()
+    if (
+      state.activeSongId === null ||
+      state.activeSongId === currentSongId
+    ) {
+      return
     }
+    if (state.activeStem === 'karaoke') {
+      detachKaraokeVocals()
+    }
+    set({
+      activeSongId: null,
+      activeStem: null,
+      ...(state.status === 'ready'
+        ? { status: 'idle' as const, progress: 0, etaMs: 0 }
+        : {}),
+    })
   },
 
   async restoreOriginal() {
     const hadActiveStem = get().activeSongId !== null
+    const songId = get().activeSongId ?? currentSongId()
     generationToken += 1
+    detachKaraokeVocals()
     clearActiveUrl()
     set({
       status: 'idle',
@@ -504,6 +635,11 @@ export const useSmartStemStore = create<SmartStemState>((set, get) => ({
       generatingSongId: null,
       error: '',
     })
+    if (songId !== null) {
+      useSettingsStore
+        .getState()
+        .setSongStemEnabled(songId, false)
+    }
     if (!hadActiveStem) return
     try {
       usePlayerStore.setState({ sourceTransition: 'stem' })

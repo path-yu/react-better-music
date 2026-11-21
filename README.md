@@ -81,7 +81,10 @@ A macOS-style third-party NetEase Cloud Music client rewritten with React 19 + T
 - One-click install of Python 3.9, TensorFlow 2.9, Spleeter 2.4, FFmpeg and FFprobe
 - Runtime and stem-library folders default to the application directory and are configurable in Settings
 - Default output is compressed M4A/AAC at 192 kbps; OGG, MP3, FLAC and WAV plus 128–320 kbps are selectable
-- Background jobs with progress, ETA, duplicate-job protection and automatic recovery after a page refresh
+- Instrumental tracks are detected from NetEase's placeholder lyrics and skip separation
+- Smart mode is remembered per song; switching tracks never converts songs that were not explicitly enabled
+- Background jobs use periodic polling with progress, ETA, duplicate-job protection and automatic recovery after a page refresh
+- Karaoke mix (“随心唱”) plays vocals and accompaniment together with a low default vocal level and a real-time vertical vocal slider
 - Both stems and the original mix are available from the song detail page; results are cached in IndexedDB for instant reuse
 - The last selected stem is remembered; changing output settings only affects future generations
 
@@ -135,7 +138,7 @@ A macOS-style third-party NetEase Cloud Music client rewritten with React 19 + T
 | Backend | NetEaseCloudMusicApiEnhanced (`server/`) |
 | Desktop | Electrobun + Hutch + Bun |
 | Phone remote | Node HTTP, Web App Manifest, Service Worker |
-| Tests | Vitest (76 unit tests) |
+| Tests | Vitest (79 unit tests) |
 
 ## Architecture
 

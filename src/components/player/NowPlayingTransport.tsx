@@ -8,6 +8,7 @@ import {
   Ellipsis,
   ListMusic,
   Loader2,
+  Mic2,
   MicVocal,
   Music2,
   Pause,
@@ -35,7 +36,10 @@ import {
   PopoverTrigger,
 } from '@pikoloo/darwin-ui'
 import { cn, formatDuration } from '../../lib/format'
+import { isInstrumentalSong } from '../../lib/songs'
 import { seekAudio } from '../../lib/audio'
+import { toast } from '../../lib/toast'
+import { KaraokeVocalFader } from './KaraokeVocalFader'
 import { usePlayerStore } from '../../store/player'
 import { useSettingsStore } from '../../store/settings'
 import { useSmartStemStore } from '../../store/smartStem'
@@ -90,8 +94,14 @@ export function NowPlayingTransport({
   const videoTime = useVideoPlaybackStore((state) => state.currentTime)
   const videoDuration = useVideoPlaybackStore((state) => state.duration)
   const toggleVideo = useVideoPlaybackStore((state) => state.toggle)
-  const stemMode = useSettingsStore((state) => state.stemMode)
-  const setStemMode = useSettingsStore((state) => state.setStemMode)
+  const songStemState = useSettingsStore((state) =>
+    currentSong
+      ? state.stemSongs?.[String(currentSong.id)]
+      : undefined,
+  )
+  const setSongStemEnabled = useSettingsStore(
+    (state) => state.setSongStemEnabled,
+  )
   const smartInstalled = useSmartStemStore((state) => state.installed)
   const smartStatus = useSmartStemStore((state) => state.status)
   const smartProgress = useSmartStemStore((state) => state.progress)
@@ -103,8 +113,11 @@ export function NowPlayingTransport({
   const smartActiveSong = useSmartStemStore((state) => state.activeSongId)
   const smartActiveStem = useSmartStemStore((state) => state.activeStem)
   const switchSmartStem = useSmartStemStore((state) => state.switchStem)
-  const selectSmartOriginal = useSmartStemStore(
-    (state) => state.selectOriginal,
+  const setSmartVocalLevel = useSmartStemStore(
+    (state) => state.setVocalLevel,
+  )
+  const karaokeVocalLevel = useSettingsStore(
+    (state) => state.karaokeVocalLevel ?? 0.08,
   )
   const checkSmartEnvironment = useSmartStemStore(
     (state) => state.checkEnvironment,
@@ -120,19 +133,27 @@ export function NowPlayingTransport({
   const [installPromptOpen, setInstallPromptOpen] = useState(false)
   const lastStemToggleRef = useRef(0)
 
-  const smartActiveThisSong = Boolean(currentSong) &&
+  const currentSongIsInstrumental = isInstrumentalSong(currentSong)
+  const songStemEnabled = Boolean(songStemState?.enabled)
+  const smartActiveThisSong =
+    Boolean(currentSong) &&
     smartActiveSong === currentSong?.id &&
-    smartStatus === 'ready'
+    smartActiveStem !== null
 
   useEffect(() => {
     // Do not compete with the home page's first data requests while the
     // player is paused. The button checks on demand when smart mode is enabled.
-    if (videoActive || stemMode === 'off') return
+    if (videoActive || !songStemEnabled || currentSongIsInstrumental) return
     const timer = window.setTimeout(() => {
       void checkSmartEnvironment()
     }, 900)
     return () => window.clearTimeout(timer)
-  }, [checkSmartEnvironment, stemMode, videoActive])
+  }, [
+    checkSmartEnvironment,
+    currentSongIsInstrumental,
+    songStemEnabled,
+    videoActive,
+  ])
 
 
   if (!currentSong) return null
@@ -168,49 +189,56 @@ export function NowPlayingTransport({
     const now = Date.now()
     if (now - lastStemToggleRef.current < 600) return
     lastStemToggleRef.current = now
-    if (stemMode === 'off') {
+    if (!songStemEnabled) {
+      if (currentSongIsInstrumental) {
+        toast.info(i18n._(msg`当前是纯音乐，无需分离人声`))
+        return
+      }
+      // Show the checking spinner immediately; the environment request can
+      // take a few hundred milliseconds on a cold bridge.
+      setSongStemEnabled(currentSong.id, true)
       // Always re-check before preparing a job. A cached `installed` flag can
       // become stale after the environment is uninstalled or moved.
       const installed = await checkSmartEnvironment(true)
       if (!installed) {
-        setStemMode('off')
+        setSongStemEnabled(currentSong.id, false)
         setInstallPromptOpen(true)
         return
       }
-      setStemMode('smart')
-      const player = usePlayerStore.getState()
-      if (currentSong && player.sourceReady && player.audioUrl) {
-        void prepareSmartStem(currentSong.id)
-      }
+      void prepareSmartStem(currentSong.id)
       return
     }
-    setStemMode('off')
+    setSongStemEnabled(currentSong.id, false)
     void restoreSmartStem()
   }
 
   const stemTitle =
-    stemMode === 'off'
+    !songStemEnabled
       ? smartInstalled === false
         ? i18n._(msg`Spleeter 未安装，请先在设置中安装`)
         : i18n._(msg`智能伴奏关闭：点击开启`)
       : smartStatus === 'checking'
         ? i18n._(msg`正在检查 Spleeter 环境…`)
-        : smartGeneratingThisSong
-          ? i18n._(
-              msg`智能伴奏生成中 ${Math.round(smartProgress * 100)}% · 预计剩余 ${etaText}`,
-            )
+        : smartStatus === 'instrumental' || currentSongIsInstrumental
+          ? i18n._(msg`当前是纯音乐，无需分离人声`)
           : smartActiveThisSong
-            ? smartActiveStem === 'original'
-              ? i18n._(msg`智能伴奏已开启：当前播放原曲`)
-              : i18n._(msg`智能伴奏已启用：点击关闭`)
-            : smartStatus === 'error'
+            ? smartActiveStem === 'karaoke'
+              ? i18n._(msg`随心唱已启用：拖动音量调整人声`)
+              : smartActiveStem === 'vocals'
+                ? i18n._(msg`人声轨已启用：点击关闭`)
+                : i18n._(msg`智能伴奏已启用：点击关闭`)
+            : smartGeneratingThisSong
               ? i18n._(
-                  msg`智能伴奏生成失败：${smartError || '未知错误'}`,
+                  msg`智能伴奏生成中 ${Math.round(smartProgress * 100)}% · 预计剩余 ${etaText}`,
                 )
-              : i18n._(msg`智能伴奏已开启：播放时生成`)
+              : smartStatus === 'error'
+                ? i18n._(
+                    msg`智能伴奏生成失败：${smartError || '未知错误'}`,
+                  )
+                : i18n._(msg`智能伴奏已开启：播放时生成`)
 
   const smartLoading =
-    stemMode === 'smart' &&
+    songStemEnabled &&
     !smartActiveThisSong &&
     (smartStatus === 'checking' ||
       (smartStatus === 'generating' && smartGeneratingThisSong))
@@ -268,13 +296,13 @@ export function NowPlayingTransport({
             type="button"
             title={stemTitle}
             aria-label={stemTitle}
-            aria-pressed={stemMode !== 'off'}
+            aria-pressed={songStemEnabled}
             aria-busy={smartLoading}
             disabled={smartLoading}
             onClick={() => void handleStemMode()}
             className={cn(
               'pressable flex h-8 w-8 items-center justify-center rounded-full transition-colors disabled:cursor-default',
-              stemMode === 'off'
+              !songStemEnabled
                 ? 'text-white/45 hover:text-white/80'
                 : smartActiveThisSong
                   ? 'bg-emerald-400/12 text-emerald-300'
@@ -289,6 +317,8 @@ export function NowPlayingTransport({
                 showValue={smartStatus !== 'checking'}
                 indeterminate={smartStatus === 'checking'}
               />
+            ) : currentSongIsInstrumental ? (
+              <Music2 className="h-4 w-4" />
             ) : (
               <AudioLines className="h-4 w-4" />
             )}
@@ -296,23 +326,30 @@ export function NowPlayingTransport({
         ) : null}
 
         {!videoActive &&
-        stemMode === 'smart' &&
+        songStemEnabled &&
         smartActiveThisSong ? (
-          <div className="flex items-center rounded-full bg-white/8 p-0.5">
+          <div className="flex items-center gap-1">
+            {smartActiveStem === 'karaoke' ? (
+              <KaraokeVocalFader
+                value={Math.round(karaokeVocalLevel * 100)}
+                onChange={setSmartVocalLevel}
+              />
+            ) : null}
+            <div className="flex items-center rounded-full bg-white/8 p-0.5">
             <button
               type="button"
-              title={i18n._(msg`播放原曲`)}
-              aria-label={i18n._(msg`播放原曲`)}
-              aria-pressed={smartActiveStem === 'original'}
-              onClick={() => void selectSmartOriginal()}
+              title={i18n._(msg`随心唱`)}
+              aria-label={i18n._(msg`随心唱`)}
+              aria-pressed={smartActiveStem === 'karaoke'}
+              onClick={() => void switchSmartStem('karaoke')}
               className={cn(
                 'pressable flex h-6 w-6 items-center justify-center rounded-full transition-colors',
-                smartActiveStem === 'original'
-                  ? 'bg-white/16 text-white'
+                smartActiveStem === 'karaoke'
+                  ? 'bg-white/16 text-accent'
                   : 'text-white/40 hover:text-white/75',
               )}
             >
-              <Music2 className="h-3.5 w-3.5" />
+              <Mic2 className="h-3.5 w-3.5" />
             </button>
             <button
               type="button"
@@ -346,6 +383,7 @@ export function NowPlayingTransport({
             >
               <MicVocal className="h-3.5 w-3.5" />
             </button>
+            </div>
           </div>
         ) : null}
         <button

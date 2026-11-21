@@ -18,6 +18,14 @@ export type RawSong = {
   song?: RawSong
 }
 
+/** NetEase uses an empty / 纯音乐 lyric for instrumental tracks. */
+export function isInstrumentalSong(
+  song: Pick<Song, 'lyric' | 'isNotLyric'> | null | undefined,
+) {
+  if (!song) return false
+  return Boolean(song.isNotLyric) || Boolean(song.lyric?.includes('纯音乐，请欣赏'))
+}
+
 export function normalizeSong(raw: RawSong): Song {
   const target = raw.song ?? raw
   const ar = target.ar ?? target.artists ?? []
