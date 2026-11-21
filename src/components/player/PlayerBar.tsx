@@ -162,9 +162,6 @@ export function PlayerBar() {
   const prepareSmartStem = useSmartStemStore(
     (state) => state.prepareForSong,
   )
-  const restoreSmartStem = useSmartStemStore(
-    (state) => state.restoreOriginal,
-  )
   const setVolume = usePlayerStore((state) => state.setVolume)
   const setCurrentTime = usePlayerStore((state) => state.setCurrentTime)
   const setMediaDuration = usePlayerStore((state) => state.setMediaDuration)
@@ -467,10 +464,7 @@ export function PlayerBar() {
     videoActive,
   ])
 
-  useEffect(() => {
-    if (stemMode === 'smart' || !usingSmartStem) return
-    void restoreSmartStem()
-  }, [restoreSmartStem, stemMode, usingSmartStem])
+
 
   // Every play request (previous / next / pick a song / replay) bumps
   // playToken. Stop the old track synchronously on that commit; the source
