@@ -1474,13 +1474,13 @@ msgstr "播放"
 msgid "播放 / 暂停"
 msgstr "播放 / 暂停"
 
-#: src/components/player/NowPlayingTransport.tsx:367
-#: src/components/player/NowPlayingTransport.tsx:368
+#: src/components/player/NowPlayingTransport.tsx:373
+#: src/components/player/NowPlayingTransport.tsx:374
 msgid "播放人声"
 msgstr "播放人声"
 
-#: src/components/player/NowPlayingTransport.tsx:350
-#: src/components/player/NowPlayingTransport.tsx:351
+#: src/components/player/NowPlayingTransport.tsx:356
+#: src/components/player/NowPlayingTransport.tsx:357
 msgid "播放伴奏"
 msgstr "播放伴奏"
 
@@ -3055,8 +3055,8 @@ msgstr "链接已复制"
 msgid "队列视图"
 msgstr "队列视图"
 
-#: src/components/player/NowPlayingTransport.tsx:335
-#: src/components/player/NowPlayingTransport.tsx:336
+#: src/components/player/NowPlayingTransport.tsx:341
+#: src/components/player/NowPlayingTransport.tsx:342
 msgid "随心唱"
 msgstr "随心唱"
 
