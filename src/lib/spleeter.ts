@@ -42,9 +42,11 @@ export function getSpleeterStatus() {
   return requestJson<SpleeterStatus>('/spleeter/status')
 }
 
-export function startSpleeterInstall() {
+export function startSpleeterInstall(proxy = '') {
   return requestJson<SpleeterInstallState>('/spleeter/install', {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ proxy }),
   })
 }
 

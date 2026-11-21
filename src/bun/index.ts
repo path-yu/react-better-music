@@ -1367,7 +1367,13 @@ try {
           return Response.json(spleeterStatus(), { headers })
         }
         if (url.pathname === '/spleeter/install' && request.method === 'POST') {
-          return Response.json(startSpleeterInstall(), { headers })
+          try {
+            const body = (await request.json()) as { proxy?: unknown }
+            const proxy = typeof body.proxy === 'string' ? body.proxy : ''
+            return Response.json(startSpleeterInstall(proxy), { headers })
+          } catch {
+            return Response.json(startSpleeterInstall(), { headers })
+          }
         }
         if (
           url.pathname === '/spleeter/install-root' &&

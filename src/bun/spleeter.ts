@@ -185,7 +185,7 @@ function installScriptPath() {
   )
 }
 
-export function startSpleeterInstall() {
+export function startSpleeterInstall(proxy = '') {
   if (installState.installing) return installState
   const existing = spleeterStatus()
   if (existing.available && existing.venvInInstallRoot) {
@@ -227,6 +227,8 @@ export function startSpleeterInstall() {
           script,
           '-InstallRoot',
           target,
+          '-Proxy',
+          proxy.trim(),
         ],
         {
           cwd: dirname(script),

@@ -121,6 +121,12 @@ function SettingsPage() {
   const setSpleeterBitrate = useSettingsStore(
     (state) => state.setSpleeterBitrate,
   )
+  const spleeterProxyUrl = useSettingsStore(
+    (state) => state.spleeterProxyUrl,
+  )
+  const setSpleeterProxyUrl = useSettingsStore(
+    (state) => state.setSpleeterProxyUrl,
+  )
   const cacheBitrate = useSettingsStore((state) => state.cacheBitrate)
   const cacheMaxMb = useSettingsStore((state) => state.cacheMaxMb)
   const setCacheMaxMb = useSettingsStore((state) => state.setCacheMaxMb)
@@ -264,7 +270,7 @@ function SettingsPage() {
     setSpleeterBusy(true)
     setSpleeterError('')
     try {
-      const state = await startSpleeterInstall()
+      const state = await startSpleeterInstall(spleeterProxyUrl)
       setSpleeterStatus((current) =>
         current ? { ...current, install: state } : current,
       )
@@ -745,11 +751,11 @@ function SettingsPage() {
           <section className="apple-card p-5 sm:p-6" data-settings-section="playback">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
+                <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80 dark:text-white/85">
                   <WandSparkles className="h-4 w-4 text-accent" />
                   <Trans>智能伴奏 · Spleeter</Trans>
                 </h2>
-                <p className="mt-1 max-w-[620px] text-[11px] leading-relaxed text-black/40">
+                <p className="mt-1 max-w-[620px] text-[11px] leading-relaxed text-black/40 dark:text-white/45">
                   <Trans>
                     安装本地 Spleeter 后，可在歌曲详情页生成并切换原曲、人声或伴奏，结果会缓存到本机。
                   </Trans>
@@ -772,13 +778,34 @@ function SettingsPage() {
               </span>
             </div>
 
+            <div className="mt-4">
+              <label className="flex flex-col gap-1.5">
+                <span className="text-[10.5px] font-medium text-black/50 dark:text-white/55">
+                  <Trans>下载代理</Trans>
+                </span>
+                <input
+                  value={spleeterProxyUrl}
+                  onChange={(event) =>
+                    setSpleeterProxyUrl(event.target.value)
+                  }
+                  placeholder="http://127.0.0.1:7890"
+                  className="h-8 w-full max-w-[420px] rounded-lg border border-[var(--app-border)] bg-[var(--app-card)] px-2 text-[11px] text-black/72 outline-none transition-colors focus:border-accent/50 dark:bg-white/[0.04] dark:text-white/72"
+                />
+                <span className="text-[10px] leading-relaxed text-black/35 dark:text-white/40">
+                  <Trans>
+                    用于 Python、pip 和 FFprobe 下载。留空则直连；例如 Clash 的 http://127.0.0.1:7890。
+                  </Trans>
+                </span>
+              </label>
+            </div>
+
             <div className="mt-4 rounded-xl border border-[var(--app-border)] bg-black/[0.018] p-4 dark:bg-white/[0.025]">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
-                  <p className="text-[12px] font-medium text-black/75">
+                  <p className="text-[12px] font-medium text-black/75 dark:text-white/80">
                     Python 3.9 · TensorFlow 2.9 · Spleeter 2.4
                   </p>
-                  <p className="mt-1 text-[10.5px] leading-relaxed text-black/40">
+                  <p className="mt-1 text-[10.5px] leading-relaxed text-black/40 dark:text-white/45">
                     <Trans>
                       安装约 1 GB，需要联网，通常耗时数分钟。模型会在第一次生成伴奏时下载。
                     </Trans>
@@ -805,7 +832,7 @@ function SettingsPage() {
               <div className="mt-3 rounded-lg border border-[var(--app-border)] bg-black/[0.02] p-2.5 dark:bg-white/[0.025]">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
-                    <p className="text-[10px] font-medium text-black/45">
+                    <p className="text-[10px] font-medium text-black/45 dark:text-white/50">
                       <Trans>安装目录</Trans>
                     </p>
                     <p
@@ -815,7 +842,7 @@ function SettingsPage() {
                       {spleeterStatus?.installRoot ||
                         i18n._(msg`正在读取…`)}
                     </p>
-                    <p className="mt-0.5 text-[9.5px] text-black/32">
+                    <p className="mt-0.5 text-[9.5px] text-black/32 dark:text-white/35">
                       <Trans>
                         默认安装到应用所在目录下的 spleeter-runtime
                       </Trans>
@@ -846,7 +873,7 @@ function SettingsPage() {
               <div className="mt-3 rounded-lg border border-[var(--app-border)] bg-black/[0.02] p-2.5 dark:bg-white/[0.025]">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
-                    <p className="text-[10px] font-medium text-black/45">
+                    <p className="text-[10px] font-medium text-black/45 dark:text-white/50">
                       <Trans>伴奏保存目录</Trans>
                     </p>
                     <p
@@ -856,7 +883,7 @@ function SettingsPage() {
                       {spleeterStatus?.libraryRoot ||
                         i18n._(msg`正在读取…`)}
                     </p>
-                    <p className="mt-0.5 text-[9.5px] text-black/32">
+                    <p className="mt-0.5 text-[9.5px] text-black/32 dark:text-white/35">
                       <Trans>
                         每首歌生成独立文件夹，默认在应用目录下的 spleeter-library
                       </Trans>
@@ -886,30 +913,28 @@ function SettingsPage() {
 
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-[10.5px] font-medium text-black/50">
+                  <span className="text-[10.5px] font-medium text-black/50 dark:text-white/55">
                     <Trans>输出格式</Trans>
                   </span>
-                  <select
+                  <Select
                     value={spleeterCodec}
                     onChange={(event) =>
                       setSpleeterCodec(
                         event.target.value as typeof spleeterCodec,
                       )
                     }
-                    className="h-8 w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-card)] px-2 text-[11px] text-black/72 outline-none transition-colors focus:border-accent/50 dark:bg-white/[0.04] dark:text-white/72"
-                  >
-                    {SPLEETER_CODEC_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
+                    options={SPLEETER_CODEC_OPTIONS.map((option) => ({
+                      value: option.value,
+                      label: option.label,
+                    }))}
+                    className="w-full text-[11px]"
+                  />
                 </label>
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-[10.5px] font-medium text-black/50">
+                  <span className="text-[10.5px] font-medium text-black/50 dark:text-white/55">
                     <Trans>输出码率</Trans>
                   </span>
-                  <select
+                  <Select
                     value={spleeterBitrate}
                     disabled={
                       spleeterCodec === 'wav' || spleeterCodec === 'flac'
@@ -919,17 +944,15 @@ function SettingsPage() {
                         event.target.value as typeof spleeterBitrate,
                       )
                     }
-                    className="h-8 w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-card)] px-2 text-[11px] text-black/72 outline-none transition-colors focus:border-accent/50 disabled:opacity-40 dark:bg-white/[0.04] dark:text-white/72"
-                  >
-                    {SPLEETER_BITRATE_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
+                    options={SPLEETER_BITRATE_OPTIONS.map((option) => ({
+                      value: option.value,
+                      label: option.label,
+                    }))}
+                    className="w-full text-[11px]"
+                  />
                 </label>
               </div>
-              <p className="mt-2 text-[10px] leading-relaxed text-black/35">
+              <p className="mt-2 text-[10px] leading-relaxed text-black/35 dark:text-white/40">
                 {spleeterCodec === 'wav'
                   ? i18n._(msg`WAV 为未压缩 PCM，两条音轨约 70–100 MB/首。`)
                   : spleeterCodec === 'flac'
@@ -941,7 +964,7 @@ function SettingsPage() {
 
               {spleeterStatus?.venv ? (
                 <p
-                  className="mt-3 truncate rounded-lg bg-black/[0.035] px-2.5 py-1.5 text-[10.5px] text-black/45 dark:bg-white/[0.045]"
+                  className="mt-3 truncate rounded-lg bg-black/[0.035] px-2.5 py-1.5 text-[10.5px] text-black/45 dark:bg-white/[0.045] dark:text-white/50"
                   title={spleeterStatus.venv}
                 >
                   {spleeterStatus.venv}
@@ -950,7 +973,7 @@ function SettingsPage() {
 
               {spleeterStatus?.install?.installing ? (
                 <div className="mt-3">
-                  <div className="mb-1.5 flex items-center justify-between text-[10.5px] text-black/45">
+                  <div className="mb-1.5 flex items-center justify-between text-[10.5px] text-black/45 dark:text-white/50">
                     <span className="truncate">
                       {spleeterStatus.install.log || i18n._(msg`准备安装…`)}
                     </span>

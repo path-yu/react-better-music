@@ -123,6 +123,8 @@ interface SettingsState {
   /** Spleeter output container/codec. Defaults to compressed AAC. */
   spleeterCodec: SpleeterCodec
   spleeterBitrate: SpleeterBitrate
+  /** Optional download proxy for the Spleeter installer (Python/pip/FFprobe). */
+  spleeterProxyUrl: string
   /** Desktop only: block right-click / F12 / DevTools shortcuts. */
   disableDevTools: boolean
   /** Prefer a matched provider for VIP tracks (manual switch is always available). */
@@ -148,6 +150,7 @@ interface SettingsState {
   setStemKind: (value: StemKind) => void
   setSpleeterCodec: (value: SpleeterCodec) => void
   setSpleeterBitrate: (value: SpleeterBitrate) => void
+  setSpleeterProxyUrl: (value: string) => void
   setDisableDevTools: (value: boolean) => void
   setAutoReplaceVipSource: (value: boolean) => void
   setAutoScrobble: (value: boolean) => void
@@ -178,6 +181,7 @@ export const useSettingsStore = create<SettingsState>()(
       stemKind: 'accompaniment',
       spleeterCodec: 'm4a',
       spleeterBitrate: '192k',
+      spleeterProxyUrl: '',
       disableDevTools: false,
       autoReplaceVipSource: false,
       // Reporting private listening logs is opt-in and never automatic.
@@ -203,6 +207,8 @@ export const useSettingsStore = create<SettingsState>()(
       setSpleeterCodec: (spleeterCodec) => set({ spleeterCodec }),
       setSpleeterBitrate: (spleeterBitrate) =>
         set({ spleeterBitrate }),
+      setSpleeterProxyUrl: (spleeterProxyUrl) =>
+        set({ spleeterProxyUrl: spleeterProxyUrl.trim() }),
       setDisableDevTools: (disableDevTools) => set({ disableDevTools }),
       setAutoReplaceVipSource: (autoReplaceVipSource) => set({ autoReplaceVipSource }),
       setAutoScrobble: (autoScrobble) => set({ autoScrobble }),
