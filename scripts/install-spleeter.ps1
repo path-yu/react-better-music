@@ -18,6 +18,11 @@ $OutputEncoding = $utf8
 $env:PYTHONIOENCODING = 'utf-8'
 $env:PYTHONUTF8 = '1'
 
+# Do not let a parent process's Python injection (for example an IDE shim in
+# PYTHONPATH) leak into the private venv. It can break pip's uninstall step and
+# leave spleeter half-installed.
+Remove-Item Env:PYTHONPATH, Env:PYTHONHOME, Env:PYTHONSTARTUP -ErrorAction SilentlyContinue
+
 $proxyValue = $Proxy.Trim()
 if ($proxyValue) {
   $env:HTTP_PROXY = $proxyValue
@@ -25,20 +30,25 @@ if ($proxyValue) {
   $env:ALL_PROXY = $proxyValue
 }
 
-function Download-File([string]$Url, [string]$OutFile) {
+function Download-File(
+  [string]$Url,
+  [string]$OutFile,
+  [int]$TimeoutSeconds = 300,
+  [int]$Attempts = 3
+) {
   $curl = Get-Command curl.exe -ErrorAction SilentlyContinue
-  for ($attempt = 1; $attempt -le 4; $attempt++) {
+  for ($attempt = 1; $attempt -le $Attempts; $attempt++) {
     try {
       if ($curl) {
         $curlArgs = @(
           '-L',
           '--fail',
           '--retry',
-          '3',
+          '1',
           '--connect-timeout',
-          '20',
+          '15',
           '--max-time',
-          '900'
+          "$TimeoutSeconds"
         )
         if ($proxyValue) { $curlArgs += @('-x', $proxyValue) }
         $curlArgs += @('-o', $OutFile, $Url)
@@ -51,7 +61,7 @@ function Download-File([string]$Url, [string]$OutFile) {
           Uri = $Url
           OutFile = $OutFile
           UseBasicParsing = $true
-          TimeoutSec = 300
+          TimeoutSec = $TimeoutSeconds
         }
         if ($proxyValue) { $params.Proxy = $proxyValue }
         Invoke-WebRequest @params
@@ -60,7 +70,7 @@ function Download-File([string]$Url, [string]$OutFile) {
     } catch {
       # Retry transient TLS/connection resets.
     }
-    Start-Sleep -Seconds 2
+    Start-Sleep -Seconds 1
   }
   throw "下载失败：$Url"
 }
@@ -176,10 +186,16 @@ try {
 
   Stage '正在升级 pip…' 28
   & $venvPython -m pip install --upgrade pip | Out-Host
+  if ($LASTEXITCODE -ne 0) {
+    throw "pip 升级失败 (exit $LASTEXITCODE)"
+  }
 
   Stage '正在安装 Spleeter / TensorFlow（约 700 MB，请耐心等待）…' 35
   & $venvPython -m pip install spleeter==2.4.0 numpy==1.23.5 imageio-ffmpeg | Out-Host
-  if (!(Test-Path $spleeter)) { throw 'Spleeter 安装失败' }
+  if ($LASTEXITCODE -ne 0) {
+    throw "Spleeter 依赖安装失败 (exit $LASTEXITCODE)"
+  }
+  if (!(Test-Path $spleeter)) { throw 'Spleeter 安装失败：未生成 spleeter.exe' }
 
   Stage '正在配置 FFmpeg…' 82
   $ffmpegSource = (& $venvPython -c "import imageio_ffmpeg; print(imageio_ffmpeg.get_ffmpeg_exe())").Trim()
@@ -195,15 +211,16 @@ try {
     $staging = Join-Path $env:TEMP ('qimiao-ffprobe-' + [guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Force $staging | Out-Null
     $sources = @(
-      @{ Url = 'https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v6.1/ffprobe-6.1-win-64.zip'; Ext = '.zip' },
-      @{ Url = 'https://registry.npmjs.org/@ffprobe-installer/win32-x64/-/win32-x64-5.1.0.tgz'; Ext = '.tgz' },
-      @{ Url = 'https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip'; Ext = '.zip' }
+      @{ Url = 'https://registry.npmjs.org/@ffprobe-installer/win32-x64/-/win32-x64-5.1.0.tgz'; Ext = '.tgz'; Label = 'npm 镜像' },
+      @{ Url = 'https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v6.1/ffprobe-6.1-win-64.zip'; Ext = '.zip'; Label = 'ffbinaries' },
+      @{ Url = 'https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip'; Ext = '.zip'; Label = 'gyan.dev' }
     )
     $installed = $false
     foreach ($source in $sources) {
       try {
+        Stage "正在下载 FFprobe（$($source.Label)）…" 88
         $archive = Join-Path $staging ('ffprobe' + $source.Ext)
-        Download-File $source.Url $archive
+        Download-File $source.Url $archive -TimeoutSeconds 90 -Attempts 2
         $extract = Join-Path $staging 'extract'
         New-Item -ItemType Directory -Force $extract | Out-Null
         if ($source.Ext -eq '.zip') {

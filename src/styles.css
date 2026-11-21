@@ -5327,6 +5327,12 @@ html.dark[data-theme='dark'] body {
   overflow: hidden;
   border-radius: 18px;
   box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6);
+  /* Keep the layered transparent PNGs in one stable compositor layer. Without
+     this, a sibling state update can briefly re-rasterise the deck, record and
+     tonearm layers even though their DOM nodes did not change. */
+  transform: translateZ(0);
+  isolation: isolate;
+  contain: layout style;
 }
 
 .retro-deck-image {
@@ -5337,6 +5343,8 @@ html.dark[data-theme='dark'] body {
   height: 100%;
   object-fit: fill;
   user-select: none;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 /* The vinyl is a separate transparent layer over the empty platter, so the
@@ -5348,12 +5356,21 @@ html.dark[data-theme='dark'] body {
   top: 50%;
   width: 80%;
   height: 80%;
-  object-fit: contain;
   transform-origin: 50% 50%;
   clip-path: circle(50%);
   pointer-events: none;
   user-select: none;
   will-change: transform;
+  backface-visibility: hidden;
+}
+
+.retro-record-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
 }
 
 /* The record and hub are driven exclusively by playback position in React.
@@ -5488,10 +5505,19 @@ html.dark[data-theme='dark'] body {
   width: 83%;
   height: 17%;
   transform-origin: 20.4819% 50%;
-  object-fit: fill;
   pointer-events: none;
   user-select: none;
   will-change: transform;
+  backface-visibility: hidden;
+}
+
+.retro-tonearm-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+  user-select: none;
 }
 
 .retro-tonearm-shadow {

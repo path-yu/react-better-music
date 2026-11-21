@@ -1,4 +1,5 @@
 import {
+  memo,
   useEffect,
   useRef,
   useState,
@@ -101,18 +102,22 @@ function usePrefersReducedMotion() {
  * Poll the active audio element instead of extrapolating from wall time: this
  * stops the record while buffering, paused, or if the store's timeupdate lags.
  */
-function useSmoothPlaybackPosition(position: number, playing: boolean) {
+function useSmoothPlaybackPosition(
+  position: number,
+  playing: boolean,
+  holdPosition: boolean,
+) {
   const reduced = usePrefersReducedMotion()
   const [smooth, setSmooth] = useState(position)
   const positionRef = useRef(position)
   positionRef.current = position
 
   useEffect(() => {
-    if (!playing || reduced) setSmooth(position)
-  }, [position, playing, reduced])
+    if (!holdPosition && (!playing || reduced)) setSmooth(position)
+  }, [position, playing, reduced, holdPosition])
 
   useEffect(() => {
-    if (!playing || reduced) return
+    if (holdPosition || !playing || reduced) return
     let frame = 0
     let last = 0
     const tick = (now: number) => {
@@ -130,7 +135,7 @@ function useSmoothPlaybackPosition(position: number, playing: boolean) {
     }
     frame = window.requestAnimationFrame(tick)
     return () => window.cancelAnimationFrame(frame)
-  }, [playing, reduced])
+  }, [playing, reduced, holdPosition])
 
   return reduced ? position : smooth
 }
@@ -421,11 +426,56 @@ function ArtworkFrame({
   )
 }
 
-export function PlayerArtwork({
+const DeckImage = memo(function DeckImage() {
+  return (
+    <img
+      className="retro-deck-image"
+      src={deckArt}
+      alt=""
+      draggable={false}
+    />
+  )
+})
+
+const RecordImage = memo(function RecordImage() {
+  return (
+    <img
+      className="retro-record-image"
+      src={recordArt}
+      alt=""
+      draggable={false}
+    />
+  )
+})
+
+const TonearmImage = memo(function TonearmImage() {
+  return (
+    <img
+      className="retro-tonearm-image"
+      src={armArt}
+      alt=""
+      draggable={false}
+    />
+  )
+})
+
+const TonearmShadowImage = memo(function TonearmShadowImage() {
+  return (
+    <img
+      className="retro-tonearm-image"
+      src={armShadowArt}
+      alt=""
+      draggable={false}
+    />
+  )
+})
+
+function PlayerArtworkBase({
   song,
   style,
   playing,
   position,
+  holdPosition = false,
   liked,
   albumAvailable,
   glowRgb,
@@ -436,6 +486,8 @@ export function PlayerArtwork({
   style: PlayerStyle
   playing: boolean
   position: number
+  /** Keep the last vinyl pose while a stem source is handing off. */
+  holdPosition?: boolean
   liked: boolean
   albumAvailable: boolean
   glowRgb?: string
@@ -444,8 +496,18 @@ export function PlayerArtwork({
 }) {
   const { i18n } = useLingui()
   const reducedMotion = usePrefersReducedMotion()
-  const smoothPosition = useSmoothPlaybackPosition(position, playing)
-  const armOn = useArmSpring(playing ? 1 : 0, reducedMotion)
+  const lastPlayingRef = useRef(playing)
+  if (!holdPosition) lastPlayingRef.current = playing
+  // During a stem hand-off the store can briefly report a different playback
+  // state while the new audio element loads. Keep the vinyl pose on the last
+  // stable state instead of toggling the record/arm for one frame.
+  const artworkPlaying = holdPosition ? lastPlayingRef.current : playing
+  const smoothPosition = useSmoothPlaybackPosition(
+    position,
+    artworkPlaying,
+    holdPosition,
+  )
+  const armOn = useArmSpring(artworkPlaying ? 1 : 0, reducedMotion)
   const duration = song.dt > 0 ? song.dt / 1000 : 0
   const progress = duration > 0 ? clamp01(smoothPosition / duration) : 0
   const vinylSpin = reducedMotion
@@ -489,7 +551,7 @@ export function PlayerArtwork({
       className={cn(
         'now-disc group',
         `now-disc--${style}`,
-        style === 'vinyl' && playing && 'is-playing',
+        style === 'vinyl' && artworkPlaying && 'is-playing',
       )}
       style={
         glowRgb
@@ -500,21 +562,15 @@ export function PlayerArtwork({
       <ArtworkFrame reducedMotion={reducedMotion}>
       {style === 'vinyl' ? (
         <div className="retro-turntable">
-          <img
-            className="retro-deck-image"
-            src={deckArt}
-            alt=""
-            draggable={false}
-          />
-          <img
+          <DeckImage />
+          <div
             className="retro-record"
-            src={recordArt}
-            alt=""
-            draggable={false}
             style={{
               transform: `translate(-50%, -50%) rotate(${vinylSpin}deg)`,
             }}
-          />
+          >
+            <RecordImage />
+          </div>
           <button
             type="button"
             onClick={onOpenAlbum}
@@ -557,22 +613,20 @@ export function PlayerArtwork({
           <span className="retro-speed-label retro-speed-label--45" aria-hidden="true">
             45
           </span>
-          <img
+          <div
             className="retro-tonearm retro-tonearm-shadow"
-            src={armShadowArt}
-            alt=""
-            draggable={false}
             style={{
               transform: `translate(calc(var(--art-size) * ${lift * 0.7}), calc(var(--art-size) * ${lift})) rotate(${armAngle}deg)`,
             }}
-          />
-          <img
+          >
+            <TonearmShadowImage />
+          </div>
+          <div
             className="retro-tonearm"
-            src={armArt}
-            alt=""
-            draggable={false}
             style={{ transform: `rotate(${armAngle}deg)` }}
-          />
+          >
+            <TonearmImage />
+          </div>
         </div>
       ) : style === 'cassette' ? (
         <div className="retro-cassette">
@@ -667,6 +721,21 @@ export function PlayerArtwork({
     </div>
   )
 }
+
+export const PlayerArtwork = memo(
+  PlayerArtworkBase,
+  (previous, next) =>
+    previous.song.id === next.song.id &&
+    previous.song.name === next.song.name &&
+    previous.song.al.picUrl === next.song.al.picUrl &&
+    previous.style === next.style &&
+    previous.playing === next.playing &&
+    previous.position === next.position &&
+    previous.holdPosition === next.holdPosition &&
+    previous.liked === next.liked &&
+    previous.albumAvailable === next.albumAvailable &&
+    previous.glowRgb === next.glowRgb,
+)
 
 function ArtworkHint() {
   return (

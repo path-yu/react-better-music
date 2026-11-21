@@ -41,7 +41,7 @@ type SmartStemState = {
   /** Song currently being generated. */
   generatingSongId: number | null
   error: string
-  checkEnvironment: () => Promise<boolean>
+  checkEnvironment: (force?: boolean) => Promise<boolean>
   prepareForSong: (songId: number) => Promise<void>
   switchStem: (kind: CachedStemKind) => Promise<void>
   selectOriginal: () => Promise<void>
@@ -213,8 +213,8 @@ export const useSmartStemStore = create<SmartStemState>((set, get) => ({
   generatingSongId: null,
   error: '',
 
-  async checkEnvironment() {
-    if (get().installed !== null) return Boolean(get().installed)
+  async checkEnvironment(force = false) {
+    if (!force && get().installed !== null) return Boolean(get().installed)
     if (checkingPromise) return checkingPromise
     set({ checking: true, status: 'checking', error: '' })
     checkingPromise = getSpleeterStatus()

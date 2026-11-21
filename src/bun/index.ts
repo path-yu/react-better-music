@@ -33,6 +33,7 @@ import {
   setSpleeterLibraryRoot,
   spleeterStatus,
   startSpleeterInstall,
+  uninstallSpleeter,
 } from './spleeter'
 
 const APP_DATA_DIR = join(process.env.LOCALAPPDATA ?? homedir(), 'com.qimiao.music')
@@ -1365,6 +1366,19 @@ try {
         }
         if (url.pathname === '/spleeter/status' && request.method === 'GET') {
           return Response.json(spleeterStatus(), { headers })
+        }
+        if (
+          url.pathname === '/spleeter/uninstall' &&
+          request.method === 'POST'
+        ) {
+          try {
+            return Response.json(uninstallSpleeter(), { headers })
+          } catch (error) {
+            return Response.json(
+              { error: String(error) },
+              { status: 409, headers },
+            )
+          }
         }
         if (url.pathname === '/spleeter/install' && request.method === 'POST') {
           try {

@@ -42,6 +42,12 @@ export function getSpleeterStatus() {
   return requestJson<SpleeterStatus>('/spleeter/status')
 }
 
+export function uninstallSpleeter() {
+  return requestJson<SpleeterStatus>('/spleeter/uninstall', {
+    method: 'POST',
+  })
+}
+
 export function startSpleeterInstall(proxy = '') {
   return requestJson<SpleeterInstallState>('/spleeter/install', {
     method: 'POST',

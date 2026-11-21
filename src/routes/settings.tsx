@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import type { MessageDescriptor } from '@lingui/core'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
@@ -23,7 +23,17 @@ import {
   Trash2,
   WandSparkles,
 } from 'lucide-react'
-import { Button, Select, Switch } from '@pikoloo/darwin-ui'
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Select,
+  Switch,
+} from '@pikoloo/darwin-ui'
 import {
   CACHE_MAX_MB_OPTIONS,
   CACHE_QUALITY_OPTIONS,
@@ -59,6 +69,7 @@ import {
   setSpleeterInstallRoot,
   setSpleeterLibraryRoot,
   startSpleeterInstall,
+  uninstallSpleeter,
   type SpleeterStatus,
 } from '../lib/spleeter'
 import {
@@ -74,6 +85,18 @@ import { useDocumentTitle } from '../lib/title'
 import { toast } from '../lib/toast'
 
 export const Route = createFileRoute('/settings')({
+  validateSearch: (search: Record<string, unknown>) => {
+    const tab = search.tab
+    return {
+      tab:
+        tab === 'general' ||
+        tab === 'playback' ||
+        tab === 'cache' ||
+        tab === 'desktop'
+          ? (tab as SettingsTab)
+          : ('general' as SettingsTab),
+    }
+  },
   component: SettingsPage,
 })
 
@@ -110,6 +133,8 @@ const SPLEETER_BITRATE_OPTIONS = [
 
 function SettingsPage() {
   const { i18n } = useLingui()
+  const navigate = useNavigate()
+  const search = Route.useSearch()
   useDocumentTitle(i18n._(msg`设置`))
   const spleeterCodec = useSettingsStore((state) => state.spleeterCodec)
   const spleeterBitrate = useSettingsStore(
@@ -137,7 +162,10 @@ function SettingsPage() {
   )
   const locale = useSettingsStore((state) => state.locale)
   const setLocale = useSettingsStore((state) => state.setLocale)
-  const [activeTab, setActiveTab] = useState<SettingsTab>('general')
+  const [activeTab, setActiveTab] = useState<SettingsTab>(search.tab)
+  useEffect(() => {
+    setActiveTab(search.tab)
+  }, [search.tab])
   const [settingsQuery, setSettingsQuery] = useState('')
   const [items, setItems] = useState<CachedAudioItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -159,6 +187,8 @@ function SettingsPage() {
   const [spleeterBusy, setSpleeterBusy] = useState(false)
   const [spleeterPicking, setSpleeterPicking] = useState(false)
   const [libraryPicking, setLibraryPicking] = useState(false)
+  const [uninstallOpen, setUninstallOpen] = useState(false)
+  const [uninstalling, setUninstalling] = useState(false)
   const [spleeterError, setSpleeterError] = useState('')
   const disableDevTools = useSettingsStore((state) => state.disableDevTools)
   const setDisableDevTools = useSettingsStore((state) => state.setDisableDevTools)
@@ -278,6 +308,22 @@ function SettingsPage() {
       setSpleeterError(String(error))
     } finally {
       setSpleeterBusy(false)
+    }
+  }
+
+  const handleUninstallSpleeter = async () => {
+    if (uninstalling) return
+    setUninstalling(true)
+    setSpleeterError('')
+    try {
+      const status = await uninstallSpleeter()
+      setSpleeterStatus(status)
+      setUninstallOpen(false)
+      toast.success(i18n._(msg`Spleeter 环境已卸载`))
+    } catch (error) {
+      setSpleeterError(String(error))
+    } finally {
+      setUninstalling(false)
     }
   }
 
@@ -527,7 +573,14 @@ function SettingsPage() {
           active={activeTab}
           query={settingsQuery}
           onQueryChange={setSettingsQuery}
-          onSelect={setActiveTab}
+          onSelect={(tab) => {
+            setActiveTab(tab)
+            void navigate({
+              to: '/settings',
+              search: { tab },
+              replace: true,
+            })
+          }}
         />
         <div
           ref={settingsPanelsRef}
@@ -748,6 +801,7 @@ function SettingsPage() {
         </section>
 
         {desktop ? (
+          <>
           <section className="apple-card p-5 sm:p-6" data-settings-section="playback">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
@@ -826,6 +880,20 @@ function SettingsPage() {
                         : i18n._(msg`一键安装 Spleeter`)}
                     </Button>
                   ) : null}
+                  {spleeterStatus?.venv ||
+                  spleeterStatus?.available ? (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      disabled={
+                        spleeterStatus?.install?.installing || uninstalling
+                      }
+                      onClick={() => setUninstallOpen(true)}
+                    >
+                      <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                      <Trans>卸载 Spleeter</Trans>
+                    </Button>
+                  ) : null}
                 </div>
               </div>
 
@@ -844,7 +912,7 @@ function SettingsPage() {
                     </p>
                     <p className="mt-0.5 text-[9.5px] text-black/32 dark:text-white/35">
                       <Trans>
-                        默认安装到应用所在目录下的 spleeter-runtime
+                        默认安装到本地数据目录下的 qimiao-spleeter-runtime（使用短路径以兼容 TensorFlow）
                       </Trans>
                     </p>
                   </div>
@@ -1003,6 +1071,39 @@ function SettingsPage() {
               )}
             </div>
           </section>
+          <Dialog open={uninstallOpen} onOpenChange={setUninstallOpen}>
+            <DialogContent size="sm" glass>
+              <DialogHeader>
+                <DialogTitle>
+                  <Trans>卸载 Spleeter</Trans>
+                </DialogTitle>
+                <DialogDescription>
+                  <Trans>
+                    将删除本地虚拟环境、Python 运行时以及 FFmpeg/FFprobe 组件，不会删除已经生成的伴奏文件。
+                  </Trans>
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={uninstalling}
+                  onClick={() => setUninstallOpen(false)}
+                >
+                  <Trans>取消</Trans>
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  loading={uninstalling}
+                  onClick={() => void handleUninstallSpleeter()}
+                >
+                  <Trans>卸载</Trans>
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          </>
         ) : null}
 
         <section className="apple-card p-6" data-settings-section="cache">

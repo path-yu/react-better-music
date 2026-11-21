@@ -132,6 +132,8 @@ export function NowPlaying() {
   const currentTime = usePlayerStore((state) =>
     state.showNowPlaying ? state.currentTime : 0,
   )
+  const sourceTransition = usePlayerStore((state) => state.sourceTransition)
+  const holdArtworkPosition = sourceTransition === 'stem'
   const lyricLines = usePlayerStore((state) => state.lyricLines)
   const lyricLoading = usePlayerStore((state) => state.lyricLoading)
   const toggleNowPlaying = usePlayerStore((state) => state.toggleNowPlaying)
@@ -1304,6 +1306,7 @@ export function NowPlaying() {
                   style={playerStyle}
                   playing={playing}
                   position={currentTime}
+                  holdPosition={holdArtworkPosition}
                   liked={liked}
                   albumAvailable={albumAvailable}
                   glowRgb={

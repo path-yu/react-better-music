@@ -153,7 +153,9 @@ export function TopBar() {
             type="button"
             aria-label={i18n._(msg`设置`)}
             title={i18n._(msg`设置`)}
-            onClick={() => navigate({ to: '/settings' })}
+            onClick={() =>
+              navigate({ to: '/settings', search: { tab: 'general' } })
+            }
             className={cn(
               'pressable flex h-7 w-7 items-center justify-center rounded-full text-black/40 transition-colors hover:bg-black/5 hover:text-black/75 max-md:h-10 max-md:w-10',
               desktopChrome && NO_DRAG_CLASS,

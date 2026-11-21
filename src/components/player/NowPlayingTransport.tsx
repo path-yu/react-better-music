@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
+import { Trans } from '@lingui/react/macro'
 import {
   AudioLines,
   Ellipsis,
@@ -20,7 +22,18 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react'
-import { Popover, PopoverTrigger } from '@pikoloo/darwin-ui'
+import {
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Popover,
+  PopoverTrigger,
+} from '@pikoloo/darwin-ui'
 import { cn, formatDuration } from '../../lib/format'
 import { seekAudio } from '../../lib/audio'
 import { usePlayerStore } from '../../store/player'
@@ -51,6 +64,7 @@ export function NowPlayingTransport({
   videoLoading?: boolean
 }) {
   const { i18n } = useLingui()
+  const navigate = useNavigate()
   const queue = usePlayerStore((state) => state.queue)
   const currentIndex = usePlayerStore((state) => state.currentIndex)
   const currentSong = queue[currentIndex]
@@ -104,6 +118,7 @@ export function NowPlayingTransport({
   )
 
   const [moreOpen, setMoreOpen] = useState(false)
+  const [installPromptOpen, setInstallPromptOpen] = useState(false)
   const lastStemToggleRef = useRef(0)
 
   const smartActiveThisSong = Boolean(currentSong) &&
@@ -174,12 +189,12 @@ export function NowPlayingTransport({
     if (now - lastStemToggleRef.current < 600) return
     lastStemToggleRef.current = now
     if (stemMode === 'off') {
-      const installed =
-        smartInstalled ?? (await checkSmartEnvironment())
+      // Always re-check before preparing a job. A cached `installed` flag can
+      // become stale after the environment is uninstalled or moved.
+      const installed = await checkSmartEnvironment(true)
       if (!installed) {
-        toast.info(
-          i18n._(msg`未检测到 Spleeter，请先在设置中一键安装`),
-        )
+        setStemMode('off')
+        setInstallPromptOpen(true)
         return
       }
       setStemMode('smart')
@@ -278,7 +293,7 @@ export function NowPlayingTransport({
             disabled={smartLoading}
             onClick={() => void handleStemMode()}
             className={cn(
-              'pressable flex h-7 w-7 items-center justify-center rounded-full transition-colors disabled:cursor-default',
+              'pressable flex h-8 w-8 items-center justify-center rounded-full transition-colors disabled:cursor-default',
               stemMode === 'off'
                 ? 'text-white/45 hover:text-white/80'
                 : smartActiveThisSong
@@ -287,19 +302,19 @@ export function NowPlayingTransport({
             )}
           >
             {smartLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <CircularProgress
+                value={Math.round(smartProgress * 100)}
+                size={32}
+                strokeWidth={2.5}
+                showValue={smartStatus !== 'checking'}
+                indeterminate={smartStatus === 'checking'}
+              />
             ) : (
               <AudioLines className="h-4 w-4" />
             )}
           </button>
         ) : null}
-        {smartLoading ? (
-          <span className="hidden items-center gap-1 whitespace-nowrap text-[10px] tabular-nums text-white/45 lg:inline-flex">
-            <Loader2 className="h-3 w-3 animate-spin" />
-            {Math.round(smartProgress * 100)}%
-            {etaSeconds > 0 ? ` · 约 ${etaText}` : ''}
-          </span>
-        ) : null}
+
         {!videoActive &&
         stemMode === 'smart' &&
         smartActiveThisSong ? (
@@ -487,6 +502,42 @@ export function NowPlayingTransport({
         />
       </div>
 
+      <Dialog open={installPromptOpen} onOpenChange={setInstallPromptOpen}>
+        <DialogContent size="sm" glass>
+          <DialogHeader>
+            <DialogTitle>
+              <Trans>开启智能伴奏需要安装 Spleeter</Trans>
+            </DialogTitle>
+            <DialogDescription>
+              <Trans>
+                首次安装需要下载约 1 GB 的 Python、TensorFlow 和 Spleeter 运行环境，通常需要 300–600 秒，具体取决于网络速度。
+              </Trans>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setInstallPromptOpen(false)}
+            >
+              <Trans>稍后</Trans>
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                setInstallPromptOpen(false)
+                void navigate({
+                  to: '/settings',
+                  search: { tab: 'playback' },
+                })
+              }}
+            >
+              <Trans>前往设置安装</Trans>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

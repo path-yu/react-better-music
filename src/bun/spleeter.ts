@@ -122,19 +122,40 @@ function applicationRoot() {
   return resolve(import.meta.dir, '..', '..', '..')
 }
 
+/**
+ * TensorFlow ships deeply nested files. Keeping the runtime under the app
+ * directory is too long for Windows' default MAX_PATH in development builds,
+ * which makes pip fail while unpacking TensorFlow. Use the short local app
+ * data directory instead.
+ */
 export function defaultSpleeterInstallRoot() {
-  return join(applicationRoot(), 'spleeter-runtime')
+  const localAppData = process.env.LOCALAPPDATA?.trim()
+  return localAppData
+    ? join(localAppData, 'qimiao-spleeter-runtime')
+    : join(applicationRoot(), 'spleeter-runtime')
 }
+
+const MAX_SPLEETER_INSTALL_ROOT = 90
 
 export function currentSpleeterInstallRoot() {
   const configured = readConfig().installRoot
-  return configured ? resolve(configured) : defaultSpleeterInstallRoot()
+  if (configured) {
+    const resolved = resolve(configured)
+    // Migrate old configurations whose path would exceed MAX_PATH after
+    // TensorFlow's nested include directories are added.
+    if (resolved.length <= MAX_SPLEETER_INSTALL_ROOT) return resolved
+  }
+  return defaultSpleeterInstallRoot()
 }
 
 export function setSpleeterInstallRoot(path: string) {
   const next = path.trim()
   if (!next) throw new Error('安装目录不能为空')
-  persistConfig({ ...readConfig(), installRoot: resolve(next) })
+  const resolved = resolve(next)
+  if (resolved.length > MAX_SPLEETER_INSTALL_ROOT) {
+    throw new Error('安装目录过长，请选择路径更短的目录')
+  }
+  persistConfig({ ...readConfig(), installRoot: resolved })
   return spleeterStatus()
 }
 
@@ -183,6 +204,31 @@ function installScriptPath() {
     findFileUp(import.meta.dir, join('scripts', 'install-spleeter.ps1')) ??
     join(import.meta.dir, '..', 'install-spleeter.ps1')
   )
+}
+
+export function uninstallSpleeter() {
+  if (installState.installing) {
+    throw new Error('Spleeter 正在安装，请等待安装结束后再卸载')
+  }
+  const activeJob = [...jobs.values()].some(
+    (job) => job.status === 'queued' || job.status === 'processing',
+  )
+  if (activeJob) {
+    throw new Error('有正在生成的伴奏任务，请等待任务结束后再卸载')
+  }
+
+  const venv = venvRoot()
+  const installRoot = currentSpleeterInstallRoot()
+  const targets = new Set<string>()
+  if (venv) targets.add(venv)
+  for (const name of ['.python39', '.venv-spleeter39']) {
+    targets.add(join(installRoot, name))
+  }
+  for (const target of targets) {
+    rmSync(target, { recursive: true, force: true })
+  }
+  installState = { installing: false, progress: 0, log: '', error: '' }
+  return spleeterStatus()
 }
 
 export function startSpleeterInstall(proxy = '') {

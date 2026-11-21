@@ -589,9 +589,6 @@ export function PlayerBar() {
     if (!current) return
     const preservePlaybackUi =
       usePlayerStore.getState().sourceTransition === 'stem'
-    if (preservePlaybackUi) {
-      usePlayerStore.setState({ sourceTransition: 'none' })
-    }
     const forcedReload =
       lastSourceReloadTokenRef.current !== sourceReloadToken
     lastSourceReloadTokenRef.current = sourceReloadToken
@@ -1032,6 +1029,9 @@ export function PlayerBar() {
   const markAudioReady = () => {
     clearBufferingTimer()
     setAudioReady(true)
+    if (usePlayerStore.getState().sourceTransition === 'stem') {
+      usePlayerStore.setState({ sourceTransition: 'none' })
+    }
   }
 
   const markBuffering = () => {
@@ -1261,6 +1261,9 @@ export function PlayerBar() {
       if (audio !== audioRef.current && audio !== incomingRef.current) return
       clearBufferingTimer()
       setAudioReady(false)
+      if (usePlayerStore.getState().sourceTransition === 'stem') {
+        usePlayerStore.setState({ sourceTransition: 'none' })
+      }
       if (!audioUrl) return
       if (audio === incomingRef.current) {
         // The transition source failed: drop the fade and let the recovery
