@@ -40,7 +40,6 @@ import { usePlayerStore } from '../../store/player'
 import { useSettingsStore } from '../../store/settings'
 import { useSmartStemStore } from '../../store/smartStem'
 import { useVideoPlaybackStore } from '../../store/videoPlayback'
-import { toast } from '../../lib/toast'
 import { MorePlaybackOptions } from './MorePlaybackOptions'
 import { ProgressSlider } from './ProgressSlider'
 
@@ -135,25 +134,6 @@ export function NowPlayingTransport({
     return () => window.clearTimeout(timer)
   }, [checkSmartEnvironment, stemMode, videoActive])
 
-  // Without Spleeter there is no accompaniment mode; return to the original.
-  // Keep an already-cached stem usable even if the runtime disappears.
-  useEffect(() => {
-    if (
-      stemMode !== 'smart' ||
-      smartInstalled !== false ||
-      smartActiveThisSong
-    ) {
-      return
-    }
-    setStemMode('off')
-    toast.info(i18n._(msg`未检测到 Spleeter，请在设置中一键安装`))
-  }, [
-    i18n,
-    setStemMode,
-    smartActiveThisSong,
-    smartInstalled,
-    stemMode,
-  ])
 
   if (!currentSong) return null
 

@@ -184,7 +184,7 @@ msgstr "R&B/Soul"
 msgid "Spleeter 已就绪"
 msgstr ""
 
-#: src/components/player/NowPlayingTransport.tsx:214
+#: src/components/player/NowPlayingTransport.tsx:194
 msgid "Spleeter 未安装，请先在设置中安装"
 msgstr ""
 
@@ -222,7 +222,7 @@ msgid "上一页"
 msgstr "Previous page"
 
 #: src/components/player/ImmersivePlayerBar.tsx:270
-#: src/components/player/NowPlayingTransport.tsx:392
+#: src/components/player/NowPlayingTransport.tsx:372
 #: src/components/player/PlayerBar.tsx:1499
 msgid "上一首"
 msgstr "Previous track"
@@ -236,7 +236,7 @@ msgid "下一页"
 msgstr "Next page"
 
 #: src/components/player/ImmersivePlayerBar.tsx:295
-#: src/components/player/NowPlayingTransport.tsx:429
+#: src/components/player/NowPlayingTransport.tsx:409
 #: src/components/player/PlayerBar.tsx:1536
 msgid "下一首"
 msgstr "Next track"
@@ -526,7 +526,7 @@ msgid "关闭导航"
 msgstr "Close navigation"
 
 #: src/components/player/ImmersivePlayerBar.tsx:232
-#: src/components/player/NowPlayingTransport.tsx:268
+#: src/components/player/NowPlayingTransport.tsx:248
 #: src/components/player/PlayerBar.tsx:1479
 msgid "关闭心动模式"
 msgstr "Turn off Heart Mode"
@@ -729,7 +729,7 @@ msgstr "Refresh Playlists"
 msgid "刷新缓存信息"
 msgstr "Refresh cache info"
 
-#: src/components/player/NowPlayingTransport.tsx:536
+#: src/components/player/NowPlayingTransport.tsx:516
 msgid "前往设置安装"
 msgstr "Open settings"
 
@@ -774,7 +774,7 @@ msgid "单曲"
 msgstr "Songs"
 
 #: src/components/player/ImmersivePlayerBar.tsx:256
-#: src/components/player/NowPlayingTransport.tsx:378
+#: src/components/player/NowPlayingTransport.tsx:358
 #: src/components/player/PlayerBar.tsx:1549
 #: src/store/player.ts:1285
 msgid "单曲循环"
@@ -1212,7 +1212,7 @@ msgstr "{0} of {1} selected"
 msgid "开启后，真实播放达到歌曲的 50% 或 4 分钟后，向网易云上报一次听歌记录。默认关闭。"
 msgstr "When enabled, report one listen to NetEase after real playback reaches 50% or four minutes. Off by default."
 
-#: src/components/player/NowPlayingTransport.tsx:509
+#: src/components/player/NowPlayingTransport.tsx:489
 msgid "开启智能伴奏需要安装 Spleeter"
 msgstr "Spleeter is required for smart accompaniment"
 
@@ -1259,8 +1259,8 @@ msgstr "Visualizer"
 
 #: src/components/player/ImmersivePlayerBar.tsx:232
 #: src/components/player/ImmersivePlayerBar.tsx:234
-#: src/components/player/NowPlayingTransport.tsx:268
-#: src/components/player/NowPlayingTransport.tsx:269
+#: src/components/player/NowPlayingTransport.tsx:248
+#: src/components/player/NowPlayingTransport.tsx:249
 #: src/components/player/PlayerBar.tsx:1480
 #: src/components/player/PlayerBar.tsx:1482
 msgid "心动模式"
@@ -1446,8 +1446,8 @@ msgid "搜索音乐、歌单、专辑、歌手、用户、MV 或视频"
 msgstr "Search songs, playlists, albums, artists, users, MVs or videos"
 
 #: src/components/player/ImmersivePlayerBar.tsx:279
-#: src/components/player/NowPlayingTransport.tsx:404
-#: src/components/player/NowPlayingTransport.tsx:411
+#: src/components/player/NowPlayingTransport.tsx:384
+#: src/components/player/NowPlayingTransport.tsx:391
 #: src/components/player/PlayerBar.tsx:1511
 #: src/components/player/PlayerBar.tsx:1518
 #: src/components/settings/SettingsNav.tsx:16
@@ -1461,13 +1461,13 @@ msgstr "Play"
 msgid "播放 / 暂停"
 msgstr "Play / Pause"
 
-#: src/components/player/NowPlayingTransport.tsx:356
-#: src/components/player/NowPlayingTransport.tsx:357
+#: src/components/player/NowPlayingTransport.tsx:336
+#: src/components/player/NowPlayingTransport.tsx:337
 msgid "播放人声"
 msgstr ""
 
-#: src/components/player/NowPlayingTransport.tsx:339
-#: src/components/player/NowPlayingTransport.tsx:340
+#: src/components/player/NowPlayingTransport.tsx:319
+#: src/components/player/NowPlayingTransport.tsx:320
 msgid "播放伴奏"
 msgstr ""
 
@@ -1480,8 +1480,8 @@ msgstr "Play all"
 #: src/components/player/ImmersivePlayerBar.tsx:305
 #: src/components/player/NowPlaying.tsx:1136
 #: src/components/player/NowPlaying.tsx:1137
-#: src/components/player/NowPlayingTransport.tsx:439
-#: src/components/player/NowPlayingTransport.tsx:440
+#: src/components/player/NowPlayingTransport.tsx:419
+#: src/components/player/NowPlayingTransport.tsx:420
 #: src/components/player/PlayerBar.tsx:1565
 #: src/components/player/QueuePanel.tsx:140
 #: src/components/player/QueuePanel.tsx:169
@@ -1492,8 +1492,8 @@ msgstr "Queue"
 msgid "播放列表已清空"
 msgstr "Queue cleared"
 
-#: src/components/player/NowPlayingTransport.tsx:324
-#: src/components/player/NowPlayingTransport.tsx:325
+#: src/components/player/NowPlayingTransport.tsx:304
+#: src/components/player/NowPlayingTransport.tsx:305
 msgid "播放原曲"
 msgstr ""
 
@@ -1707,29 +1707,29 @@ msgstr "Good evening"
 msgid "智能伴奏 · Spleeter"
 msgstr ""
 
-#: src/components/player/NowPlayingTransport.tsx:215
+#: src/components/player/NowPlayingTransport.tsx:195
 msgid "智能伴奏关闭：点击开启"
 msgstr ""
 
-#: src/components/player/NowPlayingTransport.tsx:225
+#: src/components/player/NowPlayingTransport.tsx:205
 msgid "智能伴奏已启用：点击关闭"
 msgstr ""
 
-#: src/components/player/NowPlayingTransport.tsx:224
+#: src/components/player/NowPlayingTransport.tsx:204
 msgid "智能伴奏已开启：当前播放原曲"
 msgstr ""
 
-#: src/components/player/NowPlayingTransport.tsx:230
+#: src/components/player/NowPlayingTransport.tsx:210
 msgid "智能伴奏已开启：播放时生成"
 msgstr ""
 
 #. placeholder {0}: Math.round(smartProgress * 100)
-#: src/components/player/NowPlayingTransport.tsx:220
+#: src/components/player/NowPlayingTransport.tsx:200
 msgid "智能伴奏生成中 {0}% · 预计剩余 {etaText}"
 msgstr ""
 
 #. placeholder {0}: smartError || '未知错误'
-#: src/components/player/NowPlayingTransport.tsx:228
+#: src/components/player/NowPlayingTransport.tsx:208
 msgid "智能伴奏生成失败：{0}"
 msgstr ""
 
@@ -1738,8 +1738,8 @@ msgid "智能模式可在歌曲详情页的心动模式按钮旁开启。生成�
 msgstr ""
 
 #: src/components/player/ImmersivePlayerBar.tsx:279
-#: src/components/player/NowPlayingTransport.tsx:403
-#: src/components/player/NowPlayingTransport.tsx:410
+#: src/components/player/NowPlayingTransport.tsx:383
+#: src/components/player/NowPlayingTransport.tsx:390
 #: src/components/player/PlayerBar.tsx:1510
 #: src/components/player/PlayerBar.tsx:1517
 #: src/components/songs/SongTable.tsx:112
@@ -1835,8 +1835,8 @@ msgstr "More"
 
 #: src/components/player/ImmersivePlayerBar.tsx:414
 #: src/components/player/ImmersivePlayerBar.tsx:415
-#: src/components/player/NowPlayingTransport.tsx:451
-#: src/components/player/NowPlayingTransport.tsx:452
+#: src/components/player/NowPlayingTransport.tsx:431
+#: src/components/player/NowPlayingTransport.tsx:432
 #: src/components/player/PlayerBar.tsx:1648
 #: src/components/player/PlayerBar.tsx:1649
 msgid "更多播放选项"
@@ -1867,9 +1867,9 @@ msgstr "No alternative source found"
 msgid "未找到相关视频"
 msgstr "No related videos found"
 
-#: src/components/player/NowPlayingTransport.tsx:149
-msgid "未检测到 Spleeter，请在设置中一键安装"
-msgstr ""
+#: src/components/player/NowPlayingTransport.tsx:152
+#~ msgid "未检测到 Spleeter，请在设置中一键安装"
+#~ msgstr ""
 
 #: src/routes/settings.tsx:1408
 msgid "未知歌手"
@@ -2132,7 +2132,7 @@ msgstr "Loading lyrics…"
 msgid "正在加载相似歌曲…"
 msgstr "Loading similar songs…"
 
-#: src/components/player/NowPlayingTransport.tsx:408
+#: src/components/player/NowPlayingTransport.tsx:388
 #: src/components/player/PlayerBar.tsx:1513
 msgid "正在加载音源"
 msgstr "Loading source"
@@ -2162,7 +2162,7 @@ msgstr ""
 msgid "正在导入歌曲 {0}/{1}…"
 msgstr "Importing tracks {0}/{1}…"
 
-#: src/components/player/NowPlayingTransport.tsx:217
+#: src/components/player/NowPlayingTransport.tsx:197
 msgid "正在检查 Spleeter 环境…"
 msgstr ""
 
@@ -2170,7 +2170,7 @@ msgstr ""
 msgid "正在检查运行环境…"
 msgstr ""
 
-#: src/components/player/NowPlayingTransport.tsx:407
+#: src/components/player/NowPlayingTransport.tsx:387
 #: src/components/player/PlayerBar.tsx:1515
 msgid "正在缓冲"
 msgstr "Buffering"
@@ -2561,7 +2561,7 @@ msgstr "Failed to remove recent play"
 msgid "移除歌曲失败"
 msgstr "Failed to remove track"
 
-#: src/components/player/NowPlayingTransport.tsx:523
+#: src/components/player/NowPlayingTransport.tsx:503
 msgid "稍后"
 msgstr "Later"
 
@@ -3043,7 +3043,7 @@ msgid "队列视图"
 msgstr "Queue View"
 
 #: src/components/player/ImmersivePlayerBar.tsx:255
-#: src/components/player/NowPlayingTransport.tsx:377
+#: src/components/player/NowPlayingTransport.tsx:357
 #: src/components/player/PlayerBar.tsx:1548
 #: src/routes/daily.tsx:171
 #: src/store/player.ts:1284
@@ -3073,7 +3073,7 @@ msgid "音源匹配"
 msgstr "Source matching"
 
 #: src/components/player/ImmersivePlayerBar.tsx:376
-#: src/components/player/NowPlayingTransport.tsx:501
+#: src/components/player/NowPlayingTransport.tsx:481
 #: src/components/player/PlayerBar.tsx:1604
 #: src/components/player/VolumeSlider.tsx:81
 msgid "音量"
@@ -3120,13 +3120,13 @@ msgid "页面不存在"
 msgstr "Page not found"
 
 #: src/components/player/ImmersivePlayerBar.tsx:253
-#: src/components/player/NowPlayingTransport.tsx:375
+#: src/components/player/NowPlayingTransport.tsx:355
 #: src/components/player/PlayerBar.tsx:1546
 #: src/store/player.ts:1282
 msgid "顺序播放"
 msgstr "Play in order"
 
-#: src/components/player/NowPlayingTransport.tsx:512
+#: src/components/player/NowPlayingTransport.tsx:492
 msgid "首次安装需要下载约 1 GB 的 Python、TensorFlow 和 Spleeter 运行环境，通常需要 300–600 秒，具体取决于网络速度。"
 msgstr "The first install downloads about 1 GB (Python, TensorFlow, and Spleeter) and usually takes 300–600 seconds, depending on network speed."
 
