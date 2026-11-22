@@ -142,12 +142,14 @@ function ArtistPage() {
   return (
     <div className="page">
       <div className="rounded-[22px] border border-black/8 bg-white/55 p-6 backdrop-blur-xl">
-        <div className="flex flex-col items-center gap-6 md:flex-row md:items-end">
+        {/* Centred on the text block: bottom-aligned, the avatar sat low with
+            an empty band above it whenever the biography ran long. */}
+        <div className="flex flex-col items-center gap-6 md:flex-row md:gap-8">
           <ImageWithFallback
             src={profile.cover ?? profile.picUrl}
             alt={profile.name}
             rounded="rounded-full"
-            className="artwork-shadow h-[168px] w-[168px] shrink-0"
+            className="artwork-shadow h-[184px] w-[184px] shrink-0"
             resize="400y400"
             priority
           />
@@ -235,6 +237,8 @@ function ArtistPage() {
           <SongTable
             songs={songs}
             playlistId={playlistId}
+            // Every row is this artist: no 歌手 column, only featured artists.
+            pageArtistId={profile.id}
             emptyText={i18n._(msg`暂无热门单曲`)}
           />
         </TabsContent>
@@ -335,13 +339,15 @@ function ArtistPage() {
                     {artist.name}
                   </p>
                   <p className="mt-0.5 truncate text-[11px] text-ink-4">
-                    {artist.alias?.[0] ??
-                      artist.transNames?.[0] ??
+                    {/* `a ?? b ?? c ? x : y` parsed as `(a ?? b ?? c) ? x : y`:
+                        an alias showed "0 粉丝" and was never itself shown. */}
+                    {artist.alias?.[0] ?? artist.transNames?.[0] ?? (
                       artist.fansCount ? (
                         <Trans>{formatNumber(artist.fansCount)} 粉丝</Trans>
                       ) : (
                         <Trans>相似歌手</Trans>
-                      )}
+                      )
+                    )}
                   </p>
                 </div>
               </button>

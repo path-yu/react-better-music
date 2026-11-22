@@ -6,11 +6,11 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { Play } from 'lucide-react'
+import { ChevronRight, Play } from 'lucide-react'
 import { Button, Skeleton } from '@pikoloo/darwin-ui'
 import { PlaylistCard } from '../components/cards/PlaylistCard'
 import { ImageWithFallback } from '../components/common/ImageWithFallback'
@@ -32,7 +32,7 @@ import {
 } from '../lib/color'
 import { useDailyRefreshKey } from '../lib/daily'
 import { resizedImageUrl } from '../lib/image'
-import { formatArtists } from '../lib/format'
+import { formatArtists, formatFrequency } from '../lib/format'
 import { useDocumentTitle } from '../lib/title'
 import type { Playlist, Song, Toplist } from '../types'
 
@@ -194,9 +194,11 @@ function DailyHomeCard({ songs, now }: { songs: Song[]; now: Date }) {
         />
       ) : null}
       <div className="absolute inset-0 bg-gradient-to-r from-black/45 via-black/10 to-black/25" />
+      {/* Sits between the text and the cover stack: at right-[250px] the
+          stacked covers cut the date in half. */}
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute -bottom-14 right-[250px] hidden text-[210px] font-extrabold leading-none tracking-[-18px] text-white/[0.055] lg:block"
+        className="pointer-events-none absolute -bottom-14 right-[360px] hidden text-[210px] font-extrabold leading-none tracking-[-18px] text-white/[0.055] xl:block"
       >
         {day}
       </span>
@@ -260,16 +262,28 @@ function DailyHomeCard({ songs, now }: { songs: Song[]; now: Date }) {
 
 function HomeSection({
   title,
+  moreTo,
   children,
 }: {
   title: ReactNode
+  /** The page this section previews; shows a "查看全部" link. */
+  moreTo?: '/toplist' | '/songlists'
   children: ReactNode
 }) {
   return (
     <section className="mt-[34px]">
-      <h2 className="section-title mb-3.5">
-        {title}
-      </h2>
+      <div className="mb-3.5 flex items-baseline justify-between gap-3">
+        <h2 className="section-title">{title}</h2>
+        {moreTo ? (
+          <Link
+            to={moreTo}
+            className="flex shrink-0 items-center gap-0.5 text-[13px] text-ink-3 transition-colors hover:text-accent"
+          >
+            <Trans>查看全部</Trans>
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Link>
+        ) : null}
+      </div>
       {children}
     </section>
   )
@@ -278,6 +292,7 @@ function HomeSection({
 function ChartCard({ list }: { list: Toplist }) {
   const navigate = useNavigate()
   const preview = list.tracks?.slice(0, 3) ?? []
+  const frequency = formatFrequency(list.updateFrequency)
   return (
     <button
       type="button"
@@ -304,14 +319,16 @@ function ChartCard({ list }: { list: Toplist }) {
           <span className="truncate text-[15px] font-bold text-ink-1">
             {list.name}
           </span>
-          {list.updateFrequency ? (
+          {frequency ? (
             <span className="shrink-0 truncate text-[11px] text-ink-4">
-              {list.updateFrequency}
+              {frequency}
             </span>
           ) : null}
         </div>
         <div className="mt-1 space-y-0.5">
           {preview.map((track, index) => (
+            // One truncating line, title first: as two separately truncating
+            // spans both were cut ("《爱笑的天使》… 李嫣/窦…").
             <p
               key={`${track.id ?? index}-${track.first ?? track.name ?? ''}`}
               className="flex min-w-0 items-baseline gap-1.5 text-[12px]"
@@ -319,11 +336,14 @@ function ChartCard({ list }: { list: Toplist }) {
               <span className="w-2.5 shrink-0 font-bold tabular-nums text-ink-4">
                 {index + 1}
               </span>
-              <span className="truncate font-medium text-ink-2">
-                {track.first ?? track.name}
-              </span>
-              <span className="truncate text-ink-4">
-                {track.second ?? formatArtists(track.ar)}
+              <span className="min-w-0 truncate">
+                <span className="font-medium text-ink-2">
+                  {track.first ?? track.name}
+                </span>
+                <span className="text-ink-4">
+                  {' · '}
+                  {track.second ?? formatArtists(track.ar)}
+                </span>
               </span>
             </p>
           ))}
@@ -444,7 +464,7 @@ function DiscoveryPage() {
         )}
       </HomeSection>
 
-      <HomeSection title={i18n._(msg`官方榜单`)}>
+      <HomeSection title={i18n._(msg`官方榜单`)} moreTo="/toplist">
         {chartFailed ? (
           <SectionError
             title={i18n._(msg`榜单加载失败`)}
@@ -465,7 +485,7 @@ function DiscoveryPage() {
         )}
       </HomeSection>
 
-      <HomeSection title={i18n._(msg`推荐歌单`)}>
+      <HomeSection title={i18n._(msg`推荐歌单`)} moreTo="/songlists">
         {featuredFailed ? (
           <SectionError
             title={i18n._(msg`推荐歌单加载失败`)}

@@ -15,7 +15,12 @@ import { EmptyState } from '../components/common/EmptyState'
 import { ImageWithFallback } from '../components/common/ImageWithFallback'
 import { PageHeader } from '../components/common/PageHeader'
 import { fetchPlaylistTracks, fetchRemainingPlaylistTracks, fetchToplists } from '../api'
-import { cn, formatArtists, formatNumber } from '../lib/format'
+import {
+  cn,
+  formatArtists,
+  formatFrequency,
+  formatNumber,
+} from '../lib/format'
 import { useDocumentTitle } from '../lib/title'
 import { toast } from '../lib/toast'
 import { usePlayerStore } from '../store/player'
@@ -24,11 +29,6 @@ import type { Toplist } from '../types'
 export const Route = createFileRoute('/toplist')({
   component: ToplistPage,
 })
-
-/** "更新14首" -> "更新 14 首", matching the spacing used everywhere else. */
-function formatFrequency(value?: string) {
-  return value?.replace(/(\D)(\d+)(\D)/, '$1 $2 $3').trim() ?? ''
-}
 
 /**
  * Play / pause a whole chart from its cover. Charts are at most a few hundred

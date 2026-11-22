@@ -1516,6 +1516,28 @@ html.desktop .app-window {
   }
 }
 
+/* Artist page: no 歌手 column (every row is the artist). Featured artists
+   stay visible under the title at every width. */
+.song-table--no-artist .song-col-artist {
+  display: none;
+}
+
+@media (min-width: 1100px) {
+  .song-table--no-artist .song-grid {
+    grid-template-columns: 26px minmax(0, 2.2fr) minmax(0, 1.2fr) 92px;
+  }
+
+  .song-table--no-artist .song-artist-mobile--keep {
+    display: block;
+  }
+}
+
+@container song-table (min-width: 1240px) {
+  .song-table--no-artist .song-grid {
+    grid-template-columns: 26px minmax(0, 1fr) minmax(0, 360px) 100px;
+  }
+}
+
 @media (min-width: 1100px) {
 
   .song-meta {
@@ -3988,12 +4010,29 @@ a.song-tag--outline:focus-visible {
   --slider-fill-end: color-mix(in srgb, var(--slider-fill) 52%, #38bdf8);
 }
 
+/* Player bar track. It used to be a hard-coded black gradient fading to 4%
+   at the end: invisible in the dark theme, and in both themes the end of the
+   song (the right edge) disappeared. Now a theme colour, solid to the end,
+   with only a faint cover tint at the start. */
+.player-glass:not(.player-glass--immersive) .seek-slider {
+  --player-track: rgba(0, 0, 0, 0.1);
+  --player-track-hover: rgba(0, 0, 0, 0.16);
+}
+
+.dark .player-glass:not(.player-glass--immersive) .seek-slider {
+  --player-track: rgba(255, 255, 255, 0.16);
+  --player-track-hover: rgba(255, 255, 255, 0.24);
+}
+
 .player-glass:not(.player-glass--immersive) .seek-slider__track {
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--player-progress-tint, var(--apple-blue, #3b82f6)) 10%, transparent),
-    rgba(0, 0, 0, 0.08) 55%,
-    rgba(0, 0, 0, 0.04)
+    color-mix(
+      in srgb,
+      var(--player-progress-tint, var(--apple-blue, #3b82f6)) 14%,
+      var(--player-track)
+    ),
+    var(--player-track) 40%
   );
 }
 
@@ -4002,9 +4041,12 @@ a.song-tag--outline:focus-visible {
   .seek-slider__track {
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--player-progress-tint, var(--apple-blue, #3b82f6)) 22%, transparent),
-    rgba(0, 0, 0, 0.16) 55%,
-    rgba(0, 0, 0, 0.08)
+    color-mix(
+      in srgb,
+      var(--player-progress-tint, var(--apple-blue, #3b82f6)) 22%,
+      var(--player-track-hover)
+    ),
+    var(--player-track-hover) 40%
   );
 }
 

@@ -9,6 +9,7 @@ import {
   formatArtists,
   formatDate,
   formatDuration,
+  formatFrequency,
   formatNumber,
   formatRemaining,
   getArrLast,
@@ -53,14 +54,30 @@ describe('formatNumber', () => {
     [undefined, '0'],
     [0, '0'],
     [9_999, '9999'],
-    [99_998, '99998'],
-    [99_999, '10万'],
+    [10_000, '1万'],
+    [57_148, '5.7万'],
+    [99_998, '10万'],
     [100_000, '10万'],
-    [99_999_999, '10000万'],
+    [173_000, '17.3万'],
+    [10_610_000, '1061万'],
+    [99_999_999, '1亿'],
     [100_000_000, '1亿'],
-    [250_000_000, '3亿'],
+    [250_000_000, '2.5亿'],
+    [6_500_000_000, '65亿'],
+    [14_300_000_000, '143亿'],
   ])('formats %s as %s', (input, expected) => {
     expect(formatNumber(input)).toBe(expected)
+  })
+})
+
+describe('formatFrequency', () => {
+  it.each([
+    ['更新14首', '更新 14 首'],
+    ['每周四更新', '每周四更新'],
+    ['刚刚更新', '刚刚更新'],
+    [undefined, ''],
+  ])('formats %s as %s', (input, expected) => {
+    expect(formatFrequency(input)).toBe(expected)
   })
 })
 

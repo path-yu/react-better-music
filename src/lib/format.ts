@@ -14,9 +14,20 @@ export function formatNumber(value?: number | null) {
       maximumFractionDigits: 1,
     }).format(value)
   }
-  if (value < 99999) return String(value)
-  if (value < 100000000) return `${Math.round(value / 10000)}万`
-  return `${Math.round(value / 100000000)}亿`
+  // From 1 万 up, like NetEase: one decimal below 100 of a unit (5.7万,
+  // 2.5亿), whole numbers above. Counts used to stay raw up to 99998, so one
+  // grid mixed "57148" with "17万", and 2.5亿 rounded to "3亿".
+  if (value < 10_000) return String(value)
+  const scaled = (amount: number) =>
+    amount < 100 ? String(Math.round(amount * 10) / 10) : String(Math.round(amount))
+  // 99,999,999 rounds to 10000万: promote it to 1亿.
+  if (Math.round(value / 10_000) < 10_000) return `${scaled(value / 10_000)}万`
+  return `${scaled(value / 100_000_000)}亿`
+}
+
+/** "更新14首" -> "更新 14 首": NetEase chart frequencies omit the spaces. */
+export function formatFrequency(value?: string) {
+  return value?.replace(/(\D)(\d+)(\D)/, '$1 $2 $3').trim() ?? ''
 }
 
 /** `m:ss`, or `h:mm:ss` from one hour, everywhere a duration is shown. */

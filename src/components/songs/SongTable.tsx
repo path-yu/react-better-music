@@ -39,6 +39,11 @@ interface SongTableProps {
   onRemoveFromPlaylist?: (song: Song) => void | Promise<void>
   /** Offset the sticky header when a tab bar is pinned above the table. */
   stickyTop?: number
+  /**
+   * Artist page: every row is this artist, so the 歌手 column is dropped and
+   * only featured artists are shown, under the title.
+   */
+  pageArtistId?: number
 }
 
 const VIRTUAL_THRESHOLD = 500
@@ -60,6 +65,8 @@ interface SongRowProps {
   onLike: (song: Song, liked: boolean) => void
   onRemove?: () => void
   onContextMenu: (index: number, x: number, y: number) => void
+  /** Keep the artist line under the title on wide tables (featured artists). */
+  showFeatured?: boolean
 }
 
 /**
@@ -79,6 +86,7 @@ const SongRow = memo(function SongRow({
   onLike,
   onRemove,
   onContextMenu,
+  showFeatured = false,
 }: SongRowProps) {
   const { i18n } = useLingui()
   const note = copyrightHint(song)
@@ -177,7 +185,12 @@ const SongRow = memo(function SongRow({
               </Link>
             ) : null}
           </div>
-          <p className="song-artist-mobile mt-0.5 truncate text-[11px] text-ink-4">
+          <p
+            className={cn(
+              'song-artist-mobile mt-0.5 truncate text-[11px] text-ink-4',
+              showFeatured && 'song-artist-mobile--keep',
+            )}
+          >
             <ArtistLinks artists={song.ar} />
             {note ? (
               <span className="ml-1.5 rounded-[6px] bg-black/6 px-1 text-[11px] text-ink-4">
@@ -188,7 +201,7 @@ const SongRow = memo(function SongRow({
         </div>
       </div>
 
-      <div className="song-meta min-w-0">
+      <div className="song-meta song-col-artist min-w-0">
         <div className="flex min-w-0 items-center gap-1.5 text-[12px] text-ink-3">
           <ArtistLinks artists={song.ar} className="min-w-0 truncate" />
           {note ? (
@@ -261,6 +274,7 @@ export function SongTable({
   onRemoveSong,
   onRemoveFromPlaylist,
   stickyTop,
+  pageArtistId,
 }: SongTableProps) {
   const { i18n } = useLingui()
   const rootRef = useRef<HTMLDivElement>(null)
@@ -497,6 +511,10 @@ export function SongTable({
         virtual={virtual}
         priority={index < 8}
         last={index === songs.length - 1}
+        showFeatured={
+          pageArtistId !== undefined &&
+          song.ar.some((artist) => Number(artist.id) !== pageArtistId)
+        }
         onPlay={handlePlay}
         onLike={handleLike}
         onRemove={onRemoveSong ? () => onRemoveSong(song) : undefined}
@@ -523,7 +541,7 @@ export function SongTable({
       <span>
         <Trans>标题</Trans>
       </span>
-      <span className="song-meta">
+      <span className="song-meta song-col-artist">
         <Trans>歌手</Trans>
       </span>
       <span className="song-meta">
@@ -538,7 +556,14 @@ export function SongTable({
   if (isVirtual) {
     const virtualItems = virtualizer.getVirtualItems()
     return (
-      <div ref={rootRef} className={cn('select-none', className)}>
+      <div
+        ref={rootRef}
+        className={cn(
+          'select-none',
+          pageArtistId !== undefined && 'song-table--no-artist',
+          className,
+        )}
+      >
         <div className="song-table">
           {header}
           <div
@@ -584,7 +609,14 @@ export function SongTable({
   }
 
   return (
-    <div ref={rootRef} className={cn('select-none', className)}>
+    <div
+        ref={rootRef}
+        className={cn(
+          'select-none',
+          pageArtistId !== undefined && 'song-table--no-artist',
+          className,
+        )}
+      >
       {/* The container wraps only the grid: `container` implies layout
           containment, which would pin the fixed locate button to the table. */}
       <div className="song-table">
