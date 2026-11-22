@@ -103,7 +103,7 @@ function CoverPlayButton({
       }}
       onKeyDown={(event) => event.stopPropagation()}
       className={cn(
-        'pressable absolute bottom-2 right-2 flex items-center justify-center rounded-full bg-white/90 text-black shadow-[0_6px_18px_-6px_rgba(0,0,0,0.45)] backdrop-blur-md transition-[opacity,transform] duration-200',
+        'pressable absolute bottom-2 right-2 flex items-center justify-center rounded-full bg-white/90 text-[#171717] shadow-[0_6px_18px_-6px_rgba(0,0,0,0.45)] backdrop-blur-md transition-[opacity,transform] duration-200',
         size === 'sm' ? 'h-8 w-8' : 'h-9 w-9',
         // Stays visible while this chart is the one playing or loading.
         playing || loading

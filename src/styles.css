@@ -2113,13 +2113,14 @@ html.desktop .app-window {
   text-align: center;
 }
 
-/* Three-way choice under its label row, indented to the label column. */
+/* Three-way choice under its label row. Only the menu's normal horizontal
+   padding is used; the old 36px indent left an empty red-box-sized gutter. */
 .menu-segmented {
   display: grid;
   grid-auto-columns: minmax(0, 1fr);
   grid-auto-flow: column;
   gap: 2px;
-  margin: 0 10px 6px 36px;
+  margin: 0 10px 6px;
   padding: 2px;
   border-radius: 10px;
   background: var(--menu-track);

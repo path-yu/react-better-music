@@ -142,9 +142,9 @@ function ArtistPage() {
   return (
     <div className="page">
       <div className="rounded-[22px] border border-black/8 bg-white/55 p-6 backdrop-blur-xl">
-        {/* Centred on the text block: bottom-aligned, the avatar sat low with
-            an empty band above it whenever the biography ran long. */}
-        <div className="flex flex-col items-center gap-6 md:flex-row md:gap-8">
+        {/* Keep the avatar pinned to the top. Centring it against the text
+            block made the portrait jump down whenever the biography expanded. */}
+        <div className="flex flex-col items-center gap-6 md:flex-row md:items-start md:gap-8">
           <ImageWithFallback
             src={profile.cover ?? profile.picUrl}
             alt={profile.name}
