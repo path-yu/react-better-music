@@ -18,8 +18,14 @@ interface UiState {
   loginOpen: boolean
   importPlaylistOpen: boolean
   sidebarOpen: boolean
-  /** Desktop-only icon-free collapse; the mobile drawer uses sidebarOpen. */
+  /**
+   * The user's own collapse choice (desktop only; the mobile drawer uses
+   * sidebarOpen). What is shown also depends on sidebarAutoCollapse: read it
+   * through useSidebarCollapsed(), not directly.
+   */
   sidebarCollapsed: boolean
+  /** Collapse to the icon rail while the window is 768–1023px wide. */
+  sidebarAutoCollapse: boolean
   theme: Theme
   /** Accent + surface palette; works in both light and dark themes. */
   palette: Palette
@@ -29,7 +35,8 @@ interface UiState {
   closeImportPlaylist: () => void
   toggleSidebar: () => void
   closeSidebar: () => void
-  toggleSidebarCollapsed: () => void
+  setSidebarCollapsed: (collapsed: boolean) => void
+  setSidebarAutoCollapse: (enabled: boolean) => void
   setTheme: (theme: Theme) => void
   toggleTheme: () => void
   setPalette: (palette: Palette) => void
@@ -42,6 +49,7 @@ export const useUiStore = create<UiState>()(
       importPlaylistOpen: false,
       sidebarOpen: false,
       sidebarCollapsed: false,
+      sidebarAutoCollapse: true,
       theme: 'light',
       palette: 'ocean',
       openLogin: () => set({ loginOpen: true }),
@@ -50,8 +58,8 @@ export const useUiStore = create<UiState>()(
       closeImportPlaylist: () => set({ importPlaylistOpen: false }),
       toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
       closeSidebar: () => set({ sidebarOpen: false }),
-      toggleSidebarCollapsed: () =>
-        set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+      setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
+      setSidebarAutoCollapse: (sidebarAutoCollapse) => set({ sidebarAutoCollapse }),
       setTheme: (theme) => set({ theme }),
       toggleTheme: () => set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
       setPalette: (palette) => set({ palette }),
@@ -62,6 +70,7 @@ export const useUiStore = create<UiState>()(
         theme: state.theme,
         palette: state.palette,
         sidebarCollapsed: state.sidebarCollapsed,
+        sidebarAutoCollapse: state.sidebarAutoCollapse,
       }),
     },
   ),

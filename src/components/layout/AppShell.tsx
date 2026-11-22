@@ -7,6 +7,7 @@ import { TopBar } from './TopBar'
 import { PlayerBar } from '../player/PlayerBar'
 import { NowPlaying } from '../player/NowPlaying'
 import { useUiStore } from '../../store/ui'
+import { useSidebarCollapsed } from '../../lib/useSidebarLayout'
 import { useUserStore } from '../../store/user'
 import { usePlayerStore } from '../../store/player'
 import { useSettingsStore } from '../../store/settings'
@@ -54,7 +55,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const closeImportPlaylist = useUiStore((state) => state.closeImportPlaylist)
   const closeLogin = useUiStore((state) => state.closeLogin)
   const sidebarOpen = useUiStore((state) => state.sidebarOpen)
-  const sidebarCollapsed = useUiStore((state) => state.sidebarCollapsed)
+  const sidebarCollapsed = useSidebarCollapsed()
   const closeSidebar = useUiStore((state) => state.closeSidebar)
   const theme = useUiStore((state) => state.theme)
   const palette = useUiStore((state) => state.palette)

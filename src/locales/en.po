@@ -3731,3 +3731,23 @@ msgstr "Default order"
 #: src/routes/toplist.tsx:166
 msgid "查看完整榜单"
 msgstr "View full chart"
+
+#: src/routes/settings.tsx:760
+msgid "窄窗口自动收起侧栏"
+msgstr "Auto-collapse sidebar in narrow windows"
+
+#: src/routes/settings.tsx:760
+msgid "窗口宽度小于 1024px 时把侧栏收成图标栏，给内容留出空间。在窄窗口里手动展开侧栏后，这个开关会自动关闭。"
+msgstr "Below 1024px the sidebar shrinks to an icon rail to give the content more room. Expanding it by hand in a narrow window turns this off."
+
+#: src/components/player/NowPlaying.tsx:1060
+msgid "歌曲"
+msgstr "Song"
+
+#: src/components/player/NowPlaying.tsx:1060
+msgid "队列"
+msgstr "Queue"
+
+#: src/components/player/NowPlaying.tsx:1060
+msgid "相似"
+msgstr "Similar"

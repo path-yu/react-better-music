@@ -220,8 +220,8 @@ function PlaylistDetailPage() {
   if (loading) {
     return (
       <div className="page">
-        <div className="flex gap-6">
-          <Skeleton className="h-[208px] w-[208px] rounded-[18px]" />
+        <div className="flex gap-6 max-sm:flex-col max-sm:gap-4">
+          <Skeleton className="h-[208px] w-[208px] shrink-0 rounded-[18px] max-sm:h-[160px] max-sm:w-[160px]" />
           <div className="flex-1">
             <Skeleton className="h-4 w-16 rounded-full" />
             <Skeleton className="mt-3 h-8 w-[42%] rounded-full" />
@@ -375,12 +375,12 @@ function PlaylistDetailPage() {
 
   return (
     <div className="page">
-      <div className="flex gap-6">
+      <div className="flex gap-6 max-sm:flex-col max-sm:gap-4">
         <ImageWithFallback
           src={detail.coverImgUrl}
           alt={detail.name}
           rounded="rounded-[18px]"
-          className="artwork-shadow h-[208px] w-[208px] shrink-0"
+          className="artwork-shadow h-[208px] w-[208px] shrink-0 max-sm:h-[160px] max-sm:w-[160px]"
           resize="400y400"
           priority
         />
@@ -474,10 +474,14 @@ function PlaylistDetailPage() {
 
           <div className="mt-5 flex flex-wrap items-center gap-2">
             <PlayAllButton songs={songs} playlistId={String(detail.id)} />
+            {/* Icon-only: with five buttons the row wrapped "分享" onto a
+                second line at ~1024px windows. */}
             <Button
               variant="secondary"
               size="sm"
-              className="rounded-full px-3.5 text-[12px]"
+              aria-label={i18n._(msg`刷新`)}
+              title={i18n._(msg`刷新`)}
+              className="rounded-full px-2.5 text-[12px]"
               onClick={() => {
                 // Detail/track responses are cached for five minutes.
                 invalidateApiCache([
@@ -487,8 +491,7 @@ function PlaylistDetailPage() {
                 setRefreshKey((value) => value + 1)
               }}
             >
-              <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-              <Trans>刷新</Trans>
+              <RefreshCw className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant="secondary"
@@ -523,7 +526,7 @@ function PlaylistDetailPage() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="mt-7">
-        <div className="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-[var(--app-border)] bg-[var(--app-glass)] py-2 backdrop-blur-xl page-bleed">
+        <div className="sticky top-0 z-20 flex items-center justify-between gap-4 max-sm:flex-wrap max-sm:gap-2 border-b border-[var(--app-border)] bg-[var(--app-glass)] py-2 backdrop-blur-xl page-bleed">
           <TabsList className="border-[var(--app-border)] bg-[var(--app-glass)]">
             <TabsTrigger value="songs">
               <Trans>歌曲列表</Trans>
@@ -550,7 +553,7 @@ function PlaylistDetailPage() {
               onChange={(event) => setKeyword(event.target.value)}
               placeholder={i18n._(msg`搜索歌单歌曲`)}
               size="sm"
-              className="w-[190px] rounded-full text-[12px]"
+              className="w-[190px] rounded-full text-[12px] max-sm:w-full"
             />
           ) : null}
         </div>

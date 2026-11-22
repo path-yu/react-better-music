@@ -1072,6 +1072,16 @@ html.desktop .app-window {
   --np-art-size: clamp(230px, min(36vw, 50vh), 480px);
 }
 
+/* Single-column song page: the cover is the hero, so size it from the window
+   width (minus the 32px gutters) instead of the desktop 36vw, which left a
+   230px cover floating in a 490px window. 46vh keeps the transport on screen
+   in short windows. */
+@media (max-width: 767px) {
+  :root {
+    --np-art-size: clamp(200px, min(calc(100vw - 64px), 46vh), 360px);
+  }
+}
+
 .now-disc {
   /* Give the artwork a little more presence; the transport below it is now
      compact enough to fit without squeezing the cover. */
@@ -2593,17 +2603,6 @@ html.desktop .app-window {
   );
 }
 
-/*
- * On mobile the lyrics list is not a viewport (the page scrolls), so a mask
- * would fade out the first and last lines of the song rather than the edges
- * of a scroll window.
- */
-@media (max-width: 767px) {
-  .lyrics-viewport {
-    -webkit-mask-image: none;
-    mask-image: none;
-  }
-}
 
 
 

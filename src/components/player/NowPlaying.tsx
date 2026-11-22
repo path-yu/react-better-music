@@ -19,7 +19,6 @@ import {
   Heart,
   LayoutGrid,
   List,
-  ListMusic,
   Loader2,
   LocateFixed,
   Search,
@@ -42,6 +41,7 @@ import { PlayerArtwork } from './PlayerArtwork'
 import { ImmersivePlayerBar } from './ImmersivePlayerBar'
 import { NowPlayingTitleBar } from './NowPlayingTitleBar'
 import { NowPlayingTransport } from './NowPlayingTransport'
+import { stepTab, useSwipeNavigation } from '../../lib/useSwipeNavigation'
 import { CommentSection, useCommentTotal } from '../comments/CommentSection'
 import { SongContextMenu } from '../songs/SongContextMenu'
 import { fetchMvUrl, fetchRelatedVideos, fetchSongDetail } from '../../api'
@@ -74,6 +74,10 @@ type NowPlayingPanel =
   | 'comments'
   | 'related'
 type QueueView = 'list' | 'grid'
+/** Mobile tab order, left to right; "song" is the cover view. */
+const MOBILE_VIEWS = ['song', 'lyrics', 'stage', 'queue', 'comments', 'related'] as const
+type MobileView = (typeof MOBILE_VIEWS)[number]
+const MOBILE_QUERY = '(max-width: 767.98px)'
 
 type ArtSnapshot = {
   song: Song
@@ -168,6 +172,10 @@ export function NowPlaying() {
   const growFromCover = nowPlayingTransition === 'cover'
   const [panel, setPanel] = useState<NowPlayingPanel>('lyrics')
   const [tabsVisible, setTabsVisible] = useState(true)
+  /** Mobile only: the cover view ("歌曲" tab) instead of one of the panels. */
+  const [mobileSongView, setMobileSongView] = useState(true)
+  const swipeAreaRef = useRef<HTMLDivElement>(null)
+  const mobileTabsRef = useRef<HTMLDivElement>(null)
   const [outgoingArt, setOutgoingArt] = useState<{
     snapshot: ArtSnapshot
     direction: number
@@ -1046,6 +1054,118 @@ export function NowPlaying() {
     }
   }
 
+  // Mobile: swipe the middle area left / right to move between the top tabs.
+  useSwipeNavigation(swipeAreaRef, {
+    enabled: () => window.matchMedia(MOBILE_QUERY).matches,
+    onSwipe: (step) => {
+      const current: MobileView = mobileSongView ? 'song' : panel
+      const next = stepTab(MOBILE_VIEWS, current, step)
+      if (next === current) return
+      showMobileView(next)
+      requestAnimationFrame(() => {
+        mobileTabsRef.current
+          ?.querySelector('.np-tab.is-active')
+          ?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+        const view = swipeAreaRef.current?.querySelector<HTMLElement>(
+          `[data-np-view="${next === 'song' ? 'song' : 'panel'}"]`,
+        )
+        if (!view || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+        view.animate(
+          [
+            { transform: `translateX(${step * 28}px)`, opacity: 0.4 },
+            { transform: 'none', opacity: 1 },
+          ],
+          { duration: 220, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+        )
+      })
+    },
+  })
+
+  // Song page tabs. Desktop shows them above the right column; mobile puts
+  // them at the top of the page (with an extra "歌曲" tab for the cover view)
+  // and shows one view at a time instead of one long scrolling page.
+  const selectPanel = (next: NowPlayingPanel) => {
+    setPanel(next)
+    setMobileSongView(false)
+  }
+  const showMobileView = (view: MobileView) => {
+    if (view === 'song') setMobileSongView(true)
+    else selectPanel(view)
+  }
+  const renderTabs = (mobile: boolean) => {
+    const tabOn = (key: NowPlayingPanel) =>
+      panel === key && !(mobile && mobileSongView)
+    return (
+      <div
+        className="np-tabs"
+        role="tablist"
+        aria-label={i18n._(msg`歌词、律动、播放队列、评论与相似歌曲`)}
+      >
+        {mobile ? (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mobileSongView}
+            onClick={() => setMobileSongView(true)}
+            className={cn('np-tab', mobileSongView && 'is-active')}
+          >
+            <Trans>歌曲</Trans>
+          </button>
+        ) : null}
+      <button
+        type="button"
+        role="tab"
+        aria-selected={tabOn('lyrics')}
+        onClick={() => selectPanel('lyrics')}
+        className={cn('np-tab', tabOn('lyrics') && 'is-active')}
+      >
+        <Trans>歌词</Trans>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={tabOn('stage')}
+        onClick={() => selectPanel('stage')}
+        className={cn('np-tab', tabOn('stage') && 'is-active')}
+      >
+        <Trans>律动</Trans>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={tabOn('queue')}
+        onClick={() => selectPanel('queue')}
+        className={cn('np-tab', tabOn('queue') && 'is-active')}
+      >
+        {mobile ? <Trans>队列</Trans> : <Trans>播放队列</Trans>}
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={tabOn('comments')}
+        onClick={() => selectPanel('comments')}
+        className={cn('np-tab', tabOn('comments') && 'is-active')}
+      >
+        <Trans>评论</Trans>
+        {commentTotal !== null ? (
+          <span className="np-tab__count">
+            {formatCommentCount(commentTotal, i18n.locale)}
+          </span>
+        ) : null}
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={tabOn('related')}
+        onClick={() => selectPanel('related')}
+        className={cn('np-tab', tabOn('related') && 'is-active')}
+      >
+        {mobile ? <Trans>相似</Trans> : <Trans>相似歌曲</Trans>}
+      </button>
+      </div>
+    )
+  }
+
   return (
     <div
       ref={overlayRef}
@@ -1105,12 +1225,18 @@ export function NowPlaying() {
         <div
           className={cn(
             'flex h-[58px] flex-none items-center justify-between px-6',
+            // Mobile: line up with the fixed collapse button (top-4, 36px);
+            // centring 40px buttons in the 58px row left them 7px higher.
+            'max-md:items-start max-md:px-4 max-md:pt-4',
             mvMode && 'hidden',
           )}
         >
-          {/* The floating player bar already exposes like/queue on desktop; on
-              mobile it hides both, so this row is their only entry point. */}
-          <div className="flex items-center gap-2 md:hidden">
+          {/* The floating player bar already exposes "like" on desktop; on
+              mobile it is hidden, so this row is its only entry point (the
+              queue is one of the top tabs).
+              `pl-11` clears the fixed collapse button (left-4, 36px) plus the
+              same 8px gap the row uses. */}
+          <div className="flex items-center gap-2 pl-11 md:hidden">
             <button
               type="button"
               aria-label={liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)}
@@ -1120,7 +1246,7 @@ export function NowPlaying() {
                 if (isLogin) void likeSong(currentSong.id, !liked)
                 else void toggleLocalFavorite(currentSong)
               }}
-              className="np-round-button pressable flex h-10 w-10 items-center justify-center rounded-full"
+              className="np-round-button pressable flex h-9 w-9 items-center justify-center rounded-full"
             >
               <Heart
                 className={cn(
@@ -1128,15 +1254,6 @@ export function NowPlaying() {
                   liked ? 'fill-love text-love' : 'text-white/60',
                 )}
               />
-            </button>
-            <button
-              type="button"
-              aria-label={i18n._(msg`播放列表`)}
-              title={i18n._(msg`播放列表`)}
-              onClick={() => toggleQueue(true)}
-              className="np-round-button pressable flex h-10 w-10 items-center justify-center rounded-full text-white/70"
-            >
-              <ListMusic className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -1210,12 +1327,31 @@ export function NowPlaying() {
           </>
         ) : (
           <>
-        {/* Desktop: the columns own their scrolling (lyrics/comments), so the
-            page itself never scrolls and the wheel target stays predictable.
-            Mobile: one single scroll container for the whole page. */}
-        <div className="grid flex-1 grid-cols-1 gap-4 px-6  max-md:auto-rows-max max-md:content-start max-md:overflow-y-auto md:grid-cols-[minmax(220px,0.9fr)_minmax(250px,1.1fr)] md:overflow-hidden xl:gap-6 xl:px-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <div className="flex min-h-0 flex-col items-center justify-center max-md:h-fit max-md:min-h-fit max-md:justify-start">
-            <div className="max-w-[var(--np-art-size)] text-center">
+        <div ref={mobileTabsRef} className="flex flex-none justify-center px-4 pb-2 md:hidden">
+          {renderTabs(true)}
+        </div>
+        {/* Desktop: two columns that own their scrolling (lyrics/comments), so
+            the page itself never scrolls and the wheel target stays
+            predictable. Mobile: one view at a time under the top tabs; the
+            transport stays at the bottom of every panel. */}
+        <div
+          ref={swipeAreaRef}
+          className="grid flex-1 grid-cols-1 gap-4 px-6 max-md:flex max-md:min-h-0 max-md:touch-pan-y max-md:flex-col max-md:overflow-hidden max-md:px-4 md:grid-cols-[minmax(220px,0.9fr)_minmax(250px,1.1fr)] md:overflow-hidden xl:gap-6 xl:px-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div
+            data-np-view="song"
+            className={cn(
+              'flex min-h-0 flex-col items-center justify-center',
+              mobileSongView
+                ? 'max-md:flex-1 max-md:overflow-y-auto'
+                : 'max-md:order-2 max-md:flex-none max-md:pb-1',
+            )}
+          >
+            <div
+              className={cn(
+                'max-w-[var(--np-art-size)] text-center',
+                !mobileSongView && 'max-md:hidden',
+              )}
+            >
               <div className="flex min-w-0 items-center justify-center gap-1.5">
                 <h2 className="headline-lg np-track-heading min-w-0 truncate">{currentSong.name}</h2>
                 {currentSong.trialEnd ? (
@@ -1239,16 +1375,19 @@ export function NowPlaying() {
               {currentSong.alia?.[0] ? (
                 <p className="mt-1 truncate text-[12px] text-ink-4">{currentSong.alia[0]}</p>
               ) : null}
-              <p className="np-track-meta mt-2 text-[13px] text-ink-3">
-                <ArtistLinks artists={currentSong.ar} />
+              {/* One line: a long album name used to wrap and leave the "·"
+                  dangling after the artist on narrow windows. */}
+              <p className="np-track-meta mt-2 flex min-w-0 items-center justify-center text-[13px] text-ink-3">
+                <ArtistLinks artists={currentSong.ar} className="min-w-0 truncate" />
                 {showAlbumMeta ? (
                   <>
-                    <span className="mx-2 text-ink-4">·</span>
+                    <span className="mx-2 shrink-0 text-ink-4">·</span>
                     <button
                       type="button"
                       onClick={openAlbum}
                       disabled={!albumId}
-                      className="pressable rounded-[6px] underline-offset-2 transition-colors hover:text-white hover:underline disabled:cursor-default cursor-pointer"
+                      title={currentSong.al.name}
+                      className="pressable min-w-0 truncate rounded-[6px] underline-offset-2 transition-colors hover:text-white hover:underline disabled:cursor-default cursor-pointer"
                     >
                       {currentSong.al.name}
                     </button>
@@ -1271,7 +1410,12 @@ export function NowPlaying() {
               </div>
             </div>
 
-            <div className="now-art-stage relative mt-6 mx-auto">
+            <div
+              className={cn(
+                'now-art-stage relative mt-6 mx-auto',
+                !mobileSongView && 'max-md:hidden',
+              )}
+            >
               {outgoingArt ? (
                 <div
                   aria-hidden="true"
@@ -1322,7 +1466,7 @@ export function NowPlaying() {
                 />
               </div>
             </div>
-            <div className="np-transport-panel mt-5">
+            <div className={cn('np-transport-panel mt-5', !mobileSongView && 'max-md:mt-3')}>
               <NowPlayingTransport
                 onOpenRelatedVideos={() => void openRelatedVideos()}
                 videoLoading={videoLoading}
@@ -1330,71 +1474,22 @@ export function NowPlaying() {
             </div>
 
           </div>
-          <div className="relative flex min-h-0 flex-col max-md:min-h-[420px]">
+          <div
+            data-np-view="panel"
+            className={cn(
+              'relative flex min-h-0 flex-col',
+              mobileSongView ? 'max-md:hidden' : 'max-md:order-1 max-md:flex-1',
+            )}
+          >
             <div
               className={cn(
-                'np-tabs-reveal flex flex-none items-center px-2 pb-1 pt-6',
+                'np-tabs-reveal flex flex-none items-center px-2 pb-1 pt-6 max-md:hidden',
                 !tabsVisible && 'is-hidden',
               )}
               aria-hidden={!tabsVisible}
               inert={!tabsVisible}
             >
-              <div
-                className="np-tabs"
-                role="tablist"
-                aria-label={i18n._(msg`歌词、律动、播放队列、评论与相似歌曲`)}
-              >
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={panel === 'lyrics'}
-                  onClick={() => setPanel('lyrics')}
-                  className={cn('np-tab', panel === 'lyrics' && 'is-active')}
-                >
-                  <Trans>歌词</Trans>
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={panel === 'stage'}
-                  onClick={() => setPanel('stage')}
-                  className={cn('np-tab', panel === 'stage' && 'is-active')}
-                >
-                  <Trans>律动</Trans>
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={panel === 'queue'}
-                  onClick={() => setPanel('queue')}
-                  className={cn('np-tab', panel === 'queue' && 'is-active')}
-                >
-                  <Trans>播放队列</Trans>
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={panel === 'comments'}
-                  onClick={() => setPanel('comments')}
-                  className={cn('np-tab', panel === 'comments' && 'is-active')}
-                >
-                  <Trans>评论</Trans>
-                  {commentTotal !== null ? (
-                    <span className="np-tab__count">
-                      {formatCommentCount(commentTotal, i18n.locale)}
-                    </span>
-                  ) : null}
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={panel === 'related'}
-                  onClick={() => setPanel('related')}
-                  className={cn('np-tab', panel === 'related' && 'is-active')}
-                >
-                  <Trans>相似歌曲</Trans>
-                </button>
-              </div>
+              {renderTabs(false)}
             </div>
             <div className="relative min-h-0 flex-1">
               {panel === 'lyrics' ? (
@@ -1413,7 +1508,7 @@ export function NowPlaying() {
                     lines={lyricLines}
                     activeIndex={activeIndex}
                     onSeek={handleSeek}
-                    className="h-full max-md:h-auto"
+                    className="h-full"
                   />
                 )
               ) : panel === 'stage' ? (
@@ -1431,11 +1526,11 @@ export function NowPlaying() {
                     lines={lyricLines}
                     activeIndex={activeIndex}
                     onSeek={handleSeek}
-                    className="h-full max-md:h-auto"
+                    className="h-full"
                   />
                 )
               ) : panel === 'queue' ? (
-                <div className="relative flex h-[min(72vh,620px)] min-h-[360px] flex-col md:h-full">
+                <div className="relative flex h-full min-h-0 flex-col">
                   <div className="flex shrink-0 items-center gap-2 px-2 pt-2">
                     <div className="relative min-w-0 flex-1">
                       <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/35" />
@@ -1849,7 +1944,7 @@ export function NowPlaying() {
                   className="h-full"
                 />
               ) : (
-                <div className="h-full overflow-y-auto px-5 pb-8 pt-4 max-md:h-auto max-md:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <div className="h-full overflow-y-auto px-5 pb-8 pt-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   <CommentSection
                     key={currentSong.id}
                     type={0}

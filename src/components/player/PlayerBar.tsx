@@ -1425,7 +1425,12 @@ export function PlayerBar() {
         'player-glass relative grid h-[76px] items-center px-4 max-md:grid-cols-[minmax(0,1fr)_auto] max-md:gap-2 max-md:px-3',
         showNowPlaying
           ? 'gap-2 grid-cols-[minmax(0,1fr)_minmax(340px,560px)_minmax(0,1fr)]'
-          : 'grid-cols-[minmax(170px,1fr)_minmax(300px,1.5fr)_minmax(150px,1fr)] gap-4',
+          : // Fixed 170 / 300 / 150px minimums overflowed bars narrower than
+            // ~690px (a 768–950px window with the sidebar open) and clipped
+            // the right-hand buttons. The song column now gives way first
+            // (the title truncates); the transport and the buttons keep the
+            // width their content needs.
+            'grid-cols-[minmax(0,1fr)_minmax(min-content,1.5fr)_minmax(max-content,1fr)] gap-4',
         // NowPlaying renders its own transport. Keep this instance mounted for
         // the audio engine, but hide its UI so there is no surface to morph.
         showNowPlaying ? 'invisible pointer-events-none z-30' : 'z-30',
@@ -1833,7 +1838,7 @@ function AudioProgressRow({
   const displayBuffered = sourceMatches ? buffered : 0
 
   return (
-    <div className="mt-1.5 grid h-5 w-full grid-cols-[40px_minmax(0,1fr)_40px] items-center gap-2.5 max-md:absolute max-md:inset-x-0 max-md:top-0 max-md:mt-0 max-md:px-3">
+    <div className="mt-1.5 grid h-5 w-full grid-cols-[40px_minmax(0,1fr)_40px] items-center gap-2.5 max-md:absolute max-md:inset-x-0 max-md:top-0 max-md:mt-0 max-md:grid-cols-1 max-md:px-3">
       <span
         data-testid="elapsed-time"
         className="text-right text-[11px] leading-none tabular-nums text-ink-4 max-md:hidden"

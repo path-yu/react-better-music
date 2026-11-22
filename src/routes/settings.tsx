@@ -204,6 +204,8 @@ function SettingsPage() {
   const setTheme = useUiStore((state) => state.setTheme)
   const palette = useUiStore((state) => state.palette)
   const setPalette = useUiStore((state) => state.setPalette)
+  const sidebarAutoCollapse = useUiStore((state) => state.sidebarAutoCollapse)
+  const setSidebarAutoCollapse = useUiStore((state) => state.setSidebarAutoCollapse)
   const fogBackdrop = useSettingsStore((state) => state.fogBackdrop)
   const setFogBackdrop = useSettingsStore((state) => state.setFogBackdrop)
   const nowPlayingTransition = useSettingsStore(
@@ -751,6 +753,22 @@ function SettingsPage() {
                   label: i18n._(option.label),
                 }))}
                 className="w-[160px] shrink-0 text-[12px]"
+              />
+            </div>
+
+            <div className="flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-[13px] font-medium text-ink-2">
+                  <Trans>窄窗口自动收起侧栏</Trans>
+                </p>
+                <p className="mt-1 max-w-[560px] text-[11px] leading-relaxed text-ink-3">
+                  <Trans>窗口宽度小于 1024px 时把侧栏收成图标栏，给内容留出空间。在窄窗口里手动展开侧栏后，这个开关会自动关闭。</Trans>
+                </p>
+              </div>
+              <Switch
+                checked={sidebarAutoCollapse}
+                onChange={setSidebarAutoCollapse}
+                aria-label={i18n._(msg`窄窗口自动收起侧栏`)}
               />
             </div>
 

@@ -3731,3 +3731,23 @@ msgstr "默认排序"
 #: src/routes/toplist.tsx:166
 msgid "查看完整榜单"
 msgstr "查看完整榜单"
+
+#: src/routes/settings.tsx:760
+msgid "窄窗口自动收起侧栏"
+msgstr "窄窗口自动收起侧栏"
+
+#: src/routes/settings.tsx:760
+msgid "窗口宽度小于 1024px 时把侧栏收成图标栏，给内容留出空间。在窄窗口里手动展开侧栏后，这个开关会自动关闭。"
+msgstr "窗口宽度小于 1024px 时把侧栏收成图标栏，给内容留出空间。在窄窗口里手动展开侧栏后，这个开关会自动关闭。"
+
+#: src/components/player/NowPlaying.tsx:1060
+msgid "歌曲"
+msgstr "歌曲"
+
+#: src/components/player/NowPlaying.tsx:1060
+msgid "队列"
+msgstr "队列"
+
+#: src/components/player/NowPlaying.tsx:1060
+msgid "相似"
+msgstr "相似"

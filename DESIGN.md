@@ -155,6 +155,8 @@
 
 - 一级分组（浏览、我的音乐）：`.eyebrow`。
 - 二级分组（本地歌单、创建的歌单、收藏的歌单）：`.sidebar-subheading`。
+- 收起状态：窗口 768–1023px 时默认自动收成 64px 图标栏（「设置 → 通用 → 窄窗口自动收起侧栏」）；用户在窄窗口里手动展开后，这个开关会自动关闭，之后不再自动收起。< 768px 是抽屉，不受影响。
+- 组件里判断侧栏是否收起，一律用 `useSidebarCollapsed()`，切换用 `useToggleSidebarCollapsed()`（`lib/useSidebarLayout.ts`），不要直接读 `sidebarCollapsed`。
 
 ## 5. 动效与无障碍
 

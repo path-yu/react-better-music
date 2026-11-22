@@ -199,13 +199,18 @@ export const LyricsPanel = memo(function LyricsPanel({
       style={{ '--lyric-font-scale': fontScale } as CSSProperties}
       className={cn(
         'lyrics-viewport relative h-full overflow-y-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
-        // Mobile keeps a single outer scroll container for the whole page.
-        'max-md:h-auto max-md:overflow-visible',
+        // Mobile used to render the whole lyric list into the page scroll
+        // (`h-auto overflow-visible`): auto-scroll had nothing to scroll, so
+        // the sung line was usually off screen and every visible line blurred.
+        // On mobile the lyrics are now their own full-height tab view.
         compact && 'lyrics-viewport--compact',
         className,
       )}
     >
-      <div className={compact ? 'py-16' : 'py-8 md:py-[38%]'}>
+      {/* Mobile: the first line starts a little below the tabs instead of in
+          the middle; the bottom padding still lets the last line scroll up
+          to the middle. */}
+      <div className={compact ? 'py-16' : 'pb-[35vh] pt-[8vh] md:py-[38%]'}>
         {lines.map((line, index) => {
           const active = index === activeIndex
           const away = activeIndex < 0 ? 0 : Math.abs(index - activeIndex)

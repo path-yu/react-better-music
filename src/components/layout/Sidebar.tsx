@@ -22,6 +22,7 @@ import { Button } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { useUserStore } from '../../store/user'
 import { useUiStore } from '../../store/ui'
+import { useSidebarCollapsed } from '../../lib/useSidebarLayout'
 import { useLocalLibraryStore } from '../../store/localLibrary'
 import { useSearchStore } from '../../store/search'
 import { cn } from '../../lib/format'
@@ -45,7 +46,7 @@ export function Sidebar() {
   const profile = useUserStore((state) => state.profile)
   const createdPlaylists = useUserStore((state) => state.createdPlaylists)
   const collectedPlaylists = useUserStore((state) => state.collectedPlaylists)
-  const sidebarCollapsed = useUiStore((state) => state.sidebarCollapsed)
+  const sidebarCollapsed = useSidebarCollapsed()
   const localPlaylists = useLocalLibraryStore((state) => state.playlists)
   const localSubscribedPlaylists = useLocalLibraryStore(
     (state) => state.subscribedPlaylists,

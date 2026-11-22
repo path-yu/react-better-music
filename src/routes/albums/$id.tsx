@@ -73,8 +73,8 @@ function AlbumDetailPage() {
   if (loading) {
     return (
       <div className="page">
-        <div className="flex gap-6">
-          <Skeleton className="h-[208px] w-[208px] rounded-[18px]" />
+        <div className="flex gap-6 max-sm:flex-col max-sm:gap-4">
+          <Skeleton className="h-[208px] w-[208px] shrink-0 rounded-[18px] max-sm:h-[160px] max-sm:w-[160px]" />
           <div className="flex-1">
             <Skeleton className="h-4 w-16 rounded-full" />
             <Skeleton className="mt-3 h-8 w-[42%] rounded-full" />
@@ -117,12 +117,12 @@ function AlbumDetailPage() {
 
   return (
     <div className="page">
-      <div className="flex gap-6">
+      <div className="flex gap-6 max-sm:flex-col max-sm:gap-4">
         <ImageWithFallback
           src={album.picUrl}
           alt={album.name}
           rounded="rounded-[18px]"
-          className="artwork-shadow h-[208px] w-[208px] shrink-0"
+          className="artwork-shadow h-[208px] w-[208px] shrink-0 max-sm:h-[160px] max-sm:w-[160px]"
           resize="400y400"
           priority
         />
@@ -180,7 +180,7 @@ function AlbumDetailPage() {
         </div>
       </div>
 
-      <div className="sticky top-0 z-20 mt-7 flex items-center justify-between gap-4 border-b border-[var(--app-border)] bg-[var(--app-glass)] py-2 backdrop-blur-xl page-bleed">
+      <div className="sticky top-0 z-20 mt-7 flex items-center justify-between gap-4 max-sm:flex-wrap max-sm:gap-2 border-b border-[var(--app-border)] bg-[var(--app-glass)] py-2 backdrop-blur-xl page-bleed">
         <div className="flex items-baseline gap-1.5 whitespace-nowrap">
           <span className="text-[12px] font-medium text-ink-2">
             <Trans>歌曲列表</Trans>
@@ -194,7 +194,7 @@ function AlbumDetailPage() {
           onChange={(event) => setKeyword(event.target.value)}
           placeholder={i18n._(msg`搜索专辑歌曲`)}
           size="sm"
-          className="w-[190px] rounded-full text-[12px]"
+          className="w-[190px] rounded-full text-[12px] max-sm:w-full"
         />
       </div>
 

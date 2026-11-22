@@ -15,6 +15,7 @@ import {
 import { UserMenu } from './UserMenu'
 import { WindowControls } from './WindowControls'
 import { useUiStore } from '../../store/ui'
+import { useSidebarCollapsed, useToggleSidebarCollapsed } from '../../lib/useSidebarLayout'
 import { cn } from '../../lib/format'
 import { isDesktopShell } from '../../lib/desktop'
 import { isTauriApp } from '../../lib/platform'
@@ -30,10 +31,8 @@ export function TopBar() {
   const theme = useUiStore((state) => state.theme)
   const toggleTheme = useUiStore((state) => state.toggleTheme)
   const toggleSidebar = useUiStore((state) => state.toggleSidebar)
-  const sidebarCollapsed = useUiStore((state) => state.sidebarCollapsed)
-  const toggleSidebarCollapsed = useUiStore(
-    (state) => state.toggleSidebarCollapsed,
-  )
+  const sidebarCollapsed = useSidebarCollapsed()
+  const toggleSidebarCollapsed = useToggleSidebarCollapsed()
   const desktopChrome = isDesktopShell() || isTauriApp()
   const nativeMacControls =
     desktopChrome && desktopPlatform() === 'macos'
