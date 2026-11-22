@@ -1,6 +1,25 @@
 @import "@fontsource-variable/inter/index.css";
-@import "tailwindcss";
+/*
+ * darwin-ui ships a complete prebuilt Tailwind (theme + preflight +
+ * utilities). Imported after the app's Tailwind, its bare utilities
+ * (`hidden`, `flex`, `grid-cols-2`, `lg:grid-cols-4`, `px-6`, `h-7` ...) landed
+ * later in the same `utilities` layer and beat the app's responsive variants:
+ * `hidden lg:block` never showed, `xl:grid-cols-5` stayed at 4 columns and
+ * `max-md:*` sizes were ignored. Import it first so the app's rules come last.
+ */
 @import "@pikoloo/darwin-ui/styles.css";
+@import "tailwindcss";
+
+/* Keep the two theme tokens darwin-ui customises, which used to win simply
+   because its build came last. */
+@theme static {
+  --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --radius-lg: var(--radius);
+  /* Wide desktop windows (content ≥ ~1380px next to the sidebar). Arbitrary
+     `min-[…]:` variants sort before `lg:`/`xl:` and lose to them. */
+  --breakpoint-3xl: 105rem;
+}
 
 /*
  * The app toggles `.dark` on <html>, but Tailwind's default `dark:` variant
@@ -1046,17 +1065,24 @@ html.desktop .app-window {
   animation-play-state: paused;
 }
 
+/* One size for the song page cover, its title block and the scrubber. It used
+   to stop at 380px, leaving a 1080p window mostly empty around a small cover;
+   50vh still keeps the cover plus transport inside short windows. */
+:root {
+  --np-art-size: clamp(230px, min(36vw, 50vh), 480px);
+}
+
 .now-disc {
   /* Give the artwork a little more presence; the transport below it is now
      compact enough to fit without squeezing the cover. */
-  width: clamp(230px, min(36vw, 50vh), 380px);
-  height: clamp(230px, min(36vw, 50vh), 380px);
+  width: var(--np-art-size);
+  height: var(--np-art-size);
 }
 
 /* Horizontal song-change transition, following the reference cover slide. */
 .now-art-stage {
-  width: clamp(230px, min(36vw, 50vh), 380px);
-  height: clamp(230px, min(36vw, 50vh), 380px);
+  width: var(--np-art-size);
+  height: var(--np-art-size);
   flex: none;
 }
 
@@ -1134,7 +1160,7 @@ html.desktop .app-window {
 
 /* The scrubber/timeline uses exactly the artwork width on the detail page. */
 .np-transport-panel {
-  width: clamp(230px, min(36vw, 50vh), 380px);
+  width: var(--np-art-size);
   max-width: 100%;
 }
 
@@ -1339,6 +1365,23 @@ html.desktop .app-window {
   .song-grid {
     grid-template-columns: 26px minmax(0, 2.2fr) minmax(0, 1.2fr) minmax(0, 1.2fr) 52px;
   }
+}
+
+/* Song tables measure themselves (not the window: the sidebar and the
+   two-column pages change the width). Past ~1240px proportional columns left
+   the album 390px wide and far from the duration; cap artist and album so
+   the extra width goes to the title like Apple Music / Spotify. */
+.song-table {
+  container: song-table / inline-size;
+}
+
+@container song-table (min-width: 1240px) {
+  .song-grid {
+    grid-template-columns: 26px minmax(0, 1fr) minmax(0, 300px) minmax(0, 300px) 64px;
+  }
+}
+
+@media (min-width: 1100px) {
 
   .song-meta {
     display: block;
@@ -2518,6 +2561,7 @@ html.desktop .app-window {
 }
 
 .lyrics-viewport {
+  container-type: inline-size;
   /* Apple's lyric tokens: current line `--systemPrimary-onDark` (#ffffffeb),
      context `#ffffff40`-`#ffffff80`. */
   /* White lyrics sit on a bright artwork wash; a soft shadow keeps them legible. */
@@ -2648,8 +2692,11 @@ html.desktop .app-window {
 }
 
 .lyric-line__text {
+  /* Sized from the lyrics column (container units), not the window: the column
+     is ~52% of the song page, so a 1080p window now reads at ~34px instead of
+     a fixed 28px lost in a 1000px-wide column, and short windows keep 24px. */
   font-size: calc(
-    clamp(24px, 1.7vw, 28px) * var(--lyric-font-scale, 1)
+    clamp(24px, 3.4cqi, 40px) * var(--lyric-font-scale, 1)
   );
   line-height: 1.34;
   letter-spacing: -0.01em;
@@ -5328,7 +5375,7 @@ html.dark[data-theme='dark'] body {
 
 /* ---------- exact retro assets from the reference renderer ---------- */
 .now-disc {
-  --art-size: clamp(230px, min(36vw, 50vh), 380px);
+  --art-size: var(--np-art-size);
   width: var(--art-size);
   height: var(--art-size);
 }

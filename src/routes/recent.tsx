@@ -99,7 +99,7 @@ function RecentSongsPage() {
             )}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="page-header__actions">
           <PlayAllButton songs={filteredSongs} playlistId="recent-songs" />
           {isLogin ? (
             <button

@@ -3726,3 +3726,8 @@ msgstr "Installs to qimiao-spleeter-runtime under local app data by default (a s
 #: src/routes/songlists/index.tsx:206
 msgid "默认排序"
 msgstr "Default order"
+
+
+#: src/routes/toplist.tsx:166
+msgid "查看完整榜单"
+msgstr "View full chart"

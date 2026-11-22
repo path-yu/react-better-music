@@ -213,7 +213,7 @@ function EditPlaylistPage() {
   }
 
   return (
-    <div className="page mx-auto max-w-[900px]">
+    <div className="page max-w-[900px]">
       <button
         type="button"
         onClick={leave}

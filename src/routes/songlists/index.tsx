@@ -175,7 +175,7 @@ function SonglistsPage() {
             <Trans>编辑精选的华语、欧美与器乐歌单</Trans>
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="page-header__actions">
           <Popover open={sortMenuOpen} onOpenChange={setSortMenuOpen}>
             <PopoverTrigger asChild>
               <button

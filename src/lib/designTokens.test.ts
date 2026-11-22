@@ -111,4 +111,15 @@ describe('design tokens', () => {
     }
     expect(missing).toEqual([])
   })
+
+  it('imports the prebuilt darwin-ui Tailwind before the app Tailwind', () => {
+    // darwin-ui's bare utilities (`hidden`, `grid-cols-2`, `h-7` ...) must come
+    // earlier in the utilities layer, or they beat the app's `lg:` / `xl:` /
+    // `max-md:` variants.
+    const css = readFileSync(join(SRC, 'styles.css'), 'utf8')
+    const darwin = css.indexOf('@import "@pikoloo/darwin-ui/styles.css"')
+    const tailwind = css.indexOf('@import "tailwindcss"')
+    expect(darwin).toBeGreaterThan(-1)
+    expect(tailwind).toBeGreaterThan(darwin)
+  })
 })

@@ -319,7 +319,7 @@ function ProfilePage() {
   }
 
   return (
-    <div className="page mx-auto max-w-[900px]">
+    <div className="page max-w-[900px]">
       <PageHeader
         title={<Trans>个人信息</Trans>}
         description={<Trans>修改昵称、头像、性别与地区资料</Trans>}

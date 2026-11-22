@@ -470,34 +470,36 @@ export function SongTable({
     const virtualItems = virtualizer.getVirtualItems()
     return (
       <div className={cn('select-none', className)}>
-        {header}
-        <div
-          ref={scrollRef}
-          className="relative h-[72vh] max-h-[700px] min-h-[360px] overflow-y-auto pr-1"
-        >
+        <div className="song-table">
+          {header}
           <div
-            className="relative w-full"
-            style={{ height: `${virtualizer.getTotalSize()}px` }}
+            ref={scrollRef}
+            className="relative h-[72vh] max-h-[700px] min-h-[360px] overflow-y-auto pr-1"
           >
-            {virtualItems.map((virtualRow) => {
-              const song = songs[virtualRow.index]
-              if (!song) return null
-              return (
-                <div
-                  key={`${song.id}-${virtualRow.index}`}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: `${virtualRow.size}px`,
-                    transform: `translateY(${virtualRow.start}px)`,
-                  }}
-                >
-                  {renderRow(song, virtualRow.index, true)}
-                </div>
-              )
-            })}
+            <div
+              className="relative w-full"
+              style={{ height: `${virtualizer.getTotalSize()}px` }}
+            >
+              {virtualItems.map((virtualRow) => {
+                const song = songs[virtualRow.index]
+                if (!song) return null
+                return (
+                  <div
+                    key={`${song.id}-${virtualRow.index}`}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: `${virtualRow.size}px`,
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                  >
+                    {renderRow(song, virtualRow.index, true)}
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </div>
         {locateButton}
@@ -508,13 +510,17 @@ export function SongTable({
 
   return (
     <div className={cn('select-none', className)}>
-      {header}
-      <div ref={listRef} className="py-1">
-        {songs.map((song, index) => (
-          <div key={`${song.id}-${index}`} data-song-id={song.id}>
-            {renderRow(song, index)}
-          </div>
-        ))}
+      {/* The container wraps only the grid: `container` implies layout
+          containment, which would pin the fixed locate button to the table. */}
+      <div className="song-table">
+        {header}
+        <div ref={listRef} className="py-1">
+          {songs.map((song, index) => (
+            <div key={`${song.id}-${index}`} data-song-id={song.id}>
+              {renderRow(song, index)}
+            </div>
+          ))}
+        </div>
       </div>
       {locateButton}
       {contextMenuNode}

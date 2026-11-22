@@ -179,7 +179,7 @@ function LocalPlaylistPage() {
             <Trans>本地歌单 · {playlist.songs.length} 首</Trans>
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="page-header__actions">
           <PlayAllButton songs={playlist.songs} playlistId={`local-${playlist.id}`} />
           <button
             type="button"

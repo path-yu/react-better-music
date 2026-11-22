@@ -585,7 +585,7 @@ function SettingsPage() {
   }, [activeTab])
 
   return (
-    <div className="page settings-page mx-auto max-w-[1200px] pb-4">
+    <div className="page settings-page max-w-[1200px] pb-4">
       <PageHeader
         title={<Trans>设置</Trans>}
         description={<Trans>管理外观、播放、缓存与桌面功能</Trans>}

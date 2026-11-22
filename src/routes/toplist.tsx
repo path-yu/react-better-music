@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { ChartNoAxesColumnIncreasing, Play } from 'lucide-react'
+import { ChartNoAxesColumnIncreasing, ChevronRight, Play } from 'lucide-react'
 import { Skeleton } from '@pikoloo/darwin-ui'
 import { EmptyState } from '../components/common/EmptyState'
 import { ImageWithFallback } from '../components/common/ImageWithFallback'
@@ -81,13 +81,13 @@ function ToplistPage() {
           />
         </div>
       ) : loading ? (
-        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+        <div className="mt-6 grid gap-4 lg:grid-cols-2 3xl:grid-cols-3">
           {Array.from({ length: 8 }).map((_, index) => (
             <Skeleton key={index} className="h-[224px] w-full rounded-[18px]" />
           ))}
         </div>
       ) : lists.length ? (
-        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+        <div className="mt-6 grid gap-4 lg:grid-cols-2 3xl:grid-cols-3">
           {lists.map((list, index) => (
             <button
               key={list.id}
@@ -126,8 +126,12 @@ function ToplistPage() {
                   </p>
                 ) : null}
                 <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-[11px] text-ink-4">
-                  {list.updateFrequency ? <span>{list.updateFrequency}</span> : null}
-                  <span>·</span>
+                  {list.updateFrequency ? (
+                    <>
+                      <span>{list.updateFrequency}</span>
+                      <span>·</span>
+                    </>
+                  ) : null}
                   <span>
                     <Trans>{list.trackCount ?? 0} 首</Trans>
                   </span>
@@ -150,7 +154,16 @@ function ToplistPage() {
                       </p>
                     ))}
                   </div>
-                ) : null}
+                ) : (
+                  // Only the first official charts come with a track preview;
+                  // the rest used to leave the bottom half of the card empty.
+                  <div className="mt-auto flex items-center justify-end border-t border-black/[0.055] pt-2 text-[11px]">
+                    <span className="flex items-center gap-0.5 text-ink-4 transition-colors group-hover:text-accent">
+                      <Trans>查看完整榜单</Trans>
+                      <ChevronRight className="h-3 w-3" />
+                    </span>
+                  </div>
+                )}
               </div>
             </button>
           ))}

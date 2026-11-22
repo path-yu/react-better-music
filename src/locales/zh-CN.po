@@ -3726,3 +3726,8 @@ msgstr "默认安装到本地数据目录下的 qimiao-spleeter-runtime（使用
 #: src/routes/songlists/index.tsx:206
 msgid "默认排序"
 msgstr "默认排序"
+
+
+#: src/routes/toplist.tsx:166
+msgid "查看完整榜单"
+msgstr "查看完整榜单"

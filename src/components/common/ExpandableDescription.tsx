@@ -105,7 +105,7 @@ export function ExpandableDescription({
         </p>
       </div>
       {canExpand ? (
-        <div className="mt-1.5 flex justify-center">
+        <div className="mt-1.5 flex justify-start">
           <button
             type="button"
             aria-expanded={expanded}
