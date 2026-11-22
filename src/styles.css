@@ -4890,21 +4890,6 @@ html.dark[data-theme='dark'] body {
   --apple-blue-rgb: var(--palette-rgb-dark);
   --apple-blue-on-light: var(--palette-accent-light);
   --apple-blue-dark: var(--palette-accent-dark);
-  --app-bg: var(--palette-bg-dark);
-  --app-surface: var(--palette-surface-dark);
-  --app-surface: color-mix(in srgb, var(--palette-surface-dark) 94%, transparent);
-  --app-content: var(--palette-surface-dark);
-  --app-glass: var(--palette-surface-dark);
-  --app-glass: color-mix(in srgb, var(--palette-surface-dark) 82%, transparent);
-  --app-sidebar: var(--palette-surface-dark);
-  --app-sidebar: color-mix(in srgb, var(--palette-surface-dark) 76%, transparent);
-  --app-player: var(--palette-surface-dark);
-  --app-player: color-mix(in srgb, var(--palette-surface-dark) 90%, transparent);
-  --app-card: var(--palette-surface-dark);
-  --app-border: rgba(255, 255, 255, 0.12);
-  --app-border: color-mix(in srgb, var(--palette-accent-dark) 20%, transparent);
-  --app-border-strong: rgba(255, 255, 255, 0.22);
-  --app-border-strong: color-mix(in srgb, var(--palette-accent-dark) 30%, transparent);
   --primary: var(--palette-primary-dark);
   --ring: var(--palette-ring-dark);
   --accent: var(--palette-tint-dark);
@@ -4913,7 +4898,65 @@ html.dark[data-theme='dark'] body {
   --nowplaying-accent-focus: var(--palette-focus-dark);
   --nowplaying-accent-rgb: var(--palette-rgb-dark);
   --nowplaying-accent-on-light: var(--palette-accent-light);
-  --nowplaying-base: var(--palette-nowplaying-base);
+}
+
+/*
+ * Dark chrome stays neutral. The palette may tint the top atmosphere and
+ * interactive states, but cards, sidebars and the player must not become a
+ * saturated wash: dark mode amplifies chroma and makes covers/status colours
+ * compete with the background. 8% at the top, 3% elsewhere.
+ */
+[data-theme='dark'][data-palette] {
+  --dark-chrome-surface: color-mix(
+    in oklab,
+    var(--palette-accent-dark, var(--apple-blue-dark)) 3%,
+    #232325
+  );
+  --app-bg: radial-gradient(
+    circle at 20% 0%,
+    color-mix(
+        in oklab,
+        var(--palette-accent-dark, var(--apple-blue-dark)) 8%,
+        #26262c
+      )
+      0%,
+    #111113 48%,
+    color-mix(
+        in oklab,
+        var(--palette-accent-dark, var(--apple-blue-dark)) 3%,
+        #1a1a1e
+      )
+      100%
+  );
+  --app-surface: color-mix(
+    in srgb,
+    var(--dark-chrome-surface) 94%,
+    transparent
+  );
+  --app-content: var(--dark-chrome-surface);
+  --app-glass: color-mix(
+    in srgb,
+    var(--dark-chrome-surface) 82%,
+    transparent
+  );
+  --app-sidebar: color-mix(
+    in srgb,
+    var(--dark-chrome-surface) 76%,
+    transparent
+  );
+  --app-player: color-mix(
+    in srgb,
+    var(--dark-chrome-surface) 90%,
+    transparent
+  );
+  --app-card: var(--dark-chrome-surface);
+  --app-border: rgba(255, 255, 255, 0.1);
+  --app-border-strong: rgba(255, 255, 255, 0.18);
+  --nowplaying-base: color-mix(
+    in oklab,
+    var(--palette-accent-dark, var(--apple-blue-dark)) 4%,
+    #101012
+  );
 }
 
 

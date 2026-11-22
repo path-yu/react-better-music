@@ -88,16 +88,16 @@ export const PALETTE_OPTIONS: PaletteOption[] = [
 ]
 
 const META_COLORS: Record<Palette, Record<Theme, string>> = {
-  ocean: { light: '#f5f5f7', dark: '#1c1c1e' },
-  sunset: { light: '#fbf3e8', dark: '#1b1511' },
-  forest: { light: '#eef5f1', dark: '#122019' },
-  sakura: { light: '#fdf2f8', dark: '#1f1118' },
-  violet: { light: '#f5f3ff', dark: '#1b1626' },
-  teal: { light: '#ecfeff', dark: '#0f1d22' },
-  rose: { light: '#fff1f2', dark: '#211316' },
-  amber: { light: '#fefce8', dark: '#1f1a10' },
-  graphite: { light: '#f8fafc', dark: '#16181d' },
-  mocha: { light: '#f7ede3', dark: '#1d1512' },
+  ocean: { light: '#f5f5f7', dark: '#131316' },
+  sunset: { light: '#fbf3e8', dark: '#131316' },
+  forest: { light: '#eef5f1', dark: '#131316' },
+  sakura: { light: '#fdf2f8', dark: '#131316' },
+  violet: { light: '#f5f3ff', dark: '#131316' },
+  teal: { light: '#ecfeff', dark: '#131316' },
+  rose: { light: '#fff1f2', dark: '#131316' },
+  amber: { light: '#fefce8', dark: '#131316' },
+  graphite: { light: '#f8fafc', dark: '#131316' },
+  mocha: { light: '#f7ede3', dark: '#131316' },
 }
 
 export function applyTheme(theme: Theme, palette: Palette = 'ocean') {
