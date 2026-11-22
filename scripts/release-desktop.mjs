@@ -5,7 +5,7 @@
  * Usage:
  *   pnpm desktop:release:auto
  */
-import { execFileSync, spawnSync } from 'node:child_process'
+import { spawnSync } from 'node:child_process'
 import {
   existsSync,
   readFileSync,
@@ -16,22 +16,36 @@ import { dirname, join, resolve } from 'node:path'
 import { createInterface } from 'node:readline/promises'
 import { fileURLToPath } from 'node:url'
 import { stdin as input, stdout as output } from 'node:process'
+import { findGh, runGh } from './lib/gh.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const root = resolve(here, '..')
 const configPath = join(root, 'electrobun.config.ts')
 const notesPath = join(root, '.release-notes.md')
 const repo = 'path-yu/react-better-music'
-const rl = createInterface({ input, output })
+let rl = createInterface({ input, output })
 
 const currentConfig = readFileSync(configPath, 'utf8')
 const currentVersion =
   currentConfig.match(/version:\s*['"]([^'"]+)['"]/)?.[1] ?? '0.0.0'
 
 function parseVersion(value) {
-  const match = value.match(/^v?(\d+)\.(\d+)\.(\d+)$/)
+  // Older tags in this repository use two components (`1.5`). Normalise them
+  // to semver instead of silently falling back to 1.0.0.
+  const match = String(value)
+    .trim()
+    .match(/^v?(\d+)(?:\.(\d+))?(?:\.(\d+))?$/)
   if (!match) return null
-  return match.slice(1).map(Number)
+  return [
+    Number(match[1]),
+    Number(match[2] ?? 0),
+    Number(match[3] ?? 0),
+  ]
+}
+
+function normalizeVersion(value) {
+  const parts = parseVersion(value)
+  return parts ? parts.join('.') : null
 }
 
 function compareVersion(a, b) {
@@ -67,10 +81,10 @@ function pnpm(args) {
   })
 }
 
+const ghExe = findGh()
 function gh(args, options = {}) {
-  return execFileSync('gh', args, {
+  return runGh(ghExe, args, {
     cwd: root,
-    stdio: 'inherit',
     ...options,
   })
 }
@@ -95,27 +109,31 @@ async function fetchLatestVersion() {
 }
 
 let ghReady = false
-try {
-  execFileSync('gh', ['--version'], { stdio: 'ignore' })
+if (!ghExe) {
+  console.error('✗ 未找到 GitHub CLI，请先安装：')
+  console.error('  winget install --id GitHub.cli')
+} else {
   try {
-    execFileSync('gh', ['auth', 'status'], { stdio: 'ignore' })
+    runGh(ghExe, ['auth', 'status'], { stdio: 'ignore' })
     ghReady = true
   } catch {
     console.log('GitHub CLI 尚未登录。')
     const answer = await rl.question('现在运行 gh auth login 吗？(Y/n) ')
     if (!answer.trim() || /^y(es)?$/i.test(answer.trim())) {
+      // gh auth login is interactive and needs the terminal's stdin. The active
+      // readline interface would otherwise consume the "Press Enter" keypress,
+      // leaving gh waiting forever after the browser says it is connected.
+      rl.close()
       gh(['auth', 'login'])
+      rl = createInterface({ input, output })
       try {
-        execFileSync('gh', ['auth', 'status'], { stdio: 'ignore' })
+        runGh(ghExe, ['auth', 'status'], { stdio: 'ignore' })
         ghReady = true
       } catch {
         console.error('✗ GitHub CLI 仍未登录')
       }
     }
   }
-} catch {
-  console.error('✗ 未找到 GitHub CLI，请先安装：')
-  console.error('  winget install --id GitHub.cli')
 }
 
 if (!ghReady) {
@@ -139,9 +157,10 @@ console.log('')
 const versionInput = (
   await rl.question(`新版本号 [${suggestedVersion(baseVersion)}]: `)
 ).trim()
-const version = versionInput || suggestedVersion(baseVersion)
+const version =
+  normalizeVersion(versionInput || suggestedVersion(baseVersion)) ?? ''
 
-if (!/^\d+\.\d+\.\d+$/.test(version)) {
+if (!version) {
   console.error('✗ 版本号必须是 semver，例如 1.6.0')
   rl.close()
   process.exit(1)

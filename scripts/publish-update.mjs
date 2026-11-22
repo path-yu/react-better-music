@@ -8,10 +8,10 @@
  * The update manifest is uploaded last so clients never see a release whose
  * archive or checksum is still missing.
  */
-import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { findGh, runGh } from './lib/gh.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const root = resolve(here, '..')
@@ -52,9 +52,8 @@ if (!existsSync(manifest)) {
   process.exit(1)
 }
 
-try {
-  execFileSync('gh', ['--version'], { stdio: 'ignore' })
-} catch {
+const ghExe = findGh()
+if (!ghExe) {
   console.error('✗ 未找到 GitHub CLI，请先安装并登录：')
   console.error('  winget install --id GitHub.cli')
   console.error('  gh auth login')
@@ -62,9 +61,8 @@ try {
 }
 
 const gh = (args) =>
-  execFileSync('gh', args, {
+  runGh(ghExe, args, {
     cwd: root,
-    stdio: 'inherit',
   })
 
 let createdDraft = false
