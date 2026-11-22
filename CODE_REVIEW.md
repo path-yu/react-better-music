@@ -158,7 +158,7 @@ pnpm i18n:extract && pnpm typecheck && pnpm typecheck:desktop && pnpm lint && pn
 | `pnpm dev:api` 监听所有网卡 | 脚本加 `--host 127.0.0.1`，`app.js` 支持该参数；Docker / `npm start` 行为不变 | `package.json`、`server/app.js` |
 | 恢复进度后，播放页进度和歌词停在 0:00 | 尚未加载音频时，播放页显示保存的位置 | `store/player.ts` |
 | 刷新后第一次播放，底部播放栏和详情页进度条先显示 0:00，音频加载完再跳到恢复位置 | 有待恢复位置（`resumeAt`）时，两处进度条都显示目标位置，直到音频跳转完成；新音源加载时共享的 `currentTime` 不再先归零；`onPlaying` 兜底，确保待恢复位置不会一直挂着。切换音源、出错重载也一并受益 | `PlayerBar.tsx`、`store/player.ts` |
-| 边听边缓存重复下载：`<audio>` 的缓冲 JS 读不到，播放 10 秒后缓存任务又向 CDN 完整下载一次 | 新增 `server/audioTee.js`：同一媒体地址第一次完整请求时全速下载到临时文件，播放、进度内拖动、缓存任务、重播都从这个正在增长的文件读；拖到未下载部分 2MB 以外仍直接请求 CDN；没人读的未完成下载 5 秒后放弃（快速切歌不会下完每一首）；最多 8 个 / 300MB，25 分钟过期；临时目录按进程区分，启动时清理已退出进程留下的目录 | `server/audioTee.js`（新）、`server/server.js` |
+| 边听边缓存重复下载：`<audio>` 的缓冲 JS 读不到，播放 10 秒后缓存任务又向 CDN 完整下载一次 | 新增 `server/audioTee.js`：同一媒体地址第一次完整请求时全速下载到临时文件，播放、进度内拖动、缓存任务、重播都从这个正在增长的文件读；拖到未下载部分 2MB 以外仍直接请求 CDN；没人读的未完成下载 5 秒后放弃（快速切歌不会下完每一首）；最多 8 个 / 300MB，25 分钟过期；临时目录按进程区分，启动时清理已退出进程留下的目录。**自查修复**：读取端原先在写入流异步创建文件之前就去打开文件，首个播放请求可能因 ENOENT 失败，现在改为有数据写入后才打开；读取端在打开期间被销毁时，文件句柄会被关闭 | `server/audioTee.js`（新）、`server/server.js` |
 | vitest 未配置 Lingui，底层文件无法翻译 | `vitest.config.ts` 接入 `@lingui/vite-plugin`（与构建相同的宏转换和 `.po` 加载）；`songs.ts`「未知专辑」、`video.ts`「视频」、`image.ts` 两条错误改走多语言 | `vitest.config.ts`、`lib/songs.ts`、`lib/video.ts`、`lib/image.ts`、`lib/format.test.ts` |
 
 ---

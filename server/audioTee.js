@@ -309,7 +309,6 @@ function createReader(entry, start, end) {
     if (reading || stream.destroyed) return
     reading = true
     try {
-      if (!handle) handle = await fs.promises.open(entry.file, 'r')
       for (;;) {
         if (stream.destroyed) return
         if (position > end) {
@@ -326,6 +325,19 @@ function createReader(entry, start, end) {
           // Resumed by the next 'progress' event.
           waiting = true
           return
+        }
+        // Open only once bytes are counted: the write stream creates the file
+        // asynchronously, so opening right away could fail with ENOENT and
+        // break the very first playback request. `written` grows only after a
+        // write has landed, so the file exists by now.
+        if (!handle) {
+          const opened = await fs.promises.open(entry.file, 'r')
+          // Destroyed while opening: release() ran without a handle to close.
+          if (released) {
+            await opened.close().catch(() => undefined)
+            return
+          }
+          handle = opened
         }
         const length = Math.min(CHUNK, available)
         const buffer = Buffer.allocUnsafe(length)
