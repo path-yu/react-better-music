@@ -8,18 +8,22 @@ import {
   Updater,
   Utils,
   type ElectrobunEvent,
-  type UpdateStatusEntry,
 } from 'electrobun/main'
 import {
   appendFileSync,
+  closeSync,
   existsSync,
   mkdirSync,
+  openSync,
   readFileSync,
   readdirSync,
   renameSync,
   rmSync,
+  statSync,
   writeFileSync,
+  writeSync,
 } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { homedir } from 'node:os'
 import { extname, join } from 'node:path'
 import { acquireInstanceLock, releaseInstanceLock } from './instanceLock'
@@ -60,23 +64,88 @@ const STARTED_AT = Date.now()
 const STARTUP_LOG = join(APP_DATA_DIR, 'startup.log')
 
 /* ------------------------------- updates --------------------------------- */
+/**
+ * Installer-based updates.
+ *
+ * Electrobun's built-in Updater only works when the app lives in its managed
+ * root (%LOCALAPPDATA%\<identifier>\<channel>\app). Our Inno Setup installer
+ * lets users pick any directory, so instead of swapping the app bundle we
+ * download the latest `win-x64-Setup-Custom.exe` from the GitHub release and
+ * run it. The installer keeps the same AppId with UsePreviousAppDir=yes, so it
+ * upgrades in place wherever the user installed it.
+ */
 
-let latestUpdateStatus: UpdateStatusEntry | null = null
-let updateStatusHistory: UpdateStatusEntry[] = []
-let updateDownloadRunning = false
-let updateCheckRunning = false
+const UPDATE_DIR = join(APP_DATA_DIR, 'updates')
+/** Metadata written by scripts/installer/build.mjs and uploaded last. */
+const INSTALLER_MANIFEST = 'win-x64-Setup-Custom.json'
+/** Older releases only have Electrobun's manifest; use it for the version. */
+const LEGACY_MANIFEST = 'stable-win-x64-update.json'
+const DEFAULT_INSTALLER_FILE = 'win-x64-Setup-Custom.exe'
+/** Abort a download when no bytes arrive for this long. */
+const DOWNLOAD_IDLE_TIMEOUT_MS = 60_000
 
-function updatesSupported() {
-  return BuildConfig.getSync().isPackaged
+type UpdatePhase =
+  | 'idle'
+  | 'checking'
+  | 'up-to-date'
+  | 'available'
+  | 'downloading'
+  | 'verifying'
+  | 'ready'
+  | 'installing'
+  | 'error'
+
+interface RemoteInstaller {
+  version: string
+  file: string
+  size?: number
+  sha256?: string
 }
 
-/**
- * Electrobun reports `updateAvailable` whenever the published build hash
- * differs from the installed one, even when both carry the same version. A
- * local rebuild of 1.6.0 therefore looks "outdated" next to the published
- * 1.6.0, and downloading it would silently swap in a different (usually
- * older) build. Only treat a strictly higher version number as an update.
- */
+interface InstallerUpdateState {
+  phase: UpdatePhase
+  remote: RemoteInstaller | null
+  downloadedBytes: number
+  totalBytes: number
+  installerPath: string | null
+  error: string
+  checkedAt: number | null
+  /** Last phase/progress change; the settings card uses it for a stall hint. */
+  updatedAt: number
+}
+
+let updateState: InstallerUpdateState = {
+  phase: 'idle',
+  remote: null,
+  downloadedBytes: 0,
+  totalBytes: 0,
+  installerPath: null,
+  error: '',
+  checkedAt: null,
+  updatedAt: Date.now(),
+}
+let updateCheckInFlight: Promise<void> | null = null
+let updateDownloadInFlight: Promise<void> | null = null
+
+function setUpdateState(patch: Partial<InstallerUpdateState>) {
+  updateState = { ...updateState, ...patch, updatedAt: Date.now() }
+}
+
+function updatesSupported() {
+  return BuildConfig.getSync().isPackaged && process.platform === 'win32'
+}
+
+function errorText(error: unknown) {
+  if (error instanceof Error) {
+    if (error.name === 'TimeoutError' || error.name === 'AbortError') {
+      return '连接超时，请检查网络或代理设置是否能访问 GitHub'
+    }
+    return error.message
+  }
+  return String(error)
+}
+
+/** Compare dotted versions numerically (1.10.0 > 1.9.0), ignoring a `v` prefix. */
 function compareVersions(a: string, b: string) {
   const parse = (value: string) =>
     value
@@ -99,41 +168,361 @@ function isNewerRelease(remote?: string | null, local?: string | null) {
   return compareVersions(remote, local) > 0
 }
 
-function startUpdateCheck() {
-  if (updateCheckRunning) return
-  updateCheckRunning = true
-  void Updater.checkForUpdate()
-    .catch((error) => {
-      latestUpdateStatus = {
-        status: 'error',
-        message: error instanceof Error ? error.message : String(error),
-        timestamp: Date.now(),
+const SAFE_VERSION = /^v?\d+(?:\.\d+){0,2}(?:[-+][0-9A-Za-z.-]+)?$/
+const SAFE_INSTALLER_FILE = /^[A-Za-z0-9._-]+\.exe$/
+const SHA256_HEX = /^[a-f0-9]{64}$/
+
+function updateUnavailableReason(local: { baseUrl?: string; channel?: string }) {
+  if (!local.baseUrl) return '未配置 release.baseUrl'
+  if (local.channel === 'dev' || local.channel === 'development') {
+    return '开发版不启用自动更新'
+  }
+  return ''
+}
+
+function releaseAssetUrl(baseUrl: string, file: string) {
+  return `${baseUrl.replace(/\/+$/, '')}/${encodeURIComponent(file)}`
+}
+
+/** Returns null on 404 so callers can fall back to an older manifest. */
+async function fetchReleaseJson(baseUrl: string, file: string) {
+  const response = await fetch(
+    `${releaseAssetUrl(baseUrl, file)}?t=${Date.now()}`,
+    {
+      headers: { 'Cache-Control': 'no-cache' },
+      signal: AbortSignal.timeout(20_000),
+    },
+  )
+  if (response.status === 404) return null
+  if (!response.ok) throw new Error(`获取 ${file} 失败（HTTP ${response.status}）`)
+  try {
+    return (await response.json()) as Record<string, unknown>
+  } catch {
+    throw new Error(`${file} 不是有效的 JSON`)
+  }
+}
+
+async function resolveRemoteInstaller(
+  baseUrl: string,
+  identifier: string,
+): Promise<RemoteInstaller> {
+  const manifest = await fetchReleaseJson(baseUrl, INSTALLER_MANIFEST)
+  if (manifest) {
+    const version = String(manifest.version ?? '')
+    const file = String(manifest.file ?? DEFAULT_INSTALLER_FILE)
+    const sha256 =
+      typeof manifest.sha256 === 'string' ? manifest.sha256.toLowerCase() : ''
+    const size = Number(manifest.size)
+    if (
+      typeof manifest.identifier === 'string' &&
+      identifier &&
+      manifest.identifier !== identifier
+    ) {
+      throw new Error('更新清单与当前应用不匹配')
+    }
+    if (!SAFE_VERSION.test(version) || !SAFE_INSTALLER_FILE.test(file)) {
+      throw new Error('更新清单格式不正确')
+    }
+    return {
+      version: version.replace(/^v/i, ''),
+      file,
+      size: Number.isSafeInteger(size) && size > 0 ? size : undefined,
+      sha256: SHA256_HEX.test(sha256) ? sha256 : undefined,
+    }
+  }
+  const legacy = await fetchReleaseJson(baseUrl, LEGACY_MANIFEST)
+  const version = String(legacy?.version ?? '')
+  if (!legacy || !SAFE_VERSION.test(version)) {
+    throw new Error('最新发布中没有可用的更新清单')
+  }
+  return { version: version.replace(/^v/i, ''), file: DEFAULT_INSTALLER_FILE }
+}
+
+function installerPathFor(version: string) {
+  return join(UPDATE_DIR, `声屿-Setup-${version}.exe`)
+}
+
+function sha256OfFile(path: string) {
+  return createHash('sha256').update(readFileSync(path)).digest('hex')
+}
+
+/** Reuse an installer downloaded earlier for the same release. */
+function cachedInstallerFor(remote: RemoteInstaller) {
+  const path = installerPathFor(remote.version)
+  try {
+    if (!existsSync(path)) return null
+    const size = statSync(path).size
+    if (size <= 0 || (remote.size && size !== remote.size)) return null
+    if (remote.sha256 && sha256OfFile(path) !== remote.sha256) return null
+    return path
+  } catch {
+    return null
+  }
+}
+
+/** Drop installers and partial downloads that do not belong to `keep`. */
+function cleanupInstallers(keep?: string) {
+  try {
+    if (!existsSync(UPDATE_DIR)) return
+    for (const name of readdirSync(UPDATE_DIR)) {
+      const path = join(UPDATE_DIR, name)
+      if (path === keep) continue
+      if (name.endsWith('.exe') || name.endsWith('.partial')) {
+        rmSync(path, { force: true })
       }
+    }
+  } catch {
+    // Best effort; a locked file is retried on the next download.
+  }
+}
+
+function checkForInstallerUpdate(): Promise<void> {
+  if (updateCheckInFlight) return updateCheckInFlight
+  if (
+    updateState.phase === 'downloading' ||
+    updateState.phase === 'verifying' ||
+    updateState.phase === 'installing'
+  ) {
+    return Promise.resolve()
+  }
+  const operation = (async () => {
+    setUpdateState({ phase: 'checking', error: '' })
+    try {
+      const local = await Updater.getLocalInfo()
+      const reason = updateUnavailableReason(local)
+      if (reason) throw new Error(reason)
+      const remote = await resolveRemoteInstaller(local.baseUrl, local.identifier)
+      if (!isNewerRelease(remote.version, local.version)) {
+        cleanupInstallers()
+        setUpdateState({
+          phase: 'up-to-date',
+          remote,
+          installerPath: null,
+          downloadedBytes: 0,
+          totalBytes: 0,
+          checkedAt: Date.now(),
+        })
+        return
+      }
+      const cached = cachedInstallerFor(remote)
+      const cachedSize = cached ? statSync(cached).size : 0
+      setUpdateState({
+        phase: cached ? 'ready' : 'available',
+        remote,
+        installerPath: cached,
+        downloadedBytes: cachedSize,
+        totalBytes: cachedSize || remote.size || 0,
+        checkedAt: Date.now(),
+      })
+    } catch (error) {
+      setUpdateState({
+        phase: 'error',
+        error: `检查更新失败：${errorText(error)}`,
+        checkedAt: Date.now(),
+      })
+    }
+  })()
+  updateCheckInFlight = operation.finally(() => {
+    updateCheckInFlight = null
+  })
+  return updateCheckInFlight
+}
+
+function downloadInstallerUpdate(): Promise<void> {
+  if (updateDownloadInFlight) return updateDownloadInFlight
+  const remote = updateState.remote
+  if (
+    !remote ||
+    (updateState.phase !== 'available' && updateState.phase !== 'error')
+  ) {
+    return Promise.resolve()
+  }
+  const operation = (async () => {
+    const target = installerPathFor(remote.version)
+    const partial = `${target}.partial`
+    let fd: number | null = null
+    const controller = new AbortController()
+    let idleTimer: ReturnType<typeof setTimeout> | null = null
+    const armIdleTimer = () => {
+      if (idleTimer) clearTimeout(idleTimer)
+      idleTimer = setTimeout(() => controller.abort(), DOWNLOAD_IDLE_TIMEOUT_MS)
+    }
+    setUpdateState({
+      phase: 'downloading',
+      error: '',
+      installerPath: null,
+      downloadedBytes: 0,
+      totalBytes: remote.size ?? 0,
     })
-    .finally(() => {
-      updateCheckRunning = false
-    })
+    try {
+      const local = await Updater.getLocalInfo()
+      if (!isNewerRelease(remote.version, local.version)) {
+        throw new Error('已是最新版本，无需下载')
+      }
+      mkdirSync(UPDATE_DIR, { recursive: true })
+      cleanupInstallers()
+      armIdleTimer()
+      const response = await fetch(releaseAssetUrl(local.baseUrl, remote.file), {
+        signal: AbortSignal.any([
+          controller.signal,
+          AbortSignal.timeout(30 * 60_000),
+        ]),
+      })
+      if (response.status === 404) {
+        throw new Error('最新发布中没有安装包，请稍后再试')
+      }
+      if (!response.ok || !response.body) {
+        throw new Error(`安装包下载失败（HTTP ${response.status}）`)
+      }
+      const headerLength = Number(response.headers.get('content-length'))
+      const totalBytes =
+        Number.isSafeInteger(headerLength) && headerLength > 0
+          ? headerLength
+          : remote.size ?? 0
+      setUpdateState({ totalBytes })
+
+      const hash = createHash('sha256')
+      const reader = response.body.getReader()
+      let written = 0
+      let header = ''
+      fd = openSync(partial, 'w')
+      for (;;) {
+        const { done, value } = await reader.read()
+        if (done) break
+        armIdleTimer()
+        if (!value?.byteLength) continue
+        if (written === 0) {
+          header = String.fromCharCode(value[0] ?? 0, value[1] ?? 0)
+        }
+        writeSync(fd, value)
+        hash.update(value)
+        written += value.byteLength
+        updateState = {
+          ...updateState,
+          downloadedBytes: written,
+          updatedAt: Date.now(),
+        }
+      }
+      closeSync(fd)
+      fd = null
+
+      setUpdateState({ phase: 'verifying' })
+      if (written <= 0 || header !== 'MZ') {
+        throw new Error('下载的文件不是有效的安装程序')
+      }
+      if ((remote.size && written !== remote.size) || (totalBytes && written !== totalBytes)) {
+        throw new Error('安装包下载不完整，请重试')
+      }
+      if (remote.sha256 && hash.digest('hex') !== remote.sha256) {
+        throw new Error('安装包校验失败（SHA-256 不一致），请重试')
+      }
+      rmSync(target, { force: true })
+      renameSync(partial, target)
+      setUpdateState({
+        phase: 'ready',
+        installerPath: target,
+        downloadedBytes: written,
+        totalBytes: written,
+      })
+    } catch (error) {
+      setUpdateState({
+        phase: 'error',
+        error: `下载更新失败：${
+          controller.signal.aborted
+            ? '超过 60 秒没有收到数据，请检查网络或代理设置'
+            : errorText(error)
+        }`,
+      })
+    } finally {
+      if (idleTimer) clearTimeout(idleTimer)
+      if (fd !== null) {
+        try {
+          closeSync(fd)
+        } catch {}
+      }
+      rmSync(partial, { force: true })
+    }
+  })()
+  updateDownloadInFlight = operation.finally(() => {
+    updateDownloadInFlight = null
+  })
+  return updateDownloadInFlight
+}
+
+/**
+ * Start the installer outside this process tree, then quit so it can replace
+ * our files. The process is created through WMI because children of the app
+ * may be torn down together with it (Electrobun's own updater hands off via
+ * Task Scheduler for the same reason).
+ */
+async function launchInstallerUpdate() {
+  const path = updateState.installerPath
+  const remote = updateState.remote
+  if (updateState.phase !== 'ready' || !path || !remote || !existsSync(path)) {
+    throw new Error('安装包尚未下载完成')
+  }
+  const local = await Updater.getLocalInfo()
+  if (!isNewerRelease(remote.version, local.version)) {
+    throw new Error('已是最新版本，无需安装')
+  }
+  setUpdateState({ phase: 'installing', error: '' })
+  try {
+    const logPath = join(UPDATE_DIR, 'install.log')
+    // /SILENT: progress window only; the installer reuses the previous install
+    // directory (UsePreviousAppDir) and relaunches the app when /RELAUNCH=1.
+    const commandLine = [
+      `"${path}"`,
+      '/SILENT',
+      '/SUPPRESSMSGBOXES',
+      '/NORESTART',
+      '/CLOSEAPPLICATIONS',
+      '/RELAUNCH=1',
+      `"/LOG=${logPath}"`,
+    ].join(' ')
+    const script = [
+      "$ErrorActionPreference = 'Stop'",
+      `$r = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ CommandLine = '${commandLine.replaceAll("'", "''")}' }`,
+      'Write-Output ("{0} {1}" -f $r.ReturnValue, $r.ProcessId)',
+    ].join('; ')
+    const child = Bun.spawn(
+      [
+        'powershell.exe',
+        '-NoProfile',
+        '-NonInteractive',
+        '-ExecutionPolicy',
+        'Bypass',
+        '-EncodedCommand',
+        Buffer.from(script, 'utf16le').toString('base64'),
+      ],
+      { stdout: 'pipe', stderr: 'pipe', windowsHide: true },
+    )
+    const [exitCode, stdout, stderr] = await Promise.all([
+      child.exited,
+      new Response(child.stdout).text(),
+      new Response(child.stderr).text(),
+    ])
+    const [returnValue] = stdout.trim().split(/\s+/)
+    if (exitCode !== 0 || returnValue !== '0') {
+      throw new Error(
+        stderr.trim() || `无法启动安装程序（返回值 ${returnValue || exitCode}）`,
+      )
+    }
+  } catch (error) {
+    setUpdateState({ phase: 'ready', error: `启动安装程序失败：${errorText(error)}` })
+    throw error
+  }
+  // Let the HTTP response flush, then quit so the installer can replace files.
+  setTimeout(() => Utils.quit(), 400)
 }
 
 if (updatesSupported()) {
-  Updater.onStatusChange((entry) => {
-    latestUpdateStatus = entry
-    updateStatusHistory = [...updateStatusHistory.slice(-29), entry]
-  })
-  // Prime the cache while the user is still opening the app. The HTTP check
-  // endpoint returns immediately and lets this finish in the background.
+  // Prime the result while the user is still opening the app.
   setTimeout(() => {
     void (async () => {
       try {
         const local = await Updater.getLocalInfo()
-        if (
-          !local.baseUrl ||
-          local.channel === 'dev' ||
-          local.channel === 'development'
-        ) {
-          return
-        }
-        startUpdateCheck()
+        if (updateUnavailableReason(local)) return
+        await checkForInstallerUpdate()
       } catch {
         // Offline startup or a missing release is non-fatal.
       }
@@ -142,63 +531,51 @@ if (updatesSupported()) {
 }
 
 async function updateSnapshot() {
-  const packaged = updatesSupported()
+  const packaged = BuildConfig.getSync().isPackaged
+  const base = {
+    phase: updateState.phase,
+    remote: updateState.remote,
+    downloadedBytes: updateState.downloadedBytes,
+    totalBytes: updateState.totalBytes,
+    error: updateState.error,
+    checkedAt: updateState.checkedAt,
+    updatedAt: updateState.updatedAt,
+  }
   if (!packaged) {
     return {
+      ...base,
       supported: false,
       packaged: false,
       reason: 'dev',
       local: null,
-      update: null,
       newerVersion: false,
-      downloading: updateDownloadRunning,
-      checking: updateCheckRunning,
-      status: latestUpdateStatus,
-      history: updateStatusHistory,
     }
   }
   try {
-    const local = await Updater.getLocalInfo()
-    const unavailableReason =
-      !local.baseUrl
-        ? '未配置 release.baseUrl'
-        : local.channel === 'dev' || local.channel === 'development'
-          ? '开发版不启用自动更新'
-          : ''
-    const update = Updater.updateInfo()
-    // Only a higher version number counts; a different hash alone does not.
-    const newerVersion = Boolean(
-      update.updateAvailable && isNewerRelease(update.version, local.version),
-    )
+    const info = await Updater.getLocalInfo()
+    const reason =
+      process.platform !== 'win32'
+        ? '当前平台暂不支持在线更新'
+        : updateUnavailableReason(info)
     return {
-      supported: !unavailableReason,
+      ...base,
+      supported: !reason,
       packaged: true,
-      reason: unavailableReason || undefined,
-      local,
-      update,
-      newerVersion,
-      downloading: updateDownloadRunning,
-      checking: updateCheckRunning,
-      status: latestUpdateStatus,
-      history: updateStatusHistory,
+      reason: reason || undefined,
+      local: { version: info.version, channel: info.channel },
+      newerVersion: isNewerRelease(updateState.remote?.version, info.version),
     }
   } catch (error) {
     return {
+      ...base,
       supported: false,
       packaged: true,
-      reason: error instanceof Error ? error.message : String(error),
+      reason: errorText(error),
       local: null,
-      update: Updater.updateInfo(),
       newerVersion: false,
-      downloading: updateDownloadRunning,
-      checking: updateCheckRunning,
-      status: latestUpdateStatus,
-      history: updateStatusHistory,
     }
   }
 }
-
-
 
 /**
  * Record a startup milestone in both the console and `startup.log`. The
@@ -1577,104 +1954,33 @@ try {
         if (url.pathname === '/update/status' && request.method === 'GET') {
           return Response.json(await updateSnapshot(), { headers })
         }
-        if (url.pathname === '/update/check' && request.method === 'POST') {
+        if (url.pathname.startsWith('/update/') && request.method === 'POST') {
           if (!updatesSupported()) {
             return Response.json(
-              { error: '自动更新仅在安装版中可用' },
+              { error: '自动更新仅在 Windows 安装版中可用' },
               { status: 400, headers },
             )
           }
-          try {
-            const local = await Updater.getLocalInfo()
-            if (!local.baseUrl) {
-              return Response.json(
-                { error: '未配置 release.baseUrl' },
-                { status: 400, headers },
-              )
-            }
-            if (local.channel === 'dev' || local.channel === 'development') {
-              return Response.json(
-                { error: '开发版不启用自动更新' },
-                { status: 400, headers },
-              )
-            }
-            // Return immediately with the cached result/checking flag. The
-            // GitHub request continues in the background and the settings card
-            // polls `/update/status` for the final answer.
-            startUpdateCheck()
-            return Response.json(await updateSnapshot(), { headers })
-          } catch (error) {
-            return Response.json(
-              { error: error instanceof Error ? error.message : String(error) },
-              { status: 502, headers },
-            )
-          }
-        }
-        if (url.pathname === '/update/download' && request.method === 'POST') {
-          if (!updatesSupported()) {
-            return Response.json(
-              { error: '自动更新仅在安装版中可用' },
-              { status: 400, headers },
-            )
-          }
-          const info = Updater.updateInfo()
-          const local = await Updater.getLocalInfo().catch(() => null)
-          // Refuse same-version or older builds so a click can never downgrade.
-          if (
-            !info.updateAvailable ||
-            info.updateReady ||
-            !isNewerRelease(info.version, local?.version)
-          ) {
+          if (url.pathname === '/update/check') {
+            // Return immediately; the card polls /update/status for the result.
+            void checkForInstallerUpdate()
             return Response.json(await updateSnapshot(), { headers })
           }
-          if (!updateDownloadRunning) {
-            updateDownloadRunning = true
-            void Updater.downloadUpdate()
-              .catch((error) => {
-                latestUpdateStatus = {
-                  status: 'error',
-                  message: error instanceof Error ? error.message : String(error),
-                  timestamp: Date.now(),
-                }
-              })
-              .finally(() => {
-                updateDownloadRunning = false
-              })
+          if (url.pathname === '/update/download') {
+            void downloadInstallerUpdate()
+            return Response.json(await updateSnapshot(), { headers })
           }
-          return Response.json(await updateSnapshot(), { headers })
-        }
-        if (url.pathname === '/update/apply' && request.method === 'POST') {
-          if (!updatesSupported()) {
-            return Response.json(
-              { error: '自动更新仅在安装版中可用' },
-              { status: 400, headers },
-            )
+          if (url.pathname === '/update/apply') {
+            try {
+              await launchInstallerUpdate()
+              return Response.json({ ok: true }, { headers })
+            } catch (error) {
+              return Response.json(
+                { error: errorText(error) },
+                { status: 409, headers },
+              )
+            }
           }
-          const ready = Updater.updateInfo()
-          if (!ready.updateReady) {
-            return Response.json(
-              { error: '更新尚未下载完成' },
-              { status: 409, headers },
-            )
-          }
-          const local = await Updater.getLocalInfo().catch(() => null)
-          if (!isNewerRelease(ready.version, local?.version)) {
-            return Response.json(
-              { error: '已是最新版本，无需安装' },
-              { status: 409, headers },
-            )
-          }
-          // Let the HTTP response flush before the updater asks the app to quit.
-          setTimeout(() => {
-            void Updater.applyUpdate().catch((error) => {
-              latestUpdateStatus = {
-                status: 'error',
-                message: error instanceof Error ? error.message : String(error),
-                timestamp: Date.now(),
-              }
-            })
-          }, 150)
-          return Response.json({ ok: true }, { headers })
         }
         if (url.pathname === '/window-state' && request.method === 'GET') {
           return Response.json(currentWindowState(), { headers })

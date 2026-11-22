@@ -10,6 +10,11 @@
 ;   · 支持"仅为我安装（免管理员）/ 为所有用户安装（Program Files）"
 ;   · 生成开始菜单、桌面快捷方式与卸载程序
 ;
+; 在线更新：应用下载最新的本安装包后以
+;   /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RELAUNCH=1
+; 运行。AppId 不变且 UsePreviousAppDir=yes，会覆盖安装到用户原来选择的目录；
+; /RELAUNCH=1 时安装完成后自动重新打开声屿（见 [Run] 与 ShouldRelaunch）。
+;
 ; 用法：
 ;   1) 安装 Inno Setup 6（https://jrsoftware.org/isdl.php）
 ;   2) 先执行 pnpm desktop:build 产出 build/stable-win-x64/声屿/
@@ -52,6 +57,7 @@ DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppName}
 ; 关键：允许用户修改安装目录
 DisableDirPage=no
+; 升级（含在线更新）时沿用上次安装的目录
 UsePreviousAppDir=yes
 DirExistsWarning=no
 
@@ -92,3 +98,11 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\bin\{#AppExeName}"; Tasks: de
 
 [Run]
 Filename: "{app}\bin\{#AppExeName}"; Description: "运行 {#AppName}"; Flags: nowait postinstall skipifsilent
+; 应用内在线更新：静默安装完成后自动重新打开（普通静默安装不受影响）。
+Filename: "{app}\bin\{#AppExeName}"; Flags: nowait; Check: ShouldRelaunch
+
+[Code]
+function ShouldRelaunch: Boolean;
+begin
+  Result := WizardSilent and (ExpandConstant('{param:RELAUNCH|0}') = '1');
+end;

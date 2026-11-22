@@ -5,6 +5,9 @@
  * Electrobun 自带的 Setup.exe 是固定目录的每用户自解压器（没有目录页，也没有
  * 命令行参数可改路径），所以这里用 Inno Setup 把同一份内容再包一层。
  *
+ * 同时生成 artifacts/win-x64-Setup-Custom.json（版本、大小、SHA-256），
+ * 应用内更新据此判断新版本并校验下载的安装包。
+ *
  * 关键点：要安装的是 **解压后的应用目录**（bin/ + Resources/），而不是
  * `build/stable-win-x64/声屿` 那个「安装源包」（Resources 里只有一个 tar.zst）。
  * 装错形态时 launcher 会报 "installer package is incomplete"。
@@ -19,7 +22,10 @@ import {
   mkdirSync,
   readFileSync,
   rmSync,
+  statSync,
+  writeFileSync,
 } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -120,5 +126,26 @@ if (existsSync(output)) {
   const target = join(artifactDir, 'win-x64-Setup-Custom.exe')
   copyFileSync(output, target)
   console.log(`› 安装包已复制到 ${target}`)
+
+  // In-app updates read this to find the newest installer and verify it.
+  // publish-update.mjs uploads it after the .exe so clients never see a
+  // manifest whose installer is still missing.
+  const configText = readFileSync(configPath, 'utf8')
+  const identifier =
+    configText.match(/identifier:\s*['"]([^'"]+)['"]/)?.[1] ?? ''
+  const manifest = {
+    schemaVersion: 1,
+    identifier,
+    version: appVersion,
+    file: 'win-x64-Setup-Custom.exe',
+    size: statSync(target).size,
+    sha256: createHash('sha256').update(readFileSync(target)).digest('hex'),
+  }
+  writeFileSync(
+    join(artifactDir, 'win-x64-Setup-Custom.json'),
+    JSON.stringify(manifest),
+    'utf8',
+  )
+  console.log(`› 安装包清单：${manifest.version} · ${manifest.sha256.slice(0, 12)}…`)
 }
 process.exit(0)

@@ -98,46 +98,39 @@ export function reportDesktopLog(message: string) {
 
 
 
-export interface DesktopUpdateStatusEntry {
-  status: string
-  message: string
-  timestamp: number
-  details?: {
-    progress?: number
-    bytesDownloaded?: number
-    totalBytes?: number
-    errorMessage?: string
-    patchNumber?: number
-    totalPatchesApplied?: number
-  }
-}
+export type DesktopUpdatePhase =
+  | 'idle'
+  | 'checking'
+  | 'up-to-date'
+  | 'available'
+  | 'downloading'
+  | 'verifying'
+  | 'ready'
+  | 'installing'
+  | 'error'
 
+/** Installer-based update state reported by the main process. */
 export interface DesktopUpdateState {
   supported: boolean
   packaged: boolean
-  checking: boolean
   reason?: string
-  local: {
+  local: { version: string; channel: string } | null
+  phase: DesktopUpdatePhase
+  /** Latest published release (installer metadata). */
+  remote: {
     version: string
-    hash: string
-    baseUrl: string
-    channel: string
-    name: string
-    identifier: string
-  } | null
-  update: {
-    version: string
-    hash: string
-    updateAvailable: boolean
-    updateReady: boolean
-    error: string
+    file: string
+    size?: number
+    sha256?: string
   } | null
   /** Published version is strictly higher than the installed one. */
-  newerVersion?: boolean
-  /** The main process is downloading or preparing an update bundle. */
-  downloading?: boolean
-  status: DesktopUpdateStatusEntry | null
-  history: DesktopUpdateStatusEntry[]
+  newerVersion: boolean
+  downloadedBytes: number
+  totalBytes: number
+  error: string
+  checkedAt: number | null
+  /** Last phase/progress change, used for the stall hint. */
+  updatedAt: number
 }
 
 async function updateRequest<T>(path: string, init?: RequestInit) {

@@ -28,16 +28,8 @@ function formatMegabytes(bytes?: number) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
 
-/** No status change for this long while downloading usually means a network stall. */
+/** No progress for this long while downloading usually means a network stall. */
 const STALL_HINT_MS = 30_000
-
-type DownloadPhase =
-  | 'starting'
-  | 'local-check'
-  | 'patch'
-  | 'full-download'
-  | 'decompressing'
-  | 'finishing'
 
 export function UpdateCard() {
   const { i18n } = useLingui()
@@ -54,109 +46,58 @@ export function UpdateCard() {
     }
   }, [])
 
+  const phase = state?.phase
+  // Poll faster while bytes are moving so the progress bar stays smooth.
+  const active =
+    phase === 'checking' || phase === 'downloading' || phase === 'verifying'
+
   useEffect(() => {
     if (!isDesktopApp()) return
     void refresh()
-    const timer = window.setInterval(() => void refresh(), 2000)
+    const timer = window.setInterval(() => void refresh(), active ? 1000 : 2000)
     return () => window.clearInterval(timer)
-  }, [refresh])
+  }, [refresh, active])
 
   if (!isDesktopApp()) return null
 
-  const update = state?.update
-  const status = state?.status
-  const phase = status?.status
-  // The main process only reports a newer *version* as an update; a rebuild
-  // of the same version (different hash) is treated as up to date.
-  const newerVersion = Boolean(state?.newerVersion)
-  const updateReady = Boolean(update?.updateReady && newerVersion)
-  // Trust the main process flag instead of enumerating Updater status names,
-  // which change between Electrobun releases.
-  const downloading = busy === 'download' || Boolean(state?.downloading)
-  // Map Electrobun's fine-grained statuses onto a few user-facing stages.
-  // Unknown statuses fall back to the generic "starting" label instead of
-  // hiding the progress UI.
-  const downloadPhase: DownloadPhase = (() => {
-    switch (phase) {
-      case 'download-starting':
-        return 'starting'
-      case 'checking-local-tar':
-      case 'local-tar-found':
-      case 'local-tar-missing':
-        return 'local-check'
-      case 'fetching-patch':
-      case 'patch-found':
-      case 'patch-not-found':
-      case 'downloading-patch':
-      case 'applying-patch':
-      case 'patch-applied':
-      case 'patch-failed':
-      case 'patch-chain-complete':
-        return 'patch'
-      case 'downloading-full-bundle':
-      case 'download-progress':
-        return 'full-download'
-      case 'decompressing':
-        return 'decompressing'
-      case 'extracting-version':
-      case 'download-complete':
-        return 'finishing'
-      default:
-        return 'starting'
-    }
-  })()
-  // Only the full-bundle download reports a real percentage; other stages
-  // show an indeterminate bar.
-  const hasPercent = phase === 'download-progress'
-  const progress = hasPercent
-    ? Math.max(0, Math.min(100, Math.round(status?.details?.progress ?? 0)))
-    : downloadPhase === 'decompressing' || downloadPhase === 'finishing'
+  const remote = state?.remote
+  const newerVersion = Boolean(state?.newerVersion && remote)
+  const checking = busy === 'check' || phase === 'checking'
+  const downloading =
+    busy === 'download' || phase === 'downloading' || phase === 'verifying'
+  const verifying = phase === 'verifying'
+  // Keep the ready card (with its spinner) visible while the installer starts.
+  const ready = newerVersion && (phase === 'ready' || phase === 'installing')
+  const installing = busy === 'apply' || phase === 'installing'
+  const failed = phase === 'error'
+  const upToDate = phase === 'up-to-date'
+
+  const totalBytes = state?.totalBytes || remote?.size || 0
+  const downloadedBytes = state?.downloadedBytes ?? 0
+  const progress =
+    verifying
       ? 100
-      : null
-  const downloadedLabel = formatMegabytes(status?.details?.bytesDownloaded)
-  const totalLabel = formatMegabytes(status?.details?.totalBytes)
-  // The card polls every 2 s, so Date.now() here is refreshed on each poll.
-  // Only judge staleness against a download status; the previous
-  // "update-available" entry may be minutes old when the click happens.
-  const isDownloadStatus =
-    phase === 'download-starting' || downloadPhase !== 'starting'
+      : totalBytes > 0
+        ? Math.max(0, Math.min(100, Math.round((downloadedBytes / totalBytes) * 100)))
+        : null
+  const downloadedLabel = formatMegabytes(downloadedBytes)
+  const totalLabel = formatMegabytes(totalBytes)
+  const sizeLabel = formatMegabytes(remote?.size)
+  // Date.now() is re-evaluated on every poll render.
   const stalled =
-    downloading &&
-    isDownloadStatus &&
-    downloadPhase !== 'decompressing' &&
-    downloadPhase !== 'finishing' &&
-    typeof status?.timestamp === 'number' &&
-    Date.now() - status.timestamp > STALL_HINT_MS
-  const applying = busy === 'apply' || status?.status === 'applying'
-  const checking =
-    busy === 'check' ||
-    Boolean(state?.checking) ||
-    status?.status === 'checking'
-  const upToDate =
-    !checking &&
-    !update?.error &&
-    !newerVersion &&
-    (phase === 'no-update' || Boolean(update?.updateAvailable))
+    phase === 'downloading' &&
+    typeof state?.updatedAt === 'number' &&
+    Date.now() - state.updatedAt > STALL_HINT_MS
 
-  const handleCheck = async () => {
+  const run = async (
+    kind: 'check' | 'download',
+    request: () => Promise<DesktopUpdateState>,
+  ) => {
     if (busy) return
-    setBusy('check')
+    setBusy(kind)
     setError('')
     try {
-      setState(await checkDesktopUpdate())
-    } catch (nextError) {
-      setError(errorMessage(nextError))
-    } finally {
-      setBusy(null)
-    }
-  }
-
-  const handleDownload = async () => {
-    if (busy) return
-    setBusy('download')
-    setError('')
-    try {
-      setState(await downloadDesktopUpdate())
+      setState(await request())
     } catch (nextError) {
       setError(errorMessage(nextError))
     } finally {
@@ -170,9 +111,11 @@ export function UpdateCard() {
     setError('')
     try {
       await applyDesktopUpdate()
+      // The app quits shortly; keep the button disabled until then.
     } catch (nextError) {
       setError(errorMessage(nextError))
       setBusy(null)
+      void refresh()
     }
   }
 
@@ -200,8 +143,14 @@ export function UpdateCard() {
         <button
           type="button"
           aria-busy={checking}
-          disabled={!state?.supported || Boolean(busy) || checking}
-          onClick={() => void handleCheck()}
+          disabled={
+            !state?.supported ||
+            Boolean(busy) ||
+            checking ||
+            downloading ||
+            installing
+          }
+          onClick={() => void run('check', checkDesktopUpdate)}
           className="pressable inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-[var(--app-border)] px-3 text-[11px] font-medium text-ink-3 transition-colors hover:border-accent/30 hover:bg-accent/8 hover:text-ink-1 disabled:cursor-default disabled:opacity-40"
         >
           {checking ? (
@@ -219,9 +168,7 @@ export function UpdateCard() {
           className="mt-4 flex items-center gap-2 rounded-[10px] bg-black/4 px-3 py-2 text-[11px] text-ink-3"
         >
           <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
-          <Trans>
-            正在连接 GitHub 获取更新清单，通常需要几秒…
-          </Trans>
+          <Trans>正在连接 GitHub 获取最新版本信息，通常需要几秒…</Trans>
         </p>
       ) : null}
 
@@ -239,95 +186,93 @@ export function UpdateCard() {
         </p>
       ) : null}
 
-      {error ? (
+      {error || (failed && state?.error) ? (
         <p className="mt-4 rounded-[10px] bg-danger/8 px-3 py-2 text-[11px] leading-relaxed text-danger">
-          {error}
+          {error || state?.error}
         </p>
       ) : null}
 
-      {update?.error ? (
-        <p className="mt-4 rounded-[10px] bg-danger/8 px-3 py-2 text-[11px] leading-relaxed text-danger">
-          {update.error}
-        </p>
-      ) : null}
-
-      {updateReady && update ? (
+      {ready && remote ? (
         <div className="mt-4 rounded-[14px] border border-accent/25 bg-accent/8 p-4">
-          <div className="flex items-start gap-3">
-            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-            <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-medium text-ink-1">
-                <Trans>更新已下载完成</Trans>
-              </p>
-              <p className="mt-1 text-[11px] leading-relaxed text-ink-3">
-                <Trans>
-                  新版本 {update.version} 会在重启后安装，当前播放状态会结束。
-                </Trans>
-              </p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-start gap-3">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+              <div className="min-w-0">
+                <p className="text-[13px] font-medium text-ink-1">
+                  <Trans>新版本 {remote.version} 的安装包已下载</Trans>
+                </p>
+                <p className="mt-1 text-[11px] leading-relaxed text-ink-3">
+                  <Trans>
+                    点击「立即安装」后声屿会关闭，安装程序会覆盖安装到原来的目录，完成后自动重新打开。当前播放会结束。
+                  </Trans>
+                </p>
+              </div>
             </div>
             <Button
               size="sm"
               loading={busy === 'apply'}
-              disabled={Boolean(busy) || applying}
+              disabled={Boolean(busy) || installing}
               onClick={() => void handleApply()}
             >
               <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-              <Trans>重启并更新</Trans>
+              <Trans>立即安装</Trans>
             </Button>
           </div>
+          {installing ? (
+            <p className="mt-3 flex items-center gap-2 text-[11px] text-ink-3">
+              <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+              <Trans>正在启动安装程序，声屿即将关闭…</Trans>
+            </p>
+          ) : null}
         </div>
-      ) : newerVersion && update ? (
+      ) : newerVersion && remote ? (
         <div className="mt-4 rounded-[14px] border border-black/8 bg-black/[0.025] p-4 dark:border-white/10 dark:bg-white/[0.035]">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-[13px] font-medium text-ink-1">
-                <Trans>发现新版本 {update.version}</Trans>
+                <Trans>发现新版本 {remote.version}</Trans>
               </p>
               <p className="mt-1 text-[11px] text-ink-3">
-                <Trans>下载完成后可选择重启安装。</Trans>
+                {sizeLabel ? (
+                  <Trans>
+                    将下载完整安装包（{sizeLabel}），下载完成后运行安装程序完成更新。
+                  </Trans>
+                ) : (
+                  <Trans>将下载完整安装包，下载完成后运行安装程序完成更新。</Trans>
+                )}
               </p>
             </div>
             <Button
               size="sm"
               loading={busy === 'download'}
-              disabled={Boolean(busy) || downloading}
-              onClick={() => void handleDownload()}
+              disabled={Boolean(busy) || downloading || checking}
+              onClick={() => void run('download', downloadDesktopUpdate)}
             >
               <Download className="mr-1.5 h-3.5 w-3.5" />
-              <Trans>下载更新</Trans>
+              {failed ? <Trans>重新下载</Trans> : <Trans>下载更新</Trans>}
             </Button>
           </div>
           {downloading ? (
             <div className="mt-3">
               <div className="mb-1.5 flex items-center justify-between text-[11px] text-ink-3">
                 <span aria-live="polite">
-                  {downloadPhase === 'local-check' ? (
-                    <Trans>正在检查本地已有的安装包…</Trans>
-                  ) : downloadPhase === 'patch' ? (
-                    <Trans>正在下载增量补丁…</Trans>
-                  ) : downloadPhase === 'full-download' ? (
-                    <Trans>正在下载完整更新包…</Trans>
-                  ) : downloadPhase === 'decompressing' ? (
-                    <Trans>正在解压并校验更新…</Trans>
-                  ) : downloadPhase === 'finishing' ? (
-                    <Trans>正在完成准备…</Trans>
+                  {verifying ? (
+                    <Trans>正在校验安装包…</Trans>
                   ) : (
-                    <Trans>正在准备下载…</Trans>
+                    <Trans>正在下载安装包…</Trans>
                   )}
                 </span>
                 <span className="tabular-nums">
-                  {hasPercent && downloadedLabel
-                    ? totalLabel
-                      ? `${downloadedLabel} / ${totalLabel} · ${progress}%`
-                      : downloadedLabel
-                    : progress !== null
-                      ? `${progress}%`
-                      : null}
+                  {verifying
+                    ? '100%'
+                    : totalLabel
+                      ? `${downloadedLabel || '0.0 MB'} / ${totalLabel} · ${progress ?? 0}%`
+                      : downloadedLabel || null}
                 </span>
               </div>
               <div className="h-1.5 overflow-hidden rounded-full bg-black/8 dark:bg-white/10">
                 {progress === null ? (
-                  // Stage without a percentage: indeterminate pulse.
+                  // Size unknown: indeterminate pulse instead of an empty bar.
                   <div className="h-full w-1/3 animate-pulse rounded-full bg-accent/60" />
                 ) : (
                   <div
@@ -339,7 +284,7 @@ export function UpdateCard() {
               {stalled ? (
                 <p className="mt-2 text-[11px] leading-relaxed text-ink-4">
                   <Trans>
-                    已超过 30 秒没有新进度，可能是无法连接 GitHub。请检查网络或代理设置，下载会在超时后自动报错。
+                    已超过 30 秒没有新进度，可能是无法连接 GitHub。请检查网络或代理设置，60 秒无数据会自动停止并提示重试。
                   </Trans>
                 </p>
               ) : null}
@@ -349,12 +294,6 @@ export function UpdateCard() {
       ) : upToDate ? (
         <p className="mt-4 rounded-[10px] bg-black/4 px-3 py-2 text-[11px] text-ink-3">
           <Trans>当前已是最新版本。</Trans>
-        </p>
-      ) : null}
-
-      {applying ? (
-        <p className="mt-3 text-[11px] text-ink-3">
-          <Trans>正在准备重启并安装更新…</Trans>
         </p>
       ) : null}
     </section>

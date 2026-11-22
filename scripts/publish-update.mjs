@@ -95,8 +95,19 @@ for (const name of readdirSync(artifacts)) {
   }
 }
 
+// In-app updates download the Inno installer described by this manifest.
+const installerManifest = join(artifacts, 'win-x64-Setup-Custom.json')
+const installerExe = join(artifacts, 'win-x64-Setup-Custom.exe')
+if (!existsSync(installerManifest) || !existsSync(installerExe)) {
+  console.error('✗ 未找到 win-x64-Setup-Custom.exe / .json，请先运行 pnpm desktop:installer')
+  process.exit(1)
+}
+
 const files = readdirSync(artifacts)
-  .filter((name) => !name.endsWith('-update.json'))
+  .filter(
+    (name) =>
+      !name.endsWith('-update.json') && name !== basename(installerManifest),
+  )
   .sort()
   .map((name) => join(artifacts, name))
 
@@ -145,7 +156,9 @@ for (const file of files) {
   )
   gh(['release', 'upload', tag, file, '--clobber'])
 }
-// Clients read the manifest first; publish it only after every payload file.
+// Clients read the manifests first; publish them only after every payload file.
+console.log(`↑ ${basename(installerManifest)}`)
+gh(['release', 'upload', tag, installerManifest, '--clobber'])
 console.log('↑ stable-win-x64-update.json')
 gh(['release', 'upload', tag, manifest, '--clobber'])
 
