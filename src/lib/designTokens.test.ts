@@ -122,4 +122,44 @@ describe('design tokens', () => {
     expect(darwin).toBeGreaterThan(-1)
     expect(tailwind).toBeGreaterThan(darwin)
   })
+
+  it('keeps custom circles and pills round under the squircle corners', () => {
+    // styles.css gives every element `corner-shape: squircle`, which turns a
+    // `border-radius: 999px` pill into a near-square. Each rule that draws a
+    // circle or pill must be listed in the `corner-shape: round` exemptions.
+    // (Tailwind `rounded-full` is exempted by class and needs nothing.)
+    const css = readFileSync(join(SRC, 'styles.css'), 'utf8').replace(
+      /\/\*[\s\S]*?\*\//g,
+      '',
+    )
+    const start = css.indexOf('@supports (corner-shape: squircle)')
+    expect(start).toBeGreaterThan(-1)
+    const exemptions = css
+      .slice(start, css.indexOf('@layer base', start))
+      .replace(/\s+/g, ' ')
+    // Whole-token match, so `.np-tab` is not satisfied by `.np-tabs`.
+    const listed = (text: string) => {
+      const escaped = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      return new RegExp(escaped + '(?![\\w-])').test(exemptions)
+    }
+    const missing: string[] = []
+    for (const match of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      const radius = /border-radius:\s*([^;]+);/.exec(match[2])?.[1].trim()
+      if (!radius || !/^(9{2,}px|50%|100%)$/.test(radius)) continue
+      for (const raw of match[1].split(',')) {
+        const selector = raw
+          .replace(/\s+/g, ' ')
+          .trim()
+          .replace(/::?(before|after)$/, '')
+          .replace(/:(hover|focus-visible|focus|active)\b/g, '')
+        if (!selector || selector.includes('scrollbar')) continue
+        // `.player-glass .seek-slider__fill` is covered by `.seek-slider__fill`.
+        const classes = selector.split(' ').pop()?.match(/\.[\w-]+/g) ?? []
+        if (!listed(selector) && !classes.some((name) => listed(name))) {
+          missing.push(selector)
+        }
+      }
+    }
+    expect([...new Set(missing)]).toEqual([])
+  })
 })

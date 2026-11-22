@@ -189,3 +189,12 @@
 1. 改 `styles.css` 里的变量。
 2. 同步改 `designTokens.test.ts` 里的允许值。
 3. 更新本文件。
+
+
+## 菜单与开关
+
+- 所有浮动菜单（歌曲右键、侧栏菜单、「更多播放选项」）共用 `.menu-*`：32px 行、16px 图标列、13px 文字、行圆角 10px、菜单圆角 14px、内边距 4px；右侧放值、`›` 或开关。
+- 三选一的设置用 `.menu-segmented` 分段控件，开 / 关用整行按钮 + `SwitchTrack`；不用悬停二级菜单。
+- 开关只有一个外观：`SwitchTrack`（`components/common/ToggleSwitch.tsx`），设置页和菜单共用，不要另写。
+- 全局 `corner-shape: squircle` 会把 999px / 50% 圆角变成方块：圆形和胶囊优先用 `rounded-full`；必须用自定义类时，把选择器加进 styles.css 的 `corner-shape: round` 豁免（测试会检查）。
+- 菜单里按 Esc 只关菜单，不关下面的播放页。

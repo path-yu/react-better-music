@@ -14,6 +14,7 @@ import {
   WholeWord,
 } from 'lucide-react'
 import { PlayerMenuContent } from './PlayerMenuContent'
+import { SwitchTrack } from '../common/ToggleSwitch'
 import { usePlayerMenuTint } from '../../lib/menuSurface'
 import { cn } from '../../lib/format'
 import { toast } from '../../lib/toast'
@@ -89,7 +90,10 @@ function MenuChoice<T extends string>({
   )
 }
 
-/** An on/off row: the whole row toggles, the switch only shows the state. */
+/**
+ * An on/off row: the whole row toggles, the switch only shows the state. The
+ * switch is the settings page's own track, so both always look the same.
+ */
 function MenuSwitch({
   icon,
   label,
@@ -114,7 +118,7 @@ function MenuSwitch({
     >
       <span className="menu-item__icon">{icon}</span>
       <span className="menu-item__label">{label}</span>
-      <span aria-hidden="true" className={cn('menu-switch', checked && 'is-on')} />
+      <SwitchTrack checked={checked} />
     </button>
   )
 }

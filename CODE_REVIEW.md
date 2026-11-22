@@ -687,3 +687,33 @@ src/
 - [ ] 专辑页（stickyTop=57）、搜索页、每日推荐的表头吸顶位置正确
 - [ ] 点 MV 标签进入 MV 页；点行的其他位置仍是播放
 - [ ] 本地歌单的删除按钮在时长旁边，悬停才出现
+
+
+## 第 31 批：右键菜单与「更多播放选项」菜单
+
+| 问题 | 处理 | 文件 |
+|---|---|---|
+| 「更多播放选项」里混了四种写法：音质是一个框里的竖排列表，歌词显示 / 字号是悬停才出现的二级菜单，逐字播放是带一行说明的大开关，桌面歌词 / 迷你播放器是「已关闭」文字；行高、缩进、图标大小（14/16px）都不一样，顶部还有一行没用的「播放选项」标题 | 统一成同一种行：32px 行高、16px 图标列、13px 文字。三选一的设置（音质、歌词显示、歌词字号）用分段控件，缩进到文字列对齐；开 / 关的设置（逐字播放、桌面歌词、迷你播放器）整行可点，右侧显示开关；逐字播放的说明移到悬停提示；去掉标题行和二级菜单。改设置后菜单不再自动关闭 | `MorePlaybackOptions.tsx` |
+| 播放页右键菜单是灰色玻璃底加 1px 边框，和「更多」菜单的封面色深色底不是一套 | 播放页里改用同样的 `.menu-surface`（14px 圆角）；别处保留浅色玻璃 | `SongContextMenu.tsx` |
+| 右键菜单的顺序混乱：「相关视频」排第一，「喜欢」单独放最后 | 按「播放 → 收藏 → 跳转 → 删除」排：下一首播放 · 收藏到歌单 › · 喜欢 ｜ 查看歌手 · 查看专辑 · 相关视频 ｜ 从歌单移除（红色） | `SongContextMenu.tsx` |
+| 菜单高度按条目数估算，估得不准时菜单会超出窗口 | 先渲染再测量实际大小，夹在窗口内 | `SongContextMenu.tsx` |
+| 播放页打开菜单时按 Esc，菜单和整个播放页一起关掉 | 菜单在 window 捕获阶段处理 Esc 并阻止传播；播放页在有菜单或弹窗时不响应 Esc | `SongContextMenu.tsx`、`SidebarMenu.tsx`、`NowPlaying.tsx` |
+| — | 新增共用的 `.menu-list / .menu-item / .menu-separator / .menu-segmented / .menu-header` 样式，颜色走变量，浅色、深色和播放页三种底都能用；菜单内边距 6→4px | `styles.css`、`PlayerMenuContent.tsx` |
+
+## 第 32 批：菜单开关是方的 + 全局 squircle 误伤圆形
+
+**根因**：styles.css 给所有元素加了 `corner-shape: squircle`（iOS 风格的连续圆角），只给 `rounded-full` 和少数几个类改回 `round`。超椭圆圆角在半径 999px 时会退化成接近直角的矩形，所以**凡是用自定义类写 `border-radius: 999px / 50%` 的圆形和胶囊，在 Chromium 139+ 里都变成了圆角方块**。第 31 批的菜单开关就是这么写的，而设置页的开关用的是 `rounded-full`，所以两者看起来不一样。
+
+| 处理 | 文件 |
+|---|---|
+| 把开关的外观抽成 `SwitchTrack`（36×20、`rounded-full`），设置页的 `ToggleSwitch` 和菜单行共用，以后不会再不一致；删掉 `.menu-switch` | `ToggleSwitch.tsx`、`MorePlaybackOptions.tsx`、`styles.css` |
+| 一并扫出另外 34 个元素 + 10 个伪元素也是同样问题：黑胶唱片、唱机转盘 / 唱臂、磁带卷轴 / 螺丝、指示灯、播放页标签 `.np-tab`、律动样式切换、筛选 `.chip`、竖向音量条、MV 控制按钮和进度条等，全部加进 `corner-shape: round` 豁免 | `styles.css` |
+| 新增测试：styles.css 里任何 999px / 50% / 100% 圆角的规则不在豁免名单里就报错 | `designTokens.test.ts` |
+
+浏览器实测（Chrome 158）：菜单开关 36×20、`superellipse(1)`（= round），与设置页一致；`.chip`、`.tape-reel`、`.np-tab`、`.turntable-platter` 均为 round，普通卡片仍是 squircle；Esc 只关菜单，播放页保持打开。用 Python 按测试的同样逻辑跑了一遍，没有遗漏项。
+
+回归检查：
+- [ ] 设置页所有开关外观、焦点描边不变
+- [ ] 播放器样式「黑胶 / 唱机 / 磁带」里的圆形部件是正圆
+- [ ] 筛选 chip、播放页标签是胶囊形
+- [ ] 侧栏右键菜单按 Esc 只关菜单
