@@ -21,6 +21,7 @@
     "desktop:build": "hutch run build",
     "desktop:installer": "node scripts/installer/build.mjs",
     "desktop:release": "pnpm desktop:build && pnpm desktop:installer",
+    "desktop:release:fast": "node scripts/desktop-release-fast.mjs",
     "desktop:publish-update": "node scripts/publish-update.mjs",
     "desktop:release:auto": "node scripts/release-desktop.mjs",
     "dev:tauri": "vite dev --mode tauri --port 5173 --strictPort",

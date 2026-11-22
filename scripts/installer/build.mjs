@@ -13,12 +13,22 @@
  * ISCC.exe 查找顺序：环境变量 ISCC → PATH → 用户目录 → Program Files。
  */
 import { spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, rmSync } from 'node:fs'
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+} from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const root = resolve(here, '../..')
+const configPath = join(root, 'electrobun.config.ts')
+const appVersion =
+  readFileSync(configPath, 'utf8').match(/version:\s*['"]([^'"]+)['"]/)?.[1] ??
+  '0.1.0'
 const script = join(here, 'app.iss')
 const archive = join(root, 'build/stable-win-x64/声屿-Setup.tar.zst')
 const stage = join(root, 'build/installer/payload')
@@ -85,9 +95,30 @@ console.log(`› ISCC: ${iscc}`)
 console.log('› 正在编译安装包…')
 
 const define = `/DPayloadDir=${payload.includes(' ') ? `"${payload}"` : payload}`
-const result = spawnSync(iscc, [define, script], { stdio: 'inherit' })
+const versionDefine = `/DAppVersion=${appVersion}`
+const fast = process.env.INSTALLER_FAST === '1'
+const compression = `/DCompressionMode=${fast ? 'lzma2/fast' : 'lzma2/max'}`
+console.log(`› 安装包版本：${appVersion}`)
+if (fast) console.log('› 快速模式：使用 lzma2/fast 压缩安装包')
+const result = spawnSync(iscc, [define, versionDefine, compression, script], {
+  stdio: 'inherit',
+})
 if (result.error) {
   console.error(`✗ 启动 ISCC 失败：${result.error.message}`)
   process.exit(1)
 }
-process.exit(result.status ?? 1)
+if (result.status !== 0) {
+  process.exit(result.status ?? 1)
+}
+
+// Also place the custom installer beside Hutch's update artifacts so the
+// release publisher uploads the same installer users can download.
+const output = join(root, 'build/installer/声屿-Setup-Custom.exe')
+const artifactDir = join(root, 'artifacts')
+if (existsSync(output)) {
+  mkdirSync(artifactDir, { recursive: true })
+  const target = join(artifactDir, 'win-x64-Setup-Custom.exe')
+  copyFileSync(output, target)
+  console.log(`› 安装包已复制到 ${target}`)
+}
+process.exit(0)

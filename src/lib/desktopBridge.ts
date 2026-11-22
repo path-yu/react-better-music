@@ -107,6 +107,8 @@ export interface DesktopUpdateStatusEntry {
     bytesDownloaded?: number
     totalBytes?: number
     errorMessage?: string
+    patchNumber?: number
+    totalPatchesApplied?: number
   }
 }
 
@@ -130,6 +132,10 @@ export interface DesktopUpdateState {
     updateReady: boolean
     error: string
   } | null
+  /** Published version is strictly higher than the installed one. */
+  newerVersion?: boolean
+  /** The main process is downloading or preparing an update bundle. */
+  downloading?: boolean
   status: DesktopUpdateStatusEntry | null
   history: DesktopUpdateStatusEntry[]
 }

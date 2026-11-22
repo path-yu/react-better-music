@@ -70,6 +70,35 @@ function updatesSupported() {
   return BuildConfig.getSync().isPackaged
 }
 
+/**
+ * Electrobun reports `updateAvailable` whenever the published build hash
+ * differs from the installed one, even when both carry the same version. A
+ * local rebuild of 1.6.0 therefore looks "outdated" next to the published
+ * 1.6.0, and downloading it would silently swap in a different (usually
+ * older) build. Only treat a strictly higher version number as an update.
+ */
+function compareVersions(a: string, b: string) {
+  const parse = (value: string) =>
+    value
+      .trim()
+      .replace(/^v/i, '')
+      .split(/[.+-]/)
+      .slice(0, 3)
+      .map((part) => Number.parseInt(part, 10) || 0)
+  const left = parse(a)
+  const right = parse(b)
+  for (let index = 0; index < 3; index += 1) {
+    const diff = (left[index] ?? 0) - (right[index] ?? 0)
+    if (diff !== 0) return diff
+  }
+  return 0
+}
+
+function isNewerRelease(remote?: string | null, local?: string | null) {
+  if (!remote || !local) return false
+  return compareVersions(remote, local) > 0
+}
+
 function startUpdateCheck() {
   if (updateCheckRunning) return
   updateCheckRunning = true
@@ -121,6 +150,8 @@ async function updateSnapshot() {
       reason: 'dev',
       local: null,
       update: null,
+      newerVersion: false,
+      downloading: updateDownloadRunning,
       checking: updateCheckRunning,
       status: latestUpdateStatus,
       history: updateStatusHistory,
@@ -134,12 +165,19 @@ async function updateSnapshot() {
         : local.channel === 'dev' || local.channel === 'development'
           ? '开发版不启用自动更新'
           : ''
+    const update = Updater.updateInfo()
+    // Only a higher version number counts; a different hash alone does not.
+    const newerVersion = Boolean(
+      update.updateAvailable && isNewerRelease(update.version, local.version),
+    )
     return {
       supported: !unavailableReason,
       packaged: true,
       reason: unavailableReason || undefined,
       local,
-      update: Updater.updateInfo(),
+      update,
+      newerVersion,
+      downloading: updateDownloadRunning,
       checking: updateCheckRunning,
       status: latestUpdateStatus,
       history: updateStatusHistory,
@@ -151,6 +189,8 @@ async function updateSnapshot() {
       reason: error instanceof Error ? error.message : String(error),
       local: null,
       update: Updater.updateInfo(),
+      newerVersion: false,
+      downloading: updateDownloadRunning,
       checking: updateCheckRunning,
       status: latestUpdateStatus,
       history: updateStatusHistory,
@@ -1578,7 +1618,13 @@ try {
             )
           }
           const info = Updater.updateInfo()
-          if (!info.updateAvailable || info.updateReady) {
+          const local = await Updater.getLocalInfo().catch(() => null)
+          // Refuse same-version or older builds so a click can never downgrade.
+          if (
+            !info.updateAvailable ||
+            info.updateReady ||
+            !isNewerRelease(info.version, local?.version)
+          ) {
             return Response.json(await updateSnapshot(), { headers })
           }
           if (!updateDownloadRunning) {
@@ -1604,9 +1650,17 @@ try {
               { status: 400, headers },
             )
           }
-          if (!Updater.updateInfo().updateReady) {
+          const ready = Updater.updateInfo()
+          if (!ready.updateReady) {
             return Response.json(
               { error: '更新尚未下载完成' },
+              { status: 409, headers },
+            )
+          }
+          const local = await Updater.getLocalInfo().catch(() => null)
+          if (!isNewerRelease(ready.version, local?.version)) {
+            return Response.json(
+              { error: '已是最新版本，无需安装' },
               { status: 409, headers },
             )
           }

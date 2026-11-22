@@ -19,7 +19,10 @@
 ; ---------------------------------------------------------------------------
 
 #define AppName "声屿"
-#define AppVersion "0.1.0"
+#ifndef AppVersion
+  ; build.mjs normally passes /DAppVersion=<electrobun.config.ts version>.
+  #define AppVersion "0.1.0"
+#endif
 ; 由 scripts/installer/build.mjs 通过 /DPayloadDir=... 传入（已解压的应用目录）；
 ; 直接调用 ISCC 时回退到默认的暂存路径。
 #ifndef PayloadDir
@@ -29,6 +32,12 @@
 #define AppExeName "launcher.exe"
 ; 保持稳定：升级安装时沿用同一个 AppId 才能正确覆盖旧版本
 #define AppId "{{8F3C2B10-7E4A-4C9D-9C2E-5B1A6D4F7E21}"
+
+#ifndef CompressionMode
+  ; Final releases keep the smallest installer. Fast local builds can pass
+  ; /DCompressionMode=lzma2/fast to trade size for speed.
+  #define CompressionMode "lzma2/max"
+#endif
 
 [Setup]
 AppId={#AppId}
@@ -56,7 +65,7 @@ SetupIconFile=..\..\assets\app-icon.ico
 UninstallDisplayIcon={app}\Resources\app.ico
 UninstallDisplayName={#AppName}
 
-Compression=lzma2/max
+Compression={#CompressionMode}
 SolidCompression=yes
 WizardStyle=modern
 CloseApplications=yes
