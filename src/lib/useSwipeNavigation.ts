@@ -1,4 +1,4 @@
-import { useEffect, useRef, type RefObject } from 'react'
+import { useEffect, useRef } from 'react'
 
 /** -1 = previous tab, 1 = next tab, 0 = not a swipe. */
 export type SwipeStep = -1 | 0 | 1
@@ -61,14 +61,15 @@ function ownsHorizontalGesture(target: EventTarget | null, root: HTMLElement) {
  * drag-to-reorder and sliders keep working.
  */
 export function useSwipeNavigation(
-  ref: RefObject<HTMLElement | null>,
+  /** Pass the element itself (e.g. from a state callback ref) so listeners
+      attach whenever it mounts, also after the first render. */
+  root: HTMLElement | null,
   options: { enabled: () => boolean; onSwipe: (step: 1 | -1) => void },
 ) {
   const latest = useRef(options)
   latest.current = options
 
   useEffect(() => {
-    const root = ref.current
     if (!root) return
 
     let start: { id: number; x: number; y: number; t: number } | null = null
@@ -126,5 +127,5 @@ export function useSwipeNavigation(
       root.removeEventListener('pointercancel', onPointerCancel)
       root.removeEventListener('wheel', onWheel)
     }
-  }, [ref])
+  }, [root])
 }

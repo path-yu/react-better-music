@@ -14,6 +14,11 @@ describe('sidebar auto collapse', () => {
     expect(resolveSidebarCollapsed(prefs(true, false), false)).toBe(true)
   })
 
+  it('always shows the full sidebar in the mobile drawer', () => {
+    expect(resolveSidebarCollapsed(prefs(true, true), false, true)).toBe(false)
+    expect(resolveSidebarCollapsed(prefs(true, false), false, true)).toBe(false)
+  })
+
   it('remembers an expand made in a narrow window', () => {
     const next = nextSidebarPrefs(prefs(false, true), true)
     expect(next).toEqual(prefs(false, false))

@@ -10,29 +10,52 @@ import { useUiStore } from '../store/ui'
 export const SIDEBAR_AUTO_COLLAPSE_QUERY =
   '(min-width: 768px) and (max-width: 1023.98px)'
 
-function subscribe(onChange: () => void) {
-  if (typeof window === 'undefined' || !window.matchMedia) return () => {}
-  const query = window.matchMedia(SIDEBAR_AUTO_COLLAPSE_QUERY)
-  query.addEventListener('change', onChange)
-  return () => query.removeEventListener('change', onChange)
-}
+/** Below this the sidebar is a slide-in drawer, never the icon rail. */
+export const SIDEBAR_DRAWER_QUERY = '(max-width: 767.98px)'
 
-function isNarrowDesktop() {
+function matches(query: string) {
   return (
     typeof window !== 'undefined' &&
     typeof window.matchMedia === 'function' &&
-    window.matchMedia(SIDEBAR_AUTO_COLLAPSE_QUERY).matches
+    window.matchMedia(query).matches
   )
 }
 
+function subscribeTo(query: string) {
+  return (onChange: () => void) => {
+    if (typeof window === 'undefined' || !window.matchMedia) return () => {}
+    const list = window.matchMedia(query)
+    list.addEventListener('change', onChange)
+    return () => list.removeEventListener('change', onChange)
+  }
+}
+
+const subscribeNarrow = subscribeTo(SIDEBAR_AUTO_COLLAPSE_QUERY)
+const subscribeDrawer = subscribeTo(SIDEBAR_DRAWER_QUERY)
+const isNarrowDesktop = () => matches(SIDEBAR_AUTO_COLLAPSE_QUERY)
+const isDrawerLayout = () => matches(SIDEBAR_DRAWER_QUERY)
+
 export function useNarrowDesktop() {
-  return useSyncExternalStore(subscribe, isNarrowDesktop, () => false)
+  return useSyncExternalStore(subscribeNarrow, isNarrowDesktop, () => false)
+}
+
+export function useDrawerLayout() {
+  return useSyncExternalStore(subscribeDrawer, isDrawerLayout, () => false)
 }
 
 type SidebarPrefs = { sidebarCollapsed: boolean; sidebarAutoCollapse: boolean }
 
-/** What the user sees: their own choice, or the automatic narrow-window rail. */
-export function resolveSidebarCollapsed(prefs: SidebarPrefs, narrow: boolean) {
+/**
+ * What the user sees: their own choice, or the automatic narrow-window rail.
+ * The mobile drawer always shows the full sidebar: a collapse made in a wide
+ * window used to turn the drawer into a 232px panel of bare icons.
+ */
+export function resolveSidebarCollapsed(
+  prefs: SidebarPrefs,
+  narrow: boolean,
+  drawer = false,
+) {
+  if (drawer) return false
   return prefs.sidebarCollapsed || (prefs.sidebarAutoCollapse && narrow)
 }
 
@@ -53,9 +76,14 @@ export function nextSidebarPrefs(prefs: SidebarPrefs, narrow: boolean): SidebarP
 
 export function useSidebarCollapsed() {
   const narrow = useNarrowDesktop()
+  const drawer = useDrawerLayout()
   const sidebarCollapsed = useUiStore((state) => state.sidebarCollapsed)
   const sidebarAutoCollapse = useUiStore((state) => state.sidebarAutoCollapse)
-  return resolveSidebarCollapsed({ sidebarCollapsed, sidebarAutoCollapse }, narrow)
+  return resolveSidebarCollapsed(
+    { sidebarCollapsed, sidebarAutoCollapse },
+    narrow,
+    drawer,
+  )
 }
 
 export function useToggleSidebarCollapsed() {

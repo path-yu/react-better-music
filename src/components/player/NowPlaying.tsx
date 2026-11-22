@@ -42,6 +42,7 @@ import { ImmersivePlayerBar } from './ImmersivePlayerBar'
 import { NowPlayingTitleBar } from './NowPlayingTitleBar'
 import { NowPlayingTransport } from './NowPlayingTransport'
 import { stepTab, useSwipeNavigation } from '../../lib/useSwipeNavigation'
+import { useScrollEdgeHints } from '../../lib/useScrollEdgeHints'
 import { CommentSection, useCommentTotal } from '../comments/CommentSection'
 import { SongContextMenu } from '../songs/SongContextMenu'
 import { fetchMvUrl, fetchRelatedVideos, fetchSongDetail } from '../../api'
@@ -143,7 +144,6 @@ export function NowPlaying() {
   const lyricLines = usePlayerStore((state) => state.lyricLines)
   const lyricLoading = usePlayerStore((state) => state.lyricLoading)
   const toggleNowPlaying = usePlayerStore((state) => state.toggleNowPlaying)
-  const toggleQueue = usePlayerStore((state) => state.toggleQueue)
   const playAt = usePlayerStore((state) => state.playAt)
   const moveQueueItem = usePlayerStore((state) => state.moveQueueItem)
   const ensureLyrics = usePlayerStore((state) => state.ensureLyrics)
@@ -174,8 +174,8 @@ export function NowPlaying() {
   const [tabsVisible, setTabsVisible] = useState(true)
   /** Mobile only: the cover view ("歌曲" tab) instead of one of the panels. */
   const [mobileSongView, setMobileSongView] = useState(true)
-  const swipeAreaRef = useRef<HTMLDivElement>(null)
-  const mobileTabsRef = useRef<HTMLDivElement>(null)
+  const [swipeArea, setSwipeArea] = useState<HTMLDivElement | null>(null)
+  const [mobileTabList, setMobileTabList] = useState<HTMLDivElement | null>(null)
   const [outgoingArt, setOutgoingArt] = useState<{
     snapshot: ArtSnapshot
     direction: number
@@ -544,7 +544,29 @@ export function NowPlaying() {
     1,
     Math.floor((queueInnerWidth + SONG_TILE_GAP) / (SONG_TILE_MIN + SONG_TILE_GAP)),
   )
-  const queueTileWidth = Math.min(SONG_TILE_MIN, queueInnerWidth)
+  // Stretch the covers so the columns span the whole row: fixed 112px tiles
+  // sat flush left and left up to one tile of empty space on the right
+  // (~100px in a 490px window). Columns are still chosen from the 112px
+  // minimum, so a tile grows by less than one pitch; the few pixels the
+  // floor() leaves over are split on both sides.
+  const queueTileWidth = Math.max(
+    1,
+    Math.min(
+      queueInnerWidth,
+      Math.floor(
+        (queueInnerWidth - SONG_TILE_GAP * (queueColumns - 1)) / queueColumns,
+      ),
+    ),
+  )
+  const queueRowOffset = Math.max(
+    0,
+    Math.floor(
+      (queueInnerWidth -
+        queueColumns * queueTileWidth -
+        SONG_TILE_GAP * (queueColumns - 1)) /
+        2,
+    ),
+  )
   const queueRowHeight = Math.max(80, queueTileWidth + SONG_TILE_GAP)
   const queueEntries = useMemo(() => {
     const query = queueSearch.trim()
@@ -891,6 +913,53 @@ export function NowPlaying() {
   // Keep the overlay mounted so closing can play its exit animation. Video
   // mode already stays mounted to keep the decoder alive; audio mode remains
   // in the DOM but is hidden and non-interactive.
+  // Mobile: the tab row can be wider than a 390px window; fade the edge that
+  // still has tabs behind it.
+  useScrollEdgeHints(mobileTabList)
+  // Tapping / swiping to a half-hidden tab scrolls it fully into the row.
+  useEffect(() => {
+    if (!mobileTabList) return
+    const active = mobileTabList.querySelector<HTMLElement>('.np-tab.is-active')
+    if (!active) return
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const left = active.offsetLeft - mobileTabList.offsetLeft
+    const target = Math.min(
+      Math.max(left - 24, mobileTabList.scrollLeft),
+      left + active.offsetWidth + 24 - mobileTabList.clientWidth,
+    )
+    if (Math.abs(target - mobileTabList.scrollLeft) < 1) return
+    mobileTabList.scrollTo({ left: Math.max(0, target), behavior: reduce ? 'auto' : 'smooth' })
+  }, [mobileTabList, panel, mobileSongView])
+
+  // Mobile: swipe the middle area left / right to move between the top tabs.
+  useSwipeNavigation(swipeArea, {
+    enabled: () => window.matchMedia(MOBILE_QUERY).matches,
+    onSwipe: (step) => {
+      const current: MobileView = mobileSongView ? 'song' : panel
+      const next = stepTab(MOBILE_VIEWS, current, step)
+      if (next === current) return
+      if (next === 'song') {
+        setMobileSongView(true)
+      } else {
+        setPanel(next)
+        setMobileSongView(false)
+      }
+      requestAnimationFrame(() => {
+        const view = swipeArea?.querySelector<HTMLElement>(
+          `[data-np-view="${next === 'song' ? 'song' : 'panel'}"]`,
+        )
+        if (!view || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+        view.animate(
+          [
+            { transform: `translateX(${step * 28}px)`, opacity: 0.4 },
+            { transform: 'none', opacity: 1 },
+          ],
+          { duration: 220, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+        )
+      })
+    },
+  })
+
   if (!currentSong) return null
 
   const loadingSource = playing && !sourceReady
@@ -1054,33 +1123,6 @@ export function NowPlaying() {
     }
   }
 
-  // Mobile: swipe the middle area left / right to move between the top tabs.
-  useSwipeNavigation(swipeAreaRef, {
-    enabled: () => window.matchMedia(MOBILE_QUERY).matches,
-    onSwipe: (step) => {
-      const current: MobileView = mobileSongView ? 'song' : panel
-      const next = stepTab(MOBILE_VIEWS, current, step)
-      if (next === current) return
-      showMobileView(next)
-      requestAnimationFrame(() => {
-        mobileTabsRef.current
-          ?.querySelector('.np-tab.is-active')
-          ?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
-        const view = swipeAreaRef.current?.querySelector<HTMLElement>(
-          `[data-np-view="${next === 'song' ? 'song' : 'panel'}"]`,
-        )
-        if (!view || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-        view.animate(
-          [
-            { transform: `translateX(${step * 28}px)`, opacity: 0.4 },
-            { transform: 'none', opacity: 1 },
-          ],
-          { duration: 220, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
-        )
-      })
-    },
-  })
-
   // Song page tabs. Desktop shows them above the right column; mobile puts
   // them at the top of the page (with an extra "歌曲" tab for the cover view)
   // and shows one view at a time instead of one long scrolling page.
@@ -1088,16 +1130,13 @@ export function NowPlaying() {
     setPanel(next)
     setMobileSongView(false)
   }
-  const showMobileView = (view: MobileView) => {
-    if (view === 'song') setMobileSongView(true)
-    else selectPanel(view)
-  }
   const renderTabs = (mobile: boolean) => {
     const tabOn = (key: NowPlayingPanel) =>
       panel === key && !(mobile && mobileSongView)
     return (
       <div
-        className="np-tabs"
+        ref={mobile ? setMobileTabList : undefined}
+        className={cn('np-tabs', mobile && 'np-tabs--mobile')}
         role="tablist"
         aria-label={i18n._(msg`歌词、律动、播放队列、评论与相似歌曲`)}
       >
@@ -1327,7 +1366,7 @@ export function NowPlaying() {
           </>
         ) : (
           <>
-        <div ref={mobileTabsRef} className="flex flex-none justify-center px-4 pb-2 md:hidden">
+        <div className="flex flex-none justify-center px-4 pb-2 md:hidden">
           {renderTabs(true)}
         </div>
         {/* Desktop: two columns that own their scrolling (lyrics/comments), so
@@ -1335,7 +1374,7 @@ export function NowPlaying() {
             predictable. Mobile: one view at a time under the top tabs; the
             transport stays at the bottom of every panel. */}
         <div
-          ref={swipeAreaRef}
+          ref={setSwipeArea}
           className="grid flex-1 grid-cols-1 gap-4 px-6 max-md:flex max-md:min-h-0 max-md:touch-pan-y max-md:flex-col max-md:overflow-hidden max-md:px-4 md:grid-cols-[minmax(220px,0.9fr)_minmax(250px,1.1fr)] md:overflow-hidden xl:gap-6 xl:px-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <div
             data-np-view="song"
@@ -1869,7 +1908,7 @@ export function NowPlaying() {
                                   style={{
                                     position: 'absolute',
                                     top: 0,
-                                    left: 0,
+                                    left: queueRowOffset,
                                     right: 0,
                                     height: `${queueRowHeight}px`,
                                     transform: `translateY(${virtualRow.start}px)`,

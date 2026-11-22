@@ -1838,7 +1838,11 @@ function AudioProgressRow({
   const displayBuffered = sourceMatches ? buffered : 0
 
   return (
-    <div className="mt-1.5 grid h-5 w-full grid-cols-[40px_minmax(0,1fr)_40px] items-center gap-2.5 max-md:absolute max-md:inset-x-0 max-md:top-0 max-md:mt-0 max-md:grid-cols-1 max-md:px-3">
+    <div
+      // Mobile: an edge-to-edge line on the bar's top border (Apple Music /
+      // Spotify mini player). `-top-px` sits it on the 1px border itself.
+      className="player-progress-row mt-1.5 grid h-5 w-full grid-cols-[40px_minmax(0,1fr)_40px] items-center gap-2.5 max-md:absolute max-md:inset-x-0 max-md:-top-px max-md:z-10 max-md:mt-0 max-md:block max-md:h-auto max-md:px-0"
+    >
       <span
         data-testid="elapsed-time"
         className="text-right text-[11px] leading-none tabular-nums text-ink-4 max-md:hidden"
