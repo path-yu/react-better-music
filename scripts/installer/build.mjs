@@ -106,15 +106,48 @@ const fast = process.env.INSTALLER_FAST === '1'
 const compression = `/DCompressionMode=${fast ? 'lzma2/fast' : 'lzma2/max'}`
 console.log(`› 安装包版本：${appVersion}`)
 if (fast) console.log('› 快速模式：使用 lzma2/fast 压缩安装包')
-const result = spawnSync(iscc, [define, versionDefine, compression, script], {
-  stdio: 'inherit',
-})
-if (result.error) {
-  console.error(`✗ 启动 ISCC 失败：${result.error.message}`)
-  process.exit(1)
-}
-if (result.status !== 0) {
-  process.exit(result.status ?? 1)
+// ISCC writes the setup exe and then patches its icon/version resources.
+// Windows Defender (or another scanner) often opens the fresh exe in between,
+// which fails with "EndUpdateResource failed (110)". The lock is transient, so
+// retry only that error instead of failing the whole release.
+const RESOURCE_LOCK_PATTERN = /EndUpdateResource|Resource update error/i
+const MAX_ATTEMPTS = 4
+const sleep = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms)
+
+let result
+for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+  result = spawnSync(iscc, [define, versionDefine, compression, script], {
+    stdio: ['ignore', 'pipe', 'pipe'],
+    maxBuffer: 64 * 1024 * 1024,
+  })
+  if (result.error) {
+    console.error(`✗ 启动 ISCC 失败：${result.error.message}`)
+    process.exit(1)
+  }
+  // Pass ISCC's own output through unchanged (it uses the console code page).
+  if (result.stdout?.length) process.stdout.write(result.stdout)
+  if (result.stderr?.length) process.stderr.write(result.stderr)
+  if (result.status === 0) break
+
+  const output = Buffer.concat([
+    result.stdout ?? Buffer.alloc(0),
+    result.stderr ?? Buffer.alloc(0),
+  ]).toString('latin1')
+  if (!RESOURCE_LOCK_PATTERN.test(output) || attempt === MAX_ATTEMPTS) {
+    if (RESOURCE_LOCK_PATTERN.test(output)) {
+      console.error(
+        '✗ 安装包资源写入被占用（通常是杀毒软件在扫描新生成的 exe）。' +
+          '请把 build\\installer 加入 Windows 安全中心的排除项后重试：\n' +
+          `  Add-MpPreference -ExclusionPath "${join(root, 'build', 'installer')}"`,
+      )
+    }
+    process.exit(result.status ?? 1)
+  }
+  const waitMs = attempt * 3000
+  console.warn(
+    `› 安装包被其它程序占用（多半是杀毒软件扫描），${waitMs / 1000}s 后重试（${attempt}/${MAX_ATTEMPTS - 1}）…`,
+  )
+  sleep(waitMs)
 }
 
 // Also place the custom installer beside Hutch's update artifacts so the

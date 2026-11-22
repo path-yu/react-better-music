@@ -383,10 +383,10 @@ msgid "下载失败"
 msgstr "Download failed"
 
 #: src/components/settings/UpdateCard.tsx:301
-msgid "下载完成后可选择重启安装。"
-msgstr ""
+#~ msgid "下载完成后可选择重启安装。"
+#~ msgstr ""
 
-#: src/components/settings/UpdateCard.tsx:311
+#: src/components/settings/UpdateCard.tsx:252
 msgid "下载更新"
 msgstr ""
 
@@ -1005,8 +1005,8 @@ msgstr "Bilingual"
 #~ msgid "发现同一版本的新构建 {0}"
 #~ msgstr ""
 
-#. placeholder {0}: update.version
-#: src/components/settings/UpdateCard.tsx:298
+#. placeholder {0}: remote.version
+#: src/components/settings/UpdateCard.tsx:233
 msgid "发现新版本 {0}"
 msgstr ""
 
@@ -1315,6 +1315,14 @@ msgstr "Failed to upload cover"
 msgid "封面更新成功"
 msgstr "Cover updated"
 
+#: src/components/settings/UpdateCard.tsx:241
+msgid "将下载完整安装包，下载完成后运行安装程序完成更新。"
+msgstr ""
+
+#: src/components/settings/UpdateCard.tsx:237
+msgid "将下载完整安装包（{sizeLabel}），下载完成后运行安装程序完成更新。"
+msgstr ""
+
 #: src/routes/settings.tsx:1156
 msgid "将删除本地虚拟环境、Python 运行时以及 FFmpeg/FFprobe 组件，不会删除已经生成的伴奏文件。"
 msgstr "This removes the local virtual environment, Python runtime, and FFmpeg/FFprobe components. Generated accompaniment files will be kept."
@@ -1452,9 +1460,13 @@ msgstr "Developer tools disabled. Restart the app to apply fully."
 msgid "已设为下一首播放"
 msgstr "Added to play next"
 
-#: src/components/settings/UpdateCard.tsx:355
-msgid "已超过 30 秒没有新进度，可能是无法连接 GitHub。请检查网络或代理设置，下载会在超时后自动报错。"
+#: src/components/settings/UpdateCard.tsx:286
+msgid "已超过 30 秒没有新进度，可能是无法连接 GitHub。请检查网络或代理设置，60 秒无数据会自动停止并提示重试。"
 msgstr ""
+
+#: src/components/settings/UpdateCard.tsx:355
+#~ msgid "已超过 30 秒没有新进度，可能是无法连接 GitHub。请检查网络或代理设置，下载会在超时后自动报错。"
+#~ msgstr ""
 
 #: src/store/player.ts:1067
 msgid "已跳过 {skipped} 首无法播放的歌曲"
@@ -1483,7 +1495,7 @@ msgstr "{0} of {1} selected"
 msgid "已重置配对，之前连接的手机需要重新扫码"
 msgstr "Pairing reset. Previously paired phones need to scan the new code."
 
-#: src/components/settings/UpdateCard.tsx:197
+#: src/components/settings/UpdateCard.tsx:132
 msgid "开发版"
 msgstr ""
 
@@ -1524,7 +1536,7 @@ msgstr "Preview only ({trialEnd}s). Sign in or get VIP for the full track."
 msgid "当前使用网易云推荐的其他可播放版本"
 msgstr ""
 
-#: src/components/settings/UpdateCard.tsx:365
+#: src/components/settings/UpdateCard.tsx:296
 msgid "当前已是最新版本。"
 msgstr ""
 
@@ -1546,7 +1558,7 @@ msgid "当前歌曲缺少完整人声或伴奏缓存，无法开启随心唱"
 msgstr "Sing-along needs both the vocal and instrumental tracks cached for this song"
 
 #. placeholder {0}: state.local.version
-#: src/components/settings/UpdateCard.tsx:199
+#: src/components/settings/UpdateCard.tsx:134
 msgid "当前版本 {0}"
 msgstr ""
 
@@ -2028,7 +2040,12 @@ msgstr "Failed to load new songs"
 
 #. placeholder {0}: update.version
 #: src/components/settings/UpdateCard.tsx:277
-msgid "新版本 {0} 会在重启后安装，当前播放状态会结束。"
+#~ msgid "新版本 {0} 会在重启后安装，当前播放状态会结束。"
+#~ msgstr ""
+
+#. placeholder {0}: remote.version
+#: src/components/settings/UpdateCard.tsx:202
+msgid "新版本 {0} 的安装包已下载"
 msgstr ""
 
 #: src/store/settings.ts:81
@@ -2266,14 +2283,14 @@ msgid "更改目录"
 msgstr ""
 
 #: src/components/settings/UpdateCard.tsx:274
-msgid "更新已下载完成"
-msgstr ""
+#~ msgid "更新已下载完成"
+#~ msgstr ""
 
-#: src/lib/desktopBridge.ts:149
+#: src/lib/desktopBridge.ts:142
 msgid "更新服务请求失败"
 msgstr ""
 
-#: src/components/settings/UpdateCard.tsx:246
+#: src/components/settings/UpdateCard.tsx:185
 msgid "更新配置不可用。"
 msgstr ""
 
@@ -2437,8 +2454,8 @@ msgstr "Desktop lyrics are unavailable"
 msgid "桌面端"
 msgstr "Desktop"
 
-#: src/components/settings/UpdateCard.tsx:193
-#: src/components/settings/UpdateCard.tsx:220
+#: src/components/settings/UpdateCard.tsx:128
+#: src/components/settings/UpdateCard.tsx:161
 msgid "检查更新"
 msgstr ""
 
@@ -2598,24 +2615,28 @@ msgid "歌词显示"
 msgstr "Lyrics display"
 
 #: src/components/settings/UpdateCard.tsx:321
-msgid "正在下载增量补丁…"
+#~ msgid "正在下载增量补丁…"
+#~ msgstr ""
+
+#: src/components/settings/UpdateCard.tsx:262
+msgid "正在下载安装包…"
 msgstr ""
 
 #: src/components/settings/UpdateCard.tsx:323
-msgid "正在下载完整更新包…"
-msgstr ""
+#~ msgid "正在下载完整更新包…"
+#~ msgstr ""
 
 #: src/components/settings/UpdateCard.tsx:248
 #~ msgid "正在下载更新…"
 #~ msgstr ""
 
 #: src/components/settings/UpdateCard.tsx:329
-msgid "正在准备下载…"
-msgstr ""
+#~ msgid "正在准备下载…"
+#~ msgstr ""
 
 #: src/components/settings/UpdateCard.tsx:371
-msgid "正在准备重启并安装更新…"
-msgstr ""
+#~ msgid "正在准备重启并安装更新…"
+#~ msgstr ""
 
 #: src/components/playlists/ImportPlaylistDialog.tsx:416
 msgid "正在创建本地歌单…"
@@ -2654,6 +2675,10 @@ msgstr "Matching tracks {0}/{1}…"
 msgid "正在同步最近播放…"
 msgstr "Syncing recent plays…"
 
+#: src/components/settings/UpdateCard.tsx:224
+msgid "正在启动安装程序，声屿即将关闭…"
+msgstr ""
+
 #: src/components/settings/RemoteControlCard.tsx:100
 #: src/components/settings/RemoteControlCard.tsx:120
 msgid "正在启动遥控服务…"
@@ -2664,8 +2689,8 @@ msgid "正在安装"
 msgstr ""
 
 #: src/components/settings/UpdateCard.tsx:327
-msgid "正在完成准备…"
-msgstr ""
+#~ msgid "正在完成准备…"
+#~ msgstr ""
 
 #. placeholder {0}: Math.min(index + chunk.length, selectedSongs.length)
 #. placeholder {1}: selectedSongs.length
@@ -2679,13 +2704,17 @@ msgstr "Importing tracks {0}/{1}…"
 msgid "正在播放"
 msgstr "Now playing"
 
+#: src/components/settings/UpdateCard.tsx:260
+msgid "正在校验安装包…"
+msgstr ""
+
 #: src/components/player/NowPlayingTransport.tsx:225
 msgid "正在检查 Spleeter 环境…"
 msgstr ""
 
 #: src/components/settings/UpdateCard.tsx:319
-msgid "正在检查本地已有的安装包…"
-msgstr ""
+#~ msgid "正在检查本地已有的安装包…"
+#~ msgstr ""
 
 #: src/routes/settings.tsx:1144
 msgid "正在检查运行环境…"
@@ -2713,8 +2742,8 @@ msgid "正在获取视频…"
 msgstr "Loading video…"
 
 #: src/components/settings/UpdateCard.tsx:325
-msgid "正在解压并校验更新…"
-msgstr ""
+#~ msgid "正在解压并校验更新…"
+#~ msgstr ""
 
 #: src/components/playlists/ImportPlaylistDialog.tsx:228
 msgid "正在解析歌单链接…"
@@ -2745,9 +2774,13 @@ msgstr "Reading the playlist…"
 msgid "正在读取缓存…"
 msgstr "Loading cache…"
 
-#: src/components/settings/UpdateCard.tsx:230
-msgid "正在连接 GitHub 获取更新清单，通常需要几秒…"
+#: src/components/settings/UpdateCard.tsx:171
+msgid "正在连接 GitHub 获取最新版本信息，通常需要几秒…"
 msgstr ""
+
+#: src/components/settings/UpdateCard.tsx:230
+#~ msgid "正在连接 GitHub 获取更新清单，通常需要几秒…"
+#~ msgstr ""
 
 #: src/routes/index.tsx:209
 msgid "每天 6:00 更新"
@@ -2947,6 +2980,10 @@ msgstr "A warm amber gold, bright and lively"
 #: src/routes/latest-mv.tsx:31
 msgid "港台"
 msgstr "HK / Taiwan"
+
+#: src/components/settings/UpdateCard.tsx:205
+msgid "点击「立即安装」后声屿会关闭，安装程序会覆盖安装到原来的目录，完成后自动重新打开。当前播放会结束。"
+msgstr ""
 
 #: src/components/player/TimeToggle.tsx:22
 msgid "点击切换为剩余时间"
@@ -3220,6 +3257,10 @@ msgstr "Auto-collapse sidebar in narrow windows"
 msgid "窗口宽度小于 1024px 时把侧栏收成图标栏，给内容留出空间。在窄窗口里手动展开侧栏后，这个开关会自动关闭。"
 msgstr "Below 1024px the sidebar shrinks to an icon rail to give the content more room. Expanding it by hand in a narrow window turns this off."
 
+#: src/components/settings/UpdateCard.tsx:218
+msgid "立即安装"
+msgstr ""
+
 #: src/components/common/Pager.tsx:51
 msgid "第一页"
 msgstr "First page"
@@ -3367,7 +3408,7 @@ msgstr "Network request failed. Try again later."
 msgid "自动匹配"
 msgstr "Auto match"
 
-#: src/components/settings/UpdateCard.tsx:238
+#: src/components/settings/UpdateCard.tsx:177
 msgid "自动更新只在安装版中启用；开发版请使用 desktop:release 验证更新流程。"
 msgstr ""
 
@@ -3562,7 +3603,7 @@ msgstr "Choose an image file"
 msgid "读取图片失败"
 msgstr "Couldn't read the image"
 
-#: src/components/settings/UpdateCard.tsx:201
+#: src/components/settings/UpdateCard.tsx:136
 msgid "读取当前版本…"
 msgstr ""
 
@@ -3767,8 +3808,8 @@ msgid "配色方案"
 msgstr ""
 
 #: src/components/settings/UpdateCard.tsx:289
-msgid "重启并更新"
-msgstr ""
+#~ msgid "重启并更新"
+#~ msgstr ""
 
 #: src/components/layout/Sidebar.tsx:263
 msgid "重命名"
@@ -3781,6 +3822,10 @@ msgstr "Rename playlist"
 #: src/store/localLibrary.ts:102
 msgid "重命名歌单失败"
 msgstr "Failed to rename playlist"
+
+#: src/components/settings/UpdateCard.tsx:252
+msgid "重新下载"
+msgstr ""
 
 #: src/routes/daily.tsx:189
 msgid "重新加载"
