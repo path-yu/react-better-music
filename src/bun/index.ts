@@ -64,9 +64,26 @@ const STARTUP_LOG = join(APP_DATA_DIR, 'startup.log')
 let latestUpdateStatus: UpdateStatusEntry | null = null
 let updateStatusHistory: UpdateStatusEntry[] = []
 let updateDownloadRunning = false
+let updateCheckRunning = false
 
 function updatesSupported() {
   return BuildConfig.getSync().isPackaged
+}
+
+function startUpdateCheck() {
+  if (updateCheckRunning) return
+  updateCheckRunning = true
+  void Updater.checkForUpdate()
+    .catch((error) => {
+      latestUpdateStatus = {
+        status: 'error',
+        message: error instanceof Error ? error.message : String(error),
+        timestamp: Date.now(),
+      }
+    })
+    .finally(() => {
+      updateCheckRunning = false
+    })
 }
 
 if (updatesSupported()) {
@@ -74,8 +91,8 @@ if (updatesSupported()) {
     latestUpdateStatus = entry
     updateStatusHistory = [...updateStatusHistory.slice(-29), entry]
   })
-  // Silently prime the status for the settings card. `checkForUpdate` never
-  // downloads or installs anything by itself.
+  // Prime the cache while the user is still opening the app. The HTTP check
+  // endpoint returns immediately and lets this finish in the background.
   setTimeout(() => {
     void (async () => {
       try {
@@ -87,12 +104,12 @@ if (updatesSupported()) {
         ) {
           return
         }
-        await Updater.checkForUpdate()
+        startUpdateCheck()
       } catch {
         // Offline startup or a missing release is non-fatal.
       }
     })()
-  }, 8000)
+  }, 2500)
 }
 
 async function updateSnapshot() {
@@ -104,6 +121,7 @@ async function updateSnapshot() {
       reason: 'dev',
       local: null,
       update: null,
+      checking: updateCheckRunning,
       status: latestUpdateStatus,
       history: updateStatusHistory,
     }
@@ -122,6 +140,7 @@ async function updateSnapshot() {
       reason: unavailableReason || undefined,
       local,
       update: Updater.updateInfo(),
+      checking: updateCheckRunning,
       status: latestUpdateStatus,
       history: updateStatusHistory,
     }
@@ -132,6 +151,7 @@ async function updateSnapshot() {
       reason: error instanceof Error ? error.message : String(error),
       local: null,
       update: Updater.updateInfo(),
+      checking: updateCheckRunning,
       status: latestUpdateStatus,
       history: updateStatusHistory,
     }
@@ -1538,7 +1558,10 @@ try {
                 { status: 400, headers },
               )
             }
-            await Updater.checkForUpdate()
+            // Return immediately with the cached result/checking flag. The
+            // GitHub request continues in the background and the settings card
+            // polls `/update/status` for the final answer.
+            startUpdateCheck()
             return Response.json(await updateSnapshot(), { headers })
           } catch (error) {
             return Response.json(

@@ -62,6 +62,10 @@ export function UpdateCard() {
     status?.status === 'applying-patch' ||
     status?.status === 'download-complete'
   const applying = busy === 'apply' || status?.status === 'applying'
+  const checking =
+    busy === 'check' ||
+    Boolean(state?.checking) ||
+    status?.status === 'checking'
 
   const handleCheck = async () => {
     if (busy) return
@@ -124,12 +128,12 @@ export function UpdateCard() {
         </div>
         <button
           type="button"
-          aria-busy={busy === 'check'}
-          disabled={!state?.supported || Boolean(busy)}
+          aria-busy={checking}
+          disabled={!state?.supported || Boolean(busy) || checking}
           onClick={() => void handleCheck()}
           className="pressable inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-[var(--app-border)] px-3 text-[11px] font-medium text-ink-3 transition-colors hover:border-accent/30 hover:bg-accent/8 hover:text-ink-1 disabled:cursor-default disabled:opacity-40"
         >
-          {busy === 'check' ? (
+          {checking ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
           ) : (
             <RefreshCw className="h-3.5 w-3.5" />
@@ -137,6 +141,18 @@ export function UpdateCard() {
           <Trans>检查更新</Trans>
         </button>
       </div>
+
+      {checking ? (
+        <p
+          aria-live="polite"
+          className="mt-4 flex items-center gap-2 rounded-[10px] bg-black/4 px-3 py-2 text-[11px] text-ink-3"
+        >
+          <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+          <Trans>
+            正在连接 GitHub 获取更新清单，通常需要几秒…
+          </Trans>
+        </p>
+      ) : null}
 
       {!state?.packaged ? (
         <p className="mt-4 rounded-[10px] bg-black/4 px-3 py-2 text-[11px] leading-relaxed text-ink-3">

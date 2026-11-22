@@ -382,11 +382,11 @@ msgstr "下载到本地"
 msgid "下载失败"
 msgstr "下载失败"
 
-#: src/components/settings/UpdateCard.tsx:200
+#: src/components/settings/UpdateCard.tsx:212
 msgid "下载完成后可选择重启安装。"
 msgstr "下载完成后可选择重启安装。"
 
-#: src/components/settings/UpdateCard.tsx:210
+#: src/components/settings/UpdateCard.tsx:222
 msgid "下载更新"
 msgstr "下载更新"
 
@@ -1001,7 +1001,7 @@ msgid "双语对照"
 msgstr "双语对照"
 
 #. placeholder {0}: update.version
-#: src/components/settings/UpdateCard.tsx:197
+#: src/components/settings/UpdateCard.tsx:209
 msgid "发现新版本 {0}"
 msgstr "发现新版本 {0}"
 
@@ -1515,7 +1515,7 @@ msgstr "当前仅可试听 {trialEnd} 秒，登录或开通会员后可播放完
 msgid "当前使用网易云推荐的其他可播放版本"
 msgstr "当前使用网易云推荐的其他可播放版本"
 
-#: src/components/settings/UpdateCard.tsx:233
+#: src/components/settings/UpdateCard.tsx:245
 msgid "当前已是最新版本。"
 msgstr "当前已是最新版本。"
 
@@ -2014,7 +2014,7 @@ msgid "新歌加载失败"
 msgstr "新歌加载失败"
 
 #. placeholder {0}: update.version
-#: src/components/settings/UpdateCard.tsx:176
+#: src/components/settings/UpdateCard.tsx:188
 msgid "新版本 {0} 会在重启后安装，当前播放状态会结束。"
 msgstr "新版本 {0} 会在重启后安装，当前播放状态会结束。"
 
@@ -2252,7 +2252,7 @@ msgstr "更换头像"
 msgid "更改目录"
 msgstr "更改目录"
 
-#: src/components/settings/UpdateCard.tsx:173
+#: src/components/settings/UpdateCard.tsx:185
 msgid "更新已下载完成"
 msgstr "更新已下载完成"
 
@@ -2260,7 +2260,7 @@ msgstr "更新已下载完成"
 msgid "更新服务请求失败"
 msgstr "更新服务请求失败"
 
-#: src/components/settings/UpdateCard.tsx:151
+#: src/components/settings/UpdateCard.tsx:163
 msgid "更新配置不可用。"
 msgstr "更新配置不可用。"
 
@@ -2584,11 +2584,11 @@ msgstr "歌词字号"
 msgid "歌词显示"
 msgstr "歌词显示"
 
-#: src/components/settings/UpdateCard.tsx:217
+#: src/components/settings/UpdateCard.tsx:229
 msgid "正在下载更新…"
 msgstr "正在下载更新…"
 
-#: src/components/settings/UpdateCard.tsx:240
+#: src/components/settings/UpdateCard.tsx:252
 msgid "正在准备重启并安装更新…"
 msgstr "正在准备重启并安装更新…"
 
@@ -2707,6 +2707,10 @@ msgstr "正在读取歌单…"
 #: src/routes/settings.tsx:1412
 msgid "正在读取缓存…"
 msgstr "正在读取缓存…"
+
+#: src/components/settings/UpdateCard.tsx:147
+msgid "正在连接 GitHub 获取更新清单，通常需要几秒…"
+msgstr "正在连接 GitHub 获取更新清单，通常需要几秒…"
 
 #: src/routes/index.tsx:209
 msgid "每天 6:00 更新"
@@ -3326,7 +3330,7 @@ msgstr "网络请求失败，请稍后重试"
 msgid "自动匹配"
 msgstr "自动匹配"
 
-#: src/components/settings/UpdateCard.tsx:143
+#: src/components/settings/UpdateCard.tsx:155
 msgid "自动更新只在安装版中启用；开发版请使用 desktop:release 验证更新流程。"
 msgstr "自动更新只在安装版中启用；开发版请使用 desktop:release 验证更新流程。"
 
@@ -3725,7 +3729,7 @@ msgstr "部分歌曲加载失败，可点击「刷新」重试"
 msgid "配色方案"
 msgstr "配色方案"
 
-#: src/components/settings/UpdateCard.tsx:188
+#: src/components/settings/UpdateCard.tsx:200
 msgid "重启并更新"
 msgstr "重启并更新"
 

@@ -113,6 +113,7 @@ export interface DesktopUpdateStatusEntry {
 export interface DesktopUpdateState {
   supported: boolean
   packaged: boolean
+  checking: boolean
   reason?: string
   local: {
     version: string
