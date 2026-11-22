@@ -324,6 +324,43 @@ Start-Process .\build\installer\声屿-Setup-Custom.exe
 
 `desktop:release` only builds and packages; it does **not** replace the running dev app or run the installer automatically.
 
+### Desktop auto-update
+
+Packaged stable builds use Electrobun's built-in Updater. The static release URL is configured in `electrobun.config.ts`:
+
+```ts
+release: {
+  baseUrl:
+    'https://github.com/path-yu/react-better-music/releases/latest/download',
+}
+```
+
+Open **Settings → Desktop → Check for updates** to check, download and restart. The app also performs one silent check eight seconds after startup; nothing is downloaded until the user confirms. Development and dev-channel builds return an "unsupported" state.
+
+One guided command handles versioning, building and publishing:
+
+```powershell
+pnpm desktop:release:auto
+```
+
+It reads the current/local and latest GitHub version, suggests the next minor version, asks for release notes, updates `app.version`, runs `desktop:release`, and uploads a draft Release with the manifest last.
+
+Or run the steps manually after bumping `app.version`:
+
+```powershell
+pnpm desktop:release
+pnpm desktop:publish-update --tag v1.1.1
+```
+
+The publish helper requires the GitHub CLI:
+
+```powershell
+winget install --id GitHub.cli
+gh auth login
+```
+
+It uploads the archive, checksum and installer first, then `stable-win-x64-update.json` last, and publishes a draft Release only after all assets are present. Keep `app.version`, the tag and the manifest version aligned; `/releases/latest` covers stable only.
+
 ### Dev vs release process
 
 ```text

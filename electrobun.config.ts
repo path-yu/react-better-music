@@ -10,6 +10,11 @@ export default {
   runtime: {
     exitOnLastWindowClosed: false,
   },
+  // Hutch publishes the update manifest and archives beside each GitHub release.
+  release: {
+    baseUrl:
+      'https://github.com/path-yu/react-better-music/releases/latest/download',
+  },
   build: {
     mainProcess: 'bun',
     bun: {

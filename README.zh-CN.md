@@ -348,6 +348,43 @@ Start-Process .\build\installer\声屿-Setup-Custom.exe
 
 `desktop:release` 只负责构建和生成安装包，不会自动替换正在运行的开发版，也不会自动执行安装器。
 
+### 桌面端自动更新
+
+正式版使用 Electrobun 自带的 Updater，静态更新地址配置在 `electrobun.config.ts`：
+
+```ts
+release: {
+  baseUrl:
+    'https://github.com/path-yu/react-better-music/releases/latest/download',
+}
+```
+
+设置 → 桌面 → 检查更新 中可以检查、下载并重启安装。正式版启动 8 秒后还会静默检查一次，但不会自动下载；开发版和 dev 频道不启用更新。
+
+推荐使用一条交互式命令完成版本号、构建和发布：
+
+```powershell
+pnpm desktop:release:auto
+```
+
+脚本会读取本地/远端最新版本，建议下一个版本号，收集更新内容，自动修改 `app.version`、执行 `desktop:release`，最后创建草稿 Release 并按顺序上传资产和更新清单。
+
+也可以提升 `app.version` 后手动执行：
+
+```powershell
+pnpm desktop:release
+pnpm desktop:publish-update --tag v1.1.1
+```
+
+发布脚本依赖 GitHub CLI：
+
+```powershell
+winget install --id GitHub.cli
+gh auth login
+```
+
+脚本会先上传压缩包、checksum 和安装包，最后上传 `stable-win-x64-update.json`，全部成功后才把草稿 Release 公开。`app.version`、tag 和清单版本必须一致；`/releases/latest` 只适用于 stable。
+
 ### 开发版与正式版的区别
 
 ```text

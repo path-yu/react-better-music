@@ -98,6 +98,74 @@ export function reportDesktopLog(message: string) {
 
 
 
+export interface DesktopUpdateStatusEntry {
+  status: string
+  message: string
+  timestamp: number
+  details?: {
+    progress?: number
+    bytesDownloaded?: number
+    totalBytes?: number
+    errorMessage?: string
+  }
+}
+
+export interface DesktopUpdateState {
+  supported: boolean
+  packaged: boolean
+  reason?: string
+  local: {
+    version: string
+    hash: string
+    baseUrl: string
+    channel: string
+    name: string
+    identifier: string
+  } | null
+  update: {
+    version: string
+    hash: string
+    updateAvailable: boolean
+    updateReady: boolean
+    error: string
+  } | null
+  status: DesktopUpdateStatusEntry | null
+  history: DesktopUpdateStatusEntry[]
+}
+
+async function updateRequest<T>(path: string, init?: RequestInit) {
+  const response = await bridgeFetch(path, init, 45_000)
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as {
+      error?: string
+    } | null
+    throw new Error(body?.error || i18n._(msg`更新服务请求失败`))
+  }
+  return (await response.json()) as T
+}
+
+export function getDesktopUpdateState() {
+  return updateRequest<DesktopUpdateState>('/update/status')
+}
+
+export function checkDesktopUpdate() {
+  return updateRequest<DesktopUpdateState>('/update/check', {
+    method: 'POST',
+  })
+}
+
+export function downloadDesktopUpdate() {
+  return updateRequest<DesktopUpdateState>('/update/download', {
+    method: 'POST',
+  })
+}
+
+export function applyDesktopUpdate() {
+  return updateRequest<{ ok: true }>('/update/apply', {
+    method: 'POST',
+  })
+}
+
 /** Whether the next launch should create WebView2 with DevTools disabled. */
 export async function getDevToolsPolicy() {
   return requestJson<{ disabled: boolean }>('/devtools-policy')

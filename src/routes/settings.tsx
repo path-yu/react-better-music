@@ -51,6 +51,7 @@ import {
 } from '../components/settings/SettingsNav'
 import { PlayerStylePicker } from '../components/settings/PlayerStylePicker'
 import { RemoteControlCard } from '../components/settings/RemoteControlCard'
+import { UpdateCard } from '../components/settings/UpdateCard'
 import {
   clearAudioCache,
   downloadCachedAudio,
@@ -1393,6 +1394,8 @@ function SettingsPage() {
             </p>
           </section>
         ) : null}
+
+        {desktop && import.meta.env.MODE !== 'tauri' ? <UpdateCard /> : null}
 
         {/* Electrobun only: the Tauri shell has its own API and bridge. */}
         {desktop && import.meta.env.MODE !== 'tauri' ? <RemoteControlCard /> : null}

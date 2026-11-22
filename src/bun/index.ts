@@ -5,8 +5,10 @@ import {
   GlobalShortcut,
   Screen,
   Tray,
+  Updater,
   Utils,
   type ElectrobunEvent,
+  type UpdateStatusEntry,
 } from 'electrobun/main'
 import {
   appendFileSync,
@@ -56,6 +58,87 @@ function spleeterAudioType(path: string) {
 const BRIDGE_TOKEN = crypto.randomUUID()
 const STARTED_AT = Date.now()
 const STARTUP_LOG = join(APP_DATA_DIR, 'startup.log')
+
+/* ------------------------------- updates --------------------------------- */
+
+let latestUpdateStatus: UpdateStatusEntry | null = null
+let updateStatusHistory: UpdateStatusEntry[] = []
+let updateDownloadRunning = false
+
+function updatesSupported() {
+  return BuildConfig.getSync().isPackaged
+}
+
+if (updatesSupported()) {
+  Updater.onStatusChange((entry) => {
+    latestUpdateStatus = entry
+    updateStatusHistory = [...updateStatusHistory.slice(-29), entry]
+  })
+  // Silently prime the status for the settings card. `checkForUpdate` never
+  // downloads or installs anything by itself.
+  setTimeout(() => {
+    void (async () => {
+      try {
+        const local = await Updater.getLocalInfo()
+        if (
+          !local.baseUrl ||
+          local.channel === 'dev' ||
+          local.channel === 'development'
+        ) {
+          return
+        }
+        await Updater.checkForUpdate()
+      } catch {
+        // Offline startup or a missing release is non-fatal.
+      }
+    })()
+  }, 8000)
+}
+
+async function updateSnapshot() {
+  const packaged = updatesSupported()
+  if (!packaged) {
+    return {
+      supported: false,
+      packaged: false,
+      reason: 'dev',
+      local: null,
+      update: null,
+      status: latestUpdateStatus,
+      history: updateStatusHistory,
+    }
+  }
+  try {
+    const local = await Updater.getLocalInfo()
+    const unavailableReason =
+      !local.baseUrl
+        ? '未配置 release.baseUrl'
+        : local.channel === 'dev' || local.channel === 'development'
+          ? '开发版不启用自动更新'
+          : ''
+    return {
+      supported: !unavailableReason,
+      packaged: true,
+      reason: unavailableReason || undefined,
+      local,
+      update: Updater.updateInfo(),
+      status: latestUpdateStatus,
+      history: updateStatusHistory,
+    }
+  } catch (error) {
+    return {
+      supported: false,
+      packaged: true,
+      reason: error instanceof Error ? error.message : String(error),
+      local: null,
+      update: Updater.updateInfo(),
+      status: latestUpdateStatus,
+      history: updateStatusHistory,
+    }
+  }
+}
+
+
 
 /**
  * Record a startup milestone in both the console and `startup.log`. The
@@ -1430,6 +1513,91 @@ try {
           const disabled = url.searchParams.get('disabled') !== '0'
           persistDevToolsDisabled(disabled)
           return Response.json({ disabled }, { headers })
+        }
+        if (url.pathname === '/update/status' && request.method === 'GET') {
+          return Response.json(await updateSnapshot(), { headers })
+        }
+        if (url.pathname === '/update/check' && request.method === 'POST') {
+          if (!updatesSupported()) {
+            return Response.json(
+              { error: '自动更新仅在安装版中可用' },
+              { status: 400, headers },
+            )
+          }
+          try {
+            const local = await Updater.getLocalInfo()
+            if (!local.baseUrl) {
+              return Response.json(
+                { error: '未配置 release.baseUrl' },
+                { status: 400, headers },
+              )
+            }
+            if (local.channel === 'dev' || local.channel === 'development') {
+              return Response.json(
+                { error: '开发版不启用自动更新' },
+                { status: 400, headers },
+              )
+            }
+            await Updater.checkForUpdate()
+            return Response.json(await updateSnapshot(), { headers })
+          } catch (error) {
+            return Response.json(
+              { error: error instanceof Error ? error.message : String(error) },
+              { status: 502, headers },
+            )
+          }
+        }
+        if (url.pathname === '/update/download' && request.method === 'POST') {
+          if (!updatesSupported()) {
+            return Response.json(
+              { error: '自动更新仅在安装版中可用' },
+              { status: 400, headers },
+            )
+          }
+          const info = Updater.updateInfo()
+          if (!info.updateAvailable || info.updateReady) {
+            return Response.json(await updateSnapshot(), { headers })
+          }
+          if (!updateDownloadRunning) {
+            updateDownloadRunning = true
+            void Updater.downloadUpdate()
+              .catch((error) => {
+                latestUpdateStatus = {
+                  status: 'error',
+                  message: error instanceof Error ? error.message : String(error),
+                  timestamp: Date.now(),
+                }
+              })
+              .finally(() => {
+                updateDownloadRunning = false
+              })
+          }
+          return Response.json(await updateSnapshot(), { headers })
+        }
+        if (url.pathname === '/update/apply' && request.method === 'POST') {
+          if (!updatesSupported()) {
+            return Response.json(
+              { error: '自动更新仅在安装版中可用' },
+              { status: 400, headers },
+            )
+          }
+          if (!Updater.updateInfo().updateReady) {
+            return Response.json(
+              { error: '更新尚未下载完成' },
+              { status: 409, headers },
+            )
+          }
+          // Let the HTTP response flush before the updater asks the app to quit.
+          setTimeout(() => {
+            void Updater.applyUpdate().catch((error) => {
+              latestUpdateStatus = {
+                status: 'error',
+                message: error instanceof Error ? error.message : String(error),
+                timestamp: Date.now(),
+              }
+            })
+          }, 150)
+          return Response.json({ ok: true }, { headers })
         }
         if (url.pathname === '/window-state' && request.method === 'GET') {
           return Response.json(currentWindowState(), { headers })
