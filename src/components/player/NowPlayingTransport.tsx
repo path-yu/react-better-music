@@ -39,7 +39,6 @@ import { cn, formatDuration, formatRemaining } from '../../lib/format'
 import { TimeToggle } from './TimeToggle'
 import { PLAY_MODE_LABELS } from '../../lib/playMode'
 import { isInstrumentalSong } from '../../lib/songs'
-import { seekAudio } from '../../lib/audio'
 import { toast } from '../../lib/toast'
 import { KaraokeVocalFader } from './KaraokeVocalFader'
 import { selectOverlayTime, usePlayerStore } from '../../store/player'
@@ -90,7 +89,6 @@ export function NowPlayingTransport({
   const cycleMode = usePlayerStore((state) => state.cycleMode)
   const toggleHeartMode = usePlayerStore((state) => state.toggleHeartMode)
   const toggleQueue = usePlayerStore((state) => state.toggleQueue)
-  const setCurrentTime = usePlayerStore((state) => state.setCurrentTime)
   const setVolume = usePlayerStore((state) => state.setVolume)
 
   const videoActive = useVideoPlaybackStore((state) => state.active)
@@ -264,8 +262,7 @@ export function NowPlayingTransport({
     if (videoActive) {
       useVideoPlaybackStore.getState().seek(seconds)
     } else {
-      seekAudio(seconds)
-      setCurrentTime(seconds)
+      usePlayerStore.getState().seekTo(seconds)
     }
   }
 

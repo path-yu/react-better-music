@@ -159,6 +159,7 @@ pnpm i18n:extract && pnpm typecheck && pnpm typecheck:desktop && pnpm lint && pn
 | `pnpm dev:api` 监听所有网卡 | 脚本加 `--host 127.0.0.1`，`app.js` 支持该参数；Docker / `npm start` 行为不变 | `package.json`、`server/app.js` |
 | 恢复进度后，播放页进度和歌词停在 0:00 | 尚未加载音频时，播放页显示保存的位置 | `store/player.ts` |
 | 刷新后第一次播放，底部播放栏和详情页进度条先显示 0:00，音频加载完再跳到恢复位置 | 有待恢复位置（`resumeAt`）时，两处进度条都显示目标位置，直到音频跳转完成；新音源加载时共享的 `currentTime` 不再先归零；`onPlaying` 兜底，确保待恢复位置不会一直挂着。切换音源、出错重载也一并受益 | `PlayerBar.tsx`、`store/player.ts` |
+| 刷新后还没播放时，在详情页点击或拖动进度条无效，滑块弹回恢复位置（上一条修复引入的回归）。原因：详情页、沉浸式播放栏直接给还没加载音频的元素设 `currentTime`（会被忽略），而进度条在有待恢复位置时显示 `resumeAt`；按播放时也仍从记住的位置开始 | 新增统一入口 `seekTo`：音频已加载就直接跳转，否则把目标记为 `resumeAt`，加载后应用；按播放时优先用这次拖动的位置；详情页、沉浸式播放栏、手机遥控、系统媒体控件的拖动都走它，底部栏的延迟拖动也同步到这里 | `store/player.ts`、`NowPlayingTransport.tsx`、`ImmersivePlayerBar.tsx`、`PlayerBar.tsx`、`lib/remoteBridge.ts` |
 | 边听边缓存重复下载：`<audio>` 的缓冲 JS 读不到，播放 10 秒后缓存任务又向 CDN 完整下载一次 | 新增 `server/audioTee.js`：同一媒体地址第一次完整请求时全速下载到临时文件，播放、进度内拖动、缓存任务、重播都从这个正在增长的文件读；拖到未下载部分 2MB 以外仍直接请求 CDN；没人读的未完成下载 5 秒后放弃（快速切歌不会下完每一首）；最多 8 个 / 300MB，25 分钟过期；临时目录按进程区分，启动时清理已退出进程留下的目录。**自查修复**：读取端原先在写入流异步创建文件之前就去打开文件，首个播放请求可能因 ENOENT 失败，现在改为有数据写入后才打开；读取端在打开期间被销毁时，文件句柄会被关闭 | `server/audioTee.js`（新）、`server/server.js` |
 | vitest 未配置 Lingui，底层文件无法翻译 | `vitest.config.ts` 接入 `@lingui/vite-plugin`（与构建相同的宏转换和 `.po` 加载）；`songs.ts`「未知专辑」、`video.ts`「视频」、`image.ts` 两条错误改走多语言 | `vitest.config.ts`、`lib/songs.ts`、`lib/video.ts`、`lib/image.ts`、`lib/format.test.ts` |
 
@@ -227,6 +228,7 @@ src/
 - [ ] 播到 1:30 关闭应用再打开：底部进度条和播放页都显示 1:30，按空格从 1:30 继续
 - [ ] 重启后先点进度条再按播放：从点击位置开始
 - [ ] 刷新后按播放：底部和详情页进度条在加载期间一直停在恢复位置，不会先跳回 0:00；「切换音源」时同样不跳
+- [ ] 刷新后**先不播放**，在详情页和底部栏分别点击、拖动进度条：滑块停在新位置，按播放从新位置开始；手机遥控拖动同样有效
 - [ ] 快捷键：← / →、Ctrl + ← / →、M、L；在搜索框和滑块上不触发
 - [ ] Windows 媒体浮层的封面和进度正常
 

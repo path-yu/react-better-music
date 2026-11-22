@@ -26,7 +26,6 @@ import { Popover, PopoverTrigger } from '@pikoloo/darwin-ui'
 import { cn, formatDuration, formatRemaining } from '../../lib/format'
 import { TimeToggle } from './TimeToggle'
 import { PLAY_MODE_LABELS } from '../../lib/playMode'
-import { seekAudio } from '../../lib/audio'
 import { usePlayerMenuTint } from '../../lib/menuSurface'
 import { toast } from '../../lib/toast'
 import {
@@ -74,7 +73,6 @@ export function ImmersivePlayerBar({
   const volume = usePlayerStore((state) => state.volume)
   const heartMode = usePlayerStore((state) => state.heartMode)
   const heartLoading = usePlayerStore((state) => state.heartLoading)
-  const setCurrentTime = usePlayerStore((state) => state.setCurrentTime)
   const togglePlay = usePlayerStore((state) => state.togglePlay)
   const next = usePlayerStore((state) => state.next)
   const prev = usePlayerStore((state) => state.prev)
@@ -163,8 +161,7 @@ export function ImmersivePlayerBar({
     const seconds = (value / 100) * (durationMs / 1000)
     if (videoActive) seekVideo(seconds)
     else {
-      seekAudio(seconds)
-      setCurrentTime(seconds)
+      usePlayerStore.getState().seekTo(seconds)
     }
   }
 

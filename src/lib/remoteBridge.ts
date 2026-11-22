@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 import { API_BASE } from './apiBase'
-import { seekAudio } from './audio'
 import { usePlayerStore } from '../store/player'
 
 const REMOTE_BASE = `${API_BASE}/remote/api`
@@ -104,8 +103,7 @@ async function applyCommand(command: RemoteCommand) {
         0,
         Math.min(duration, Number(command.value) || 0),
       )
-      state.setCurrentTime(position / 1000)
-      seekAudio(position / 1000)
+      state.seekTo(position / 1000)
       break
     }
     case 'volume':

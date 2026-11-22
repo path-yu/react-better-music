@@ -989,7 +989,9 @@ export function PlayerBar() {
     set('previoustrack', () => void usePlayerStore.getState().prev())
     set('nexttrack', () => void usePlayerStore.getState().next())
     set('seekto', (details) => {
-      if (typeof details.seekTime === 'number') seekAudio(details.seekTime)
+      if (typeof details.seekTime === 'number') {
+        usePlayerStore.getState().seekTo(details.seekTime)
+      }
     })
     set('seekbackward', (details) => {
       const audio = getAudio()
@@ -1092,6 +1094,9 @@ export function PlayerBar() {
       // back to 0. Remember the target and apply it once metadata arrives.
       pendingSeekRef.current = { percent: value, songId: currentSong.id }
       setPendingSeek(value)
+      // Keep the store in step so the song page shows (and play starts at)
+      // the same target; this bar applies it itself on loadedmetadata.
+      usePlayerStore.getState().seekTo((value / 100) * (duration / 1000), { defer: true })
       if (!matchesSource && !audioUrl && !seekLoadingRef.current) {
         seekLoadingRef.current = true
         void refreshCurrentUrl().then((ok) => {

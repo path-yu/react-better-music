@@ -112,6 +112,14 @@ interface PlayerState {
   /** Replace the current track with a matched provider source (manual picker). */
   switchToOtherSource: (source?: string, force?: boolean) => Promise<void>
   consumeResumeAt: () => void
+  /**
+   * The one seek entry point for every progress bar, the remote and media
+   * keys. Seeks the media when it is loaded; otherwise (a restored session
+   * not played yet, or metadata still loading) remembers the target as the
+   * resume position, which loadAt / loadedmetadata apply. `defer` skips the
+   * direct seek for callers that apply it themselves on loadedmetadata.
+   */
+  seekTo: (seconds: number, options?: { defer?: boolean }) => void
   prefetchNext: () => void
   invalidateUrls: () => void
   markSongLike: (id: number, like: boolean) => void
@@ -1336,8 +1344,9 @@ export const usePlayerStore = create<PlayerState>()(
           if (!song) return
           if (!get().audioUrl) {
             // First play after a restart continues where the app was closed.
+            // A seek made before pressing play wins over the remembered spot.
             const ok = await loadAt(currentIndex, {
-              resumeAt: takeRestoredPosition(song),
+              resumeAt: get().resumeAt ?? takeRestoredPosition(song),
             })
             if (!ok) return
           }
@@ -1489,7 +1498,8 @@ export const usePlayerStore = create<PlayerState>()(
               // A recovery reload should keep the position instead of jumping
               // back to the beginning.
               // A seek on a track restored at launch falls back to the saved spot.
-              resumeAt: get().currentTime || takeRestoredPosition(song),
+              resumeAt:
+                get().resumeAt ?? (get().currentTime || takeRestoredPosition(song)),
               audioFromCache: false,
               audioBlob: null,
               // Keep the visible lyrics if the recovery could not load them.
@@ -1589,6 +1599,33 @@ export const usePlayerStore = create<PlayerState>()(
 
         consumeResumeAt() {
           set({ resumeAt: null })
+        },
+
+        seekTo(seconds, options) {
+          if (!Number.isFinite(seconds)) return
+          const target = Math.max(0, seconds)
+          const state = get()
+          const audio = getAudio()
+          const ready = Boolean(
+            !options?.defer &&
+              audio &&
+              state.audioUrl &&
+              audio.getAttribute('src') === state.audioUrl &&
+              audio.readyState >= 1 &&
+              Number.isFinite(audio.duration) &&
+              audio.duration > 0,
+          )
+          if (ready && audio) {
+            const clamped = Math.min(target, Math.max(0, audio.duration - 0.25))
+            audio.currentTime = clamped
+            set({ currentTime: clamped, resumeAt: null })
+            return
+          }
+          // Assigning currentTime to an element without loaded media is
+          // ignored, and the bars show resumeAt while it is set; a seek here
+          // used to snap straight back to the remembered position.
+          restoredPosition = null
+          set({ currentTime: target, resumeAt: target })
         },
 
         prefetchNext() {
