@@ -5,7 +5,10 @@ import { cn } from '../../lib/format'
 
 interface ExpandableDescriptionProps {
   text: string
-  /** Collapsed height in px. Expanded height is measured from the content. */
+  /**
+   * Collapsed height in px; the default is exactly four 12px lines (19.5px
+   * line height), so the last visible line is never cut in half.
+   */
   previewHeight?: number
   className?: string
   textClassName?: string
@@ -18,10 +21,17 @@ interface ExpandableDescriptionProps {
  */
 export function ExpandableDescription({
   text,
-  previewHeight = 75,
+  previewHeight = 78,
   className,
   textClassName,
 }: ExpandableDescriptionProps) {
+  // NetEase notes often carry runs of blank lines (an album blurb, three
+  // empty lines, the title). Keep at most one, so the preview shows text.
+  const content = text
+    .replace(/\r\n?/g, '\n')
+    .replace(/[ \t\u3000]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
   const [expanded, setExpanded] = useState(false)
   const [height, setHeight] = useState(0)
   const [expandedMaxHeight, setExpandedMaxHeight] = useState(520)
@@ -101,7 +111,7 @@ export function ExpandableDescription({
             textClassName,
           )}
         >
-          {text}
+          {content}
         </p>
       </div>
       {canExpand ? (

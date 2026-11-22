@@ -493,22 +493,26 @@ function SearchPage() {
                   }
                   className="group flex items-center gap-3 rounded-[14px] border border-black/8 bg-white/55 p-3 text-left transition-colors hover:bg-white/80"
                 >
+                  {/* Hairline ring: NetEase's default avatar is plain white
+                      and vanished into the light card. */}
                   <ImageWithFallback
                     src={artist.picUrl}
                     alt={artist.name}
                     rounded="rounded-full"
-                    className="h-14 w-14 shrink-0"
+                    className="avatar-ring h-14 w-14 shrink-0"
                     resize="128y128"
                   />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[13px] text-ink-2 group-hover:text-accent">
                       {artist.name}
                     </p>
-                    <p className="mt-0.5 truncate text-[11px] text-ink-4">
-                      {artist.alias?.[0] ??
-                        artist.transNames?.[0] ??
-                        i18n._(msg`${artist.albumSize ?? 0} 张专辑`)}
-                    </p>
+                    {/* Without an alias this line used to repeat the album
+                        count shown on the next line. */}
+                    {artist.alias?.[0] ?? artist.transNames?.[0] ? (
+                      <p className="mt-0.5 truncate text-[11px] text-ink-4">
+                        {artist.alias?.[0] ?? artist.transNames?.[0]}
+                      </p>
+                    ) : null}
                     <p className="mt-0.5 text-[11px] text-ink-4">
                       <Trans>
                         {artist.albumSize ?? 0} 张专辑 · {artist.mvSize ?? 0} 个 MV

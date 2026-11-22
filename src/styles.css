@@ -1517,13 +1517,16 @@ html.desktop .app-window {
 }
 
 /* Artist page: no 歌手 column (every row is the artist). Featured artists
-   stay visible under the title at every width. */
-.song-table--no-artist .song-col-artist {
+   stay visible under the title at every width. Album page: no 专辑 column.
+   Either way one meta column is left, so both share the grid below. */
+.song-table--no-artist .song-col-artist,
+.song-table--no-album .song-col-album {
   display: none;
 }
 
 @media (min-width: 1100px) {
-  .song-table--no-artist .song-grid {
+  .song-table--no-artist .song-grid,
+  .song-table--no-album .song-grid {
     grid-template-columns: 26px minmax(0, 2.2fr) minmax(0, 1.2fr) 92px;
   }
 
@@ -1533,7 +1536,8 @@ html.desktop .app-window {
 }
 
 @container song-table (min-width: 1240px) {
-  .song-table--no-artist .song-grid {
+  .song-table--no-artist .song-grid,
+  .song-table--no-album .song-grid {
     grid-template-columns: 26px minmax(0, 1fr) minmax(0, 360px) 100px;
   }
 }
@@ -1924,6 +1928,18 @@ html.desktop .app-window {
   color: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
+}
+
+/* Hairline around round avatars: NetEase's default avatar is plain white and
+   disappeared into light cards. A plain rule because `ring-1` on the
+   ImageWithFallback wrapper rendered no ring (cause not tracked down; ring-*
+   works on other elements). */
+.avatar-ring {
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.dark .avatar-ring {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
 /* ---------- menus ----------
@@ -5020,6 +5036,17 @@ html.dark[data-theme='dark'] body {
   overflow-y: auto;
   overscroll-behavior: contain;
   padding-right: 4px;
+  /* The panel scrolls inside the page: fade its last 20px instead of cutting
+     a card off mid-row, and leave room so the final row clears the fade. */
+  padding-bottom: 24px;
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent);
+}
+
+/* darwin-ui's Select trigger is 36px / 14px, larger than the 13px row
+   titles beside it. */
+.settings-select > button {
+  height: 32px;
+  font-size: 13px;
 }
 
 /* Keep the swatch density independent from utility ordering in the bundle. */

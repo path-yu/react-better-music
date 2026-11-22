@@ -734,7 +734,7 @@ function SettingsPage() {
                   value: option.value,
                   label: i18n._(option.label),
                 }))}
-                className="w-[160px] shrink-0 text-[12px]"
+                className="settings-select w-[160px] shrink-0"
               />
             </div>
 
@@ -758,7 +758,7 @@ function SettingsPage() {
                   value: option.value,
                   label: i18n._(option.label),
                 }))}
-                className="w-[160px] shrink-0 text-[12px]"
+                className="settings-select w-[160px] shrink-0"
               />
             </div>
 
@@ -797,7 +797,7 @@ function SettingsPage() {
                   value: item.value,
                   label: item.label,
                 }))}
-                className="w-[160px] shrink-0 text-[12px]"
+                className="settings-select w-[160px] shrink-0"
               />
             </div>
           </div>
@@ -1069,7 +1069,7 @@ function SettingsPage() {
                       value: option.value,
                       label: i18n._(option.label),
                     }))}
-                    className="w-full text-[11px]"
+                    className="settings-select w-full"
                   />
                 </label>
                 <label className="flex flex-col gap-1.5">
@@ -1090,7 +1090,7 @@ function SettingsPage() {
                       value: option.value,
                       label: i18n._(option.label),
                     }))}
-                    className="w-full text-[11px]"
+                    className="settings-select w-full"
                   />
                 </label>
               </div>
@@ -1217,7 +1217,7 @@ function SettingsPage() {
                   value: option.value,
                   label: i18n._(option.label),
                 }))}
-                className="text-[12px]"
+                className="settings-select "
               />
               <p className="mt-2 text-[11px] leading-relaxed text-ink-4">
                 <Trans>
@@ -1242,7 +1242,7 @@ function SettingsPage() {
                   value: String(mb),
                   label: `${mb} MB`,
                 }))}
-                className="text-[12px]"
+                className="settings-select "
               />
               <p className="mt-2 text-[11px] leading-relaxed text-ink-4">
                 <Trans>默认 200 MB，超出后按缓存时间从旧到新清理。</Trans>

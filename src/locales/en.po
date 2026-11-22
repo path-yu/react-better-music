@@ -3852,3 +3852,6 @@ msgstr "Full chart"
 
 msgid "播放「{0}」"
 msgstr "Play “{0}”"
+
+msgid "点赞，{0} 人赞过"
+msgstr "Like, {0} likes"

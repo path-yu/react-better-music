@@ -331,7 +331,7 @@ function ArtistPage() {
                   src={artist.picUrl}
                   alt={artist.name}
                   rounded="rounded-full"
-                  className="h-14 w-14 shrink-0"
+                  className="avatar-ring h-14 w-14 shrink-0"
                   resize="128y128"
                 />
                 <div className="min-w-0 flex-1">

@@ -203,6 +203,7 @@ function AlbumDetailPage() {
           songs={filteredSongs}
           playlistId={`album-${album.id}`}
           stickyTop={57}
+          hideAlbum
           emptyText={
             keyword
               ? i18n._(msg`没有匹配的歌曲`)

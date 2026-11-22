@@ -26,7 +26,12 @@ import { usePlayerStore } from '../../store/player'
 import { toast } from '../../lib/toast'
 import { getAudio } from '../../lib/audio'
 import { apiUrl } from '../../lib/http'
-import { formatDate, formatDuration, getArrLast } from '../../lib/format'
+import {
+  formatDate,
+  formatDuration,
+  formatNumber,
+  getArrLast,
+} from '../../lib/format'
 import { cn } from '../../lib/format'
 import { resizedImageUrl } from '../../lib/image'
 import type { Comment, CommentResponse } from '../../types'
@@ -688,7 +693,9 @@ export function CommentSection({
                     type="button"
                     onClick={() => openUser(comment.user?.userId)}
                     disabled={!comment.user?.userId}
-                    className="text-left text-[12px] font-medium text-accent hover:underline disabled:cursor-default disabled:no-underline"
+                    // Neutral, not accent blue: on the song page the list sits
+                    // on the cover's colours, where blue names clashed.
+                    className="text-left text-[12px] font-semibold text-ink-2 hover:text-ink-1 hover:underline disabled:cursor-default disabled:no-underline"
                   >
                     {comment.user?.nickname}
                   </button>
@@ -717,12 +724,12 @@ export function CommentSection({
                         onClick={() =>
                           openUser(comment.beReplied[0].user?.userId)
                         }
-                        className="text-accent hover:underline"
+                        className="font-semibold text-ink-1 hover:underline"
                       >
                         @{comment.beReplied[0].user?.nickname}：
                       </button>
                     ) : (
-                      <span className="text-accent">
+                      <span className="font-semibold text-ink-1">
                         @{comment.beReplied[0].user?.nickname}：
                       </span>
                     )}
@@ -740,6 +747,9 @@ export function CommentSection({
                   <button
                     type="button"
                     onClick={() => void handleLike(comment)}
+                    title={String(comment.likedCount)}
+                    aria-label={i18n._(msg`点赞，${comment.likedCount} 人赞过`)}
+                    aria-pressed={Boolean(comment.liked)}
                     className={cn(
                       'pressable flex items-center gap-1 transition-colors',
                       comment.liked ? 'text-love' : 'hover:text-ink-2',
@@ -748,7 +758,8 @@ export function CommentSection({
                     <Heart
                       className={cn('h-3 w-3', comment.liked ? 'fill-current' : '')}
                     />
-                    {comment.likedCount}
+                    {/* 28.2万 like the tab badge, not 281560; nothing for 0. */}
+                    {comment.likedCount ? formatNumber(comment.likedCount) : null}
                   </button>
                   <button
                     type="button"
@@ -777,8 +788,11 @@ export function CommentSection({
     <section>
       <div className="flex items-center gap-2">
         <h3 className="headline-md">{sectionTitle}</h3>
-        <span className="text-[12px] text-ink-4">
-          {data.total ? <Trans>{data.total} 条</Trans> : null}
+        <span
+          className="text-[12px] text-ink-4"
+          title={data.total ? String(data.total) : undefined}
+        >
+          {data.total ? <Trans>{formatNumber(data.total)} 条</Trans> : null}
         </span>
       </div>
 

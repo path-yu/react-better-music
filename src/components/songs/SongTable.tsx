@@ -44,6 +44,8 @@ interface SongTableProps {
    * only featured artists are shown, under the title.
    */
   pageArtistId?: number
+  /** Album page: every row is the same album, so the 专辑 column is dropped. */
+  hideAlbum?: boolean
 }
 
 const VIRTUAL_THRESHOLD = 500
@@ -211,7 +213,7 @@ const SongRow = memo(function SongRow({
           ) : null}
         </div>
       </div>
-      <p className="song-meta truncate text-[12px] text-ink-3">
+      <p className="song-meta song-col-album truncate text-[12px] text-ink-3">
         {song.al.id ? (
           <Link
             to="/albums/$id"
@@ -275,6 +277,7 @@ export function SongTable({
   onRemoveFromPlaylist,
   stickyTop,
   pageArtistId,
+  hideAlbum = false,
 }: SongTableProps) {
   const { i18n } = useLingui()
   const rootRef = useRef<HTMLDivElement>(null)
@@ -544,7 +547,7 @@ export function SongTable({
       <span className="song-meta song-col-artist">
         <Trans>歌手</Trans>
       </span>
-      <span className="song-meta">
+      <span className="song-meta song-col-album">
         <Trans>专辑</Trans>
       </span>
       <span className="text-right">
@@ -561,6 +564,7 @@ export function SongTable({
         className={cn(
           'select-none',
           pageArtistId !== undefined && 'song-table--no-artist',
+          hideAlbum && 'song-table--no-album',
           className,
         )}
       >
@@ -614,6 +618,7 @@ export function SongTable({
         className={cn(
           'select-none',
           pageArtistId !== undefined && 'song-table--no-artist',
+          hideAlbum && 'song-table--no-album',
           className,
         )}
       >
