@@ -1365,7 +1365,7 @@ html.desktop .app-window {
   display: grid;
   align-items: center;
   gap: 0.75rem;
-  grid-template-columns: 26px minmax(0, 1fr) 52px;
+  grid-template-columns: 26px minmax(0, 1fr) 92px;
 }
 
 .song-meta {
@@ -1436,7 +1436,7 @@ html.desktop .app-window {
 
 @media (min-width: 1100px) {
   .song-grid {
-    grid-template-columns: 26px minmax(0, 2.2fr) minmax(0, 1.2fr) minmax(0, 1.2fr) 52px;
+    grid-template-columns: 26px minmax(0, 2.2fr) minmax(0, 1.2fr) minmax(0, 1.2fr) 92px;
   }
 }
 
@@ -1450,7 +1450,7 @@ html.desktop .app-window {
 
 @container song-table (min-width: 1240px) {
   .song-grid {
-    grid-template-columns: 26px minmax(0, 1fr) minmax(0, 300px) minmax(0, 300px) 64px;
+    grid-template-columns: 26px minmax(0, 1fr) minmax(0, 300px) minmax(0, 300px) 100px;
   }
 }
 
@@ -1827,7 +1827,7 @@ html.desktop .app-window {
      top of the menu. Use a faint inset highlight and a softer drop shadow. */
   border: none;
   outline: none;
-  border-radius: 10px;
+  border-radius: 14px;
   background-color: rgba(28, 28, 30, 0.94);
   background-image: radial-gradient(
     120% 90% at 100% 0%,
@@ -1842,8 +1842,262 @@ html.desktop .app-window {
   -webkit-backdrop-filter: blur(24px);
 }
 
+/* ---------- menus ----------
+   One row system for the song context menu, the sidebar menus and the
+   player's "more" popover: 32px rows, 16px icon column, 13px text, value or
+   chevron on the right, 10px row radius inside a 14px surface with 4px
+   padding. Colours come from variables so the light popover, the dark theme
+   and the tinted song-page surface share the same markup. */
+.menu-list {
+  --menu-fg: var(--ink-1);
+  --menu-muted: var(--ink-3);
+  --menu-faint: var(--ink-4);
+  --menu-hover: rgba(0, 0, 0, 0.06);
+  --menu-separator: rgba(0, 0, 0, 0.08);
+  --menu-track: rgba(0, 0, 0, 0.06);
+  --menu-track-strong: rgba(0, 0, 0, 0.16);
+  --menu-thumb: #fff;
+  --menu-thumb-shadow: 0 1px 3px rgba(0, 0, 0, 0.14), 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+  color: var(--menu-fg);
+  font-size: 13px;
+}
+
+.dark .menu-list,
+.menu-list .dark,
+.menu-surface {
+  --menu-fg: rgba(255, 255, 255, 0.9);
+  --menu-muted: rgba(255, 255, 255, 0.58);
+  --menu-faint: rgba(255, 255, 255, 0.4);
+  --menu-hover: rgba(255, 255, 255, 0.1);
+  --menu-separator: rgba(255, 255, 255, 0.1);
+  --menu-track: rgba(255, 255, 255, 0.08);
+  --menu-track-strong: rgba(255, 255, 255, 0.22);
+  --menu-thumb: rgba(255, 255, 255, 0.22);
+  --menu-thumb-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.14);
+}
+
+.menu-item {
+  display: flex;
+  width: 100%;
+  min-height: 32px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  border-radius: 10px;
+  color: var(--menu-fg);
+  font-size: 13px;
+  line-height: 1.25;
+  text-align: left;
+  transition: background-color 0.12s ease;
+}
+
+.menu-item:not(.menu-item--static):hover,
+.menu-item:focus-visible {
+  background: var(--menu-hover);
+  outline: none;
+}
+
+.menu-item:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.menu-item--static {
+  cursor: default;
+}
+
+.menu-item__icon {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  color: var(--menu-muted);
+}
+
+.menu-item__icon svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.8;
+}
+
+.menu-item__label {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-item__meta {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  color: var(--menu-faint);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.menu-item__meta svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* A playlist cover in the icon column: wider than an icon, so it overhangs
+   evenly and labels stay aligned with the rows around it. */
+.menu-item__cover {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  margin-inline: -3px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.menu-item--danger,
+.menu-item--danger .menu-item__icon {
+  color: var(--color-danger, #ff3b30);
+}
+
+.menu-item--danger:hover,
+.menu-item--danger:focus-visible {
+  background: color-mix(in srgb, var(--color-danger, #ff3b30) 12%, transparent);
+}
+
+.menu-separator {
+  height: 1px;
+  margin: 4px 10px;
+  background: var(--menu-separator);
+}
+
+.menu-header {
+  display: flex;
+  height: 32px;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px 0 4px;
+  color: var(--menu-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.menu-back {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: var(--menu-muted);
+}
+
+.menu-back:hover,
+.menu-back:focus-visible {
+  background: var(--menu-hover);
+  color: var(--menu-fg);
+  outline: none;
+}
+
+.menu-back svg {
+  width: 16px;
+  height: 16px;
+}
+
+.menu-empty {
+  padding: 16px 10px;
+  color: var(--menu-faint);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* Three-way choice under its label row, indented to the label column. */
+.menu-segmented {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 2px;
+  margin: 0 10px 6px 36px;
+  padding: 2px;
+  border-radius: 10px;
+  background: var(--menu-track);
+}
+
+.menu-segmented__option {
+  height: 26px;
+  overflow: hidden;
+  border-radius: 6px;
+  color: var(--menu-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease;
+}
+
+.menu-segmented__option:hover {
+  color: var(--menu-fg);
+}
+
+.menu-segmented__option.is-selected {
+  background: var(--menu-thumb);
+  box-shadow: var(--menu-thumb-shadow);
+  color: var(--menu-fg);
+  font-weight: 600;
+}
+
+.menu-segmented__option:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+/* State only: the whole row is the button. Same green as ToggleSwitch. */
+.menu-switch {
+  position: relative;
+  width: 30px;
+  height: 18px;
+  flex: none;
+  border-radius: 999px;
+  background: var(--menu-track-strong);
+  transition: background-color 0.2s ease;
+}
+
+.menu-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s ease;
+}
+
+.menu-switch.is-on {
+  background: #10b981;
+}
+
+.menu-switch.is-on::after {
+  transform: translateX(12px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-switch,
+  .menu-switch::after {
+    transition: none;
+  }
+}
+
 /* Queue pane ("待播清单"): a compact, virtualized list of what plays next. */
 .np-queue-row {
+  position: relative;
+  /* Keeps the z-index:-1 highlight inside the row. */
+  isolation: isolate;
   display: flex;
   width: 100%;
   align-items: center;
@@ -1852,15 +2106,128 @@ html.desktop .app-window {
   border-radius: 12px;
   color: #fff;
   text-align: left;
+}
+
+/* Highlights are inset 2px top and bottom so a selected row never butts
+   against the next row's cover. */
+.np-queue-row::before {
+  content: '';
+  position: absolute;
+  inset: 2px 0;
+  z-index: -1;
+  border-radius: 10px;
+  background: transparent;
   transition: background-color 0.16s ease;
+  pointer-events: none;
 }
 
-.np-queue-row:hover {
-  background: rgba(255, 255, 255, 0.06);
+.np-queue-row:hover::before {
+  background: rgba(255, 255, 255, 0.07);
 }
 
-.np-queue-row.is-current {
-  background: rgba(255, 255, 255, 0.12);
+/* Current track: neutral glass that reads on any cover colour, a hairline
+   edge and full-white text, like Apple Music's queue. */
+.np-queue-row.is-current::before,
+.np-queue-row.is-current:hover::before {
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+}
+
+.np-queue-row.is-current .np-queue-row__name {
+  color: #fff;
+}
+
+.np-queue-row.is-current .np-queue-row__artist {
+  color: rgba(255, 255, 255, 0.66);
+}
+
+.np-queue-row.is-current .np-queue-row__time {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* VIP / MV tags: song table, queue sheet. */
+.song-tag {
+  display: inline-flex;
+  height: 16px;
+  align-items: center;
+  border-radius: 6px;
+  padding: 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+/* Over the dark song-page sheet: an outline, no fill, so a column of tags
+   reads as metadata instead of a row of coloured buttons. */
+/* On light / themed surfaces: a hairline in the tag's own colour. */
+.song-tag--outline {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 38%, transparent);
+}
+
+a.song-tag--outline:hover,
+a.song-tag--outline:focus-visible {
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.song-tag--quiet {
+  color: rgba(255, 255, 255, 0.6);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+}
+
+.queue-row[aria-current='true'] .song-tag--quiet {
+  color: rgba(255, 255, 255, 0.8);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+}
+
+/* Playing indicator in the index slot: three bars that bounce while the
+   song plays and rest when paused. */
+.np-eq {
+  display: inline-flex;
+  height: 12px;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.np-eq i {
+  width: 2.5px;
+  height: 4px;
+  border-radius: 1px;
+  /* Follows the text colour: white on the song page, accent on light UI. */
+  background: currentColor;
+  transition: height 0.2s ease;
+}
+
+.np-eq i:nth-child(2) {
+  height: 7px;
+}
+
+.np-eq.is-playing i {
+  animation: np-eq-bounce 0.9s ease-in-out infinite;
+}
+
+.np-eq.is-playing i:nth-child(2) {
+  animation-delay: -0.3s;
+}
+
+.np-eq.is-playing i:nth-child(3) {
+  animation-delay: -0.6s;
+}
+
+@keyframes np-eq-bounce {
+  0%,
+  100% {
+    height: 3px;
+  }
+  50% {
+    height: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .np-eq.is-playing i {
+    animation: none;
+  }
 }
 
 .np-queue-row {
@@ -3976,6 +4343,15 @@ html.desktop .app-window {
   font-size: 12px;
   font-variant-numeric: tabular-nums;
   color: rgba(255, 255, 255, 0.88);
+}
+
+/* Cast needs the Remote Playback API with a receiver nearby. WebView2 in the
+   desktop app never has one, and a browser without devices reports
+   `data-availability="unavailable"`: a permanently disabled button. Show it
+   only when casting can actually start. */
+.mv-video-shell .media-cast-button[data-availability='unavailable'],
+html.desktop .mv-video-shell .media-cast-button {
+  display: none;
 }
 
 /* Row 2: settings and the secondary buttons go to the right edge. */
@@ -6127,6 +6503,15 @@ html.dark[data-theme='dark'] body {
   .page-bleed {
     margin-inline: calc(var(--page-x, 32px) * -1);
     padding-inline: var(--page-x, 32px);
+  }
+
+  /* Toolbars that stick to the top of a page while its list scrolls under
+     them. Same tint as the glass, painted over the page colour so it is
+     opaque: the translucent glass let row text show through. */
+  .sticky-bar {
+    background:
+      linear-gradient(var(--app-glass), var(--app-glass)),
+      var(--app-content);
   }
 
   .page-header {

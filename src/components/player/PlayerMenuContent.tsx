@@ -35,7 +35,7 @@ export function PlayerMenuContent({
         align={align}
         sideOffset={sideOffset}
         glass
-        className={cn(className, 'p-1.5')}
+        className={cn(className, 'p-1')}
       >
         {children}
       </PopoverContent>
@@ -55,7 +55,7 @@ export function PlayerMenuContent({
         'player-menu-popover border-0 bg-transparent p-0 shadow-none',
       )}
     >
-      <MenuSurface active tint={tint} className="p-1.5">
+      <MenuSurface active tint={tint} className="p-1">
         <div className="dark">{children}</div>
       </MenuSurface>
     </PopoverContent>

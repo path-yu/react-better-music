@@ -310,7 +310,7 @@ function SearchPage() {
       </div>
 
       <Tabs value={tab} onValueChange={changeTab} className="mt-5">
-        <div className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-[var(--app-border)] bg-[var(--app-glass)] pb-2 pt-2 backdrop-blur-xl page-bleed">
+        <div className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-[var(--app-border)] sticky-bar pb-2 pt-2 page-bleed">
           <TabsList className="max-w-full overflow-x-auto">
             <TabsTrigger value="songs">
               <Trans>单曲</Trans>

@@ -55,6 +55,10 @@ export function SidebarMenu({
     }
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        // Captured on window and stopped here, so the song page (which closes
+        // on Escape from a document listener) stays open under the menu.
+        event.preventDefault()
+        event.stopPropagation()
         onClose()
         return
       }
@@ -83,12 +87,12 @@ export function SidebarMenu({
       onClose()
     }
     document.addEventListener('pointerdown', onPointerDown, true)
-    document.addEventListener('keydown', onKeyDown)
+    window.addEventListener('keydown', onKeyDown, true)
     window.addEventListener('scroll', onScroll, true)
     window.addEventListener('resize', onClose)
     return () => {
       document.removeEventListener('pointerdown', onPointerDown, true)
-      document.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('keydown', onKeyDown, true)
       window.removeEventListener('scroll', onScroll, true)
       window.removeEventListener('resize', onClose)
     }

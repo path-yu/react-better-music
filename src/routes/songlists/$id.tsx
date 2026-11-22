@@ -526,7 +526,7 @@ function PlaylistDetailPage() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="mt-7">
-        <div className="sticky top-0 z-20 flex items-center justify-between gap-4 max-sm:flex-wrap max-sm:gap-2 border-b border-[var(--app-border)] bg-[var(--app-glass)] py-2 backdrop-blur-xl page-bleed">
+        <div className="sticky top-0 z-20 flex items-center justify-between gap-4 max-sm:flex-wrap max-sm:gap-2 border-b border-[var(--app-border)] sticky-bar py-2 page-bleed">
           <TabsList className="border-[var(--app-border)] bg-[var(--app-glass)]">
             <TabsTrigger value="songs">
               <Trans>歌曲列表</Trans>

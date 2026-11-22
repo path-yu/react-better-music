@@ -1806,8 +1806,6 @@ export function PlayerBar() {
           </PopoverTrigger>
           <MorePlaybackOptions
             immersive={false}
-            flat
-            submenuSide="left"
             onClose={() => setMoreOpen(false)}
           />
         </Popover>

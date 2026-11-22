@@ -38,6 +38,8 @@ import {
   CACHE_MAX_MB_OPTIONS,
   CACHE_QUALITY_OPTIONS,
   NOW_PLAYING_TRANSITION_OPTIONS,
+  BACKDROP_STYLE_OPTIONS,
+  type BackdropStyle,
   useSettingsStore,
   type NowPlayingTransition,
 } from '../store/settings'
@@ -206,8 +208,8 @@ function SettingsPage() {
   const setPalette = useUiStore((state) => state.setPalette)
   const sidebarAutoCollapse = useUiStore((state) => state.sidebarAutoCollapse)
   const setSidebarAutoCollapse = useUiStore((state) => state.setSidebarAutoCollapse)
-  const fogBackdrop = useSettingsStore((state) => state.fogBackdrop)
-  const setFogBackdrop = useSettingsStore((state) => state.setFogBackdrop)
+  const backdropStyle = useSettingsStore((state) => state.backdropStyle)
+  const setBackdropStyle = useSettingsStore((state) => state.setBackdropStyle)
   const nowPlayingTransition = useSettingsStore(
     (state) => state.nowPlayingTransition,
   )
@@ -717,18 +719,22 @@ function SettingsPage() {
             <div className="flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <p className="text-[13px] font-medium text-ink-2">
-                  <Trans>WebGL 雾化背景</Trans>
+                  <Trans>播放页背景</Trans>
                 </p>
                 <p className="mt-1 max-w-[560px] text-[11px] leading-relaxed text-ink-3">
                   <Trans>
-                    默认使用轻量的 CSS 动态渐变；开启后在歌曲详情页使用 GPU 绘制封面色彩雾气，不支持 WebGL 时自动回退。
+                    CSS 渐变最省电；WebGL 雾化用 GPU 绘制封面色彩雾气；Apple Music 是把封面扭曲、模糊后缓慢旋转的流动背景。后两种不支持 WebGL 时自动回退到 CSS 渐变。
                   </Trans>
                 </p>
               </div>
-              <Switch
-                checked={fogBackdrop}
-                onChange={setFogBackdrop}
-                aria-label={i18n._(msg`WebGL 雾化背景`)}
+              <Select
+                value={backdropStyle}
+                onChange={(event) => setBackdropStyle(event.target.value as BackdropStyle)}
+                options={BACKDROP_STYLE_OPTIONS.map((option) => ({
+                  value: option.value,
+                  label: i18n._(option.label),
+                }))}
+                className="w-[160px] shrink-0 text-[12px]"
               />
             </div>
 

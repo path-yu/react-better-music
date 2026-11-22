@@ -240,7 +240,7 @@ function SonglistsPage() {
         </div>
       </div>
 
-      <div className="sticky top-0 z-20 mt-5 border-b border-[var(--app-border)] bg-[var(--app-glass)] py-2.5 backdrop-blur-xl page-bleed">
+      <div className="sticky top-0 z-20 mt-5 border-b border-[var(--app-border)] sticky-bar py-2.5 page-bleed">
         <div className="flex items-center gap-2">
           <button
             type="button"

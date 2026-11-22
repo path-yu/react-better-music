@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
@@ -6,12 +13,13 @@ import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import {
   ChevronLeft,
-  CornerDownRight,
+  ChevronRight,
   Disc3,
   Film,
   Heart,
   ListMusic,
   ListPlus,
+  ListStart,
   Loader2,
   Trash2,
   UserRound,
@@ -23,6 +31,7 @@ import { useUserStore } from '../../store/user'
 import { useLocalLibraryStore } from '../../store/localLibrary'
 import { usePlayerStore } from '../../store/player'
 import type { LocalPlaylist } from '../../api/local'
+import { cn } from '../../lib/format'
 import type { Playlist, Song } from '../../types'
 
 interface SongContextMenuProps {
@@ -89,6 +98,10 @@ export function SongContextMenu({
     }
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        // Captured on window and stopped here, so the song page (which closes
+        // on Escape from a document listener) stays open under the menu.
+        event.preventDefault()
+        event.stopPropagation()
         onClose()
         return
       }
@@ -122,11 +135,11 @@ export function SongContextMenu({
       onClose()
     }
     document.addEventListener('pointerdown', onPointerDown, true)
-    document.addEventListener('keydown', onKeyDown)
+    window.addEventListener('keydown', onKeyDown, true)
     window.addEventListener('scroll', onScroll, true)
     return () => {
       document.removeEventListener('pointerdown', onPointerDown, true)
-      document.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('keydown', onKeyDown, true)
       window.removeEventListener('scroll', onScroll, true)
     }
   }, [onClose])
@@ -293,17 +306,44 @@ export function SongContextMenu({
 
   const artists = (song.ar ?? []).filter((artist) => artist.id)
   const hasAlbum = Boolean(song.al.id)
-  const extraItems =
-    artists.length +
-    (hasAlbum ? 1 : 0) +
-    (onRemoveFromPlaylist ? 1 : 0)
   const inPlaylistMode = mode === 'playlists' || mode === 'local-playlists'
-  const menuWidth = inPlaylistMode ? 240 : 190
-  const menuHeight = inPlaylistMode
-    ? 320
-    : Math.min(460, 252 + extraItems * 32)
-  const left = Math.max(8, Math.min(x, window.innerWidth - menuWidth - 12))
-  const top = Math.max(8, Math.min(y, window.innerHeight - menuHeight))
+  const menuWidth = inPlaylistMode ? 240 : 220
+
+  // Open at the pointer, then keep the measured menu inside the window. The
+  // old height was estimated from item counts and drifted off-screen.
+  const [position, setPosition] = useState({ left: x, top: y })
+  useLayoutEffect(() => {
+    const menu = menuRef.current
+    if (!menu) return
+    const rect = menu.getBoundingClientRect()
+    setPosition({
+      left: Math.max(8, Math.min(x, window.innerWidth - rect.width - 8)),
+      top: Math.max(8, Math.min(y, window.innerHeight - rect.height - 8)),
+    })
+  }, [x, y, mode, loadingPlaylists, playlists.length, localPlaylists.length])
+
+  const icon = (node: ReactNode) => (
+    <span className="menu-item__icon" aria-hidden="true">
+      {node}
+    </span>
+  )
+
+  const backHeader = (title: ReactNode) => (
+    <>
+      <div className="menu-header">
+        <button
+          type="button"
+          onClick={() => setMode('root')}
+          aria-label={i18n._(msg`返回`)}
+          className="menu-back"
+        >
+          <ChevronLeft />
+        </button>
+        <span className="truncate">{title}</span>
+      </div>
+      <div className="menu-separator" role="separator" />
+    </>
+  )
 
   return createPortal(
     <div className={dark ? 'dark' : undefined}>
@@ -311,192 +351,185 @@ export function SongContextMenu({
         ref={menuRef}
         role="menu"
         aria-label={i18n._(msg`歌曲操作`)}
-        className="song-context-menu fixed z-[1000] min-w-[190px] max-h-[calc(100vh-16px)] overflow-y-auto rounded-[10px] border border-black/10 bg-white/90 p-1 text-[12px] shadow-[0_14px_40px_rgba(0,0,0,0.22)] backdrop-blur-2xl [scrollbar-width:none]"
-        style={{ left, top, width: menuWidth, ...menuStyle }}
+        className={cn(
+          'song-context-menu menu-list fixed z-[1000] max-h-[calc(100vh-16px)] overflow-y-auto p-1 [scrollbar-width:none]',
+          // On the song page: the same tinted dark surface as the player's
+          // "more" menu, instead of a grey sheet with its own border.
+          dark
+            ? 'menu-surface'
+            : 'rounded-[14px] border border-black/10 bg-white/90 shadow-[0_14px_40px_rgba(0,0,0,0.22)] backdrop-blur-2xl',
+        )}
+        style={{ ...position, width: menuWidth, ...menuStyle }}
         onContextMenu={(event) => event.preventDefault()}
       >
-      {mode === 'root' ? (
-        <>
-          <button
-            type="button"
-            role="menuitem"
-            disabled={busy}
-            onClick={() => void openRelatedVideos()}
-            className="flex h-8 w-full items-center gap-2 rounded-[6px] px-2.5 text-left text-ink-2 transition-colors hover:bg-black/6 disabled:opacity-50"
-          >
-            {busy ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
-            ) : (
-              <Film className="h-3.5 w-3.5 text-ink-3" />
-            )}
-            <Trans>相关视频</Trans>
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            disabled={busy}
-            onClick={() => void queueAsNext()}
-            className="flex h-8 w-full items-center gap-2 rounded-[6px] px-2.5 text-left text-ink-2 transition-colors hover:bg-black/6 disabled:opacity-50"
-          >
-            <CornerDownRight className="h-3.5 w-3.5 text-ink-3" />
-            <Trans>下一首播放</Trans>
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => void openPlaylistPicker()}
-            className="flex h-8 w-full items-center gap-2 rounded-[6px] px-2.5 text-left text-ink-2 transition-colors hover:bg-black/6"
-          >
-            <ListPlus className="h-3.5 w-3.5 text-ink-3" />
-            <Trans>收藏到歌单</Trans>
-          </button>
-
-          {artists.length || hasAlbum || onRemoveFromPlaylist ? (
-            <div className="my-1 h-px bg-black/6" />
-          ) : null}
-          {artists.map((artist) => (
-            <button
-              key={artist.id}
-              type="button"
-              role="menuitem"
-              onClick={() => openArtist(Number(artist.id))}
-              className="flex h-8 w-full items-center gap-2 rounded-[6px] px-2.5 text-left text-ink-2 transition-colors hover:bg-black/6"
-            >
-              <UserRound className="h-3.5 w-3.5 shrink-0 text-ink-3" />
-              <span className="min-w-0 truncate">
-                <Trans>查看歌手：{artist.name}</Trans>
-              </span>
-            </button>
-          ))}
-          {hasAlbum ? (
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => openAlbum(Number(song.al.id))}
-              className="flex h-8 w-full items-center gap-2 rounded-[6px] px-2.5 text-left text-ink-2 transition-colors hover:bg-black/6"
-            >
-              <Disc3 className="h-3.5 w-3.5 shrink-0 text-ink-3" />
-              <span className="min-w-0 truncate">
-                <Trans>查看专辑：{song.al.name}</Trans>
-              </span>
-            </button>
-          ) : null}
-          {onRemoveFromPlaylist ? (
+        {mode === 'root' ? (
+          <>
+            {/* Play, then keep, then go somewhere, then destructive. */}
             <button
               type="button"
               role="menuitem"
               disabled={busy}
-              onClick={() => void removeFromPlaylist()}
-              className="flex h-8 w-full items-center gap-2 rounded-[6px] px-2.5 text-left text-love/85 transition-colors hover:bg-love/8 disabled:opacity-50"
+              onClick={() => void queueAsNext()}
+              className="menu-item"
             >
-              <Trash2 className="h-3.5 w-3.5 shrink-0" />
-              <Trans>从歌单移除</Trans>
+              {icon(<ListStart />)}
+              <span className="menu-item__label">
+                <Trans>下一首播放</Trans>
+              </span>
             </button>
-          ) : null}
-
-          <div className="my-1 h-px bg-black/6" />
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => void toggleLike()}
-            className="flex h-8 w-full items-center gap-2 rounded-[6px] px-2.5 text-left text-ink-2 transition-colors hover:bg-black/6"
-          >
-            <Heart
-              className={`h-3.5 w-3.5 ${
-                liked ? 'fill-love text-love' : 'text-ink-3'
-              }`}
-            />
-            {liked ? <Trans>取消喜欢</Trans> : <Trans>喜欢</Trans>}
-          </button>
-        </>
-      ) : mode === 'local-playlists' ? (
-        <>
-          <div className="flex h-8 items-center gap-1 px-1">
             <button
               type="button"
-              onClick={() => setMode('root')}
-              aria-label={i18n._(msg`返回`)}
-              className="pressable flex h-6 w-6 items-center justify-center rounded-[6px] text-ink-3 hover:bg-black/6"
+              role="menuitem"
+              aria-haspopup="menu"
+              onClick={() => void openPlaylistPicker()}
+              className="menu-item"
             >
-              <ChevronLeft className="h-3.5 w-3.5" />
+              {icon(<ListPlus />)}
+              <span className="menu-item__label">
+                <Trans>收藏到歌单</Trans>
+              </span>
+              <span className="menu-item__meta" aria-hidden="true">
+                <ChevronRight />
+              </span>
             </button>
-            <span className="text-[11px] font-medium text-ink-2">
-              <Trans>收藏到本地歌单</Trans>
-            </span>
-          </div>
-          <div className="my-1 h-px bg-black/6" />
-          <div className="max-h-[260px] overflow-y-auto">
-            {localPlaylists.length ? (
-              localPlaylists.map((playlist) => (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => void toggleLike()}
+              className="menu-item"
+            >
+              <span
+                className={cn('menu-item__icon', liked && 'text-love')}
+                aria-hidden="true"
+              >
+                <Heart className={liked ? 'fill-current' : undefined} />
+              </span>
+              <span className="menu-item__label">
+                {liked ? <Trans>取消喜欢</Trans> : <Trans>喜欢</Trans>}
+              </span>
+            </button>
+
+            <div className="menu-separator" role="separator" />
+            {artists.map((artist) => (
+              <button
+                key={artist.id}
+                type="button"
+                role="menuitem"
+                onClick={() => openArtist(Number(artist.id))}
+                title={artist.name}
+                className="menu-item"
+              >
+                {icon(<UserRound />)}
+                <span className="menu-item__label">
+                  <Trans>查看歌手：{artist.name}</Trans>
+                </span>
+              </button>
+            ))}
+            {hasAlbum ? (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => openAlbum(Number(song.al.id))}
+                title={song.al.name}
+                className="menu-item"
+              >
+                {icon(<Disc3 />)}
+                <span className="menu-item__label">
+                  <Trans>查看专辑：{song.al.name}</Trans>
+                </span>
+              </button>
+            ) : null}
+            <button
+              type="button"
+              role="menuitem"
+              disabled={busy}
+              onClick={() => void openRelatedVideos()}
+              className="menu-item"
+            >
+              {icon(busy ? <Loader2 className="animate-spin" /> : <Film />)}
+              <span className="menu-item__label">
+                <Trans>相关视频</Trans>
+              </span>
+            </button>
+
+            {onRemoveFromPlaylist ? (
+              <>
+                <div className="menu-separator" role="separator" />
                 <button
-                  key={playlist.id}
                   type="button"
                   role="menuitem"
                   disabled={busy}
-                  onClick={() => void saveToLocalPlaylist(playlist)}
-                  className="flex h-9 w-full items-center gap-2 rounded-[6px] px-2 text-left text-ink-2 transition-colors hover:bg-black/6 disabled:opacity-50"
+                  onClick={() => void removeFromPlaylist()}
+                  className="menu-item menu-item--danger"
                 >
-                  <ListMusic className="h-3.5 w-3.5 text-ink-4" />
-                  <span className="min-w-0 flex-1 truncate">{playlist.name}</span>
-                  <span className="text-[11px] text-ink-4">
-                    {playlist.songs.length}
+                  {icon(<Trash2 />)}
+                  <span className="menu-item__label">
+                    <Trans>从歌单移除</Trans>
                   </span>
                 </button>
-              ))
-            ) : (
-              <p className="px-2 py-4 text-center text-[11px] text-ink-4">
-                <Trans>暂无本地歌单，请先在侧栏创建</Trans>
-              </p>
-            )}
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="flex h-8 items-center gap-1 px-1">
-            <button
-              type="button"
-              onClick={() => setMode('root')}
-              aria-label={i18n._(msg`返回`)}
-              className="pressable flex h-6 w-6 items-center justify-center rounded-[6px] text-ink-3 hover:bg-black/6"
-            >
-              <ChevronLeft className="h-3.5 w-3.5" />
-            </button>
-            <span className="text-[11px] font-medium text-ink-2">
-              <Trans>收藏到歌单</Trans>
-            </span>
-          </div>
-          <div className="my-1 h-px bg-black/6" />
-          <div className="max-h-[260px] overflow-y-auto">
-            {loadingPlaylists ? (
-              <div className="flex items-center justify-center py-5">
-                <Loader2 className="h-4 w-4 animate-spin text-ink-4" />
-              </div>
-            ) : playlists.length ? (
-              playlists.map((playlist) => (
-                <button
-                  key={playlist.id}
-                  type="button"
-                  role="menuitem"
-                  disabled={busy}
-                  onClick={() => void saveToPlaylist(playlist)}
-                  className="flex h-9 w-full items-center gap-2 rounded-[6px] px-2 text-left text-ink-2 transition-colors hover:bg-black/6 disabled:opacity-50"
-                >
-                  <img
-                    src={resizedImageUrl(playlist.coverImgUrl, '100y100') ?? undefined}
-                    alt=""
-                    className="h-6 w-6 shrink-0 rounded-[6px] object-cover"
-                  />
-                  <span className="truncate">{playlist.name}</span>
-                </button>
-              ))
-            ) : (
-              <p className="px-2 py-4 text-center text-[11px] text-ink-4">
-                <Trans>暂无可用歌单</Trans>
-              </p>
-            )}
-          </div>
-        </>
-      )}
+              </>
+            ) : null}
+          </>
+        ) : mode === 'local-playlists' ? (
+          <>
+            {backHeader(<Trans>收藏到本地歌单</Trans>)}
+            <div className="max-h-[260px] overflow-y-auto">
+              {localPlaylists.length ? (
+                localPlaylists.map((playlist) => (
+                  <button
+                    key={playlist.id}
+                    type="button"
+                    role="menuitem"
+                    disabled={busy}
+                    onClick={() => void saveToLocalPlaylist(playlist)}
+                    className="menu-item"
+                  >
+                    {icon(<ListMusic />)}
+                    <span className="menu-item__label">{playlist.name}</span>
+                    <span className="menu-item__meta">{playlist.songs.length}</span>
+                  </button>
+                ))
+              ) : (
+                <p className="menu-empty">
+                  <Trans>暂无本地歌单，请先在侧栏创建</Trans>
+                </p>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            {backHeader(<Trans>收藏到歌单</Trans>)}
+            <div className="max-h-[260px] overflow-y-auto">
+              {loadingPlaylists ? (
+                <div className="menu-empty flex justify-center">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                </div>
+              ) : playlists.length ? (
+                playlists.map((playlist) => (
+                  <button
+                    key={playlist.id}
+                    type="button"
+                    role="menuitem"
+                    disabled={busy}
+                    onClick={() => void saveToPlaylist(playlist)}
+                    className="menu-item"
+                  >
+                    <img
+                      src={resizedImageUrl(playlist.coverImgUrl, '100y100') ?? undefined}
+                      alt=""
+                      className="menu-item__cover"
+                    />
+                    <span className="menu-item__label">{playlist.name}</span>
+                  </button>
+                ))
+              ) : (
+                <p className="menu-empty">
+                  <Trans>暂无可用歌单</Trans>
+                </p>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>,
     document.body,

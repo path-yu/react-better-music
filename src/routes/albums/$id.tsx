@@ -180,7 +180,7 @@ function AlbumDetailPage() {
         </div>
       </div>
 
-      <div className="sticky top-0 z-20 mt-7 flex items-center justify-between gap-4 max-sm:flex-wrap max-sm:gap-2 border-b border-[var(--app-border)] bg-[var(--app-glass)] py-2 backdrop-blur-xl page-bleed">
+      <div className="sticky top-0 z-20 mt-7 flex items-center justify-between gap-4 max-sm:flex-wrap max-sm:gap-2 border-b border-[var(--app-border)] sticky-bar py-2 page-bleed">
         <div className="flex items-baseline gap-1.5 whitespace-nowrap">
           <span className="text-[12px] font-medium text-ink-2">
             <Trans>歌曲列表</Trans>

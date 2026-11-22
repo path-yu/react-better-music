@@ -60,7 +60,7 @@ function LatestMusicPage() {
         actions={<PlayAllButton songs={songs} playlistId={`top-song-${type}`} />}
       />
 
-      <div className="sticky top-0 z-20 mt-4 flex gap-1.5 border-b border-[var(--app-border)] bg-[var(--app-glass)] py-2.5 backdrop-blur-xl page-bleed">
+      <div className="sticky top-0 z-20 mt-4 flex gap-1.5 border-b border-[var(--app-border)] sticky-bar py-2.5 page-bleed">
         {TYPES.map((item) => (
           <button
             key={item.value}

@@ -57,6 +57,19 @@ export const PLAYER_STYLE_OPTIONS: Array<{
   { value: 'cassette', label: msg`磁带` },
 ]
 
+/** Song page backdrop: CSS gradient (default), WebGL fog, or Apple Music's
+    blurred-cover scene (PixiJS, loaded on demand). */
+export type BackdropStyle = 'ambient' | 'fog' | 'apple'
+
+export const BACKDROP_STYLE_OPTIONS: Array<{
+  value: BackdropStyle
+  label: MessageDescriptor
+}> = [
+  { value: 'ambient', label: msg`CSS 渐变` },
+  { value: 'fog', label: msg`WebGL 雾化` },
+  { value: 'apple', label: msg`Apple Music` },
+]
+
 export const NOW_PLAYING_TRANSITION_OPTIONS: Array<{
   value: NowPlayingTransition
   label: MessageDescriptor
@@ -107,8 +120,8 @@ interface SettingsState {
   lyricFontSize: LyricFontSize
   /** Karaoke word-by-word animation; off falls back to whole-line highlighting. */
   wordByWordLyrics: boolean
-  /** WebGL fog backdrop on the immersive player. */
-  fogBackdrop: boolean
+  /** Backdrop of the immersive player. */
+  backdropStyle: BackdropStyle
   /** Visualizer used by the song detail "律动" tab. */
   lyricStageStyle: LyricStageStyle
   /** Preferred third-party source module; `auto` tries all in order. */
@@ -150,7 +163,7 @@ interface SettingsState {
   setLyricDisplayMode: (value: LyricDisplayMode) => void
   setLyricFontSize: (value: LyricFontSize) => void
   setWordByWordLyrics: (value: boolean) => void
-  setFogBackdrop: (value: boolean) => void
+  setBackdropStyle: (value: BackdropStyle) => void
   setLyricStageStyle: (value: LyricStageStyle) => void
   setPreferredSource: (value: string) => void
   setNowPlayingMode: (value: NowPlayingMode) => void
@@ -186,8 +199,8 @@ export const useSettingsStore = create<SettingsState>()(
       lyricFontSize: 'medium',
       wordByWordLyrics: true,
       // CSS ambient gradients are cheaper and do not keep a WebGL context alive.
-      // Users can opt into the WebGL fog in Settings.
-      fogBackdrop: false,
+      // Users can opt into the WebGL fog or the Apple Music scene in Settings.
+      backdropStyle: 'ambient',
       lyricStageStyle: 'flow',
       preferredSource: 'auto',
       nowPlayingMode: 'audio',
@@ -216,7 +229,7 @@ export const useSettingsStore = create<SettingsState>()(
       setLyricDisplayMode: (lyricDisplayMode) => set({ lyricDisplayMode }),
       setLyricFontSize: (lyricFontSize) => set({ lyricFontSize }),
       setWordByWordLyrics: (wordByWordLyrics) => set({ wordByWordLyrics }),
-      setFogBackdrop: (fogBackdrop) => set({ fogBackdrop }),
+      setBackdropStyle: (backdropStyle) => set({ backdropStyle }),
       setLyricStageStyle: (lyricStageStyle) => set({ lyricStageStyle }),
       setPreferredSource: (preferredSource) => set({ preferredSource }),
       setNowPlayingMode: (nowPlayingMode) => set({ nowPlayingMode }),
@@ -280,7 +293,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'react-music-settings',
-      version: 9,
+      version: 10,
       // v1 stored a boolean translation switch; keep "off" users in original mode.
       migrate: (persisted, version) => {
         const previous = persisted as Partial<SettingsState> & {
@@ -344,17 +357,27 @@ export const useSettingsStore = create<SettingsState>()(
                 ),
               }
             : withSongStem
+        // v10 turns the fog on/off switch into a three-way backdrop choice.
+        const withBackdrop =
+          version < 10
+            ? {
+                ...withKaraoke,
+                backdropStyle: ((withKaraoke as { fogBackdrop?: boolean }).fogBackdrop
+                  ? 'fog'
+                  : 'ambient') as BackdropStyle,
+              }
+            : withKaraoke
         // v5 removes Lossless/Hi-Res. Keep existing installs on a valid level
         // instead of leaving a stale value that the quality picker cannot show.
         if (
           version < 5 &&
           !PLAY_QUALITY_OPTIONS.some(
-            (option) => option.value === withKaraoke.playLevel,
+            (option) => option.value === withBackdrop.playLevel,
           )
         ) {
-          return { ...withKaraoke, playLevel: 'exhigh' as PlayLevel }
+          return { ...withBackdrop, playLevel: 'exhigh' as PlayLevel }
         }
-        return withKaraoke
+        return withBackdrop
       },
     },
   ),

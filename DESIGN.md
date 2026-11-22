@@ -161,6 +161,7 @@
 
 - 封面、标题区、进度条同宽，统一用 `--np-art-size`：`clamp(230px, min(36vw, 50vh), 480px)`。
 - 歌词字号按歌词栏宽度计算：`clamp(24px, 3.4cqi, 40px) × 用户字号倍率`，1080p 窗口约 34px。
+- 背景三选一（设置 → 通用 → 播放页背景，`settings.backdropStyle`）：`ambient` CSS 渐变（默认，最省电）· `fog` WebGL 雾化 · `apple` Apple Music 同款（`lib/appleBackdrop.ts`，PixiJS 7，打开播放页时才加载）。后两种失败时一律回退到 CSS 渐变。Apple 背景的参数（4 张封面的大小、位置、转速，Twist / Kawase / Adjustment 的数值，15fps）来自 Apple Music 网页版，不要随意调整；运动和布局的计算在 `lib/appleBackdropMotion.ts`，有单元测试。
 - 窄屏（<768px）：顶部是「歌曲 · 歌词 · 律动 · 队列 · 评论 · 相似」标签，一次只显示一页，整页不滚动；播放控制固定在底部，各面板自己滚动。封面 `clamp(200px, min(100vw − 64px, 46vh), 360px)`。不要把面板改回铺进页面滚动。
 - 窄屏中间区域可以左右滑动切换标签（触摸、触控板双指横滑；鼠标拖动不算，到两端停住）。自己处理横向手势的控件要加 `data-no-swipe`。
 - 窄屏标签栏放不下时，用 `useScrollEdgeHints` 把仍有内容的一侧渐隐，选中的标签自动滚到完整可见。

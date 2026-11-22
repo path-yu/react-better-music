@@ -22,7 +22,6 @@ import {
   Loader2,
   LocateFixed,
   Search,
-  Volume2,
   X,
 } from 'lucide-react'
 import { ImageWithFallback } from '../common/ImageWithFallback'
@@ -36,6 +35,7 @@ import { LyricStage } from './LyricStage'
 import { SimilarSongsPanel } from './SimilarSongsPanel'
 import AmbientBackground from './AmbientBackground'
 import { FogBackground } from './FogBackground'
+import { AppleBackdrop } from './AppleBackdrop'
 import { MvVideoPlayer } from '../mv/MvVideoPlayer'
 import { PlayerArtwork } from './PlayerArtwork'
 import { ImmersivePlayerBar } from './ImmersivePlayerBar'
@@ -165,7 +165,7 @@ export function NowPlaying() {
   const setNowPlayingMode = useSettingsStore(
     (state) => state.setNowPlayingMode,
   )
-  const fogBackdrop = useSettingsStore((state) => state.fogBackdrop)
+  const backdropStyle = useSettingsStore((state) => state.backdropStyle)
   const nowPlayingTransition = useSettingsStore(
     (state) => state.nowPlayingTransition,
   )
@@ -525,6 +525,12 @@ export function NowPlaying() {
     () => resizedImageUrl(artwork, '640y640') ?? artwork,
     [artwork],
   )
+  // Apple feeds its scene a 316px cover; it is blurred past recognition, so a
+  // small file keeps texture uploads cheap.
+  const appleBackdropSource = useMemo(
+    () => resizedImageUrl(artwork, '320y320') ?? artwork,
+    [artwork],
+  )
 
   // Measure the grid once before laying out rows. Only visible rows are mounted
   // below, so a 1000+ song queue does not create thousands of covers.
@@ -830,9 +836,11 @@ export function NowPlaying() {
   useEffect(() => {
     if (!show) return
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return
+      if (event.key !== 'Escape' || event.defaultPrevented) return
       // The queue panel is stacked above this view and handles Escape itself.
       if (usePlayerStore.getState().showQueue) return
+      // So does an open menu or popover: Escape closes that first.
+      if (document.querySelector('[role="menu"], [data-floating-content]')) return
       requestClose()
     }
     document.addEventListener('keydown', handleKeyDown)
@@ -1233,7 +1241,19 @@ export function NowPlaying() {
         visible. Keeping a full-screen WebGL context around for the whole
         session wastes GPU resources and makes a renderer/GPU crash more likely.
       */}
-      {!show ? null : fogBackdrop ? (
+      {!show ? null : backdropStyle === 'apple' ? (
+        <AppleBackdrop
+          artwork={appleBackdropSource}
+          playing={playing}
+          fallback={
+            <AmbientBackground
+              artwork={ambientSource ?? ''}
+              palette={palette}
+              playing={playing}
+            />
+          }
+        />
+      ) : backdropStyle === 'fog' ? (
         <FogBackground
           tint={palette.colors[0]}
           playing={playing}
@@ -1771,15 +1791,17 @@ export function NowPlaying() {
                                   left: 0,
                                   height: `${row.size}px`,
                                   transform: `translateY(${row.start}px)`,
+                                  // The current row is a neutral glass pill (CSS):
+                                  // tinting it with the cover colour turned it
+                                  // into a muddy band on a backdrop already
+                                  // painted in that colour.
                                   backgroundColor:
-                                    active && palette.colors[0]
-                                      ? withAlpha(palette.colors[0], 0.16)
-                                      : dragOverQueueIndex === originalIndex
-                                        ? withAlpha(
-                                            palette.colors[0] ?? '#8e8e93',
-                                            0.06,
-                                          )
-                                        : undefined,
+                                    !active && dragOverQueueIndex === originalIndex
+                                      ? withAlpha(
+                                          palette.colors[0] ?? '#8e8e93',
+                                          0.06,
+                                        )
+                                      : undefined,
                                 }}
                               >
                                 {dragOverQueueIndex === originalIndex ? (
@@ -1809,14 +1831,19 @@ export function NowPlaying() {
                                 </span>
                                 <span className="np-queue-row__index">
                                   {active ? (
-                                    <Volume2
-                                      className="h-3.5 w-3.5"
-                                      style={
-                                        palette.colors[0]
-                                          ? { color: palette.colors[0] }
-                                          : undefined
+                                    <span
+                                      className={cn('np-eq', playing && 'is-playing')}
+                                      aria-label={
+                                        playing
+                                          ? i18n._(msg`正在播放`)
+                                          : i18n._(msg`已暂停`)
                                       }
-                                    />
+                                      role="img"
+                                    >
+                                      <i />
+                                      <i />
+                                      <i />
+                                    </span>
                                   ) : (
                                     String(originalIndex + 1).padStart(2, '0')
                                   )}

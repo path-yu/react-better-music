@@ -1,10 +1,18 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { Link } from '@tanstack/react-router'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { Heart, LocateFixed, Pause, Play, Trash2, Volume2 } from 'lucide-react'
+import { Heart, LocateFixed, Pause, Play, Trash2 } from 'lucide-react'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
 import { EmptyState } from '../common/EmptyState'
@@ -95,14 +103,22 @@ const SongRow = memo(function SongRow({
     >
       <div className="relative flex h-6 items-center justify-center">
         {active ? (
-          <Volume2
+          // Same playing bars as the queues: they bounce while playing and
+          // rest when paused (the old pulsing speaker read the same either way).
+          <span
             className={cn(
-              'h-3.5 w-3.5 text-accent transition-opacity group-hover:opacity-0',
-              playing ? 'animate-pulse' : 'opacity-60',
+              'np-eq text-accent transition-opacity group-hover:opacity-0',
+              playing && 'is-playing',
             )}
-          />
+            role="img"
+            aria-label={playing ? i18n._(msg`正在播放`) : i18n._(msg`已暂停`)}
+          >
+            <i />
+            <i />
+            <i />
+          </span>
         ) : (
-          <span className="text-center text-[11px] font-medium leading-none tabular-nums text-ink-4 transition-opacity group-hover:opacity-0">
+          <span className="text-center text-[12px] font-medium leading-none tabular-nums text-ink-4 transition-opacity group-hover:opacity-0">
             {index + 1}
           </span>
         )}
@@ -141,15 +157,24 @@ const SongRow = memo(function SongRow({
             >
               {song.name}
             </span>
-            {song.mv || song.mvid ? (
-              <span className="shrink-0 rounded-[6px] bg-accent/10 px-1 text-[11px] font-medium text-accent">
-                MV
-              </span>
-            ) : null}
+            {/* Outlined, not filled: on most rows both tags appear, and two
+                coloured blocks per row out-shouted the song names. MV is a
+                link to the video. Same order as the queue: VIP, then MV. */}
             {song.fee === 1 ? (
-              <span className="shrink-0 rounded-[6px] bg-love/10 px-1 text-[11px] font-medium text-love">
+              <span className="song-tag song-tag--outline shrink-0 text-love">
                 VIP
               </span>
+            ) : null}
+            {song.mv || song.mvid ? (
+              <Link
+                to="/mv/$id"
+                params={{ id: String(song.mv || song.mvid) }}
+                aria-label={i18n._(msg`观看 MV`)}
+                title={i18n._(msg`观看 MV`)}
+                className="song-tag song-tag--outline shrink-0 text-ink-3 transition-colors hover:text-accent"
+              >
+                MV
+              </Link>
             ) : null}
           </div>
           <p className="song-artist-mobile mt-0.5 truncate text-[11px] text-ink-4">
@@ -161,35 +186,6 @@ const SongRow = memo(function SongRow({
             ) : null}
           </p>
         </div>
-        {onRemove ? (
-          <button
-            type="button"
-            aria-label={i18n._(msg`从歌单移除`)}
-            title={i18n._(msg`从歌单移除`)}
-            onClick={onRemove}
-            className="pressable shrink-0 text-ink-4 opacity-0 transition-opacity hover:text-love focus-visible:opacity-100 group-hover:opacity-100"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        ) : null}
-        <button
-          type="button"
-          aria-label={
-            liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)
-          }
-          onClick={() => onLike(song, liked)}
-          className={cn(
-            'pressable shrink-0 transition-opacity focus-visible:opacity-100',
-            liked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
-          )}
-        >
-          <Heart
-            className={cn(
-              'h-3.5 w-3.5',
-              liked ? 'fill-love text-love' : 'text-ink-4',
-            )}
-          />
-        </button>
       </div>
 
       <div className="song-meta min-w-0">
@@ -215,9 +211,42 @@ const SongRow = memo(function SongRow({
           song.al.name
         )}
       </p>
-      <p className="text-right text-[11px] tabular-nums text-ink-4">
-        {formatDuration(song.dt)}
-      </p>
+      {/* Row actions sit with the duration (as in Apple Music), not at the
+          end of a wide title column where they floated next to the artist. */}
+      <div className="flex items-center justify-end gap-3">
+          {onRemove ? (
+            <button
+              type="button"
+              aria-label={i18n._(msg`从歌单移除`)}
+              title={i18n._(msg`从歌单移除`)}
+              onClick={onRemove}
+              className="pressable shrink-0 text-ink-4 opacity-0 transition-opacity hover:text-love focus-visible:opacity-100 group-hover:opacity-100"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          ) : null}
+          <button
+            type="button"
+            aria-label={
+              liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)
+            }
+            onClick={() => onLike(song, liked)}
+            className={cn(
+              'pressable shrink-0 transition-opacity focus-visible:opacity-100',
+              liked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
+            )}
+          >
+            <Heart
+              className={cn(
+                'h-3.5 w-3.5',
+                liked ? 'fill-love text-love' : 'text-ink-4',
+              )}
+            />
+          </button>
+        <span className="w-9 text-right text-[12px] tabular-nums text-ink-3">
+          {formatDuration(song.dt)}
+        </span>
+      </div>
     </div>
   )
 })
@@ -234,8 +263,17 @@ export function SongTable({
   stickyTop,
 }: SongTableProps) {
   const { i18n } = useLingui()
+  const rootRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
+  // The page's own scroll container. Long lists used to get a second,
+  // 72vh-tall scroll box inside the page: two scrollbars, a header that did
+  // not stick with the page, and columns shifted by the inner scrollbar.
+  // `undefined` = not looked up yet, `null` = none found (inner box fallback).
+  const [scrollParent, setScrollParent] = useState<HTMLElement | null | undefined>(
+    undefined,
+  )
+  const [scrollMargin, setScrollMargin] = useState(0)
   const currentSong = usePlayerStore((state) => state.queue[state.currentIndex])
   const playing = usePlayerStore((state) => state.playing)
   const likedIds = useUserStore((state) => state.likedIds)
@@ -307,11 +345,49 @@ export function SongTable({
   ) : null
 
   const isVirtual = songs.length > VIRTUAL_THRESHOLD
+  const hasRows = !loading && songs.length > 0
+
+  useLayoutEffect(() => {
+    if (!hasRows) return
+    let parent = rootRef.current?.parentElement ?? null
+    while (parent && parent !== document.body) {
+      if (/(auto|scroll)/.test(getComputedStyle(parent).overflowY)) break
+      parent = parent.parentElement
+    }
+    setScrollParent(parent && parent !== document.body ? parent : null)
+  }, [hasRows])
+
+  /** Virtual rows scroll with the page (`null` keeps the old inner box). */
+  const pageScroll = isVirtual && !!scrollParent
+  const innerScroll = isVirtual && scrollParent === null
+
+  // Where the list starts inside the scroll container; content above it (a
+  // description that expands, a cover that loads) moves it.
+  useLayoutEffect(() => {
+    const parent = scrollParent
+    const list = listRef.current
+    if (!pageScroll || !parent || !list) return
+    const measure = () => {
+      const next = Math.round(
+        list.getBoundingClientRect().top -
+          parent.getBoundingClientRect().top +
+          parent.scrollTop,
+      )
+      setScrollMargin((previous) => (previous === next ? previous : next))
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(parent)
+    for (const child of Array.from(parent.children)) observer.observe(child)
+    return () => observer.disconnect()
+  }, [pageScroll, scrollParent])
+
   const virtualizer = useVirtualizer({
-    count: isVirtual ? songs.length : 0,
-    getScrollElement: () => scrollRef.current,
+    count: pageScroll || innerScroll ? songs.length : 0,
+    getScrollElement: () => (pageScroll ? (scrollParent ?? null) : scrollRef.current),
     estimateSize: () => ROW_HEIGHT,
     overscan: 10,
+    scrollMargin: pageScroll ? scrollMargin : 0,
   })
   const currentIndexInList = useMemo(
     () =>
@@ -322,26 +398,16 @@ export function SongTable({
   )
 
   useEffect(() => {
-    if (!isVirtual || !scrollRef.current) return
+    if (!innerScroll || !scrollRef.current) return
     scrollRef.current.scrollTop = 0
-  }, [isVirtual, songs])
+  }, [innerScroll, songs])
 
   // The locate affordance belongs to scrolling, not to the idle table. Show it
   // for two seconds after the list (or its page) scrolls, then let it fade out.
   useEffect(() => {
     setShowLocate(false)
     if (loading) return
-    let target: HTMLElement | null = scrollRef.current
-    if (!target) {
-      let parent = listRef.current?.parentElement ?? null
-      while (parent && parent !== document.body) {
-        if (/(auto|scroll)/.test(getComputedStyle(parent).overflowY)) {
-          target = parent
-          break
-        }
-        parent = parent.parentElement
-      }
-    }
+    const target = innerScroll ? scrollRef.current : scrollParent
     if (!target) return
 
     const reveal = () => {
@@ -362,7 +428,7 @@ export function SongTable({
         locateTimerRef.current = null
       }
     }
-  }, [isVirtual, loading, songs.length])
+  }, [innerScroll, loading, scrollParent, songs.length])
 
   const locateCurrent = () => {
     if (currentIndexInList < 0) return
@@ -445,10 +511,13 @@ export function SongTable({
         SONG_GRID,
         // Follow the active palette instead of a neutral white/near-black
         // surface; custom dark themes were showing a grey strip here.
-        'border-b border-[var(--app-border)] bg-[var(--app-glass)] px-3 py-2 text-[11px] font-medium text-[var(--ink-4)] backdrop-blur-xl',
-        !isVirtual && 'sticky top-0 z-10',
+        // Opaque, in the page's own colour: rows scroll under it, and the old
+        // grey glass both read as a separate strip and let row text show
+        // through.
+        'border-b border-[var(--app-border)] bg-[var(--app-content)] px-3 py-2 text-[11px] font-medium text-[var(--ink-4)]',
+        !innerScroll && 'sticky top-0 z-10',
       )}
-      style={!isVirtual && stickyTop !== undefined ? { top: stickyTop } : undefined}
+      style={!innerScroll && stickyTop !== undefined ? { top: stickyTop } : undefined}
     >
       <span className="text-center">#</span>
       <span>
@@ -469,14 +538,18 @@ export function SongTable({
   if (isVirtual) {
     const virtualItems = virtualizer.getVirtualItems()
     return (
-      <div className={cn('select-none', className)}>
+      <div ref={rootRef} className={cn('select-none', className)}>
         <div className="song-table">
           {header}
           <div
             ref={scrollRef}
-            className="relative h-[72vh] max-h-[700px] min-h-[360px] overflow-y-auto pr-1"
+            className={cn(
+              innerScroll &&
+                'relative h-[72vh] max-h-[700px] min-h-[360px] overflow-y-auto pr-1',
+            )}
           >
             <div
+              ref={listRef}
               className="relative w-full"
               style={{ height: `${virtualizer.getTotalSize()}px` }}
             >
@@ -492,7 +565,9 @@ export function SongTable({
                       left: 0,
                       width: '100%',
                       height: `${virtualRow.size}px`,
-                      transform: `translateY(${virtualRow.start}px)`,
+                      transform: `translateY(${
+                        virtualRow.start - virtualizer.options.scrollMargin
+                      }px)`,
                     }}
                   >
                     {renderRow(song, virtualRow.index, true)}
@@ -509,7 +584,7 @@ export function SongTable({
   }
 
   return (
-    <div className={cn('select-none', className)}>
+    <div ref={rootRef} className={cn('select-none', className)}>
       {/* The container wraps only the grid: `container` implies layout
           containment, which would pin the fixed locate button to the table. */}
       <div className="song-table">

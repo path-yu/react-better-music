@@ -3,7 +3,7 @@ import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { ListMusic, LocateFixed, Trash2, Volume2, X } from 'lucide-react'
+import { ListMusic, LocateFixed, Trash2, X } from 'lucide-react'
 import { Button } from '@pikoloo/darwin-ui'
 import { ArtistLinks } from '../common/ArtistLinks'
 import { usePlayerStore } from '../../store/player'
@@ -12,6 +12,8 @@ import { hexToRgb } from '../../lib/color'
 import { formatDuration } from '../../lib/format'
 import { cn } from '../../lib/format'
 import { copyrightHint } from '../../lib/songs'
+import { isDesktopShell } from '../../lib/desktop'
+import { desktopPlatform } from '../../lib/desktopWindow'
 
 const ROW_HEIGHT = 56
 
@@ -108,12 +110,10 @@ export function QueuePanel() {
 
   const virtualItems = virtualizer.getVirtualItems()
   const tintRgb = queueTint ? hexToRgb(queueTint) : null
-  const activeRowStyle =
-    immersive && tintRgb
-      ? {
-          backgroundColor: `rgba(${tintRgb.r}, ${tintRgb.g}, ${tintRgb.b}, 0.16)`,
-        }
-      : undefined
+  // Over the song page the sheet covers the window's own title bar; keep its
+  // buttons out of that strip (and let the strip still drag the window).
+  const titleBarInset =
+    immersive && isDesktopShell() ? (desktopPlatform() === 'macos' ? 30 : 38) : 0
   const panelStyle = immersive
     ? ({
         borderLeftColor: 'rgba(255, 255, 255, 0.1)',
@@ -168,16 +168,23 @@ export function QueuePanel() {
         )}
         style={panelStyle}
       >
+        {titleBarInset ? (
+          <div
+            aria-hidden="true"
+            className="electrobun-webkit-app-region-drag flex-none"
+            style={{ height: titleBarInset }}
+          />
+        ) : null}
         <div
           className={cn(
-            'flex items-center justify-between px-4 py-3.5',
+            'flex items-center justify-between px-4',
+            titleBarInset ? 'pb-3 pt-1' : 'py-3.5',
             immersive ? 'border-b-0' : 'border-b border-black/8',
           )}
         >
           <div className="flex items-center gap-2">
             <ListMusic
-              className={cn('h-4 w-4', !immersive && 'text-accent')}
-              style={immersive && queueTint ? { color: queueTint } : undefined}
+              className={cn('h-4 w-4', immersive ? 'text-white/70' : 'text-accent')}
             />
             <p
               className={cn(
@@ -234,7 +241,7 @@ export function QueuePanel() {
           </div>
         </div>
 
-        <div ref={scrollRef} className="flex-1 overflow-y-auto py-1">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto pb-16 pt-1">
           <div
             className="relative w-full"
             style={{ height: `${virtualizer.getTotalSize()}px` }}
@@ -264,32 +271,44 @@ export function QueuePanel() {
                       if (event.target !== event.currentTarget) return
                       if (event.key === 'Enter') handleRowPlay(virtualRow.index)
                     }}
+                    aria-current={active ? 'true' : undefined}
                     className={cn(
-                      'group flex h-full w-full cursor-pointer items-center gap-2.5 px-4 text-left transition-colors',
+                      // Inset pill like the in-page queue: a highlighted row
+                      // no longer butts against its neighbours.
+                      'queue-row group mx-1.5 flex h-[calc(100%-4px)] w-[calc(100%-12px)] translate-y-0.5 cursor-pointer items-center gap-2.5 rounded-[10px] px-2.5 text-left transition-colors',
                       active
                         ? immersive
-                          ? 'bg-white/10'
+                          ? 'bg-white/14 shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.12)]'
                           : 'bg-accent/8'
                         : immersive
-                          ? 'hover:bg-white/6'
+                          ? 'hover:bg-white/7'
                           : 'hover:bg-black/4',
                     )}
-                    style={active ? activeRowStyle : undefined}
                   >
-                    <span className="flex w-4 shrink-0 justify-center">
+                    {/* Wide enough for 3-digit positions (queues of 100+). */}
+                    <span
+                      className={cn(
+                        'flex w-6 shrink-0 justify-center',
+                        immersive ? 'text-white' : 'text-accent',
+                      )}
+                    >
                       {active ? (
-                        <Volume2
-                          className={cn(
-                            'h-3.5 w-3.5 text-accent',
-                            playing ? 'animate-pulse' : 'opacity-60',
-                          )}
-                          style={immersive && queueTint ? { color: queueTint } : undefined}
-                        />
+                        <span
+                          className={cn('np-eq', playing && 'is-playing')}
+                          role="img"
+                          aria-label={
+                            playing ? i18n._(msg`正在播放`) : i18n._(msg`已暂停`)
+                          }
+                        >
+                          <i />
+                          <i />
+                          <i />
+                        </span>
                       ) : (
                         <span
                           className={cn(
                             'text-[11px] tabular-nums',
-                            immersive ? 'text-white/30' : 'text-ink-4',
+                            immersive ? 'text-white/40' : 'text-ink-4',
                           )}
                         >
                           {virtualRow.index + 1}
@@ -300,33 +319,51 @@ export function QueuePanel() {
                       <div className="flex items-center gap-1.5">
                         <span
                           className={cn(
-                            'min-w-0 truncate text-[12px]',
+                            'min-w-0 truncate text-[13px]',
                             active
                               ? immersive
-                                ? 'font-medium text-white'
+                                ? 'font-semibold text-white'
                                 : 'font-medium text-accent'
                               : immersive
-                                ? 'text-white/85'
+                                ? 'text-white/88'
                                 : 'text-ink-2',
                           )}
                         >
                           {song.name}
                         </span>
+                        {/* Over the dark sheet the pink VIP / blue MV chips on
+                            nearly every row were loud, and the blue failed
+                            contrast. Quiet outlined tags there, like Apple's
+                            explicit badge; the light panel keeps colour. */}
                         {song.fee === 1 ? (
-                          <span className="shrink-0 rounded-[6px] bg-love/10 px-1 text-[11px] text-love">
+                          <span
+                            className={cn(
+                              'song-tag shrink-0',
+                              immersive ? 'song-tag--quiet' : 'song-tag--outline text-love',
+                            )}
+                          >
                             VIP
                           </span>
                         ) : null}
                         {song.mv || song.mvid ? (
-                          <span className="shrink-0 rounded-[6px] border-0 bg-accent/15 px-1 text-[11px] font-medium leading-[16px] text-accent">
+                          <span
+                            className={cn(
+                              'song-tag shrink-0',
+                              immersive ? 'song-tag--quiet' : 'song-tag--outline text-ink-3',
+                            )}
+                          >
                             MV
                           </span>
                         ) : null}
                       </div>
                       <p
                         className={cn(
-                          'flex min-w-0 items-center gap-1.5 text-[11px]',
-                          immersive ? 'text-white/40' : 'text-ink-4',
+                          'mt-0.5 flex min-w-0 items-center gap-1.5 text-[11px]',
+                          immersive
+                            ? active
+                              ? 'text-white/66'
+                              : 'text-white/50'
+                            : 'text-ink-4',
                         )}
                       >
                         <ArtistLinks artists={song.ar} className="min-w-0 truncate" />
@@ -347,7 +384,7 @@ export function QueuePanel() {
                     <span
                       className={cn(
                         'shrink-0 text-[11px] tabular-nums',
-                        immersive ? 'text-white/30' : 'text-ink-4',
+                        immersive ? 'text-white/45' : 'text-ink-4',
                       )}
                     >
                       {formatDuration(song.dt)}
@@ -373,7 +410,7 @@ export function QueuePanel() {
               })
             }
             className={cn(
-              'pressable absolute bottom-[58px] right-4 z-10 flex h-9 w-9 items-center justify-center rounded-full text-accent shadow-[0_8px_24px_rgba(0,0,0,0.2)] backdrop-blur-xl transition-[opacity,background-color] duration-200 hover:bg-accent/15 max-md:h-11 max-md:w-11',
+              'pressable absolute bottom-4 right-4 z-10 flex h-9 w-9 items-center justify-center rounded-full text-accent shadow-[0_8px_24px_rgba(0,0,0,0.2)] backdrop-blur-xl transition-[opacity,background-color] duration-200 hover:bg-accent/15 max-md:h-11 max-md:w-11',
               immersive
                 ? 'border-0 bg-white/10'
                 : 'border border-[var(--app-border-strong)] bg-[var(--app-glass)]',
@@ -383,17 +420,6 @@ export function QueuePanel() {
             <LocateFixed className="h-4 w-4" strokeWidth={1.8} />
           </button>
         ) : null}
-
-        <div
-          className={cn(
-            'px-4 py-3 text-center text-[11px]',
-            immersive
-              ? 'border-t-0 text-white/35'
-              : 'border-t border-black/8 text-ink-4',
-          )}
-        >
-          <Trans>点击歌曲开始播放</Trans>
-        </div>
       </aside>
     </div>
   )
