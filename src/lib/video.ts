@@ -1,3 +1,5 @@
+import { msg } from '@lingui/core/macro'
+import { i18n } from '../i18n'
 import type { Mv, VideoItem, VideoSearchItem } from '../types'
 
 /** Minimal shape of one item from `/mlog/music/rcmd`. */
@@ -62,7 +64,7 @@ export function videoFromSearch(raw: VideoSearchItem): VideoItem | null {
   return {
     kind: 'video',
     id: raw.vid,
-    title: raw.title || '视频',
+    title: raw.title || i18n._(msg`视频`),
     cover: raw.coverUrl,
     artist: (raw.creator ?? [])
       .map((creator) => creator.userName)
@@ -123,7 +125,7 @@ export function relatedVideoFromFeed(feed: RawRelatedVideoFeed): VideoItem | nul
   return {
     kind: 'mlog',
     id: mlog.id,
-    title: mlog.originalTitle || mlog.text || mlog.desc || '视频',
+    title: mlog.originalTitle || mlog.text || mlog.desc || i18n._(msg`视频`),
     cover:
       mlog.coverUrl ??
       mlog.coverDetail?.horizontalCoverImage?.imageUrl ??

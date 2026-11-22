@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "vite dev --port 5173",
-    "dev:api": "node server/app.js",
+    "dev:api": "node server/app.js --host 127.0.0.1",
     "typecheck": "tsc --noEmit",
     "typecheck:desktop": "tsc --noEmit -p tsconfig.bun.json",
     "i18n:extract": "lingui extract",

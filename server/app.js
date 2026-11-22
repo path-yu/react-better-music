@@ -16,7 +16,12 @@ async function start() {
   void generateConfig().catch((error) => {
     console.error('[dev api] config bootstrap failed:', error)
   })
+  // `--host` lets the root `pnpm dev:api` keep the API on loopback. Without it
+  // (Docker, `npm start`) the HOST env var / all interfaces still apply.
+  const hostIndex = process.argv.indexOf('--host')
+  const host = hostIndex > 0 ? process.argv[hostIndex + 1] : undefined
   require('./server').serveNcmApi({
+    host,
     // `npm info` takes ~1.6 s and the package is not on the public registry;
     // the version warning is not worth blocking the dev server for.
     checkVersion: false,

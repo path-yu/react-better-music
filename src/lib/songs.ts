@@ -1,3 +1,5 @@
+import { msg } from '@lingui/core/macro'
+import { i18n } from '../i18n'
 import type { Album, Artist, Mv, NoCopyrightRcmd, Playlist, Song } from '../types'
 
 export type RawSong = {
@@ -29,7 +31,7 @@ export function isInstrumentalSong(
 export function normalizeSong(raw: RawSong): Song {
   const target = raw.song ?? raw
   const ar = target.ar ?? target.artists ?? []
-  const al = target.al ?? target.album ?? { id: 0, name: '未知专辑' }
+  const al = target.al ?? target.album ?? { id: 0, name: i18n._(msg`未知专辑`) }
   return {
     id: target.id,
     name: target.name,

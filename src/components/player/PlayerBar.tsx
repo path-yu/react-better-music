@@ -540,7 +540,9 @@ export function PlayerBar() {
     const audio = audioRef.current
     if (!audio) return
 
-    setCurrentTime(0)
+    // A pending resume (source switch keeps the position) must not reset the
+    // shared clock to 0: lyrics, media session and the remote read it too.
+    setCurrentTime(usePlayerStore.getState().resumeAt ?? 0)
     setBuffered(0)
     setAudioReady(false)
 
@@ -693,7 +695,8 @@ export function PlayerBar() {
           stemSwitchTimerRef.current = null
         }, 2500)
       } else {
-        setCurrentTime(0)
+        // The new element starts at 0 until loadedmetadata applies resumeAt.
+        setCurrentTime(usePlayerStore.getState().resumeAt ?? 0)
         setBuffered(0)
         setAudioReady(false)
         setLocalMediaDuration(0)
@@ -1244,6 +1247,17 @@ export function PlayerBar() {
         maybeStartCrossfade(audio)
         return
       }
+      // Safety net: a resume point loadedmetadata did not apply (the source
+      // was not reloaded) must not stay on screen while playback runs elsewhere.
+      const pendingResume = usePlayerStore.getState().resumeAt
+      if (pendingResume != null) {
+        const limit = Number.isFinite(audio.duration) ? audio.duration : pendingResume
+        if (Math.abs(audio.currentTime - pendingResume) > 0.5) {
+          audio.currentTime = Math.min(pendingResume, limit)
+        }
+        setCurrentTime(audio.currentTime)
+        consumeResumeAt()
+      }
       switchingRef.current = false
       markAudioReady()
     },
@@ -1785,8 +1799,10 @@ function AudioProgressRow({
 }) {
   const currentTime = usePlayerStore((state) => state.currentTime)
   const buffered = usePlayerStore((state) => state.buffered)
-  // Remembered position of a track that has not been loaded yet (restart).
-  const idleTime = usePlayerStore((state) => (state.audioUrl ? null : state.resumeAt))
+  // Where playback is about to resume (restored session, recovery reload,
+  // source switch). The new media starts at 0 until loadedmetadata seeks it;
+  // showing currentTime in between made the bar jump 0:00 -> 1:12.
+  const resumeTime = usePlayerStore((state) => state.resumeAt)
   // While the audio element still points at the previous track, force the
   // progress UI to zero so stale timeupdate events can never leak through.
   const sourceMatches =
@@ -1795,10 +1811,13 @@ function AudioProgressRow({
   const pendingTime =
     pendingSeek !== null ? (pendingSeek / 100) * (durationMs / 1000) : null
   // A deferred seek keeps showing its target instead of snapping back to 0.
-  const idlePercent =
-    idleTime && durationMs ? Math.min(100, (idleTime * 1000 * 100) / durationMs) : 0
-  const displayTime = pendingTime ?? (sourceMatches ? currentTime : (idleTime ?? 0))
-  const displayPercent = pendingSeek ?? (sourceMatches ? percent : idlePercent)
+  const resumePercent =
+    resumeTime != null && durationMs
+      ? Math.min(100, (resumeTime * 1000 * 100) / durationMs)
+      : 0
+  const displayTime = pendingTime ?? resumeTime ?? (sourceMatches ? currentTime : 0)
+  const displayPercent =
+    pendingSeek ?? (resumeTime != null ? resumePercent : sourceMatches ? percent : 0)
   const displayBuffered = sourceMatches ? buffered : 0
 
   return (

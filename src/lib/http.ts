@@ -1,6 +1,7 @@
 import { API_BASE } from './apiBase'
 import { fetchWithBootRetry } from './apiFetch'
 import { isNetworkFailure, reportNetworkError } from './networkStatus'
+import { isTauriApp } from './platform'
 import {
   fetchGuestCookie,
   getActiveCookie,
@@ -102,11 +103,35 @@ async function parse<T>(response: Response): Promise<T> {
   return payload as T
 }
 
+/**
+ * The session cookie (MUSIC_U) travels in this header rather than the query
+ * string: URLs end up in logs, history and proxies, and a long cookie can
+ * exceed URL limits. The Node API in server/ reads it.
+ */
+const SESSION_HEADER = 'X-NCM-Cookie'
+
+/** The Tauri build talks to server-rust, which still expects `?cookie=`. */
+function cookieInQuery() {
+  return import.meta.env.MODE === 'tauri' || isTauriApp()
+}
+
+function sessionCookieFor(path: string) {
+  if (COOKIE_FREE_PREFIXES.some((prefix) => path.startsWith(prefix))) return ''
+  return getActiveCookie()
+}
+
 function withSessionCookie(path: string, params?: Query): Query | undefined {
-  if (COOKIE_FREE_PREFIXES.some((prefix) => path.startsWith(prefix))) return params
-  const cookie = getActiveCookie()
+  if (!cookieInQuery()) return params
+  const cookie = sessionCookieFor(path)
   if (!cookie) return params
   return { ...params, cookie }
+}
+
+/** Read the cookie at call time so a retry after a session refresh uses the new one. */
+function sessionHeaders(path: string): Record<string, string> {
+  if (cookieInQuery()) return {}
+  const cookie = sessionCookieFor(path)
+  return cookie ? { [SESSION_HEADER]: encodeURIComponent(cookie) } : {}
 }
 
 function isSessionFailure(error: unknown) {
@@ -305,6 +330,7 @@ function runGet<T>(path: string, params?: Query, signal?: AbortSignal) {
       return await fetchWithBootRetry(buildUrl(path, withSessionCookie(path, params)), {
         method: 'GET',
         credentials: 'include',
+        headers: sessionHeaders(path),
         signal: timeout.signal,
       })
     } finally {
@@ -370,6 +396,7 @@ export function post<T>(path: string, body?: BodyInit | null, params?: Query, si
       return await fetch(buildUrl(path, withSessionCookie(path, params)), {
         method: 'POST',
         credentials: 'include',
+        headers: sessionHeaders(path),
         body,
         signal: timeout.signal,
       })
@@ -412,6 +439,7 @@ export function uploadFile<T>(path: string, file: File, params?: Query) {
       return await fetch(buildUrl(path, withSessionCookie(path, params)), {
         method: 'POST',
         credentials: 'include',
+        headers: sessionHeaders(path),
         body: formData,
         signal: timeout.signal,
       })

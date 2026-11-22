@@ -3687,3 +3687,12 @@ msgstr "默认安装到本地数据目录下的 qimiao-spleeter-runtime（使用
 #: src/routes/songlists/index.tsx:203
 msgid "默认排序"
 msgstr "默认排序"
+
+msgid "未知专辑"
+msgstr "未知专辑"
+
+msgid "读取图片失败"
+msgstr "读取图片失败"
+
+msgid "图片解析失败"
+msgstr "图片解析失败"

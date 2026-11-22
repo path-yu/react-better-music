@@ -3687,3 +3687,12 @@ msgstr "Installs to qimiao-spleeter-runtime under local app data by default (a s
 #: src/routes/songlists/index.tsx:203
 msgid "默认排序"
 msgstr "Default order"
+
+msgid "未知专辑"
+msgstr "Unknown album"
+
+msgid "读取图片失败"
+msgstr "Couldn't read the image"
+
+msgid "图片解析失败"
+msgstr "Couldn't decode the image"

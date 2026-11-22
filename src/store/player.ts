@@ -1663,15 +1663,27 @@ export const usePlayerStore = create<PlayerState>()(
 let overlayTime = 0
 let overlaySongId: number | undefined
 
-export function selectOverlayTime(
-  state: Pick<PlayerState, 'showNowPlaying' | 'currentTime'>,
-) {
-  return state.showNowPlaying ? state.currentTime : overlayTime
+type OverlayTimeState = Pick<
+  PlayerState,
+  'showNowPlaying' | 'currentTime' | 'audioUrl' | 'resumeAt'
+>
+
+/**
+ * Position to show. While a resume is pending (restored session, recovery
+ * reload, source switch) the new media still sits at 0 until loadedmetadata
+ * seeks it, so show the target instead; it used to flash 0:00 in between.
+ */
+function overlayLiveTime(state: OverlayTimeState) {
+  return state.resumeAt ?? state.currentTime
+}
+
+export function selectOverlayTime(state: OverlayTimeState) {
+  return state.showNowPlaying ? overlayLiveTime(state) : overlayTime
 }
 
 usePlayerStore.subscribe((state) => {
   const songId = state.queue[state.currentIndex]?.id
-  if (state.showNowPlaying || songId !== overlaySongId) overlayTime = state.currentTime
+  if (state.showNowPlaying || songId !== overlaySongId) overlayTime = overlayLiveTime(state)
   overlaySongId = songId
 })
 

@@ -12,9 +12,14 @@ const fileUpload = require('express-fileupload')
 const compression = require('compression')
 const decode = require('safe-decode-uri-component')
 const logger = require('./util/logger.js')
+
+/** Never write a session cookie passed as `?cookie=` into the console log. */
+const redactUrl = (url) =>
+  String(url).replace(/([?&]cookie=)[^&]*/gi, '$1[redacted]')
 const { APP_CONF } = require('./util/config.json')
 const { createHttpAgent, createHttpsAgent } = require('./util/ipv4Agent')
 const { installRemoteControl } = require('./remoteControl')
+const audioTee = require('./audioTee')
 
 // Media proxy requests also force IPv4 with Happy Eyeballs disabled, otherwise
 // the first request can wait ~10s for an unreachable IPv6 connection.
@@ -245,7 +250,10 @@ async function constructServer(moduleDefs) {
           ? { 'Access-Control-Allow-Origin': corsAllowOrigin }
           : {}),
         ...(shouldSetVaryHeader ? { Vary: 'Origin' } : {}),
-        'Access-Control-Allow-Headers': 'X-Requested-With,Content-Type',
+        'Access-Control-Allow-Headers':
+          'X-Requested-With,Content-Type,X-NCM-Cookie',
+        // GETs carrying X-NCM-Cookie are preflighted; let the browser reuse it.
+        'Access-Control-Max-Age': '600',
         'Access-Control-Allow-Methods': 'PUT,PATCH,POST,GET,DELETE,OPTIONS',
         'Content-Type': 'application/json; charset=utf-8',
       })
@@ -267,6 +275,14 @@ async function constructServer(moduleDefs) {
           pair.slice(crack + 1),
         ).trim()
       })
+    // The web/desktop client sends its stored session in this header instead
+    // of `?cookie=` (which leaks into URLs and logs). Like the query cookie
+    // it replaces the browser cookie jar, which can hold a stale login. It is
+    // parsed here, before the response cache, whose key includes req.cookies.
+    const sessionHeader = req.headers['x-ncm-cookie']
+    if (typeof sessionHeader === 'string' && sessionHeader) {
+      req.cookies = cookieToJson(decode(sessionHeader))
+    }
     next()
   })
 
@@ -310,21 +326,21 @@ async function constructServer(moduleDefs) {
       res.status(400).json({ code: 400, msg: 'Invalid audio url' })
       return
     }
-    try {
-      const headers = {
-        'User-Agent': 'Mozilla/5.0',
-        Referer: 'https://music.163.com/',
-      }
-      if (req.headers.range) headers.Range = req.headers.range
-      const response = await axios.get(raw, {
+    const fetchUpstream = (range) =>
+      axios.get(raw, {
         responseType: 'stream',
         timeout: 30000,
         proxy: false,
         httpAgent: httpProxyAgent,
         httpsAgent: httpsProxyAgent,
-        headers,
+        headers: {
+          'User-Agent': 'Mozilla/5.0',
+          Referer: 'https://music.163.com/',
+          ...(range ? { Range: range } : {}),
+        },
         validateStatus: () => true,
       })
+    const sendUpstream = (response) => {
       // Only successful media responses are worth caching. A transient 403/404
       // must not be stored for five minutes with the audio cache headers.
       if (response.status !== 200 && response.status !== 206) {
@@ -352,8 +368,27 @@ async function constructServer(moduleDefs) {
       res.setHeader('Cache-Control', 'private, max-age=300')
       response.data.pipe(res)
       response.data.on('error', () => res.destroy())
+    }
+    try {
+      // Playback, seeks and the offline-cache download of one track share a
+      // single CDN download (see audioTee.js).
+      const existing = audioTee.getEntry(raw)
+      if (existing && audioTee.serve(existing, req, res)) return
+      if (!existing && audioTee.isFullRequest(req.headers.range)) {
+        const started = await audioTee.startDownload(raw, () => fetchUpstream())
+        if (started.entry && audioTee.serve(started.entry, req, res)) return
+        if (started.response) {
+          sendUpstream(started.response)
+          return
+        }
+      }
+      sendUpstream(await fetchUpstream(req.headers.range))
     } catch (error) {
       console.error('[audio proxy]', error.message)
+      if (res.headersSent) {
+        res.destroy()
+        return
+      }
       res.setHeader('Cache-Control', 'no-store')
       res.status(502).json({
         code: 502,
@@ -595,7 +630,7 @@ async function constructServer(moduleDefs) {
         })
         const displayCrypto = usedCrypto || (APP_CONF.encrypt ? 'eapi' : 'api')
         logger.info(
-          `Request Success: [${displayCrypto}] ${decode(req.originalUrl)}`,
+          `Request Success: [${displayCrypto}] ${redactUrl(decode(req.originalUrl))}`,
         )
 
         // 夹带私货部分：如果开启了通用解锁，并且是获取歌曲URL的接口，则尝试解锁（如果需要的话）ヾ(≧▽≦*)o
@@ -650,7 +685,7 @@ async function constructServer(moduleDefs) {
 
         res.status(moduleResponse.status).send(moduleResponse.body)
       } catch (/** @type {*} */ moduleResponse) {
-        logger.error(`${decode(req.originalUrl)}`, {
+        logger.error(`${redactUrl(decode(req.originalUrl))}`, {
           status: moduleResponse.status,
           body: moduleResponse.body,
         })

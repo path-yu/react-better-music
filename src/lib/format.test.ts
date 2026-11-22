@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
-// The real i18n module imports .po catalogs, which Vitest's SSR loader does
-// not transform; the formatter only needs the active locale.
+// Pin the locale: the formatter only reads `i18n.locale`, and the 万/亿
+// expectations below are the Chinese formatting.
 vi.mock('../i18n', () => ({ i18n: { locale: 'zh-CN' } }))
 
 import {

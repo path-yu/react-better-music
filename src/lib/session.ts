@@ -1,5 +1,6 @@
 import { fetchWithBootRetry } from './apiFetch'
 import { API_BASE } from './apiBase'
+import { isTauriApp } from './platform'
 
 const LOGIN_COOKIE_KEY = 'react-music-login-cookie'
 const GUEST_COOKIE_KEY = 'react-music-guest-cookie'
@@ -82,8 +83,16 @@ export function notifyLoginExpired() {
   })
 }
 
-async function requestCookie(path: string, params?: Record<string, string>) {
-  const search = new URLSearchParams(params).toString()
+async function requestCookie(
+  path: string,
+  params?: Record<string, string>,
+  /** Session cookie to authenticate with; sent as a header, not in the URL. */
+  sessionCookie = '',
+) {
+  // server-rust (Tauri build) still reads the cookie from the query string.
+  const inQuery = import.meta.env.MODE === 'tauri' || isTauriApp()
+  const query = sessionCookie && inQuery ? { ...params, cookie: sessionCookie } : params
+  const search = new URLSearchParams(query).toString()
   // Cookie bootstrap/refresh happens before the app is usable; a hung socket
   // must not keep `initSession` waiting forever.
   const controller = new AbortController()
@@ -94,6 +103,10 @@ async function requestCookie(path: string, params?: Record<string, string>) {
       {
         method: 'GET',
         credentials: 'include',
+        headers:
+          sessionCookie && !inQuery
+            ? { 'X-NCM-Cookie': encodeURIComponent(sessionCookie) }
+            : undefined,
         signal: controller.signal,
       },
     )
@@ -129,10 +142,11 @@ export async function refreshLogin(): Promise<boolean> {
   if (refreshPromise) return refreshPromise
   refreshPromise = (async () => {
     try {
-      const res = await requestCookie('/login/refresh', {
+      const res = await requestCookie(
+        '/login/refresh',
+        { timestamp: String(Date.now()) },
         cookie,
-        timestamp: String(Date.now()),
-      })
+      )
       // A login may have replaced the cookie while this request was in flight.
       if (getLoginCookie() !== cookie) return false
       if (res.code === 200 && typeof res.cookie === 'string' && res.cookie) {
