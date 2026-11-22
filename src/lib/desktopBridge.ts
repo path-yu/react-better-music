@@ -131,6 +131,37 @@ export async function getAuxWindowsState() {
   return requestJson<{ lyrics: boolean; mini: boolean }>('/aux-windows')
 }
 
+export interface RemoteControlInfo {
+  enabled: boolean
+  /** False while the API child is still starting. */
+  apiReady?: boolean
+  /** The LAN listener is bound and reachable. */
+  listening?: boolean
+  /** `port-in-use` or another listener error. */
+  error?: string
+  port?: number
+  /** Phones currently connected. */
+  phones?: number
+  /** One pairing link (and QR code) per LAN address of this computer. */
+  urls: Array<{ name: string; address: string; url: string; qr: string }>
+}
+
+export async function getRemoteControl() {
+  return requestJson<RemoteControlInfo>('/remote-control')
+}
+
+/** Turn LAN remote control on/off, or issue a new pairing key. */
+export async function setRemoteControl(patch: {
+  enabled?: boolean
+  resetToken?: boolean
+}) {
+  return requestJson<RemoteControlInfo>('/remote-control', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  })
+}
+
 /** Show, hide or toggle the compact mini player window. */
 export async function setMiniPlayerVisible(action: 'show' | 'hide' | 'toggle' = 'toggle') {
   return requestJson<{ visible: boolean }>(`/mini-window?action=${action}`, {

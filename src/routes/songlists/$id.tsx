@@ -125,12 +125,22 @@ function PlaylistDetailPage() {
         setSongs(first)
         setLoading(false)
         if (playlist.trackCount > first.length) {
-          const rest = await fetchRemainingPlaylistTracks(
+          const { songs: rest, failedPages } = await fetchRemainingPlaylistTracks(
             id,
             playlist.trackCount,
             controller.signal,
           )
-          if (!controller.signal.aborted) setSongs([...first, ...rest])
+          if (controller.signal.aborted) return
+          setSongs([...first, ...rest])
+          if (failedPages > 0) {
+            // Failed pages are not cached, so 刷新 fetches exactly what is missing.
+            const missing = Math.max(0, playlist.trackCount - first.length - rest.length)
+            toast.warning(
+              missing > 0
+                ? i18n._(msg`有 ${missing} 首歌曲加载失败，可点击「刷新」重试`)
+                : i18n._(msg`部分歌曲加载失败，可点击「刷新」重试`),
+            )
+          }
         }
       } catch {
         if (controller.signal.aborted) return

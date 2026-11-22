@@ -106,6 +106,77 @@ if (process.platform === 'win32' && readDevToolsDisabled()) {
   console.log('[desktop] WebView2 developer tools disabled for this launch')
 }
 
+/* -------------------------- phone remote control -------------------------- */
+
+const REMOTE_CONTROL_FILE = join(APP_DATA_DIR, 'remote-control.json')
+const REMOTE_TOKEN_PATTERN = /^[A-Za-z0-9_-]{16,128}$/
+/**
+ * Per-launch secret shared only with the API child. Only this process can
+ * turn LAN remote control on or read the pairing key; a web page in a local
+ * browser can reach 127.0.0.1 but never learns this value.
+ */
+const REMOTE_ADMIN_SECRET = crypto.randomUUID()
+
+interface RemoteControlConfig {
+  enabled: boolean
+  token: string
+}
+
+function newRemoteToken() {
+  return Buffer.from(crypto.getRandomValues(new Uint8Array(18))).toString('base64url')
+}
+
+function persistRemoteControl(config: RemoteControlConfig) {
+  mkdirSync(APP_DATA_DIR, { recursive: true })
+  writeFileSync(REMOTE_CONTROL_FILE, JSON.stringify(config), 'utf8')
+}
+
+/** Off by default. The pairing key survives restarts so paired phones keep working. */
+function readRemoteControl(): RemoteControlConfig {
+  try {
+    const parsed = JSON.parse(
+      readFileSync(REMOTE_CONTROL_FILE, 'utf8'),
+    ) as Partial<RemoteControlConfig>
+    if (typeof parsed.token === 'string' && REMOTE_TOKEN_PATTERN.test(parsed.token)) {
+      return { enabled: parsed.enabled === true, token: parsed.token }
+    }
+  } catch {
+    // Missing or corrupt: start from a fresh, disabled config.
+  }
+  const config: RemoteControlConfig = { enabled: false, token: newRemoteToken() }
+  try {
+    persistRemoteControl(config)
+  } catch {
+    // Retried on the next read.
+  }
+  return config
+}
+
+function remoteAdminFetch(path: string, init?: RequestInit) {
+  return fetch(`http://127.0.0.1:${API_PORT}/remote/api/${path}`, {
+    ...init,
+    headers: {
+      'content-type': 'application/json',
+      'x-remote-admin': REMOTE_ADMIN_SECRET,
+    },
+    signal: AbortSignal.timeout(4000),
+  })
+}
+
+async function remoteControlInfo() {
+  const config = readRemoteControl()
+  try {
+    const response = await remoteAdminFetch('pairing')
+    if (response.ok) {
+      const info = (await response.json()) as Record<string, unknown>
+      return { ...info, enabled: config.enabled, apiReady: true }
+    }
+  } catch {
+    // The API child is still booting or restarting.
+  }
+  return { enabled: config.enabled, apiReady: false, listening: false, urls: [] }
+}
+
 /** Renderer <-> main-process bridge (downloads, window controls, lyrics). */
 const BRIDGE_PORT = 13002
 
@@ -183,15 +254,21 @@ function startApiServer() {
     apiStarted = false
     return
   }
+  const remote = readRemoteControl()
   try {
     apiProcess = Bun.spawn([resolveBunExecutable(), script], {
       env: {
         ...process.env,
         QIMIAO_API_PORT: String(API_PORT),
-        // The LAN remote page needs the API listener on the network, but the
-        // server only exposes /remote to non-loopback clients.
-        QIMIAO_API_HOST: process.env.QIMIAO_API_HOST || '0.0.0.0',
+        // The API itself only listens on loopback. LAN remote control opens a
+        // separate listener (QIMIAO_REMOTE_PORT, default 13003) only after the
+        // user turns it on, and that listener serves nothing but /remote to
+        // other devices. A restarted child re-reads the saved config here.
+        QIMIAO_API_HOST: process.env.QIMIAO_API_HOST || '127.0.0.1',
         QIMIAO_REMOTE_ONLY: process.env.QIMIAO_REMOTE_ONLY || '1',
+        QIMIAO_REMOTE_ADMIN: REMOTE_ADMIN_SECRET,
+        QIMIAO_REMOTE_ENABLED: remote.enabled ? '1' : '0',
+        QIMIAO_REMOTE_TOKEN: remote.token,
         QIMIAO_API_PARENT_PID: String(process.pid),
         // Never derive user data from the API child's working directory. Dev
         // rebuilds replace build/dev-*/bin, which used to wipe playlists.
@@ -1322,6 +1399,29 @@ try {
           const message = (await request.text()).slice(0, 500)
           markStartup(`renderer: ${message}`)
           return Response.json({ ok: true }, { headers })
+        }
+        if (url.pathname === '/remote-control' && request.method === 'GET') {
+          return Response.json(await remoteControlInfo(), { headers })
+        }
+        if (url.pathname === '/remote-control' && request.method === 'POST') {
+          const body = (await request.json().catch(() => null)) as {
+            enabled?: unknown
+            resetToken?: unknown
+          } | null
+          const current = readRemoteControl()
+          const next: RemoteControlConfig = {
+            enabled:
+              typeof body?.enabled === 'boolean' ? body.enabled : current.enabled,
+            token: body?.resetToken === true ? newRemoteToken() : current.token,
+          }
+          persistRemoteControl(next)
+          await remoteAdminFetch('config', {
+            method: 'POST',
+            body: JSON.stringify(next),
+          }).catch(() => undefined)
+          // Give the LAN listener a moment to bind before reporting its state.
+          if (next.enabled) await Bun.sleep(150)
+          return Response.json(await remoteControlInfo(), { headers })
         }
         if (url.pathname === '/devtools-policy' && request.method === 'GET') {
           return Response.json({ disabled: readDevToolsDisabled() }, { headers })

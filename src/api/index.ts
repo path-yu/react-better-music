@@ -22,7 +22,13 @@ import type {
   VideoSearchItem,
 } from '../types'
 import { get, invalidateApiCache, postJson, uploadFile } from '../lib/http'
-import { normalizeMv, normalizePlaylist, normalizeSongs, type RawSong } from '../lib/songs'
+import {
+  normalizeMv,
+  normalizePlaylist,
+  normalizeSongs,
+  trialLengthSeconds,
+  type RawSong,
+} from '../lib/songs'
 import {
   relatedVideoFromFeed,
   videoFromMv,
@@ -261,6 +267,11 @@ export async function createPlaylist(name: string) {
   }>('/playlist/create', { name, timestamp: Date.now() })
 }
 
+const PLAYLIST_MUTATION_PREFIXES = ['/playlist/detail', '/playlist/track/all']
+
+/** Track edits change detail/track reads that are cached for five minutes. */
+const invalidatePlaylistReads = () => invalidateApiCache(PLAYLIST_MUTATION_PREFIXES)
+
 /** Add one or more tracks to a signed-in user's playlist. */
 export async function addTracksToPlaylist(
   playlistId: number | string,
@@ -275,7 +286,7 @@ export async function addTracksToPlaylist(
     pid: playlistId,
     tracks: trackIds.join(','),
     timestamp: Date.now(),
-  })
+  }).finally(invalidatePlaylistReads)
 }
 
 /** Add a track to one of the signed-in user's playlists. */
@@ -292,7 +303,7 @@ export async function addSongToPlaylist(
     pid: playlistId,
     tracks: String(trackId),
     timestamp: Date.now(),
-  })
+  }).finally(invalidatePlaylistReads)
 }
 
 /** Remove a track from one of the signed-in user's playlists. */
@@ -309,7 +320,7 @@ export async function removeSongFromPlaylist(
     pid: playlistId,
     tracks: String(trackId),
     timestamp: Date.now(),
-  })
+  }).finally(invalidatePlaylistReads)
 }
 
 export async function fetchPlaylistTracks(
@@ -326,43 +337,59 @@ export async function fetchPlaylistTracks(
   return normalizeSongs(res.songs)
 }
 
+/** Pause before retrying failed pages; the local API rate-limits bursts. */
+const TRACK_RETRY_DELAY = 800
+
 /**
  * Load the pages after the first one with bounded concurrency. A 5000-track
  * playlist used to fire 16 parallel requests at once, which the local API
  * rate-limits.
+ *
+ * Failed pages are retried once. Results are placed by page index, so a page
+ * that only succeeds on retry still lands in playlist order. `failedPages`
+ * counts pages that are still missing, so the caller can tell the user
+ * instead of silently showing (and playing) a shorter playlist.
  */
 export async function fetchRemainingPlaylistTracks(
   id: string | number,
   trackCount: number,
   signal?: AbortSignal,
-) {
+): Promise<{ songs: Song[]; failedPages: number }> {
   const pages = Math.max(
     0,
     Math.ceil((trackCount - TRACK_PAGE_SIZE) / TRACK_PAGE_SIZE),
   )
-  const songs: Song[] = []
+  const results: Array<Song[] | undefined> = new Array(pages)
 
-  for (let start = 0; start < pages; start += TRACK_FETCH_CONCURRENCY) {
-    if (signal?.aborted) break
-    const batchSize = Math.min(TRACK_FETCH_CONCURRENCY, pages - start)
-    const batch = Array.from({ length: batchSize }, (_, index) =>
-      fetchPlaylistTracks(
-        id,
-        TRACK_PAGE_SIZE,
-        (start + index + 1) * TRACK_PAGE_SIZE,
-        signal,
-      ),
-    )
-    const settled = await Promise.allSettled(batch)
-    settled.forEach((result) => {
-      if (result.status === 'fulfilled') songs.push(...result.value)
-    })
+  const runPages = async (pageIndexes: number[]) => {
+    const failed: number[] = []
+    for (let start = 0; start < pageIndexes.length; start += TRACK_FETCH_CONCURRENCY) {
+      if (signal?.aborted) break
+      const batch = pageIndexes.slice(start, start + TRACK_FETCH_CONCURRENCY)
+      const settled = await Promise.allSettled(
+        batch.map((page) =>
+          fetchPlaylistTracks(id, TRACK_PAGE_SIZE, (page + 1) * TRACK_PAGE_SIZE, signal),
+        ),
+      )
+      settled.forEach((result, index) => {
+        if (result.status === 'fulfilled') results[batch[index]] = result.value
+        else failed.push(batch[index])
+      })
+    }
+    return failed
   }
 
-  return songs
-}
+  let failed = await runPages(Array.from({ length: pages }, (_, index) => index))
+  if (failed.length && !signal?.aborted) {
+    await new Promise((resolve) => window.setTimeout(resolve, TRACK_RETRY_DELAY))
+    if (!signal?.aborted) failed = await runPages(failed)
+  }
 
-const PLAYLIST_MUTATION_PREFIXES = ['/playlist/detail', '/playlist/track/all']
+  return {
+    songs: results.flatMap((page) => page ?? []),
+    failedPages: signal?.aborted ? 0 : failed.length,
+  }
+}
 
 export async function updatePlaylistInfo(params: {
   id: string | number
@@ -418,14 +445,19 @@ export async function fetchSongUrlInfo(id: number | string, level: PlayLevel = '
   const res = await get<{
     data?: Array<{
       url: string | null
+      /** Length of the returned file in ms (the clip itself for a trial). */
+      time?: number
       freeTrialInfo?: { start?: number; end?: number } | null
     }>
   }>('/song/url/v1', { id, level })
   const item = res.data?.[0]
   return {
     url: secureMediaUrl(item?.url),
-    /** Seconds of the trial clip; null when the full track is available. */
-    trialEnd: item?.freeTrialInfo?.end ?? null,
+    /**
+     * Length in seconds of the trial clip (it starts at 0 in the returned
+     * file); null when the full track is available.
+     */
+    trialEnd: trialLengthSeconds(item?.freeTrialInfo, item?.time),
   }
 }
 

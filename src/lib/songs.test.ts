@@ -6,6 +6,7 @@ import {
   normalizePlaylist,
   normalizeSong,
   normalizeSongs,
+  trialLengthSeconds,
 } from './songs'
 
 describe('isInstrumentalSong', () => {
@@ -104,6 +105,32 @@ describe('normalizePlaylist', () => {
       creator: { userId: 1, nickname: 'n' },
     }
     expect(normalizePlaylist(playlist).coverImgUrl).toBe('cover')
+  })
+})
+
+describe('trialLengthSeconds', () => {
+  it('returns null for a full track', () => {
+    expect(trialLengthSeconds(null)).toBeNull()
+    expect(trialLengthSeconds(undefined, 258_902)).toBeNull()
+  })
+
+  it('uses the window length, not its end offset', () => {
+    expect(trialLengthSeconds({ start: 87, end: 117 })).toBe(30)
+    expect(trialLengthSeconds({ start: 0, end: 30 })).toBe(30)
+  })
+
+  it('accepts a window reported in milliseconds', () => {
+    expect(trialLengthSeconds({ start: 0, end: 30_000 })).toBe(30)
+    expect(trialLengthSeconds({ start: 87_000, end: 117_000 })).toBe(30)
+  })
+
+  it('falls back to the returned file length', () => {
+    expect(trialLengthSeconds({ start: 0, end: 0 }, 29_960)).toBe(30)
+    expect(trialLengthSeconds({ start: 0, end: 60 }, 15_000)).toBe(15)
+  })
+
+  it('defaults to 30 seconds when nothing usable is reported', () => {
+    expect(trialLengthSeconds({})).toBe(30)
   })
 })
 

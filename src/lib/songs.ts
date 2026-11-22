@@ -73,6 +73,34 @@ export function normalizeMv(raw: Mv): Mv {
   }
 }
 
+/** Used when a trial payload carries no usable window or file length. */
+const DEFAULT_TRIAL_SECONDS = 30
+
+/**
+ * Length in seconds of the trial clip returned by `/song/url/v1`, or null
+ * when the full track is available.
+ *
+ * For a trial NetEase serves a separate short file. `freeTrialInfo` only says
+ * which part of the original track that clip was cut from (for example
+ * `{ start: 87, end: 117 }`), so the clip itself plays from 0 to
+ * `end - start`, not to `end`. `fileTimeMs` is the `time` field: the length of
+ * the file actually returned, which also caps the result.
+ */
+export function trialLengthSeconds(
+  info: { start?: number | null; end?: number | null } | null | undefined,
+  fileTimeMs?: number | null,
+): number | null {
+  if (!info) return null
+  const start = Number(info.start) || 0
+  const end = Number(info.end)
+  let seconds = Number.isFinite(end) && end > start ? end - start : 0
+  // Some payloads report the window in milliseconds.
+  if (seconds > 600) seconds /= 1000
+  const fileSeconds = Number(fileTimeMs) > 0 ? Number(fileTimeMs) / 1000 : 0
+  if (fileSeconds && (!seconds || fileSeconds < seconds)) seconds = fileSeconds
+  return seconds > 0 ? Math.max(1, Math.round(seconds)) : DEFAULT_TRIAL_SECONDS
+}
+
 /**
  * NetEase's copyright hint for a row (e.g. "其它版本可播"), also rendered as
  * the list tag. Empty means the song carries no hint.

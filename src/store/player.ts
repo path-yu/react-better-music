@@ -346,17 +346,26 @@ async function enrichSong(song: Song): Promise<Song> {
   }
   // Downloaded/streamed audio may come from the recommended edition. Prefer
   // its lyrics/timing, but fall back to the original when it has none.
+  // This also runs on URL recovery (stall / media error / seek after restore):
+  // a lyric failure must never turn into "track unavailable", and lyrics that
+  // are already known for the same timeline are reused instead of re-fetched.
   const lyricSongId = source.alternativeSongId ?? song.id
-  let lyricData = await fetchLyric(lyricSongId)
+  const knownLyricSongId = song.alternativeSongId ?? song.id
+  const hasKnownLyrics = Boolean(song.lyric || song.yrc || song.isNotLyric)
+  let lyricPatch: LyricsPatch | null =
+    hasKnownLyrics && lyricSongId === knownLyricSongId
+      ? null
+      : await loadLyricsPatch(lyricSongId)
   if (
+    lyricPatch?.isNotLyric &&
     source.alternativeSongId &&
-    source.alternativeSongId !== song.id &&
-    isEmptyLyric(lyricData.lyric) &&
-    !lyricData.yrc
+    source.alternativeSongId !== song.id
   ) {
-    lyricData = await fetchLyric(song.id).catch(() => lyricData)
+    lyricPatch = (await loadLyricsPatch(song.id)) ?? lyricPatch
   }
-  const lyrics = buildLyricLines(lyricData)
+  if (lyricPatch && !lyricPatch.isNotLyric && !buildLyricLines(lyricPatch).length) {
+    lyricPatch = { ...lyricPatch, isNotLyric: true }
+  }
   const effectiveSong = source.alternativeSong
     ? { ...song, ...source.alternativeSong, id: song.id }
     : song
@@ -369,11 +378,8 @@ async function enrichSong(song: Song): Promise<Song> {
     alternativeVersion: source.alternativeVersion,
     urlFetchedAt: Date.now(),
     trialEnd: source.trialEnd,
-    lyric: lyricData.lyric,
-    tlyric: lyricData.tlyric,
-    yrc: lyricData.yrc,
-    isNotLyric: isEmptyLyric(lyricData.lyric) && !lyricData.yrc,
-    ...(lyrics.length ? {} : { isNotLyric: true }),
+    // null = keep the lyrics already on the song (reused or failed to load).
+    ...(lyricPatch ?? {}),
   }
 }
 
@@ -987,9 +993,20 @@ export const usePlayerStore = create<PlayerState>()(
         if (state.queue.length - 1 - state.currentIndex < 3) void appendHeartSongs()
       }
 
-      const step = async (direction: 1 | -1) => {
+      const step = async (direction: 1 | -1, auto = false) => {
         const { queue, currentIndex, mode } = get()
         if (!queue.length) return
+        // 顺序播放 stops after the last track when playback advances on its own
+        // (natural end or an error-recovery skip). Manual next/previous still
+        // wrap. Heart mode keeps refilling the queue, so it never "ends".
+        const stopAtEnd = auto && mode === 'order' && !get().heartMode
+        if (stopAtEnd && direction === 1 && currentIndex >= queue.length - 1) {
+          // PlayerBar also asks for the next track ~0.4s before the end to
+          // overlap the crossfade; let the last track finish in that case.
+          const audio = getAudio()
+          if (!audio || audio.ended || audio.error) set({ playing: false })
+          return
+        }
         if (mode === 'random' && queue.length > 1) {
           const candidates = queue
             .map((song, index) => (song ? index : -1))
@@ -1041,6 +1058,8 @@ export const usePlayerStore = create<PlayerState>()(
         // then stop only when every entry has been tried.
         const maxSteps = queue.length
         for (let attempt = 0; attempt < maxSteps; attempt += 1) {
+          // Skipping broken tracks in 顺序播放 must not wrap to the top either.
+          if (stopAtEnd && direction === 1 && index + 1 >= queue.length) break
           index = (index + direction + queue.length) % queue.length
           const song = queue[index]
           if (!song) continue
@@ -1250,14 +1269,18 @@ export const usePlayerStore = create<PlayerState>()(
           // instead of immediately pausing again.
           const active = get().queue[get().currentIndex]
           const audio = getAudio()
-          if (audio && active?.trialEnd && audio.currentTime >= active.trialEnd) {
+          if (
+            audio &&
+            active?.trialEnd &&
+            (audio.ended || audio.currentTime >= active.trialEnd)
+          ) {
             audio.currentTime = 0
             set({ currentTime: 0 })
           }
           set({ playing: true })
         },
 
-        next: () => step(1),
+        next: (options) => step(1, options?.auto ?? false),
         prev: () => step(-1),
 
         setPlaying(value) {
@@ -1339,6 +1362,7 @@ export const usePlayerStore = create<PlayerState>()(
 
         clearQueue() {
           clearPrefetchedAudio()
+          forcedNextSongId = null
           shuffleOrder = []
           shuffleCursor = -1
           shuffleKey = ''
@@ -1347,7 +1371,10 @@ export const usePlayerStore = create<PlayerState>()(
             window.clearTimeout(prefetchTimer)
             prefetchTimer = undefined
           }
-          set({
+          set((state) => ({
+            // Invalidate any in-flight loadAt/lyrics request so it cannot
+            // write a source or lyrics back into the now-empty player.
+            loadRequestId: state.loadRequestId + 1,
             queue: [],
             currentIndex: 0,
             playing: false,
@@ -1358,6 +1385,8 @@ export const usePlayerStore = create<PlayerState>()(
             sourceTransition: 'none',
             playlistId: '',
             lyricLines: [],
+            lyricLoading: false,
+            resumeAt: null,
             audioUrl: '',
             sourceReady: false,
             audioFromCache: false,
@@ -1366,7 +1395,7 @@ export const usePlayerStore = create<PlayerState>()(
             heartLoading: false,
             showNowPlaying: false,
             showQueue: false,
-          })
+          }))
           toast.info(i18n._(msg`播放列表已清空`))
         },
 
@@ -1379,6 +1408,7 @@ export const usePlayerStore = create<PlayerState>()(
             const active = get().queue[get().currentIndex]
             if (!active || active.id !== song.id) return true
             const freshUrl = fresh.url
+            const freshLines = readLyrics(fresh)
             patchSong(currentIndex, fresh)
             set({
               audioUrl: freshUrl
@@ -1391,7 +1421,8 @@ export const usePlayerStore = create<PlayerState>()(
               resumeAt: get().currentTime,
               audioFromCache: false,
               audioBlob: null,
-              lyricLines: readLyrics(fresh),
+              // Keep the visible lyrics if the recovery could not load them.
+              lyricLines: freshLines.length ? freshLines : get().lyricLines,
               lyricLoading: false,
             })
             return true

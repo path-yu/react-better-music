@@ -1,4 +1,30 @@
+const crypto = require('crypto')
+const http = require('http')
+const os = require('os')
 const { icon192, icon512 } = require('./remoteIcons')
+
+/**
+ * LAN remote control is off until the desktop app turns it on. While on, a
+ * separate listener on REMOTE_PORT (all interfaces) serves the phone page; the
+ * main API stays on loopback. Phones must present the pairing key that the
+ * desktop shows as a QR code.
+ */
+const REMOTE_PORT = Number(process.env.QIMIAO_REMOTE_PORT || 13003)
+const TOKEN_PATTERN = /^[A-Za-z0-9_-]{16,128}$/
+/** Per-launch secret from the desktop main process; empty = no admin API. */
+const ADMIN_SECRET = process.env.QIMIAO_REMOTE_ADMIN || ''
+const LOCAL_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i
+
+let remoteConfig = {
+  enabled: process.env.QIMIAO_REMOTE_ENABLED === '1',
+  token: TOKEN_PATTERN.test(process.env.QIMIAO_REMOTE_TOKEN || '')
+    ? process.env.QIMIAO_REMOTE_TOKEN
+    : '',
+}
+let remoteServer = null
+let remoteListening = false
+let remoteListenError = ''
+let qrCodeModule = null
 
 const REMOTE_COMMAND_TTL = 20_000
 const REMOTE_COMMAND_LIMIT = 24
@@ -20,6 +46,154 @@ function isLoopbackRequest(req) {
     address === '::1' ||
     address === '::ffff:127.0.0.1'
   )
+}
+
+function safeEqual(actual, expected) {
+  if (typeof actual !== 'string' || !expected) return false
+  const left = Buffer.from(actual)
+  const right = Buffer.from(expected)
+  return left.length === right.length && crypto.timingSafeEqual(left, right)
+}
+
+/**
+ * Loopback, and not a web page in a local browser calling across origins
+ * (any site could otherwise reach 127.0.0.1). The desktop renderer runs on a
+ * custom scheme that WebView2 sometimes reports as "null".
+ */
+function isLocalClient(req, allowAppOrigins = false) {
+  if (!isLoopbackRequest(req)) return false
+  const origin = typeof req.headers.origin === 'string' ? req.headers.origin : ''
+  if (!origin || LOCAL_ORIGIN.test(origin)) return true
+  return (
+    allowAppOrigins &&
+    (origin === 'null' ||
+      /^(views|tauri):/i.test(origin) ||
+      /^https?:\/\/tauri\.localhost$/i.test(origin))
+  )
+}
+
+/** Endpoints used by the desktop renderer: state publishing and commands. */
+function requireDesktop(req, res) {
+  if (isLocalClient(req, true)) return true
+  res.status(403).json({ code: 403, msg: 'Desktop only' })
+  return false
+}
+
+/** Enabling remote control / reading the pairing key: desktop main process only. */
+function requireAdmin(req, res) {
+  if (
+    ADMIN_SECRET &&
+    isLoopbackRequest(req) &&
+    safeEqual(req.get('x-remote-admin') || '', ADMIN_SECRET)
+  ) {
+    return true
+  }
+  res.status(403).json({ code: 403, msg: 'Forbidden' })
+  return false
+}
+
+function phoneKey(req) {
+  const header = req.get('x-remote-key')
+  if (header) return header
+  return typeof req.query.k === 'string' ? req.query.k : ''
+}
+
+/** Phone endpoints: local testing is free; LAN devices need the pairing key. */
+function authorizePhone(req, res) {
+  if (isLocalClient(req)) return true
+  noStore(res)
+  if (!remoteConfig.enabled) {
+    res.status(403).json({ code: 403, msg: 'Remote control is disabled' })
+    return false
+  }
+  if (!safeEqual(phoneKey(req), remoteConfig.token)) {
+    res.status(401).json({ code: 401, msg: 'Pairing required' })
+    return false
+  }
+  return true
+}
+
+/** Drop every phone stream, e.g. after the key was reset or remote turned off. */
+function closePhoneClients() {
+  for (const client of phoneClients) {
+    try {
+      client.end()
+    } catch {
+      // already closed
+    }
+  }
+  phoneClients.clear()
+  setRemoteActive(false)
+}
+
+/** Open or close the LAN listener to match the current config. */
+function syncRemoteListener(app) {
+  if (remoteConfig.enabled && remoteConfig.token) {
+    if (remoteServer) return
+    remoteListenError = ''
+    const server = http.createServer(app)
+    remoteServer = server
+    server.on('error', (error) => {
+      remoteListening = false
+      remoteListenError =
+        error && error.code === 'EADDRINUSE'
+          ? 'port-in-use'
+          : String((error && error.message) || error)
+      if (remoteServer === server) remoteServer = null
+      console.error('[remote] LAN listener failed:', error)
+    })
+    server.listen(REMOTE_PORT, '0.0.0.0', () => {
+      if (remoteServer !== server) return
+      remoteListening = true
+      console.log(`[remote] LAN remote control on port ${REMOTE_PORT}`)
+    })
+    return
+  }
+  closePhoneClients()
+  remoteListening = false
+  remoteListenError = ''
+  if (!remoteServer) return
+  const server = remoteServer
+  remoteServer = null
+  server.close()
+  if (typeof server.closeAllConnections === 'function') server.closeAllConnections()
+}
+
+/** Private IPv4 addresses first: those are what a phone on Wi-Fi can reach. */
+function lanAddresses() {
+  const result = []
+  for (const [name, list] of Object.entries(os.networkInterfaces())) {
+    for (const item of list || []) {
+      const ipv4 = item.family === 'IPv4' || item.family === 4
+      if (!ipv4 || item.internal || item.address.startsWith('169.254.')) continue
+      result.push({ name, address: item.address })
+    }
+  }
+  const rank = (address) =>
+    /^192\.168\./.test(address)
+      ? 0
+      : /^10\./.test(address)
+        ? 1
+        : /^172\.(1[6-9]|2\d|3[01])\./.test(address)
+          ? 2
+          : 3
+  return result.sort((a, b) => rank(a.address) - rank(b.address))
+}
+
+async function qrDataUrl(text) {
+  if (qrCodeModule === null) {
+    try {
+      qrCodeModule = require('qrcode')
+    } catch {
+      qrCodeModule = false
+    }
+  }
+  if (!qrCodeModule) return ''
+  try {
+    return await qrCodeModule.toDataURL(text, { margin: 1, width: 240 })
+  } catch {
+    return ''
+  }
 }
 
 /** Only real LAN clients count; the desktop bridge is loopback traffic. */
@@ -138,15 +312,27 @@ function installRemoteControl(app) {
     res.redirect(308, '/remote/')
   })
 
+  // The page itself holds no data; its API calls carry the pairing key.
   app.get('/remote/', (req, res) => {
-    noteRemoteClient(req)
     noStore(res)
     res.type('html').send(REMOTE_PAGE_HTML)
   })
 
-  app.get('/remote/manifest.webmanifest', (_req, res) => {
-    res.setHeader('Cache-Control', 'public, max-age=300')
-    res.type('application/manifest+json').send(REMOTE_MANIFEST)
+  // A paired page asks for the manifest with its key, so an installed home
+  // screen app starts already paired.
+  app.get('/remote/manifest.webmanifest', (req, res) => {
+    const key =
+      typeof req.query.k === 'string' && safeEqual(req.query.k, remoteConfig.token)
+        ? req.query.k
+        : ''
+    res.setHeader('Cache-Control', key ? 'no-store' : 'public, max-age=300')
+    res
+      .type('application/manifest+json')
+      .send(
+        key
+          ? { ...REMOTE_MANIFEST, start_url: `/remote/?k=${encodeURIComponent(key)}` }
+          : REMOTE_MANIFEST,
+      )
   })
 
   app.get('/remote/sw.js', (_req, res) => {
@@ -167,6 +353,7 @@ function installRemoteControl(app) {
   // Phone -> state stream. The phone page opens one EventSource and receives
   // snapshots as soon as the desktop publishes them.
   app.get('/remote/api/events', (req, res) => {
+    if (!authorizePhone(req, res)) return
     noteRemoteClient(req)
     openSse(req, res, phoneClients)
     sendSse(res, 'state', {
@@ -179,22 +366,22 @@ function installRemoteControl(app) {
   // Desktop -> command stream. It is loopback-only because it exposes
   // phone-originated commands and active-state transitions.
   app.get('/remote/api/desktop-events', (req, res) => {
-    if (!isLoopbackRequest(req)) {
-      res.status(403).end()
-      return
-    }
+    if (!requireDesktop(req, res)) return
     openSse(req, res, desktopClients)
     sendSse(res, 'active', { active: hasActiveRemoteClient() })
   })
 
   app.get('/remote/api/state', (req, res) => {
-    noteRemoteClient(req)
     noStore(res)
+    if (!authorizePhone(req, res)) return
+    noteRemoteClient(req)
     res.json({ code: 200, data: remoteState, now: Date.now() })
   })
 
+  // Desktop only: a LAN device must not be able to fake what phones display.
   app.post('/remote/api/state', (req, res) => {
     noStore(res)
+    if (!requireDesktop(req, res)) return
     const next = cleanState(req.body)
     if (!next) {
       res.status(400).json({ code: 400, msg: 'Invalid state' })
@@ -211,6 +398,7 @@ function installRemoteControl(app) {
 
   app.get('/remote/api/commands', (req, res) => {
     noStore(res)
+    if (!requireDesktop(req, res)) return
     const after = clampNumber(req.query.after, 0, 0, Number.MAX_SAFE_INTEGER)
     const reset = after > commandSequence
     const data = freshCommands().filter(
@@ -226,8 +414,9 @@ function installRemoteControl(app) {
   })
 
   app.post('/remote/api/command', (req, res) => {
-    noteRemoteClient(req)
     noStore(res)
+    if (!authorizePhone(req, res)) return
+    noteRemoteClient(req)
     const action = typeof req.body?.action === 'string' ? req.body.action : ''
     if (!validAction(action)) {
       res.status(400).json({ code: 400, msg: 'Unknown action' })
@@ -254,6 +443,52 @@ function installRemoteControl(app) {
     broadcastSse(desktopClients, 'command', command)
     res.json({ code: 200, data: command })
   })
+
+  // Pairing info for the desktop settings page (QR codes contain the key).
+  app.get('/remote/api/pairing', async (req, res) => {
+    noStore(res)
+    if (!requireAdmin(req, res)) return
+    try {
+      const active = remoteConfig.enabled && Boolean(remoteConfig.token)
+      const urls = active
+        ? await Promise.all(
+            lanAddresses().map(async ({ name, address }) => {
+              const url = `http://${address}:${REMOTE_PORT}/remote/?k=${encodeURIComponent(remoteConfig.token)}`
+              return { name, address, url, qr: await qrDataUrl(url) }
+            }),
+          )
+        : []
+      res.json({
+        code: 200,
+        enabled: remoteConfig.enabled,
+        listening: remoteListening,
+        error: remoteListenError,
+        port: REMOTE_PORT,
+        phones: phoneClients.size,
+        urls,
+      })
+    } catch (error) {
+      res.status(500).json({ code: 500, msg: String((error && error.message) || error) })
+    }
+  })
+
+  app.post('/remote/api/config', (req, res) => {
+    noStore(res)
+    if (!requireAdmin(req, res)) return
+    const enabled = req.body?.enabled === true
+    const token =
+      typeof req.body?.token === 'string' && TOKEN_PATTERN.test(req.body.token)
+        ? req.body.token
+        : remoteConfig.token
+    const tokenChanged = token !== remoteConfig.token
+    remoteConfig = { enabled, token }
+    // A new key kicks every paired phone; they must scan the new QR code.
+    if (tokenChanged) closePhoneClients()
+    syncRemoteListener(app)
+    res.json({ code: 200, enabled })
+  })
+
+  if (remoteConfig.enabled) setImmediate(() => syncRemoteListener(app))
 }
 
 const REMOTE_MANIFEST = {
@@ -284,7 +519,7 @@ const REMOTE_MANIFEST = {
 }
 
 const REMOTE_SW = `
-const CACHE = 'qimiao-remote-v5'
+const CACHE = 'qimiao-remote-v6'
 const SHELL = [
   '/remote/',
   '/remote/manifest.webmanifest',
@@ -433,6 +668,31 @@ const REMOTE_PAGE_HTML = `<!doctype html>
       var volumeHoldUntil = 0;
       var eventSource = null;
       var serverNow = 0;
+      var locked = false;
+      var KEY_STORAGE = 'qimiao-remote-key';
+      var urlKey = new URLSearchParams(location.search).get('k') || '';
+      var key = urlKey;
+      try {
+        if (!key) key = localStorage.getItem(KEY_STORAGE) || '';
+        if (key) localStorage.setItem(KEY_STORAGE, key);
+      } catch (error) {}
+      // iOS "Add to Home Screen" keeps the current URL, so keep the key in it.
+      if (key && !urlKey) {
+        try {
+          history.replaceState(null, '', '/remote/?k=' + encodeURIComponent(key));
+        } catch (error) {}
+      }
+      if (key) {
+        var manifestLink = document.querySelector('link[rel="manifest"]');
+        if (manifestLink) {
+          manifestLink.setAttribute('href', '/remote/manifest.webmanifest?k=' + encodeURIComponent(key));
+        }
+      }
+      function authHeaders(extra) {
+        var headers = extra || {};
+        if (key) headers['X-Remote-Key'] = key;
+        return headers;
+      }
       var cover = document.getElementById('cover');
       var title = document.getElementById('title');
       var artists = document.getElementById('artists');
@@ -509,7 +769,9 @@ const REMOTE_PAGE_HTML = `<!doctype html>
 
       function connectEvents() {
         if (eventSource) eventSource.close();
-        eventSource = new EventSource('/remote/api/events');
+        eventSource = new EventSource(
+          '/remote/api/events' + (key ? '?k=' + encodeURIComponent(key) : '')
+        );
         eventSource.addEventListener('state', function (event) {
           try {
             var payload = JSON.parse(event.data);
@@ -523,7 +785,57 @@ const REMOTE_PAGE_HTML = `<!doctype html>
         eventSource.onerror = function () {
           status.textContent = '等待桌面播放器';
           status.classList.remove('is-live');
+          // EventSource cannot see the status code; ask whether the key is
+          // still valid (it changes when the desktop resets pairing).
+          checkAccess();
         };
+      }
+
+      function showLocked(reason) {
+        locked = true;
+        if (eventSource) {
+          eventSource.close();
+          eventSource = null;
+        }
+        var disabled = reason === 'disabled';
+        status.textContent = disabled ? '遥控已关闭' : '需要配对';
+        status.classList.remove('is-live');
+        title.textContent = disabled ? '电脑端已关闭手机遥控' : '请重新扫码配对';
+        artists.textContent = disabled
+          ? '在电脑的「设置 → 手机遥控」中重新开启'
+          : '在电脑的「设置 → 手机遥控」中扫描二维码';
+        album.textContent = '';
+        cover.hidden = true;
+        lastCover = '';
+      }
+
+      async function checkAccess() {
+        try {
+          var response = await fetch('/remote/api/state', {
+            headers: authHeaders(),
+            cache: 'no-store',
+          });
+          if (response.status === 401) {
+            showLocked('pairing');
+            return false;
+          }
+          if (response.status === 403) {
+            showLocked('disabled');
+            return false;
+          }
+          if (response.ok) {
+            var payload = await response.json();
+            locked = false;
+            render(payload.data, payload.now);
+          }
+        } catch (error) {
+          // Desktop asleep or off the network: EventSource keeps retrying.
+        }
+        return true;
+      }
+
+      async function start() {
+        if (await checkAccess()) connectEvents();
       }
 
       async function command(action, value) {
@@ -532,10 +844,11 @@ const REMOTE_PAGE_HTML = `<!doctype html>
           if (value !== undefined) body.value = value;
           var response = await fetch('/remote/api/command', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify(body),
           });
           await response.text();
+          if (response.status === 401 || response.status === 403) checkAccess();
         } catch (error) {}
       }
 
@@ -590,15 +903,14 @@ const REMOTE_PAGE_HTML = `<!doctype html>
       document.addEventListener('visibilitychange', function () {
         if (
           document.visibilityState === 'visible' &&
-          eventSource &&
-          eventSource.readyState === 2
+          (locked || !eventSource || eventSource.readyState === 2)
         ) {
-          connectEvents();
+          start();
         }
       });
       setRangeFill(seek);
       setRangeFill(volume);
-      connectEvents();
+      start();
       window.addEventListener('pagehide', function () {
         if (eventSource) eventSource.close();
       });

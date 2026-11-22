@@ -12,7 +12,8 @@ import {
   signIn as signInApi,
 } from '../api'
 import { toast } from '../lib/toast'
-import { clearApiCache } from '../lib/http'
+import { ApiError, clearApiCache } from '../lib/http'
+import { isNetworkFailure } from '../lib/networkStatus'
 import {
   clearLoginCookie,
   fetchGuestCookie,
@@ -72,6 +73,50 @@ function isAnonymousAccount(
   return account.anonimousUser === true || account.type === 1000
 }
 
+/**
+ * The API could not be reached (offline, request timeout, the desktop API
+ * still booting, upstream 5xx). That says nothing about the login itself.
+ */
+function isTransientFailure(error: unknown) {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return true
+  // initSession passes no caller signal, so an abort here is the request timeout.
+  if (error instanceof DOMException && error.name === 'AbortError') return true
+  if (isNetworkFailure(error)) return true
+  return error instanceof ApiError && error.status >= 500
+}
+
+/** Back-off for re-checking the session after an offline launch. */
+const SESSION_RETRY_DELAYS = [5_000, 15_000, 30_000, 60_000]
+let sessionRetryTimer: number | undefined
+let sessionRetryAttempt = 0
+let removeOnlineRetry: (() => void) | null = null
+let sessionInit: Promise<void> | null = null
+
+function cancelSessionRetry(resetBackoff = true) {
+  if (sessionRetryTimer !== undefined) {
+    window.clearTimeout(sessionRetryTimer)
+    sessionRetryTimer = undefined
+  }
+  removeOnlineRetry?.()
+  removeOnlineRetry = null
+  if (resetBackoff) sessionRetryAttempt = 0
+}
+
+/** Retry on the next `online` event or after the back-off, whichever is first. */
+function scheduleSessionRetry(run: () => void) {
+  cancelSessionRetry(false)
+  const delay =
+    SESSION_RETRY_DELAYS[Math.min(sessionRetryAttempt, SESSION_RETRY_DELAYS.length - 1)]
+  sessionRetryAttempt += 1
+  const retry = () => {
+    cancelSessionRetry(false)
+    run()
+  }
+  sessionRetryTimer = window.setTimeout(retry, delay)
+  window.addEventListener('online', retry, { once: true })
+  removeOnlineRetry = () => window.removeEventListener('online', retry)
+}
+
 export const useUserStore = create<UserState>()(
   persist(
     (set, get) => ({
@@ -85,7 +130,15 @@ export const useUserStore = create<UserState>()(
       collectedPlaylists: [],
       searchHistory: [],
 
-      async initSession() {
+      initSession() {
+        // AppShell, the online listener and the retry timer may overlap.
+        if (sessionInit) return sessionInit
+        sessionInit = runInitSession().finally(() => {
+          sessionInit = null
+        })
+        return sessionInit
+
+        async function runInitSession() {
         try {
           const hadLoginCookie = Boolean(getLoginCookie())
           if (!hadLoginCookie) await fetchGuestCookie()
@@ -102,6 +155,8 @@ export const useUserStore = create<UserState>()(
             }
           }
 
+          // The API answered: whatever it said, offline retries are over.
+          cancelSessionRetry()
           const uid = account?.id
           if (uid && !isAnonymousAccount(account)) {
             set({ isLogin: true })
@@ -134,7 +189,15 @@ export const useUserStore = create<UserState>()(
           // here we only cover the "cookie vanished but profile remained" case.
           if (wasLoggedIn && !hadLoginCookie)
             toast.warning(i18n._(msg`登录状态已失效，请重新登录`))
-        } catch {
+        } catch (error) {
+          // Launching offline (or before the desktop API is up) is not a
+          // logout: keep the persisted profile and likes, and check the
+          // session again once the network is back. The network toast already
+          // tells the user what is going on.
+          if (getLoginCookie() && isTransientFailure(error)) {
+            scheduleSessionRetry(() => void get().initSession())
+            return
+          }
           set({
             isLogin: false,
             profile: null,
@@ -146,6 +209,7 @@ export const useUserStore = create<UserState>()(
           })
         } finally {
           set({ initialized: true })
+        }
         }
       },
 
@@ -192,6 +256,7 @@ export const useUserStore = create<UserState>()(
       },
 
       setProfile(profile, level) {
+        cancelSessionRetry()
         set((state) => ({ profile, level: level ?? state.level, isLogin: true }))
       },
 
@@ -210,6 +275,7 @@ export const useUserStore = create<UserState>()(
       },
 
       async logout() {
+        cancelSessionRetry()
         try {
           await logoutApi()
         } catch {
@@ -304,6 +370,7 @@ export const useUserStore = create<UserState>()(
 // The HTTP layer falls back to a guest cookie when /login/refresh fails; make
 // sure the UI stops showing the stale profile as if it were still signed in.
 onLoginExpired(() => {
+  cancelSessionRetry()
   // The session may have expired during the periodic cookie refresh, not just
   // while a request was in flight; never keep serving the previous account's
   // cached reads.

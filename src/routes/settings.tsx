@@ -48,6 +48,7 @@ import {
   type SettingsTab,
 } from '../components/settings/SettingsNav'
 import { PlayerStylePicker } from '../components/settings/PlayerStylePicker'
+import { RemoteControlCard } from '../components/settings/RemoteControlCard'
 import {
   clearAudioCache,
   downloadCachedAudio,
@@ -1318,6 +1319,9 @@ function SettingsPage() {
             </p>
           </section>
         ) : null}
+
+        {/* Electrobun only: the Tauri shell has its own API and bridge. */}
+        {desktop && import.meta.env.MODE !== 'tauri' ? <RemoteControlCard /> : null}
 
         <section className="apple-card overflow-hidden" data-settings-section="cache">
           <div className="flex items-center justify-between gap-3 border-b border-black/6 px-6 py-4">

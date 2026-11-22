@@ -57,6 +57,8 @@ import { toast } from '../../lib/toast'
 const CROSSFADE_MS = 320
 /** Never leave the previous track playing indefinitely while a source loads. */
 const CROSSFADE_HANDOFF_MS = 600
+/** Stop after this many consecutive tracks fail even after a URL refresh. */
+const MAX_ERROR_SKIPS = 5
 
 /** NetEase's audio CDN sends CORS headers, so captureStream can read it. */
 function canAnalyseAudio(url: string) {
@@ -96,6 +98,8 @@ export function PlayerBar() {
   const normalizationGainRef = useRef(1)
   const normalizationEnabledRef = useRef(false)
   const retriedRef = useRef<number | null>(null)
+  // Consecutive error-recovery skips; reset once any track actually plays.
+  const errorSkipsRef = useRef(0)
   const lastPlayTokenRef = useRef<number | null>(null)
   const lastSongIdRef = useRef<number | null>(null)
   const lastSourceReloadTokenRef = useRef(0)
@@ -960,7 +964,7 @@ export function PlayerBar() {
 
   const sourceMatches =
     Boolean(audioUrl) && audioRef.current?.getAttribute('src') === audioUrl
-  // A trial clip is limited to freeTrialInfo.end seconds even when the media
+  // A trial clip is limited to its trial length (freeTrialInfo end - start)
   // file itself is longer; otherwise prefer the loaded media duration.
   const trialDuration =
     currentSong.trialEnd && currentSong.trialEnd > 0 ? currentSong.trialEnd * 1000 : 0
@@ -1055,6 +1059,16 @@ export function PlayerBar() {
     const ranges = audio.buffered
     if (!ranges.length || !audio.duration) return
     setBuffered((ranges.end(ranges.length - 1) / audio.duration) * 100)
+  }
+
+  /** The trial window is over: stop and explain why (see togglePlay restart). */
+  const endTrial = (audio: HTMLAudioElement) => {
+    audio.pause()
+    usePlayerStore.getState().setPlaying(false)
+    if (!trialNotifiedRef.current) {
+      trialNotifiedRef.current = true
+      toast.warning(i18n._(msg`试听结束，登录或开通会员可播放完整版`))
+    }
   }
 
   const modeIcon =
@@ -1212,22 +1226,22 @@ export function PlayerBar() {
       if (audioUrl && audio.getAttribute('src') !== audioUrl) return
       setCurrentTime(audio.currentTime)
       updateBuffered()
+      if (errorSkipsRef.current && audio.currentTime > 1) errorSkipsRef.current = 0
 
-      const trialEnd = currentSong.trialEnd
-      if (trialEnd && trialEnd > 0 && audio.currentTime >= trialEnd) {
-        audio.pause()
-        usePlayerStore.getState().setPlaying(false)
-        if (!trialNotifiedRef.current) {
-          trialNotifiedRef.current = true
-          toast.warning(i18n._(msg`试听结束，登录或开通会员可播放完整版`))
-        }
+      const trialEnd = currentSong.trialEnd ?? 0
+      const isTrial = trialEnd > 0
+      if (isTrial && audio.currentTime >= trialEnd) {
+        endTrial(audio)
         return
       }
 
       // Start the next track just before the current one ends so the two
       // elements can overlap. Without this, `ended` only fires after the audio
       // has stopped, which guarantees a gap even with a crossfade configured.
+      // A trial clip ends at the trial limit instead of rolling into the next
+      // track (the clip file is about as long as the trial itself).
       if (
+        !isTrial &&
         mode !== 'singleLoop' &&
         usePlayerStore.getState().playing &&
         !switchingRef.current &&
@@ -1250,6 +1264,11 @@ export function PlayerBar() {
       // The old track ending while the next one is still resolving must not
       // trigger another skip.
       if (switchingRef.current) return
+      // The clip file can be a few ms shorter than the reported trial length.
+      if ((currentSong.trialEnd ?? 0) > 0) {
+        endTrial(event.currentTarget)
+        return
+      }
       if (mode === 'singleLoop') {
         const audio = event.currentTarget
         setCurrentTime(0)
@@ -1282,7 +1301,15 @@ export function PlayerBar() {
       }
       if (retriedRef.current === currentSong.id) {
         // Recovery skip: stop at the end in sequential mode instead of looping
-        // through a queue whose sources are all broken.
+        // through a queue whose sources are all broken. Random / single-loop
+        // modes never reach an "end", so cap consecutive skips as well.
+        errorSkipsRef.current += 1
+        if (errorSkipsRef.current >= Math.min(MAX_ERROR_SKIPS, queue.length)) {
+          errorSkipsRef.current = 0
+          usePlayerStore.getState().setPlaying(false)
+          toast.warning(i18n._(msg`连续多首歌曲无法播放，已暂停播放`))
+          return
+        }
         void next({ auto: true })
         return
       }

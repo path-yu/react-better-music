@@ -132,8 +132,14 @@ export function AppShell({ children }: { children: ReactNode }) {
       void import('../player/QueuePanel')
       void import('./LoginModal')
     }
-    const id = window.requestIdleCallback(preload, { timeout: 2500 })
-    return () => window.cancelIdleCallback(id)
+    // Safari (web build) has no requestIdleCallback; calling it would throw
+    // and take the whole shell down.
+    if (typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(preload, { timeout: 2500 })
+      return () => window.cancelIdleCallback(id)
+    }
+    const timer = window.setTimeout(preload, 1500)
+    return () => window.clearTimeout(timer)
   }, [])
 
   // Desktop lockdown. The main process disables WebView2 DevTools for the next
