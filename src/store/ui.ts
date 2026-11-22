@@ -26,6 +26,8 @@ interface UiState {
   sidebarCollapsed: boolean
   /** Collapse to the icon rail while the window is 768–1023px wide. */
   sidebarAutoCollapse: boolean
+  /** Sidebar playlist groups the user folded (local, created, collected…). */
+  sidebarCollapsedGroups: string[]
   theme: Theme
   /** Accent + surface palette; works in both light and dark themes. */
   palette: Palette
@@ -37,6 +39,7 @@ interface UiState {
   closeSidebar: () => void
   setSidebarCollapsed: (collapsed: boolean) => void
   setSidebarAutoCollapse: (enabled: boolean) => void
+  toggleSidebarGroup: (group: string) => void
   setTheme: (theme: Theme) => void
   toggleTheme: () => void
   setPalette: (palette: Palette) => void
@@ -50,6 +53,7 @@ export const useUiStore = create<UiState>()(
       sidebarOpen: false,
       sidebarCollapsed: false,
       sidebarAutoCollapse: true,
+      sidebarCollapsedGroups: [],
       theme: 'light',
       palette: 'ocean',
       openLogin: () => set({ loginOpen: true }),
@@ -60,6 +64,12 @@ export const useUiStore = create<UiState>()(
       closeSidebar: () => set({ sidebarOpen: false }),
       setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
       setSidebarAutoCollapse: (sidebarAutoCollapse) => set({ sidebarAutoCollapse }),
+      toggleSidebarGroup: (group) =>
+        set((state) => ({
+          sidebarCollapsedGroups: state.sidebarCollapsedGroups.includes(group)
+            ? state.sidebarCollapsedGroups.filter((item) => item !== group)
+            : [...state.sidebarCollapsedGroups, group],
+        })),
       setTheme: (theme) => set({ theme }),
       toggleTheme: () => set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
       setPalette: (palette) => set({ palette }),
@@ -71,6 +81,7 @@ export const useUiStore = create<UiState>()(
         palette: state.palette,
         sidebarCollapsed: state.sidebarCollapsed,
         sidebarAutoCollapse: state.sidebarAutoCollapse,
+        sidebarCollapsedGroups: state.sidebarCollapsedGroups,
       }),
     },
   ),

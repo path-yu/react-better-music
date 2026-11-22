@@ -20,7 +20,7 @@ const TITLES: Array<[string, MessageDescriptor]> = [
   ['/songlists/', msg`歌单`],
   ['/songlists', msg`推荐歌单`],
   ['/latest-music', msg`最新音乐`],
-  ['/latest-mv', msg`最新MV`],
+  ['/latest-mv', msg`最新 MV`],
   ['/mv/', msg`MV`],
   ['/search', msg`搜索`],
   ['/profile', msg`个人信息`],

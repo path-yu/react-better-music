@@ -729,6 +729,57 @@ html.desktop .app-window {
   cursor: pointer;
 }
 
+/*
+ * darwin-ui Popover / Tooltip place themselves with an inline
+ * `transform: translateY(-100%)` (side="top"), `translateX(-50%)` (centred)
+ * etc. and animate in with framer-motion, which writes its own `transform`
+ * (`translateY(5px) scale(0.98)`, then `none`) over it. The anchor offset was
+ * lost: a "top" popover grew downward from its trigger and the viewport
+ * clamp only nudged it, so the player bar's 收藏到歌单 list ran off the bottom
+ * of the window, and centred / end-aligned popovers drifted sideways.
+ * Re-apply the anchor transform from the side/align that darwin-ui encodes in
+ * `transform-origin`. The enter animation keeps its fade; only its 5px slide
+ * and 0.98 scale are dropped.
+ */
+[data-floating-content][style*="transform-origin: left bottom;"],
+[data-floating-content][style*="transform-origin: bottom left;"] {
+  transform: translateY(-100%) !important;
+}
+
+[data-floating-content][style*="transform-origin: right bottom;"],
+[data-floating-content][style*="transform-origin: bottom right;"] {
+  transform: translate(-100%, -100%) !important;
+}
+
+[data-floating-content][style*="transform-origin: center bottom;"],
+[data-floating-content][style*="transform-origin: bottom center;"],
+[data-floating-content][style*="transform-origin: bottom;"] {
+  transform: translate(-50%, -100%) !important;
+}
+
+[data-floating-content][style*="transform-origin: right top;"],
+[data-floating-content][style*="transform-origin: top right;"] {
+  transform: translateX(-100%) !important;
+}
+
+[data-floating-content][style*="transform-origin: center top;"],
+[data-floating-content][style*="transform-origin: top center;"],
+[data-floating-content][style*="transform-origin: top;"] {
+  transform: translateX(-50%) !important;
+}
+
+[data-floating-content][style*="transform-origin: right center;"],
+[data-floating-content][style*="transform-origin: center right;"],
+[data-floating-content][style*="transform-origin: right;"] {
+  transform: translate(-100%, -50%) !important;
+}
+
+[data-floating-content][style*="transform-origin: left center;"],
+[data-floating-content][style*="transform-origin: center left;"],
+[data-floating-content][style*="transform-origin: left;"] {
+  transform: translateY(-50%) !important;
+}
+
 /* Tailwind's preflight `img, video { height: auto }` sits in the same `base`
    layer as the Video.js skin and loads after it, so it beat the skin's
    `:where(.media-skin) video { height: 100% }`. The video then sized from its
@@ -3821,6 +3872,152 @@ html.desktop .app-window {
     rgba(255, 255, 255, 0.55),
     transparent
   );
+}
+
+/*
+ * MV detail page: an immersive control bar drawn on the video instead of the
+ * skin's floating pill (a white frosted pill in light mode that washed out
+ * over bright frames and read as a separate card). A dark scrim fades up
+ * from the bottom; the time slider runs edge to edge on its own row and the
+ * buttons sit below it: play · volume on the left, settings · cast · PiP ·
+ * fullscreen on the right. White on the scrim in both themes. Only colours
+ * and layout change: Video.js keeps its buttons, keyboard and menus.
+ */
+/* Menus, tooltips and HUD chips over the video follow the dark bar in both
+   themes; the light-theme remap left white text on a light glass menu. */
+.mv-video-shell .media-skin,
+[data-theme='light'] .mv-video-shell .media-skin {
+  --media-popover: rgba(30, 30, 32, 0.84);
+  --media-popover-foreground: #ffffff;
+  --media-backdrop: rgba(30, 30, 32, 0.84);
+  --media-muted: rgba(255, 255, 255, 0.12);
+  --media-muted-foreground: rgba(255, 255, 255, 0.6);
+  --media-border: rgba(255, 255, 255, 0.1);
+  --media-shadow-surface:
+    0 10px 30px -10px rgba(0, 0, 0, 0.6), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --media-shadow-surface-inset: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --media-text-shadow-dialog: none;
+}
+
+.mv-video-shell .media-popup-surface,
+.mv-video-shell [role='menu'] {
+  text-shadow: none;
+}
+
+.mv-video-shell .video-controls-backdrop {
+  background-image: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.66) 0%,
+    rgba(0, 0, 0, 0.32) 20%,
+    rgba(0, 0, 0, 0) 42%
+  );
+}
+
+.mv-video-shell .video-controls-content {
+  --media-accent: rgba(255, 255, 255, 0.16);
+  --media-accent-foreground: #ffffff;
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 2px;
+  padding: 0 10px 8px;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+.mv-video-shell .video-controls-content::after {
+  display: none;
+}
+
+/* Below 32rem the skin splits the controls into two pills (bottom and
+   top-right); keep the single bottom bar at every width. */
+.mv-video-shell .video-controls-primary {
+  display: contents;
+}
+
+.mv-video-shell .video-controls-secondary {
+  position: static;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  translate: none;
+  scale: none;
+}
+
+.mv-video-shell .video-controls-primary::after,
+.mv-video-shell .video-controls-secondary::after {
+  display: none;
+}
+
+/* Row 1: elapsed · slider · remaining, full width. */
+.mv-video-shell .video-time-slider-group {
+  order: -1;
+  flex: 1 0 100%;
+  gap: 10px;
+  height: 26px;
+  padding-inline: 4px;
+}
+
+.mv-video-shell .video-time-value {
+  display: block;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+/* Row 2: settings and the secondary buttons go to the right edge. */
+.mv-video-shell .video-controls-settings-button {
+  margin-left: auto;
+}
+
+.mv-video-shell .video-controls-content .media-button {
+  width: 34px;
+  height: 34px;
+  border-radius: 9999px;
+  color: rgba(255, 255, 255, 0.92);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.mv-video-shell .video-controls-content .media-button:hover {
+  background-color: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+.mv-video-shell .video-controls-content .media-button:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.85);
+  outline-offset: -2px;
+}
+
+/* Thin white line like Apple TV / QuickTime; it thickens while hovered. */
+.mv-video-shell .media-time-slider .media-slider-track {
+  background-color: rgba(255, 255, 255, 0.26);
+  border-radius: 9999px;
+}
+
+.mv-video-shell .media-time-slider .media-slider-buffer {
+  background-color: rgba(255, 255, 255, 0.42);
+}
+
+.mv-video-shell .media-time-slider .media-slider-fill {
+  background-color: #ffffff;
+}
+
+.mv-video-shell .media-time-slider-thumb {
+  background-color: #ffffff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18), 0 1px 4px rgba(0, 0, 0, 0.45);
 }
 
 /* The skin drops backdrop-filter for these preferences; stay opaque instead. */

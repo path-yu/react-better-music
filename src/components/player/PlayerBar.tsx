@@ -1419,6 +1419,17 @@ export function PlayerBar() {
     },
   }
 
+  // Video mode drives the MV element's volume instead of the audio one.
+  const currentVolume = videoActive ? videoVolume : volume
+  const volumeIcon =
+    currentVolume === 0 ? (
+      <VolumeX className="h-4 w-4" />
+    ) : currentVolume < 45 ? (
+      <Volume1 className="h-4 w-4" />
+    ) : (
+      <Volume2 className="h-4 w-4" />
+    )
+
   return (
     <div
       className={cn(
@@ -1526,7 +1537,9 @@ export function PlayerBar() {
           tabIndex={0}
           data-player-open-target
           aria-label={i18n._(msg`打开播放页`)}
-          className="min-w-0 flex-1 cursor-pointer"
+          // Not flex-1: the like / add-to-playlist buttons follow the title
+          // instead of sitting at the far edge of the column.
+          className="min-w-0 cursor-pointer"
           onClick={(event) => {
             // Do not let nested controls open the immersive player.
             if ((event.target as HTMLElement).closest('button')) return
@@ -1576,10 +1589,11 @@ export function PlayerBar() {
             )}
           </p>
         </div>
-      </div>
 
-      <div className="flex flex-col items-center max-md:items-end">
-        <div className="flex items-center gap-5 max-md:gap-3">
+        {/* Song actions live with the song (Apple Music / Spotify), not in
+            the transport. Hidden on mobile like before; the song page has
+            the like button there. */}
+        <div className="flex shrink-0 items-center gap-0.5 max-md:hidden">
           <button
             type="button"
             aria-label={liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)}
@@ -1589,19 +1603,25 @@ export function PlayerBar() {
               if (isLogin) void likeSong(currentSong.id, !liked)
               else void toggleLocalFavorite(currentSong)
             }}
-            className="pressable flex h-8 w-8 items-center justify-center transition-colors max-md:hidden"
+            className="pressable flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-black/5"
           >
             <Heart
               className={cn(
                 'h-4 w-4 transition-colors',
-                liked
-                  ? 'fill-love text-love'
-                  : showNowPlaying
-                    ? 'text-white/35 hover:text-white/70'
-                    : 'text-ink-4 hover:text-ink-2',
+                liked ? 'fill-love text-love' : 'text-ink-4 hover:text-ink-2',
               )}
             />
           </button>
+          <PlaylistPicker
+            song={currentSong}
+            tint={playerMenuTint}
+            buttonClassName="flex h-7 w-7 items-center justify-center rounded-full hover:bg-black/5"
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-col items-center max-md:items-end">
+        <div className="flex items-center gap-5 max-md:gap-3">
           <button
             type="button"
             title={
@@ -1684,14 +1704,6 @@ export function PlayerBar() {
           >
             {modeIcon}
           </button>
-          <button
-            type="button"
-            onClick={() => toggleQueue()}
-            className="pressable flex h-8 w-8 items-center justify-center text-ink-4 transition-colors hover:text-ink-2 max-md:hidden"
-            title={i18n._(msg`播放列表`)}
-          >
-            <ListMusic className="h-4 w-4" />
-          </button>
         </div>
 
         {!videoActive ? (
@@ -1707,12 +1719,51 @@ export function PlayerBar() {
       </div>
 
       <div className="flex items-center justify-end gap-2 max-md:hidden">
+        <button
+          type="button"
+          onClick={() => toggleQueue()}
+          aria-label={i18n._(msg`播放列表`)}
+          aria-pressed={showQueue}
+          title={i18n._(msg`播放列表`)}
+          className={cn(
+            'pressable flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-black/5',
+            showQueue ? 'text-accent' : 'text-ink-3 hover:text-ink-2',
+          )}
+        >
+          <ListMusic className="h-4 w-4" />
+        </button>
+
+        {/* Wide bars show the level inline (click the speaker to mute);
+            narrower ones keep the vertical popover. */}
+        <div className="hidden items-center gap-1 lg:flex">
+          <button
+            type="button"
+            onClick={toggleMute}
+            aria-label={currentVolume === 0 ? i18n._(msg`取消静音`) : i18n._(msg`静音`)}
+            title={i18n._(msg`静音（M）`)}
+            className="pressable flex h-7 w-7 items-center justify-center rounded-full text-ink-3 transition-colors hover:bg-black/5 hover:text-ink-2"
+          >
+            {volumeIcon}
+          </button>
+          {/* ProgressSlider is w-full; the wrapper sets the 96px width. */}
+          <div className="w-24 shrink-0">
+            <ProgressSlider
+              value={currentVolume}
+              onChange={(value) =>
+                (videoActive ? setVideoVolume : setVolume)(Math.round(value))
+              }
+              ariaLabel={i18n._(msg`音量`)}
+              valueText={`${currentVolume}%`}
+            />
+          </div>
+        </div>
+
         <Popover>
           <PopoverTrigger asChild>
             <button
               type="button"
               className={cn(
-                'pressable flex h-7 w-7 items-center justify-center rounded-full transition-colors max-md:h-10 max-md:w-10',
+                'pressable flex h-7 w-7 items-center justify-center rounded-full transition-colors max-md:h-10 max-md:w-10 lg:hidden',
                 showNowPlaying
                   ? 'text-white/55 hover:bg-white/10 hover:text-white'
                   : 'text-ink-3 hover:bg-black/5 hover:text-ink-2',
@@ -1720,13 +1771,7 @@ export function PlayerBar() {
               aria-label={i18n._(msg`音量`)}
               title={i18n._(msg`音量（Alt + ↑ / ↓）`)}
             >
-              {volume === 0 ? (
-                <VolumeX className="h-4 w-4" />
-              ) : volume < 45 ? (
-                <Volume1 className="h-4 w-4" />
-              ) : (
-                <Volume2 className="h-4 w-4" />
-              )}
+              {volumeIcon}
             </button>
           </PopoverTrigger>
           <PopoverContent
@@ -1742,20 +1787,11 @@ export function PlayerBar() {
                   onChange={videoActive ? setVideoVolume : setVolume}
                 />
                 <span className="text-[11px] tabular-nums text-ink-4">
-                  {volume}
+                  {currentVolume}
                 </span>
               </div>
             </PopoverContent>
         </Popover>
-
-        <PlaylistPicker
-          song={currentSong}
-          tint={playerMenuTint}
-          buttonClassName={cn(
-            'flex h-7 w-7 items-center justify-center rounded-full',
-            showNowPlaying ? 'hover:bg-white/10' : 'hover:bg-black/5',
-          )}
-        />
 
         <Popover open={moreOpen} onOpenChange={setMoreOpen}>
           <PopoverTrigger asChild>

@@ -3750,3 +3750,39 @@ msgstr "默认安装到本地数据目录下的 qimiao-spleeter-runtime（使用
 #: src/routes/songlists/index.tsx:206
 msgid "默认排序"
 msgstr "默认排序"
+
+#: src/components/player/PlayerBar.tsx:1760
+msgid "静音"
+msgstr "静音"
+
+#: src/components/player/PlayerBar.tsx:1760
+msgid "取消静音"
+msgstr "取消静音"
+
+#: src/components/player/PlayerBar.tsx:1760
+msgid "静音（M）"
+msgstr "静音（M）"
+
+#: src/components/layout/Sidebar.tsx:1
+msgid "取消收藏"
+msgstr "取消收藏"
+
+#: src/components/layout/Sidebar.tsx:1
+msgid "新建或导入歌单"
+msgstr "新建或导入歌单"
+
+#: src/components/layout/Sidebar.tsx:1
+msgid "新建歌单"
+msgstr "新建歌单"
+
+#: src/components/layout/Sidebar.tsx:1
+msgid "登录同步网易云歌单"
+msgstr "登录同步网易云歌单"
+
+#: src/components/layout/Sidebar.tsx:1
+msgid "重命名"
+msgstr "重命名"
+
+#: src/components/layout/Sidebar.tsx:1
+msgid "确定删除「{0}」吗？此操作无法撤销。"
+msgstr "确定删除「{0}」吗？此操作无法撤销。"

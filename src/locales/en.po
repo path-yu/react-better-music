@@ -3750,3 +3750,39 @@ msgstr "Installs to qimiao-spleeter-runtime under local app data by default (a s
 #: src/routes/songlists/index.tsx:206
 msgid "默认排序"
 msgstr "Default order"
+
+#: src/components/player/PlayerBar.tsx:1760
+msgid "静音"
+msgstr "Mute"
+
+#: src/components/player/PlayerBar.tsx:1760
+msgid "取消静音"
+msgstr "Unmute"
+
+#: src/components/player/PlayerBar.tsx:1760
+msgid "静音（M）"
+msgstr "Mute (M)"
+
+#: src/components/layout/Sidebar.tsx:1
+msgid "取消收藏"
+msgstr "Remove from library"
+
+#: src/components/layout/Sidebar.tsx:1
+msgid "新建或导入歌单"
+msgstr "New or import playlist"
+
+#: src/components/layout/Sidebar.tsx:1
+msgid "新建歌单"
+msgstr "New playlist"
+
+#: src/components/layout/Sidebar.tsx:1
+msgid "登录同步网易云歌单"
+msgstr "Sign in to sync NetEase playlists"
+
+#: src/components/layout/Sidebar.tsx:1
+msgid "重命名"
+msgstr "Rename"
+
+#: src/components/layout/Sidebar.tsx:1
+msgid "确定删除「{0}」吗？此操作无法撤销。"
+msgstr "Delete “{0}”? This cannot be undone."
