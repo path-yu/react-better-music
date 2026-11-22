@@ -48,11 +48,12 @@ export function UserMenu() {
           <ChevronDown className="h-3 w-3 text-ink-4" />
         </button>
       </PopoverTrigger>
-      {/* darwin-ui's motion animation overrides the translateX(-100%) used by
-          align="end", so shift the fixed-width panel left with a margin. */}
+      {/* Keep the panel anchored to the trigger's left edge. `align="end"`
+          relies on translateX(-100%), which darwin-ui's open animation
+          replaces, leaving the panel far to the left. */}
       <PopoverContent
         side="bottom"
-        align="end"
+        align="start"
         sideOffset={10}
         glass
         className="user-menu-popover p-0"

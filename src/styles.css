@@ -3824,14 +3824,9 @@ a.song-tag--outline:focus-visible {
 
 /* ---------- popovers ---------- */
 
-/*
- * darwin-ui's open animation replaces the `translateX(-100%)` that `align="end"`
- * uses, so the user menu is pulled left with a margin instead. Both the width
- * and the shift follow the viewport, so split/narrow windows never clip it.
- */
+/* The menu uses align="start" so no translateX correction is needed. */
 .user-menu-popover {
   width: min(290px, calc(100vw - 24px));
-  margin-left: calc(min(290px, calc(100vw - 24px)) * -1);
 }
 
 /* ---------- macOS-style sliders (seek bar / volume) ---------- */

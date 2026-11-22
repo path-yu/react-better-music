@@ -431,7 +431,7 @@ msgstr "This album has no tracks yet"
 msgid "个人信息"
 msgstr "Profile"
 
-#: src/components/layout/UserMenu.tsx:116
+#: src/components/layout/UserMenu.tsx:117
 msgid "个人信息设置"
 msgstr "Profile settings"
 
@@ -494,7 +494,7 @@ msgstr "Today · {0} tracks"
 msgid "今日为你推荐"
 msgstr "Recommended for You Today"
 
-#: src/components/layout/UserMenu.tsx:102
+#: src/components/layout/UserMenu.tsx:103
 msgid "今日已签到"
 msgstr "Checked in today"
 
@@ -672,7 +672,7 @@ msgstr "Found {userTotal} users"
 msgid "共找到 {videoTotal} 个视频"
 msgstr "Found {videoTotal} videos"
 
-#: src/components/layout/UserMenu.tsx:83
+#: src/components/layout/UserMenu.tsx:84
 #: src/routes/users/$id.tsx:234
 msgid "关注"
 msgstr "Following"
@@ -947,7 +947,7 @@ msgstr "Failed to load more"
 msgid "加载更多评论失败"
 msgstr "Failed to load more comments"
 
-#: src/components/layout/UserMenu.tsx:82
+#: src/components/layout/UserMenu.tsx:83
 msgid "动态"
 msgstr "Posts"
 
@@ -3143,7 +3143,7 @@ msgstr "Third-party source"
 msgid "等待扫码"
 msgstr "Waiting for scan"
 
-#: src/components/layout/UserMenu.tsx:102
+#: src/components/layout/UserMenu.tsx:103
 msgid "签到"
 msgstr "Check in"
 
@@ -3168,7 +3168,7 @@ msgstr "Appearance, playback, cache and desktop features"
 msgid "类型"
 msgstr "Type"
 
-#: src/components/layout/UserMenu.tsx:84
+#: src/components/layout/UserMenu.tsx:85
 #: src/routes/users/$id.tsx:240
 msgid "粉丝"
 msgstr "Followers"
@@ -3597,7 +3597,7 @@ msgstr "Mini player"
 msgid "迷你播放器暂不可用"
 msgstr "Mini player is unavailable"
 
-#: src/components/layout/UserMenu.tsx:127
+#: src/components/layout/UserMenu.tsx:128
 msgid "退出登录"
 msgstr "Sign out"
 
