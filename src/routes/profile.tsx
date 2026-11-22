@@ -2,15 +2,18 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode 
 import { createFileRoute } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
+import { Trans } from '@lingui/react/macro'
 import { Camera, Cake, MapPin, Save, UserRound } from 'lucide-react'
 import { Avatar, Button, Input, Select, Textarea } from '@pikoloo/darwin-ui'
 import { EmptyState } from '../components/common/EmptyState'
+import { UnsavedChangesDialog } from '../components/common/UnsavedChangesDialog'
 import { fetchUserDetail, updateUserAvatar, updateUserInfo } from '../api'
 import { useUserStore } from '../store/user'
 import { useUiStore } from '../store/ui'
 import { getImageSize } from '../lib/image'
 import { toast } from '../lib/toast'
 import { useDocumentTitle } from '../lib/title'
+import { useUnsavedChangesGuard } from '../lib/useUnsavedChangesGuard'
 import regionJson from '../data/region.json'
 import type { UserProfile } from '../types'
 
@@ -32,20 +35,41 @@ interface RegionGroup {
 
 const regions = regionJson as unknown as RegionGroup[]
 
-const yearOptions = Array.from({ length: new Date().getFullYear() - 1919 }, (_, index) => {
-  const value = new Date().getFullYear() - index
-  return { value: String(value), label: `${value}年` }
-})
-const monthOptions = Array.from({ length: 12 }, (_, index) => ({
-  value: String(index + 1),
-  label: `${index + 1}月`,
-}))
+const YEARS = Array.from(
+  { length: new Date().getFullYear() - 1919 },
+  (_, index) => new Date().getFullYear() - index,
+)
 const genderOptions = [
-  { value: '0', label: '保密' },
-  { value: '1', label: '男' },
-  { value: '2', label: '女' },
+  { value: '0', label: msg`保密` },
+  { value: '1', label: msg`男` },
+  { value: '2', label: msg`女` },
 ]
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024
+
+interface ProfileForm {
+  nickname: string
+  signature: string
+  gender: string
+  year: string
+  month: string
+  day: string
+  province: string
+  city: string
+}
+
+/** Comparable snapshot of the editable fields (the avatar uploads on its own). */
+function profileFormKey(form: ProfileForm) {
+  return JSON.stringify([
+    form.nickname.trim(),
+    form.signature,
+    form.gender,
+    form.year,
+    form.month,
+    form.day,
+    form.province,
+    form.city,
+  ])
+}
 
 function daysInMonth(month: number, year: number) {
   if (month === 2) return year % 4 === 0 ? 29 : 28
@@ -84,6 +108,8 @@ function ProfilePage() {
   const [city, setCity] = useState('')
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  /** Form state as loaded or last saved; null until the profile is hydrated. */
+  const [savedKey, setSavedKey] = useState<string | null>(null)
   useDocumentTitle(i18n._(msg`个人信息`))
 
   useEffect(() => {
@@ -100,17 +126,31 @@ function ProfilePage() {
     setGender(String(profile.gender ?? 0))
     setAvatarUrl(profile.avatarUrl ?? '')
     const date = profile.birthday ? new Date(profile.birthday) : null
-    if (date && !Number.isNaN(date.getTime())) {
-      setYear(String(date.getFullYear()))
-      setMonth(String(date.getMonth() + 1))
-      setDay(String(date.getDate()))
-    }
+    const validDate = date && !Number.isNaN(date.getTime()) ? date : null
+    const nextYear = validDate ? String(validDate.getFullYear()) : '2000'
+    const nextMonth = validDate ? String(validDate.getMonth() + 1) : '1'
+    const nextDay = validDate ? String(validDate.getDate()) : '1'
+    setYear(nextYear)
+    setMonth(nextMonth)
+    setDay(nextDay)
     const region = findRegionByProvince(profile.province)
     setProvince(String(region.value))
     const nextCity =
       region.cityList.find((item) => item.value === profile.city)?.value ??
       region.cityList[0]?.value
     setCity(String(nextCity ?? ''))
+    setSavedKey(
+      profileFormKey({
+        nickname: profile.nickname ?? '',
+        signature: profile.signature ?? '',
+        gender: String(profile.gender ?? 0),
+        year: nextYear,
+        month: nextMonth,
+        day: nextDay,
+        province: String(region.value),
+        city: String(nextCity ?? ''),
+      }),
+    )
   }, [profile])
 
   const activeRegion = useMemo(
@@ -118,13 +158,26 @@ function ProfilePage() {
     [province],
   )
 
+  const yearOptions = useMemo(
+    () =>
+      YEARS.map((value) => ({ value: String(value), label: i18n._(msg`${value}年`) })),
+    [i18n],
+  )
+  // Month names come from Intl: 「1月」 in Chinese, "January" in English.
+  const monthOptions = useMemo(() => {
+    const format = new Intl.DateTimeFormat(i18n.locale, { month: 'long' })
+    return Array.from({ length: 12 }, (_, index) => ({
+      value: String(index + 1),
+      label: format.format(new Date(2000, index, 1)),
+    }))
+  }, [i18n.locale])
   const dayOptions = useMemo(() => {
     const total = daysInMonth(Number(month), Number(year))
-    return Array.from({ length: total }, (_, index) => ({
-      value: String(index + 1),
-      label: `${index + 1}日`,
-    }))
-  }, [month, year])
+    return Array.from({ length: total }, (_, index) => {
+      const dayNumber = index + 1
+      return { value: String(dayNumber), label: i18n._(msg`${dayNumber}日`) }
+    })
+  }, [month, year, i18n])
 
   const cityOptions = useMemo(
     () =>
@@ -140,16 +193,31 @@ function ProfilePage() {
     [],
   )
 
+  // Must run before the early return below (rules of hooks).
+  const formKey = profileFormKey({
+    nickname,
+    signature,
+    gender,
+    year,
+    month,
+    day,
+    province,
+    city,
+  })
+  const guard = useUnsavedChangesGuard(
+    Boolean(isLogin && profile && savedKey !== null && savedKey !== formKey),
+  )
+
   if (!isLogin || !profile) {
     return (
       <div className="px-8 pt-10">
         <EmptyState
           icon={<UserRound className="h-6 w-6" />}
           title={i18n._(msg`登录后编辑个人信息`)}
-          description="扫码登录网易云账号即可同步头像与资料"
+          description={i18n._(msg`扫码登录网易云账号即可同步头像与资料`)}
           action={
             <Button variant="primary" size="sm" className="rounded-full" onClick={openLogin}>
-              扫码登录
+              <Trans>扫码登录</Trans>
             </Button>
           }
         />
@@ -235,6 +303,7 @@ function ProfilePage() {
           gender: Number(gender),
           birthday,
         })
+        setSavedKey(formKey)
         toast.success(i18n._(msg`个人资料已更新`))
         const detail = await fetchUserDetail(hydratedProfile.userId)
         if (detail?.profile) setProfile(detail.profile, detail.level)
@@ -253,14 +322,16 @@ function ProfilePage() {
       <div>
         <h1 className="headline-lg flex items-center gap-2">
           <UserRound className="h-5 w-5 text-accent" />
-          个人信息
+          <Trans>个人信息</Trans>
         </h1>
-        <p className="mt-1.5 text-[12px] text-black/35">修改昵称、头像、性别与地区资料</p>
+        <p className="mt-1.5 text-[12px] text-black/35">
+          <Trans>修改昵称、头像、性别与地区资料</Trans>
+        </p>
       </div>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_230px]">
         <div className="apple-card space-y-5 p-6">
-          <Field label="昵称">
+          <Field label={i18n._(msg`昵称`)}>
             <Input
               value={nickname}
               onChange={(event) => setNickname(event.target.value)}
@@ -270,7 +341,7 @@ function ProfilePage() {
             />
           </Field>
 
-          <Field label="介绍">
+          <Field label={i18n._(msg`介绍`)}>
             <Textarea
               value={signature}
               onChange={(event) => setSignature(event.target.value)}
@@ -281,7 +352,7 @@ function ProfilePage() {
             />
           </Field>
 
-          <Field label="性别">
+          <Field label={i18n._(msg`性别`)}>
             <div className="flex gap-1.5">
               {genderOptions.map((option) => (
                 <button
@@ -294,13 +365,13 @@ function ProfilePage() {
                       : 'border border-black/8 bg-[#f5f5f7] text-black/50 hover:bg-[#ececf0]'
                   }`}
                 >
-                  {option.label}
+                  {i18n._(option.label)}
                 </button>
               ))}
             </div>
           </Field>
 
-          <Field label="生日" icon={<Cake className="h-3.5 w-3.5 text-black/30" />}>
+          <Field label={i18n._(msg`生日`)} icon={<Cake className="h-3.5 w-3.5 text-black/30" />}>
             <div className="grid grid-cols-3 gap-2">
               <Select
                 value={year}
@@ -324,7 +395,7 @@ function ProfilePage() {
             </div>
           </Field>
 
-          <Field label="地区" icon={<MapPin className="h-3.5 w-3.5 text-black/30" />}>
+          <Field label={i18n._(msg`地区`)} icon={<MapPin className="h-3.5 w-3.5 text-black/30" />}>
             <div className="grid grid-cols-2 gap-2">
               <Select
                 value={province}
@@ -352,7 +423,7 @@ function ProfilePage() {
               onClick={() => void handleSave()}
             >
               <Save className="mr-1.5 h-3.5 w-3.5" />
-              保存修改
+              <Trans>保存修改</Trans>
             </Button>
           </div>
         </div>
@@ -377,9 +448,9 @@ function ProfilePage() {
               <Camera className="h-4 w-4" />
             </button>
           </div>
-          <p className="mt-4 text-[13px] font-medium text-black/75">{nickname || '未设置昵称'}</p>
+          <p className="mt-4 text-[13px] font-medium text-black/75">{nickname || i18n._(msg`未设置昵称`)}</p>
           <p className="mt-1 line-clamp-2 text-center text-[11px] text-black/35">
-            {signature || '这个人很懒，什么都没写'}
+            {signature || i18n._(msg`这个人很懒，什么都没写`)}
           </p>
           <Button
             variant="secondary"
@@ -388,7 +459,7 @@ function ProfilePage() {
             loading={uploading}
             onClick={handleAvatarPick}
           >
-            更换头像
+            <Trans>更换头像</Trans>
           </Button>
           <input
             ref={fileRef}
@@ -399,6 +470,11 @@ function ProfilePage() {
           />
         </div>
       </div>
+      <UnsavedChangesDialog
+        open={guard.blocked}
+        onStay={guard.stay}
+        onLeave={guard.leave}
+      />
     </div>
   )
 }

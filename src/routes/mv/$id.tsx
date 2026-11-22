@@ -198,7 +198,7 @@ function MvDetailPage() {
             ) : null}
             <span className="flex items-center gap-1">
               <Eye className="h-3 w-3" />
-              {formatNumber(detail.playCount)} 次播放
+              <Trans>{formatNumber(detail.playCount)} 次播放</Trans>
             </span>
             {detail.artists?.length ? (
               <span>
@@ -231,7 +231,9 @@ function MvDetailPage() {
         </div>
 
         <aside className="mv-related">
-          <p className="section-title mv-related__title text-[16px]">相关推荐</p>
+          <p className="section-title mv-related__title text-[16px]">
+            <Trans>相关推荐</Trans>
+          </p>
           <div className="mv-related__list mt-3">
             {similar.slice(0, 8).map((mv) => (
               <button
@@ -257,7 +259,9 @@ function MvDetailPage() {
               </button>
             ))}
             {!similar.length ? (
-              <p className="py-6 text-center text-[11px] text-black/30">暂无相关推荐</p>
+              <p className="py-6 text-center text-[11px] text-black/30">
+                <Trans>暂无相关推荐</Trans>
+              </p>
             ) : null}
           </div>
         </aside>

@@ -64,14 +64,63 @@ export function SongContextMenu({
   const [loadingPlaylists, setLoadingPlaylists] = useState(false)
   const [busy, setBusy] = useState(false)
 
+  // Hand focus back to whatever opened the menu once it closes.
+  useEffect(() => {
+    const previous =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null
+    return () => {
+      if (previous?.isConnected) previous.focus({ preventScroll: true })
+    }
+  }, [])
+
+  // Keyboard users start on the first item of each (sub)menu.
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      menuRef.current
+        ?.querySelector<HTMLElement>('button:not(:disabled)')
+        ?.focus({ preventScroll: true })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [mode, loadingPlaylists])
+
   useEffect(() => {
     const onPointerDown = (event: PointerEvent) => {
       if (!menuRef.current?.contains(event.target as Node)) onClose()
     }
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape') {
+        onClose()
+        return
+      }
+      // Arrow keys move between items, like a native menu.
+      if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return
+      const menu = menuRef.current
+      if (!menu) return
+      const items = Array.from(
+        menu.querySelectorAll<HTMLButtonElement>('button:not(:disabled)'),
+      )
+      if (!items.length) return
+      event.preventDefault()
+      const index = items.indexOf(document.activeElement as HTMLButtonElement)
+      const next =
+        event.key === 'Home'
+          ? 0
+          : event.key === 'End'
+            ? items.length - 1
+            : event.key === 'ArrowDown'
+              ? (index + 1) % items.length
+              : index <= 0
+                ? items.length - 1
+                : index - 1
+      items[next]?.focus()
     }
-    const onScroll = () => onClose()
+    // The page scrolling closes the menu; scrolling the menu's own playlist
+    // list must not (it used to close the menu before a playlist was picked).
+    const onScroll = (event: Event) => {
+      const target = event.target
+      if (target instanceof Node && menuRef.current?.contains(target)) return
+      onClose()
+    }
     document.addEventListener('pointerdown', onPointerDown, true)
     document.addEventListener('keydown', onKeyDown)
     window.addEventListener('scroll', onScroll, true)
@@ -136,7 +185,7 @@ export function SongContextMenu({
       setPlaylists(
         choices.filter(
           (playlist) =>
-            !playlist.isMyLike && playlist.name !== '我喜欢的音乐',
+            !playlist.isMyLike,
         ),
       )
     } catch {
@@ -168,7 +217,10 @@ export function SongContextMenu({
       const response = await addSongToPlaylist(playlist.id, song.id)
       const code = response.code ?? response.body?.code ?? response.status
       if (code !== 200) {
-        toast.error(i18n._(msg`收藏失败`))
+        // NetEase answers 502 「歌单内歌曲重复」 for a track that is already there.
+        const duplicate = code === 502 || /重复/.test(response.body?.message ?? '')
+        if (duplicate) toast.info(i18n._(msg`这首歌已在该歌单中`))
+        else toast.error(i18n._(msg`收藏失败`))
         return
       }
       toast.success(

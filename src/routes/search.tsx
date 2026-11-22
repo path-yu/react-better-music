@@ -41,12 +41,18 @@ function normalizeTab(value: unknown): SearchTab {
 }
 
 export const Route = createFileRoute('/search')({
-  validateSearch: (search: Record<string, unknown>) => ({
-    keyword: typeof search.keyword === 'string' ? search.keyword : '',
-    // Keeping the tab in the URL makes browser Back restore it instead of
-    // falling back to 单曲 after visiting a video/MV page.
-    tab: normalizeTab(search.tab),
-  }),
+  validateSearch: (search: Record<string, unknown>) => {
+    const page = Math.floor(Number(search.page))
+    return {
+      keyword: typeof search.keyword === 'string' ? search.keyword : '',
+      // Keeping the tab in the URL makes browser Back restore it instead of
+      // falling back to 单曲 after visiting a video/MV page.
+      tab: normalizeTab(search.tab),
+      // Same for the page: Back from a song/album returns to page 3, not 1.
+      // Omitted for page 1 so existing links and navigations stay valid.
+      ...(page > 1 ? { page } : {}),
+    }
+  },
   component: SearchPage,
 })
 
@@ -59,14 +65,25 @@ const VIDEO_PAGE_SIZE = 20
 
 function SearchPage() {
   const { i18n } = useLingui()
-  const { keyword, tab } = Route.useSearch()
+  const { keyword, tab, page = 1 } = Route.useSearch()
   const navigate = useNavigate()
   useDocumentTitle(
     keyword.trim()
       ? i18n._(msg`搜索「${keyword.trim()}」`)
       : i18n._(msg`搜索`),
   )
-  const [page, setPage] = useState(1)
+  // The page lives in the URL. A new keyword or tab navigates without it, so
+  // the first request is already for page 1 (no extra request with the old
+  // page), and Back restores the page the user was on.
+  const setPage = useCallback(
+    (value: number) => {
+      void navigate({
+        to: '/search',
+        search: { keyword, tab, ...(value > 1 ? { page: value } : {}) },
+      })
+    },
+    [keyword, navigate, tab],
+  )
   const [songs, setSongs] = useState<Song[]>([])
   const [songTotal, setSongTotal] = useState(0)
   const [playlists, setPlaylists] = useState<Playlist[]>([])
@@ -96,7 +113,6 @@ function SearchPage() {
   }, [keyword, tab, setLastSearch])
 
   useEffect(() => {
-    setPage(1)
     setSongs([])
     setPlaylists([])
     setAlbums([])
@@ -209,7 +225,6 @@ function SearchPage() {
   const retry = () => setAttempt((value) => value + 1)
 
   const changeTab = (value: string) => {
-    setPage(1)
     void navigate({
       to: '/search',
       search: { keyword, tab: normalizeTab(value) },

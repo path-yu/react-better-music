@@ -41,9 +41,11 @@ import { i18n } from '../i18n'
 import { useSettingsStore } from './settings'
 import { useLocalLibraryStore } from './localLibrary'
 import { useVideoPlaybackStore } from './videoPlayback'
+import { PLAY_MODE_CYCLE, PLAY_MODE_LABELS } from '../lib/playMode'
 import type { Song } from '../types'
 
-export type PlayMode = 'order' | 'random' | 'singleLoop'
+/** `order` stops after the last track; `loop` wraps around to the first. */
+export type PlayMode = 'order' | 'loop' | 'random' | 'singleLoop'
 
 interface PlayerState {
   queue: Song[]
@@ -534,6 +536,44 @@ type PersistedPlayerState = Pick<
 
 const MAX_PERSISTED_QUEUE = 1000
 
+/* ------------------------- remembered playback position ------------------------ */
+
+/** Kept apart from the persisted queue: it changes every second. */
+const POSITION_KEY = 'react-music-player-position'
+const POSITION_SAVE_INTERVAL = 5_000
+
+function readSavedPosition() {
+  try {
+    const raw = localStorage.getItem(POSITION_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as { songId?: unknown; time?: unknown }
+    const songId = Number(parsed.songId)
+    const time = Number(parsed.time)
+    if (!Number.isSafeInteger(songId) || songId <= 0) return null
+    if (!Number.isFinite(time) || time < 3) return null
+    return { songId, time }
+  } catch {
+    return null
+  }
+}
+
+/** Where the current track was when the app closed; used by the first play. */
+let restoredPosition = readSavedPosition()
+
+function peekRestoredPosition(song: Song | undefined) {
+  const restored = restoredPosition
+  if (!song || !restored || restored.songId !== song.id) return null
+  // Resuming in the last seconds would only replay the ending.
+  if (song.dt && restored.time > song.dt / 1000 - 5) return null
+  return restored.time
+}
+
+function takeRestoredPosition(song: Song | undefined) {
+  const time = peekRestoredPosition(song)
+  restoredPosition = null
+  return time
+}
+
 let persistedWindow: {
   source: Song[]
   index: number
@@ -753,7 +793,20 @@ export const usePlayerStore = create<PlayerState>()(
         }
       }
 
-      const loadAt = async (index: number) => {
+      // Reason of the last failed load, for merged "skipped N tracks" notices.
+      let lastLoadError = ''
+
+      const loadAt = async (
+        index: number,
+        options: {
+          /** The caller reports failures itself (skipping through the queue). */
+          silent?: boolean
+          /** Position to start at once the media is seekable. */
+          resumeAt?: number | null
+        } = {},
+      ) => {
+        // Any explicit load supersedes the position restored at launch.
+        restoredPosition = null
         const state = get()
         const song = state.queue[index]
         if (!song) return false
@@ -778,7 +831,7 @@ export const usePlayerStore = create<PlayerState>()(
           sourceTransition: 'none',
           audioFromCache: false,
           audioBlob: null,
-          resumeAt: null,
+          resumeAt: options.resumeAt ?? null,
         })
         try {
           // Prefer audio cached in IndexedDB (WebCodecs-transcoded Opus), except
@@ -930,9 +983,9 @@ export const usePlayerStore = create<PlayerState>()(
             audioFromCache: false,
             audioBlob: null,
           })
-          toast.warning(
-            apiErrorMessage(error, i18n._(msg`歌曲加载失败`)),
-          )
+          const message = apiErrorMessage(error, i18n._(msg`歌曲加载失败`))
+          if (options.silent) lastLoadError = message
+          else toast.warning(message)
           return false
         }
       }
@@ -961,7 +1014,7 @@ export const usePlayerStore = create<PlayerState>()(
             try {
               recommendations = await fetchPersonalFm(10)
             } catch {
-              throw heartError ?? new Error('智能播放暂不可用，请先登录')
+              throw heartError ?? new Error(i18n._(msg`智能播放暂不可用，请先登录`))
             }
           }
           if (!get().heartMode) return false
@@ -993,6 +1046,21 @@ export const usePlayerStore = create<PlayerState>()(
         if (state.queue.length - 1 - state.currentIndex < 3) void appendHeartSongs()
       }
 
+      /** One notice for a whole skip run instead of one toast per broken track. */
+      const reportSkipped = (skipped: number, played: boolean) => {
+        if (!skipped) return
+        if (skipped === 1) {
+          // Keep the specific reason (e.g. no copyright) for a single skip.
+          toast.warning(lastLoadError || i18n._(msg`歌曲加载失败`))
+          return
+        }
+        toast.warning(
+          played
+            ? i18n._(msg`已跳过 ${skipped} 首无法播放的歌曲`)
+            : i18n._(msg`连续 ${skipped} 首歌曲无法播放，已停止播放`),
+        )
+      }
+
       const step = async (direction: 1 | -1, auto = false) => {
         const { queue, currentIndex, mode } = get()
         if (!queue.length) return
@@ -1007,6 +1075,7 @@ export const usePlayerStore = create<PlayerState>()(
           if (!audio || audio.ended || audio.error) set({ playing: false })
           return
         }
+        let skipped = 0
         if (mode === 'random' && queue.length > 1) {
           const candidates = queue
             .map((song, index) => (song ? index : -1))
@@ -1044,11 +1113,12 @@ export const usePlayerStore = create<PlayerState>()(
             lyricLoading: true,
             playToken: state.playToken + 1,
           }))
-          const ok = await loadAt(nextIndex)
+          const ok = await loadAt(nextIndex, { silent: true })
           if (ok) {
             maybeRefillHeart()
             return
           }
+          skipped += 1
           // Fall through to the sequential scan so a failed random pick does
           // not leave the player silently stuck on an empty source.
         }
@@ -1077,13 +1147,16 @@ export const usePlayerStore = create<PlayerState>()(
             lyricLoading: true,
             playToken: state.playToken + 1,
           }))
-          const ok = await loadAt(index)
+          const ok = await loadAt(index, { silent: true })
           if (ok) {
             maybeRefillHeart()
+            reportSkipped(skipped, true)
             return
           }
+          skipped += 1
         }
         set({ playing: false })
+        reportSkipped(skipped, false)
       }
 
       return {
@@ -1092,7 +1165,7 @@ export const usePlayerStore = create<PlayerState>()(
         lastStepDirection: 1,
         playlistId: '',
         playing: false,
-        mode: 'order',
+        mode: 'loop',
         volume: 80,
         currentTime: 0,
         mediaDuration: 0,
@@ -1262,7 +1335,10 @@ export const usePlayerStore = create<PlayerState>()(
           const song = queue[currentIndex]
           if (!song) return
           if (!get().audioUrl) {
-            const ok = await loadAt(currentIndex)
+            // First play after a restart continues where the app was closed.
+            const ok = await loadAt(currentIndex, {
+              resumeAt: takeRestoredPosition(song),
+            })
             if (!ok) return
           }
           // A trial that already hit its limit should restart from the top
@@ -1289,8 +1365,8 @@ export const usePlayerStore = create<PlayerState>()(
 
         cycleMode() {
           const mode = get().mode
-          const nextMode: PlayMode =
-            mode === 'order' ? 'random' : mode === 'random' ? 'singleLoop' : 'order'
+          const nextMode =
+            PLAY_MODE_CYCLE[(PLAY_MODE_CYCLE.indexOf(mode) + 1) % PLAY_MODE_CYCLE.length]
           set({ mode: nextMode })
           if (nextMode === 'random') {
             const state = get()
@@ -1300,13 +1376,7 @@ export const usePlayerStore = create<PlayerState>()(
             shuffleCursor = -1
             shuffleKey = ''
           }
-          toast.info(
-            nextMode === 'order'
-              ? i18n._(msg`顺序播放`)
-              : nextMode === 'random'
-                ? i18n._(msg`随机播放`)
-                : i18n._(msg`单曲循环`),
-          )
+          toast.info(i18n._(PLAY_MODE_LABELS[nextMode]))
         },
 
         async toggleHeartMode() {
@@ -1418,7 +1488,8 @@ export const usePlayerStore = create<PlayerState>()(
               sourceReloadToken: get().sourceReloadToken + 1,
               // A recovery reload should keep the position instead of jumping
               // back to the beginning.
-              resumeAt: get().currentTime,
+              // A seek on a track restored at launch falls back to the saved spot.
+              resumeAt: get().currentTime || takeRestoredPosition(song),
               audioFromCache: false,
               audioBlob: null,
               // Keep the visible lyrics if the recovery could not load them.
@@ -1547,7 +1618,15 @@ export const usePlayerStore = create<PlayerState>()(
     },
     {
       name: 'react-music-player',
-      storage: createCoalescedStorage<PersistedPlayerState>(),
+      version: 1,
+      // v1 adds 列表循环. The old 顺序播放 wrapped around at the end, which is
+      // what 列表循环 does now; keep that behaviour for existing installs.
+      migrate: (persisted, version) => {
+        const state = persisted as PersistedPlayerState
+        if (version < 1 && state?.mode === 'order') return { ...state, mode: 'loop' }
+        return state
+      },
+      storage: createCoalescedStorage(),
       partialize: (state): PersistedPlayerState => {
         const persisted = persistQueue(state.queue, state.currentIndex)
         return {
@@ -1566,9 +1645,76 @@ export const usePlayerStore = create<PlayerState>()(
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.lyricLines = readLyrics(state.queue[state.currentIndex])
+          // Show the remembered position on the progress bar before playback.
+          state.resumeAt = peekRestoredPosition(state.queue[state.currentIndex])
         }
       },
     },
   ),
 )
+
+/**
+ * The now-playing overlay stays mounted (hidden) while closed. Its progress
+ * views read this instead of `currentTime`: while the overlay is closed it
+ * holds the last shown position (reset on track change), so those views stop
+ * re-rendering on every timeupdate and the exit animation no longer snaps the
+ * lyrics/progress back to 0.
+ */
+let overlayTime = 0
+let overlaySongId: number | undefined
+
+export function selectOverlayTime(
+  state: Pick<PlayerState, 'showNowPlaying' | 'currentTime'>,
+) {
+  return state.showNowPlaying ? state.currentTime : overlayTime
+}
+
+usePlayerStore.subscribe((state) => {
+  const songId = state.queue[state.currentIndex]?.id
+  if (state.showNowPlaying || songId !== overlaySongId) overlayTime = state.currentTime
+  overlaySongId = songId
+})
+
+let positionSavedAt = 0
+let lastSavedPosition = ''
+
+/** Remember the current position, throttled; forced when the window hides. */
+function savePosition(force = false) {
+  const state = usePlayerStore.getState()
+  // Nothing loaded yet (e.g. a restored, unplayed queue): keep the old entry.
+  if (!state.audioUrl) return
+  const song = state.queue[state.currentIndex]
+  if (!song) return
+  const now = Date.now()
+  if (!force && now - positionSavedAt < POSITION_SAVE_INTERVAL) return
+  positionSavedAt = now
+  const value = JSON.stringify({ songId: song.id, time: Math.floor(state.currentTime) })
+  if (value === lastSavedPosition) return
+  lastSavedPosition = value
+  try {
+    localStorage.setItem(POSITION_KEY, value)
+  } catch {
+    // storage may be unavailable
+  }
+}
+
+usePlayerStore.subscribe((state, previous) => {
+  if (!state.queue.length && previous.queue.length) {
+    lastSavedPosition = ''
+    try {
+      localStorage.removeItem(POSITION_KEY)
+    } catch {
+      // storage may be unavailable
+    }
+    return
+  }
+  if (state.currentTime !== previous.currentTime) savePosition()
+})
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('pagehide', () => savePosition(true))
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') savePosition(true)
+  })
+}
 

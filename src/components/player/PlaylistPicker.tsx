@@ -49,7 +49,7 @@ export function PlaylistPicker({
       if (user.isLogin) {
         let accountPlaylists = user.createdPlaylists.filter(
           (playlist) =>
-            !playlist.isMyLike && playlist.name !== '我喜欢的音乐',
+            !playlist.isMyLike,
         )
         if (!accountPlaylists.length && user.profile?.userId) {
           await user.loadPlaylists(user.profile.userId)
@@ -57,7 +57,7 @@ export function PlaylistPicker({
             .getState()
             .createdPlaylists.filter(
               (playlist) =>
-                !playlist.isMyLike && playlist.name !== '我喜欢的音乐',
+                !playlist.isMyLike,
             )
         }
         setChoices(
@@ -106,7 +106,10 @@ export function PlaylistPicker({
         const response = await addSongToPlaylist(choice.id, song.id)
         const code = response.code ?? response.body?.code ?? response.status
         if (code !== 200) {
-          toast.error(i18n._(msg`收藏失败`))
+          // NetEase answers 502 「歌单内歌曲重复」 for a track that is already there.
+          const duplicate = code === 502 || /重复/.test(response.body?.message ?? '')
+          if (duplicate) toast.info(i18n._(msg`这首歌已在该歌单中`))
+          else toast.error(i18n._(msg`收藏失败`))
           return
         }
       }

@@ -17,6 +17,38 @@ const entries = new Map<number, PrefetchEntry>()
 const controllers = new Map<number, AbortController>()
 const inflight = new Map<number, Promise<boolean>>()
 
+/**
+ * Read a response into a Blob, giving up as soon as it passes `limit` bytes.
+ * Without a content-length header, `response.blob()` used to download a whole
+ * oversized file before it was rejected.
+ */
+async function readLimited(
+  response: Response,
+  limit: number,
+  controller: AbortController,
+) {
+  const type = response.headers.get('content-type') ?? ''
+  if (!response.body) {
+    const blob = await response.blob()
+    return blob.size > limit ? null : blob
+  }
+  const reader = response.body.getReader()
+  const chunks: Uint8Array[] = []
+  let size = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    size += value.byteLength
+    if (size > limit) {
+      controller.abort()
+      await reader.cancel().catch(() => undefined)
+      return null
+    }
+    chunks.push(value)
+  }
+  return new Blob(chunks as BlobPart[], type ? { type } : undefined)
+}
+
 function revoke(entry?: PrefetchEntry) {
   if (entry) URL.revokeObjectURL(entry.url)
 }
@@ -93,12 +125,13 @@ export function prefetchAudio(
       })
       if (!response.ok) return false
       const length = Number(response.headers.get('content-length') ?? 0)
-      if (length > MAX_PREFETCH_BYTES) return false
-      const blob = await response.blob()
-      // The neighbour may have been dropped while the response was streaming.
-      if (controller.signal.aborted || !blob.size || blob.size > MAX_PREFETCH_BYTES) {
+      if (length > MAX_PREFETCH_BYTES) {
+        controller.abort()
         return false
       }
+      const blob = await readLimited(response, MAX_PREFETCH_BYTES, controller)
+      // The neighbour may have been dropped while the response was streaming.
+      if (!blob || controller.signal.aborted || !blob.size) return false
       entries.set(songId, {
         songId,
         url: URL.createObjectURL(blob),

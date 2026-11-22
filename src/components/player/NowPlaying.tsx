@@ -5,6 +5,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ComponentProps,
 } from 'react'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
@@ -47,7 +48,7 @@ import { fetchMvUrl, fetchRelatedVideos, fetchSongDetail } from '../../api'
 import { useDelayedBusy } from '../../lib/useDelayedBusy'
 import { isDesktopShell } from '../../lib/desktop'
 import { isTauriApp } from '../../lib/platform'
-import { usePlayerStore } from '../../store/player'
+import { selectOverlayTime, usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
 import { useLocalLibraryStore } from '../../store/localLibrary'
 import { useVideoPlaybackStore } from '../../store/videoPlayback'
@@ -127,10 +128,11 @@ export function NowPlaying() {
   const busyVisible = useDelayedBusy(
     playing && (!sourceReady || !audioReady),
   )
-  // Playback progress changes several times per second; keep the overlay from
-  // re-rendering while it is closed.
-  const currentTime = usePlayerStore((state) =>
-    state.showNowPlaying ? state.currentTime : 0,
+  // Playback progress changes ~4 times per second. This 1900-line overlay only
+  // needs the lyric line index; the artwork and word-by-word stage subscribe to
+  // the position themselves (see LivePlayerArtwork / LiveLyricStage below).
+  const activeIndex = usePlayerStore((state) =>
+    findLyricIndex(state.lyricLines, selectOverlayTime(state) * 1000),
   )
   const sourceTransition = usePlayerStore((state) => state.sourceTransition)
   const holdArtworkPosition = sourceTransition === 'stem'
@@ -812,11 +814,6 @@ export function NowPlaying() {
   // and `.now-playing-structure` lays a `linear-gradient(0deg,#0006,#0000 50%)`
   // scrim on top. No white veil, no extra tints.
 
-  const activeIndex = useMemo(
-    () => findLyricIndex(lyricLines, currentTime * 1000),
-    [lyricLines, currentTime],
-  )
-
   // Stable identity keeps the memoised lyric list from re-rendering on every
   // playback tick. Must stay above the early return (rules of hooks).
   const handleSeek = useCallback((timeMs: number) => {
@@ -836,7 +833,8 @@ export function NowPlaying() {
         song: currentSong,
         style: playerStyle,
         playing,
-        position: currentTime,
+        // Only read when the song changes (outgoing card), never reactively.
+        position: selectOverlayTime(usePlayerStore.getState()),
         liked,
         albumAvailable: Boolean(currentSong.al.id),
         glowRgb: palette.colors[0]
@@ -1301,11 +1299,10 @@ export function NowPlaying() {
                   artDirection === -1 && 'is-enter-prev',
                 )}
               >
-                <PlayerArtwork
+                <LivePlayerArtwork
                   song={currentSong}
                   style={playerStyle}
                   playing={playing}
-                  position={currentTime}
                   holdPosition={holdArtworkPosition}
                   liked={liked}
                   albumAvailable={albumAvailable}
@@ -1430,10 +1427,9 @@ export function NowPlaying() {
                     <Trans>正在加载歌词…</Trans>
                   </div>
                 ) : (
-                  <LyricStage
+                  <LiveLyricStage
                     lines={lyricLines}
                     activeIndex={activeIndex}
-                    currentTime={currentTime * 1000}
                     onSeek={handleSeek}
                     className="h-full max-md:h-auto"
                   />
@@ -1907,4 +1903,16 @@ export function NowPlaying() {
       ) : null}
     </div>
   )
+}
+
+/** Vinyl/cover artwork fed with the live position without re-rendering NowPlaying. */
+function LivePlayerArtwork(props: Omit<ComponentProps<typeof PlayerArtwork>, 'position'>) {
+  const position = usePlayerStore(selectOverlayTime)
+  return <PlayerArtwork {...props} position={position} />
+}
+
+/** Word-by-word lyric stage; owns the time subscription for the same reason. */
+function LiveLyricStage(props: Omit<ComponentProps<typeof LyricStage>, 'currentTime'>) {
+  const currentTime = usePlayerStore(selectOverlayTime)
+  return <LyricStage {...props} currentTime={currentTime * 1000} />
 }

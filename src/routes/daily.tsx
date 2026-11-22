@@ -47,8 +47,9 @@ function DailyPage() {
   }, [refreshKey])
 
   const dateKey = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`
-  const month = now.getMonth() + 1
   const day = now.getDate()
+  // 「11月」 in Chinese, "November" in English.
+  const monthName = new Intl.DateTimeFormat(i18n.locale, { month: 'long' }).format(now)
   const weekday = useMemo(
     () =>
       new Intl.DateTimeFormat(i18n.locale, { weekday: 'long' }).format(now),
@@ -131,7 +132,7 @@ function DailyPage() {
               {day}
             </span>
             <span className="mt-1 block text-[12px] font-semibold text-white/85">
-              {month}月 · {weekday}
+              {monthName} · {weekday}
             </span>
           </div>
         </div>

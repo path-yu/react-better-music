@@ -30,6 +30,13 @@ export function QueuePanel() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const locateTimerRef = useRef<number | null>(null)
   const [showLocate, setShowLocate] = useState(false)
+  // 清空 asks once: the first click arms it for a few seconds.
+  const [confirmClear, setConfirmClear] = useState(false)
+  useEffect(() => {
+    if (!confirmClear) return
+    const timer = window.setTimeout(() => setConfirmClear(false), 3000)
+    return () => window.clearTimeout(timer)
+  }, [confirmClear])
   const queueTint = usePlayerMenuTint(
     immersive && show,
     currentSong?.al.picUrl,
@@ -43,6 +50,18 @@ export function QueuePanel() {
     estimateSize: () => ROW_HEIGHT,
     overscan: 8,
   })
+
+  // Open on the track that is playing, not at the top of a long queue. Only
+  // on open: following every track change would fight the user's scrolling.
+  useEffect(() => {
+    if (!show) return
+    const frame = window.requestAnimationFrame(() => {
+      const index = usePlayerStore.getState().currentIndex
+      if (index > 0) virtualizer.scrollToIndex(index, { align: 'center' })
+    })
+    return () => window.cancelAnimationFrame(frame)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [show])
 
   // Escape closes the panel, matching every other macOS overlay; focus returns
   // to whatever opened it (the queue button in the player bar).
@@ -187,10 +206,17 @@ export function QueuePanel() {
                   ? 'text-white/45 hover:bg-white/8 hover:text-white/80'
                   : 'text-black/40',
               )}
-              onClick={clearQueue}
+              onClick={() => {
+                if (!confirmClear) {
+                  setConfirmClear(true)
+                  return
+                }
+                setConfirmClear(false)
+                clearQueue()
+              }}
             >
               <Trash2 className="mr-1 h-3 w-3" />
-              <Trans>清空</Trans>
+              {confirmClear ? <Trans>确认清空？</Trans> : <Trans>清空</Trans>}
             </Button>
             <button
               type="button"

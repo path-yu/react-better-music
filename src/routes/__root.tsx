@@ -6,6 +6,7 @@ import {
 } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
+import { Trans } from '@lingui/react/macro'
 import { Button, OverlayProvider, ToastProvider } from '@pikoloo/darwin-ui'
 import { AppShell } from '../components/layout/AppShell'
 import { ToastBridge } from '../components/common/ToastBridge'
@@ -39,16 +40,18 @@ function RootNotFound() {
     <div className="flex min-h-dvh items-center justify-center px-6">
       <div className="apple-card w-full max-w-[420px] p-8 text-center">
         <p className="eyebrow">404</p>
-        <h1 className="headline-lg mt-2 text-[24px]">页面不存在</h1>
+        <h1 className="headline-lg mt-2 text-[24px]">
+          <Trans>页面不存在</Trans>
+        </h1>
         <p className="mt-2 text-[12px] leading-relaxed text-black/40">
-          链接可能已失效，或内容已被移除。
+          <Trans>链接可能已失效，或内容已被移除。</Trans>
         </p>
         <div className="mt-5 flex justify-center">
           <Link
             to="/"
             className="pressable rounded-full bg-accent px-4 py-1.5 text-[12px] text-white hover:bg-accent-hover"
           >
-            返回首页
+            <Trans>返回首页</Trans>
           </Link>
         </div>
       </div>
@@ -68,8 +71,12 @@ function RootError({ error, reset }: ErrorComponentProps) {
   return (
     <div className="flex min-h-dvh items-center justify-center px-6">
       <div className="apple-card w-full max-w-[420px] p-8 text-center">
-        <p className="eyebrow">出错了</p>
-        <h1 className="headline-lg mt-2 text-[24px]">页面暂时无法显示</h1>
+        <p className="eyebrow">
+          <Trans>出错了</Trans>
+        </p>
+        <h1 className="headline-lg mt-2 text-[24px]">
+          <Trans>页面暂时无法显示</Trans>
+        </h1>
         <p className="mt-2 break-words text-[12px] leading-relaxed text-black/40">
           {message}
         </p>
@@ -80,7 +87,7 @@ function RootError({ error, reset }: ErrorComponentProps) {
             className="rounded-full px-4"
             onClick={reset}
           >
-            重试
+            <Trans>重试</Trans>
           </Button>
           <Button
             variant="secondary"
@@ -88,7 +95,7 @@ function RootError({ error, reset }: ErrorComponentProps) {
             className="rounded-full px-4"
             onClick={() => window.location.assign('/')}
           >
-            返回首页
+            <Trans>返回首页</Trans>
           </Button>
         </div>
       </div>

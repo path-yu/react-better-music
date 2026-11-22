@@ -226,7 +226,7 @@ export function SongTable({
   songs,
   playlistId,
   loading = false,
-  emptyText = '暂无歌曲',
+  emptyText,
   className,
   showHeader = true,
   onRemoveSong,
@@ -415,7 +415,7 @@ export function SongTable({
   }
 
   if (!songs.length) {
-    return <EmptyState title={emptyText} />
+    return <EmptyState title={emptyText ?? i18n._(msg`暂无歌曲`)} />
   }
 
   const renderRow = (song: Song, index: number, virtual = false) => {

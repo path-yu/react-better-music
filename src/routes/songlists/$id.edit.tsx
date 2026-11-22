@@ -2,10 +2,12 @@ import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
+import { Trans } from '@lingui/react/macro'
 import { ArrowLeft, ImagePlus, Pencil, Save } from 'lucide-react'
 import { Button, Input, Skeleton, Textarea } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../../components/common/ImageWithFallback'
 import { EmptyState } from '../../components/common/EmptyState'
+import { UnsavedChangesDialog } from '../../components/common/UnsavedChangesDialog'
 import {
   fetchPlaylistDetail,
   fetchPlaylistTags,
@@ -17,6 +19,7 @@ import { useUiStore } from '../../store/ui'
 import { getImageSize } from '../../lib/image'
 import { toast } from '../../lib/toast'
 import { useDocumentTitle } from '../../lib/title'
+import { useUnsavedChangesGuard } from '../../lib/useUnsavedChangesGuard'
 import type { Playlist } from '../../types'
 
 export const Route = createFileRoute('/songlists/$id/edit')({
@@ -75,6 +78,15 @@ function EditPlaylistPage() {
     }
   }, [id])
 
+  // Must run before the early returns below (rules of hooks).
+  const dirty = Boolean(
+    detail &&
+      (name.trim() !== detail.name.trim() ||
+        desc !== (detail.description ?? '') ||
+        tags.join(';') !== (detail.tags ?? []).join(';')),
+  )
+  const guard = useUnsavedChangesGuard(dirty)
+
   if (!isLogin) {
     return (
       <div className="px-8 pt-10">
@@ -82,7 +94,7 @@ function EditPlaylistPage() {
           title={i18n._(msg`登录后才能编辑歌单`)}
           action={
             <Button variant="primary" size="sm" className="rounded-full" onClick={openLogin}>
-              扫码登录
+              <Trans>扫码登录</Trans>
             </Button>
           }
         />
@@ -120,6 +132,11 @@ function EditPlaylistPage() {
     )
   }
 
+  // The guard asks before leaving with unsaved edits, here and from anywhere else.
+  const leave = () => {
+    void navigate({ to: '/songlists/$id', params: { id } })
+  }
+
   const toggleTag = (tag: string) => {
     setTags((prev) => {
       if (prev.includes(tag)) return prev.filter((item) => item !== tag)
@@ -151,6 +168,8 @@ function EditPlaylistPage() {
       const res = await updatePlaylistCover(file, size.width, id)
       if (res.code === 200 && res.data?.url) {
         setCover(res.data.url)
+        // The sidebar shows this cover; refresh the user's playlist list.
+        if (profile?.userId) void useUserStore.getState().loadPlaylists(profile.userId)
         toast.success(i18n._(msg`封面更新成功`))
       } else {
         toast.error(i18n._(msg`封面上传失败`))
@@ -176,7 +195,11 @@ function EditPlaylistPage() {
         desc,
       })
       if (res.code === 200) {
+        // The sidebar lists playlists by name; it used to keep the old one
+        // until the next launch.
+        if (profile?.userId) void useUserStore.getState().loadPlaylists(profile.userId)
         toast.success(i18n._(msg`歌单信息已保存`))
+        guard.allowNextNavigation()
         void navigate({ to: '/songlists/$id', params: { id } })
       } else {
         toast.error(i18n._(msg`保存失败`))
@@ -192,25 +215,29 @@ function EditPlaylistPage() {
     <div className="mx-auto max-w-[900px] px-8 pb-16 pt-5">
       <button
         type="button"
-        onClick={() => void navigate({ to: '/songlists/$id', params: { id } })}
+        onClick={leave}
         className="pressable flex items-center gap-1.5 rounded-full px-2 py-1 text-[11.5px] text-black/40 transition-colors hover:bg-black/5 hover:text-black/70"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
-        返回歌单
+        <Trans>返回歌单</Trans>
       </button>
 
       <div className="mt-4">
         <h1 className="headline-lg flex items-center gap-2">
           <Pencil className="h-5 w-5 text-accent" />
-          编辑歌单信息
+          <Trans>编辑歌单信息</Trans>
         </h1>
-        <p className="mt-1.5 text-[12px] text-black/35">修改歌单名称、标签、简介与封面</p>
+        <p className="mt-1.5 text-[12px] text-black/35">
+          <Trans>修改歌单名称、标签、简介与封面</Trans>
+        </p>
       </div>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_210px]">
         <div className="apple-card space-y-5 p-6">
           <div>
-            <p className="mb-1.5 text-[11px] font-medium text-black/40">歌单名</p>
+            <p className="mb-1.5 text-[11px] font-medium text-black/40">
+              <Trans>歌单名</Trans>
+            </p>
             <Input
               value={name}
               onChange={(event) => setName(event.target.value)}
@@ -222,8 +249,10 @@ function EditPlaylistPage() {
 
           <div>
             <p className="mb-1.5 text-[11px] font-medium text-black/40">
-              标签
-              <span className="ml-1 font-normal text-black/25">（最多 3 个）</span>
+              <Trans>标签</Trans>
+              <span className="ml-1 font-normal text-black/25">
+                <Trans>（最多 3 个）</Trans>
+              </span>
             </p>
             <div className="flex flex-wrap gap-1.5">
               {tags.map((tag) => (
@@ -258,7 +287,9 @@ function EditPlaylistPage() {
           </div>
 
           <div>
-            <p className="mb-1.5 text-[11px] font-medium text-black/40">简介</p>
+            <p className="mb-1.5 text-[11px] font-medium text-black/40">
+              <Trans>简介</Trans>
+            </p>
             <Textarea
               value={desc}
               onChange={(event) => setDesc(event.target.value)}
@@ -274,9 +305,9 @@ function EditPlaylistPage() {
               variant="secondary"
               size="sm"
               className="rounded-full text-[12px]"
-              onClick={() => void navigate({ to: '/songlists/$id', params: { id } })}
+              onClick={leave}
             >
-              取消
+              <Trans>取消</Trans>
             </Button>
             <Button
               variant="primary"
@@ -286,7 +317,7 @@ function EditPlaylistPage() {
               onClick={() => void handleSave()}
             >
               <Save className="mr-1.5 h-3.5 w-3.5" />
-              保存
+              <Trans>保存</Trans>
             </Button>
           </div>
         </div>
@@ -307,7 +338,7 @@ function EditPlaylistPage() {
             onClick={handleCoverPick}
           >
             <ImagePlus className="mr-1.5 h-3.5 w-3.5" />
-            修改封面
+            <Trans>修改封面</Trans>
           </Button>
           <input
             ref={fileRef}
@@ -318,6 +349,11 @@ function EditPlaylistPage() {
           />
         </div>
       </div>
+      <UnsavedChangesDialog
+        open={guard.blocked}
+        onStay={guard.stay}
+        onLeave={guard.leave}
+      />
     </div>
   )
 }

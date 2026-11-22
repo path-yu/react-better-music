@@ -10,7 +10,21 @@ import {
 } from './desktopAudioCache'
 
 const COVER_CACHE = 'react-music-covers'
+/** Object URLs handed out for cached covers; oldest are revoked past the cap. */
 const objectUrls = new Map<string, string>()
+const MAX_OBJECT_URLS = 120
+/** Covers already stored (or being stored) this session: skip the lookup too. */
+const storedCovers = new Set<string>()
+
+function rememberObjectUrl(src: string, url: string) {
+  objectUrls.set(src, url)
+  while (objectUrls.size > MAX_OBJECT_URLS) {
+    const oldest = objectUrls.entries().next().value
+    if (!oldest) break
+    objectUrls.delete(oldest[0])
+    URL.revokeObjectURL(oldest[1])
+  }
+}
 
 function canUseCacheStorage() {
   return typeof caches !== 'undefined'
@@ -35,13 +49,33 @@ export async function cacheCoverImage(
   songId?: number,
 ): Promise<void> {
   if (!src || !/^https?:\/\//i.test(src)) return
+  // Called on every track start: a replayed song used to download its cover
+  // from the CDN again before noticing it was already cached.
+  if (storedCovers.has(src)) return
+  storedCovers.add(src)
+  const desktop = isDesktopApp() && Boolean(songId)
   try {
+    if (desktop) {
+      // Desktop covers are indexed by URL (one sidecar file per URL).
+      const existing = await desktopAudioCacheAssetGet('cover', { url: src }).catch(
+        () => null,
+      )
+      if (existing?.size) return
+    } else {
+      if (!canUseCacheStorage()) return
+      const cache = await caches.open(COVER_CACHE)
+      if (await cache.match(src)) return
+    }
+
     const response = await fetchCover(src)
-    if (!response) return
+    if (!response) {
+      storedCovers.delete(src)
+      return
+    }
 
     // Desktop caches artwork next to the .opus files, inside the user-selected
     // cache directory, instead of only in the WebView profile.
-    if (isDesktopApp() && songId) {
+    if (desktop && songId) {
       try {
         const blob = await response.clone().blob()
         const ext =
@@ -60,10 +94,10 @@ export async function cacheCoverImage(
 
     if (!canUseCacheStorage()) return
     const cache = await caches.open(COVER_CACHE)
-    if (await cache.match(src)) return
     await cache.put(src, response)
   } catch {
     // Artwork is best-effort; offline playback still works without it.
+    storedCovers.delete(src)
   }
 }
 
@@ -73,14 +107,19 @@ export async function getCachedCoverUrl(
 ): Promise<string | null> {
   if (!src) return null
   const existing = objectUrls.get(src)
-  if (existing) return existing
+  if (existing) {
+    // Refresh its position so frequently shown covers are not revoked.
+    objectUrls.delete(src)
+    objectUrls.set(src, existing)
+    return existing
+  }
 
   if (isDesktopApp()) {
     try {
       const blob = await desktopAudioCacheAssetGet('cover', { url: src })
       if (blob?.size) {
         const url = URL.createObjectURL(blob)
-        objectUrls.set(src, url)
+        rememberObjectUrl(src, url)
         return url
       }
     } catch {
@@ -96,7 +135,7 @@ export async function getCachedCoverUrl(
     const blob = await response.blob()
     if (!blob.size) return null
     const url = URL.createObjectURL(blob)
-    objectUrls.set(src, url)
+    rememberObjectUrl(src, url)
     return url
   } catch {
     return null

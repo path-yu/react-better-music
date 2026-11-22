@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
@@ -32,6 +32,48 @@ type ResolvedPlaylist = {
   name: string
   coverUrl: string
   songs: Song[]
+}
+
+function normalizeTitle(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[\s()（）[\]【】\-_'"’.,，。·&/:：!！?？]+/g, '')
+}
+
+/**
+ * Pick the search result that really is this track. The first hit is often a
+ * cover, a live take or an accompaniment; prefer the same artist, the same
+ * title and a similar length.
+ */
+function pickBestMatch(track: ApplePlaylistTrack, songs: Song[]): Song | null {
+  const title = normalizeTitle(track.name)
+  const artist = normalizeTitle(track.artist ?? '')
+  // Sources report the duration in seconds or milliseconds.
+  const trackMs =
+    track.duration > 0 && track.duration < 10_000 ? track.duration * 1000 : track.duration
+  let best: Song | null = null
+  let bestScore = Number.NEGATIVE_INFINITY
+  for (let index = 0; index < songs.length; index += 1) {
+    const song = songs[index]
+    let score = -index * 0.5
+    const name = normalizeTitle(song.name)
+    if (name && name === title) score += 3
+    else if (name && title && (name.includes(title) || title.includes(name))) score += 1.5
+    const artists = song.ar.map((item) => normalizeTitle(item.name)).filter(Boolean)
+    if (artist && artists.some((item) => artist.includes(item) || item.includes(artist))) {
+      score += 4
+    }
+    if (trackMs > 0 && song.dt > 0) {
+      const diff = Math.abs(song.dt - trackMs)
+      if (diff < 3_000) score += 2
+      else if (diff > 30_000) score -= 2
+    }
+    if (score > bestScore) {
+      bestScore = score
+      best = song
+    }
+  }
+  return best
 }
 
 function playlistIdFromUrl(value: string) {
@@ -149,9 +191,18 @@ export function ImportPlaylistDialog({
   const [loading, setLoading] = useState(false)
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
+  // Reading/matching a link only reads, so it can be cancelled by closing the
+  // dialog; creating the playlist writes and must finish.
+  const [phase, setPhase] = useState<'resolve' | 'import' | null>(null)
+  const resolveTokenRef = useRef(0)
+  /** Source tracks that had no NetEase match ("title - artist"). */
+  const [unmatched, setUnmatched] = useState<string[]>([])
 
   const close = () => {
-    if (loading) return
+    if (loading && phase === 'import') return
+    resolveTokenRef.current += 1
+    setLoading(false)
+    setPhase(null)
     setError('')
     setStatus('')
     onOpenChange(false)
@@ -162,6 +213,7 @@ export function ImportPlaylistDialog({
     setCollection(null)
     setSelected(new Set())
     setPlaylistName('')
+    setUnmatched([])
     setError('')
   }
 
@@ -169,6 +221,10 @@ export function ImportPlaylistDialog({
     if (loading) return
     setError('')
     setLoading(true)
+    setPhase('resolve')
+    setUnmatched([])
+    const token = ++resolveTokenRef.current
+    const cancelled = () => token !== resolveTokenRef.current
     setStatus(i18n._(msg`正在解析歌单链接…`))
     try {
       const external = externalPlaylistSource(url)
@@ -177,6 +233,7 @@ export function ImportPlaylistDialog({
           i18n._(msg`正在读取 ${external.label} 歌单…`),
         )
         const source = await external.load()
+        if (cancelled()) return
         const sourceTracks = source.tracks ?? []
         if (!sourceTracks.length) {
           throw new Error(
@@ -185,6 +242,7 @@ export function ImportPlaylistDialog({
         }
         const matched: Song[] = []
         const seen = new Set<number>()
+        const missing: string[] = []
         const batchSize = 5
         for (let index = 0; index < sourceTracks.length; index += batchSize) {
           const batch = sourceTracks.slice(index, index + batchSize)
@@ -196,17 +254,23 @@ export function ImportPlaylistDialog({
                   type: '1',
                   limit: 5,
                 })
-                return result.songs?.[0] ?? null
+                return pickBestMatch(track, result.songs ?? [])
               } catch {
                 return null
               }
             }),
           )
-          for (const song of results) {
-            if (!song || seen.has(song.id)) continue
+          if (cancelled()) return
+          results.forEach((song, offset) => {
+            if (!song) {
+              const track = batch[offset]
+              missing.push(track.artist ? `${track.name} - ${track.artist}` : track.name)
+              return
+            }
+            if (seen.has(song.id)) return
             seen.add(song.id)
             matched.push(song)
-          }
+          })
           setStatus(
             i18n._(
               msg`正在匹配歌曲 ${Math.min(index + batch.length, sourceTracks.length)}/${sourceTracks.length}…`,
@@ -225,6 +289,7 @@ export function ImportPlaylistDialog({
           songs: matched,
         })
         setSelected(new Set(matched.map((song) => song.id)))
+        setUnmatched(missing)
         setPlaylistName(title)
         return
       }
@@ -239,10 +304,12 @@ export function ImportPlaylistDialog({
       }
       setStatus(i18n._(msg`正在读取歌单…`))
       const detail = await fetchPlaylistDetail(playlistId)
+      if (cancelled()) return
       const songs: Song[] = []
       let offset = 0
       while (songs.length < 10000) {
         const page = await fetchPlaylistTracks(playlistId, TRACK_PAGE, offset)
+        if (cancelled()) return
         if (!page.length) break
         songs.push(...page)
         offset += page.length
@@ -260,14 +327,18 @@ export function ImportPlaylistDialog({
       setSelected(new Set(unique.map((song) => song.id)))
       setPlaylistName(detail.name.trim() || i18n._(msg`导入的歌单`))
     } catch (reason) {
+      if (cancelled()) return
       setError(
         reason instanceof Error
           ? reason.message
           : i18n._(msg`歌单解析失败`),
       )
     } finally {
-      setLoading(false)
-      setStatus('')
+      if (!cancelled()) {
+        setLoading(false)
+        setPhase(null)
+        setStatus('')
+      }
     }
   }
 
@@ -304,6 +375,7 @@ export function ImportPlaylistDialog({
     const name = playlistName.trim() || collection.name
     setError('')
     setLoading(true)
+    setPhase('import')
     try {
       if (isLogin && profile) {
         setStatus(i18n._(msg`正在创建网易云歌单…`))
@@ -319,7 +391,15 @@ export function ImportPlaylistDialog({
               msg`正在导入歌曲 ${Math.min(index + chunk.length, selectedSongs.length)}/${selectedSongs.length}…`,
             ),
           )
-          await addTracksToPlaylist(newId, chunk)
+          const added = await addTracksToPlaylist(newId, chunk)
+          const code = added.code ?? added.body?.code ?? added.status
+          if (code !== 200) {
+            // The playlist exists by now; say how far the import got.
+            throw new Error(
+              added.body?.message ||
+                i18n._(msg`导入中断：已导入 ${index} 首，其余歌曲添加失败`),
+            )
+          }
         }
         await useUserStore.getState().loadPlaylists(profile.userId)
         toast.success(
@@ -352,6 +432,7 @@ export function ImportPlaylistDialog({
       )
     } finally {
       setLoading(false)
+      setPhase(null)
       setStatus('')
     }
   }
@@ -380,6 +461,15 @@ export function ImportPlaylistDialog({
               </p>
               <p className="mt-0.5 text-[11px] text-black/35 dark:text-white/40">
                 <Trans>共 {collection.songs.length} 首歌曲</Trans>
+                {unmatched.length ? (
+                  <span
+                    className="text-[#b36b00]"
+                    title={unmatched.slice(0, 40).join('\n')}
+                  >
+                    {' · '}
+                    <Trans>{unmatched.length} 首未匹配</Trans>
+                  </span>
+                ) : null}
               </p>
             </div>
             <Button

@@ -64,6 +64,13 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
   const [loading, setLoading] = useState(false)
   const timerRef = useRef<number | null>(null)
   const cancelledRef = useRef(false)
+  // AppShell passes a new callback on every render. Depending on it restarted
+  // the QR flow (a new code, invalidating one the user was scanning) whenever
+  // the shell re-rendered.
+  const onOpenChangeRef = useRef(onOpenChange)
+  useEffect(() => {
+    onOpenChangeRef.current = onOpenChange
+  }, [onOpenChange])
 
   const stopTimer = useCallback(() => {
     if (timerRef.current) {
@@ -96,7 +103,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
               saveLoginCookie(result.cookie)
             }
             clearApiCache()
-            onOpenChange(false)
+            onOpenChangeRef.current(false)
             toast.success(i18n._(msg`登录成功`))
             void useUserStore
               .getState()
@@ -118,7 +125,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
         toast.error(i18n._(msg`获取二维码失败，请检查本地 API 服务是否启动`))
       }
     }
-  }, [onOpenChange, stopTimer])
+  }, [stopTimer])
 
   // Reset to the verification-code login every time the modal opens.
   useEffect(() => {
@@ -370,7 +377,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
             </p>
 
             <p className="mt-3 max-w-[260px] text-center text-[11px] leading-relaxed text-black/30">
-              <Trans>若二维码无法刷新，请确认本地 API 服务已在 3000 端口运行</Trans>
+              <Trans>若二维码无法加载，请确认本地 API 服务已启动</Trans>
             </p>
           </div>
         </TabsContent>

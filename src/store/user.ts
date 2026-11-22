@@ -12,7 +12,7 @@ import {
   signIn as signInApi,
 } from '../api'
 import { toast } from '../lib/toast'
-import { ApiError, clearApiCache } from '../lib/http'
+import { ApiError, clearApiCache, invalidateApiCache } from '../lib/http'
 import { isNetworkFailure } from '../lib/networkStatus'
 import {
   clearLoginCookie,
@@ -54,7 +54,9 @@ function splitPlaylists(uid: number, playlists: Playlist[]) {
   const collected: Playlist[] = []
   playlists.forEach((playlist, index) => {
     if (index === 0) {
-      playlist = { ...playlist, name: '我喜欢的音乐' }
+      // NetEase always lists the account's liked playlist first. Mark it so
+      // pickers can exclude it without comparing the (now translated) name.
+      playlist = { ...playlist, name: i18n._(msg`我喜欢的音乐`), isMyLike: true }
     }
     if (playlist.creator?.userId === uid) created.push(playlist)
     else collected.push(playlist)
@@ -116,6 +118,9 @@ function scheduleSessionRetry(run: () => void) {
   window.addEventListener('online', retry, { once: true })
   removeOnlineRetry = () => window.removeEventListener('online', retry)
 }
+
+/** Songs with a like/unlike request in flight; repeated clicks are ignored. */
+const likePending = new Set<number>()
 
 export const useUserStore = create<UserState>()(
   persist(
@@ -292,8 +297,19 @@ export const useUserStore = create<UserState>()(
           createdPlaylists: [],
           collectedPlaylists: [],
         })
-        localStorage.removeItem('react-music-player')
-        localStorage.removeItem('react-music-user')
+        // Logging out must not stop the music. The queue is local state and
+        // stays (removing its storage key never stuck anyway: the next state
+        // change wrote it back). Only drop the per-account bits: like flags
+        // and 心动模式, which needs a login to refill. Search history is local
+        // too and is kept.
+        usePlayerStore.setState((state) => ({
+          heartMode: false,
+          queue: state.queue.some((song) => song.like !== undefined)
+            ? state.queue.map((song) =>
+                song.like === undefined ? song : { ...song, like: undefined },
+              )
+            : state.queue,
+        }))
         toast.success(i18n._(msg`已退出登录`))
       },
 
@@ -302,14 +318,17 @@ export const useUserStore = create<UserState>()(
           toast.warning(i18n._(msg`请先登录`))
           return false
         }
+        if (likePending.has(id)) return false
+        likePending.add(id)
+        // Update the heart right away; roll back if the request fails.
+        const previous = get().likedIds.includes(id)
+        get().updateLiked(id, like)
+        usePlayerStore.getState().markSongLike(id, like)
         try {
           const res = await likeMusic(id, like)
-          if (res.code !== 200) {
-            toast.error(i18n._(msg`操作失败`))
-            return false
-          }
-          get().updateLiked(id, like)
-          usePlayerStore.getState().markSongLike(id, like)
+          if (res.code !== 200) throw new Error(String(res.code))
+          // 我喜欢的音乐 is cached as a playlist for five minutes.
+          invalidateApiCache(['/playlist/detail', '/playlist/track/all'])
           toast.success(
             like
               ? i18n._(msg`已添加到我喜欢的音乐`)
@@ -317,8 +336,12 @@ export const useUserStore = create<UserState>()(
           )
           return true
         } catch {
+          get().updateLiked(id, previous)
+          usePlayerStore.getState().markSongLike(id, previous)
           toast.error(i18n._(msg`操作失败`))
           return false
+        } finally {
+          likePending.delete(id)
         }
       },
 

@@ -80,6 +80,7 @@ import {
   pickDownloadDir,
 } from '../lib/desktopDownloads'
 import { getDevToolsPolicy, setDevToolsPolicy } from '../lib/desktopBridge'
+import { clearCachedStems } from '../lib/smartStemCache'
 import { locales, type Locale } from '../i18n'
 import { formatDate, formatDuration } from '../lib/format'
 import { useDocumentTitle } from '../lib/title'
@@ -107,6 +108,10 @@ const SHORTCUTS: Array<{ keys: ShortcutKey[]; label: MessageDescriptor }> = [
   { keys: [msg`空格`], label: msg`播放 / 暂停` },
   { keys: ['Alt', '↑ / ↓'], label: msg`音量 +5 / -5` },
   { keys: ['Shift', 'Alt', '↑ / ↓'], label: msg`音量 +1 / -1` },
+  { keys: ['← / →'], label: msg`快退 / 快进 5 秒` },
+  { keys: ['Ctrl / ⌘', '← / →'], label: msg`上一首 / 下一首` },
+  { keys: ['M'], label: msg`静音 / 取消静音` },
+  { keys: ['L'], label: msg`喜欢 / 取消喜欢当前歌曲` },
   { keys: ['↑ / ↓', 'Enter'], label: msg`在搜索建议中选择并进入` },
   { keys: ['Esc'], label: msg`关闭播放页、播放列表、侧栏或搜索建议` },
 ]
@@ -118,18 +123,18 @@ function formatBytes(bytes: number) {
 }
 
 const SPLEETER_CODEC_OPTIONS = [
-  { value: 'm4a', label: 'M4A / AAC（推荐）' },
-  { value: 'ogg', label: 'OGG / Vorbis' },
-  { value: 'mp3', label: 'MP3' },
-  { value: 'flac', label: 'FLAC（无损）' },
-  { value: 'wav', label: 'WAV（未压缩）' },
+  { value: 'm4a', label: msg`M4A / AAC（推荐）` },
+  { value: 'ogg', label: msg`OGG / Vorbis` },
+  { value: 'mp3', label: msg`MP3` },
+  { value: 'flac', label: msg`FLAC（无损）` },
+  { value: 'wav', label: msg`WAV（未压缩）` },
 ] as const
 
 const SPLEETER_BITRATE_OPTIONS = [
-  { value: '128k', label: '128 kbps（更小）' },
-  { value: '192k', label: '192 kbps（推荐）' },
-  { value: '256k', label: '256 kbps' },
-  { value: '320k', label: '320 kbps（最高）' },
+  { value: '128k', label: msg`128 kbps（更小）` },
+  { value: '192k', label: msg`192 kbps（推荐）` },
+  { value: '256k', label: msg`256 kbps` },
+  { value: '320k', label: msg`320 kbps（最高）` },
 ] as const
 
 function SettingsPage() {
@@ -190,6 +195,7 @@ function SettingsPage() {
   const [libraryPicking, setLibraryPicking] = useState(false)
   const [uninstallOpen, setUninstallOpen] = useState(false)
   const [uninstalling, setUninstalling] = useState(false)
+  const [clearingStems, setClearingStems] = useState(false)
   const [spleeterError, setSpleeterError] = useState('')
   const disableDevTools = useSettingsStore((state) => state.disableDevTools)
   const setDisableDevTools = useSettingsStore((state) => state.setDisableDevTools)
@@ -308,6 +314,23 @@ function SettingsPage() {
       setSpleeterError(String(error))
     } finally {
       setSpleeterBusy(false)
+    }
+  }
+
+  const handleClearStems = async () => {
+    if (clearingStems) return
+    setClearingStems(true)
+    try {
+      const count = await clearCachedStems()
+      toast.success(
+        count
+          ? i18n._(msg`已清除 ${count} 首歌曲的伴奏缓存`)
+          : i18n._(msg`没有可清除的伴奏缓存`),
+      )
+    } catch {
+      toast.error(i18n._(msg`清除伴奏缓存失败`))
+    } finally {
+      setClearingStems(false)
     }
   }
 
@@ -647,7 +670,7 @@ function SettingsPage() {
                   <button
                     key={option.id}
                     type="button"
-                    title={option.description}
+                    title={i18n._(option.description)}
                     aria-pressed={selected}
                     onClick={() => setPalette(option.id)}
                     className={`group flex min-w-0 flex-col items-center gap-2 rounded-xl border px-2 py-3 transition-colors ${
@@ -680,7 +703,7 @@ function SettingsPage() {
                           : 'text-black/55'
                       }`}
                     >
-                      {option.label}
+                      {i18n._(option.label)}
                     </span>
                   </button>
                 )
@@ -894,6 +917,15 @@ function SettingsPage() {
                       <Trans>卸载 Spleeter</Trans>
                     </Button>
                   ) : null}
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    loading={clearingStems}
+                    title={i18n._(msg`最多保留最近使用的 30 首歌曲的伴奏`)}
+                    onClick={() => void handleClearStems()}
+                  >
+                    <Trans>清除伴奏缓存</Trans>
+                  </Button>
                 </div>
               </div>
 
@@ -993,7 +1025,7 @@ function SettingsPage() {
                     }
                     options={SPLEETER_CODEC_OPTIONS.map((option) => ({
                       value: option.value,
-                      label: option.label,
+                      label: i18n._(option.label),
                     }))}
                     className="w-full text-[11px]"
                   />
@@ -1014,7 +1046,7 @@ function SettingsPage() {
                     }
                     options={SPLEETER_BITRATE_OPTIONS.map((option) => ({
                       value: option.value,
-                      label: option.label,
+                      label: i18n._(option.label),
                     }))}
                     className="w-full text-[11px]"
                   />
@@ -1398,7 +1430,7 @@ function SettingsPage() {
                   >
                     <input
                       type="checkbox"
-                      aria-label={`选择 ${item.name}`}
+                      aria-label={i18n._(msg`选择 ${item.name}`)}
                       checked={selected.includes(item.id)}
                       onChange={() => toggleOne(item.id)}
                       className="h-3.5 w-3.5 flex-none accent-accent"
@@ -1422,7 +1454,7 @@ function SettingsPage() {
                     </span>
                     <button
                       type="button"
-                      aria-label={`下载 ${item.name}`}
+                      aria-label={i18n._(msg`下载 ${item.name}`)}
                       title={i18n._(msg`下载到本地`)}
                       disabled={downloadingId !== null}
                       onClick={() => void handleDownloadOne(item)}

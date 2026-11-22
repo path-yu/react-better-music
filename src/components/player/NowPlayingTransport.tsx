@@ -36,11 +36,12 @@ import {
   PopoverTrigger,
 } from '@pikoloo/darwin-ui'
 import { cn, formatDuration } from '../../lib/format'
+import { PLAY_MODE_LABELS } from '../../lib/playMode'
 import { isInstrumentalSong } from '../../lib/songs'
 import { seekAudio } from '../../lib/audio'
 import { toast } from '../../lib/toast'
 import { KaraokeVocalFader } from './KaraokeVocalFader'
-import { usePlayerStore } from '../../store/player'
+import { selectOverlayTime, usePlayerStore } from '../../store/player'
 import { useSettingsStore } from '../../store/settings'
 import { useSmartStemStore } from '../../store/smartStem'
 import { useVideoPlaybackStore } from '../../store/videoPlayback'
@@ -74,7 +75,8 @@ export function NowPlayingTransport({
   const playing = usePlayerStore((state) => state.playing)
   const sourceReady = usePlayerStore((state) => state.sourceReady)
   const audioReady = usePlayerStore((state) => state.audioReady)
-  const currentTime = usePlayerStore((state) => state.currentTime)
+  // Mounted (hidden) while the overlay is closed: don't tick in the background.
+  const currentTime = usePlayerStore(selectOverlayTime)
   const mediaDuration = usePlayerStore((state) => state.mediaDuration)
   const mode = usePlayerStore((state) => state.mode)
   const volume = usePlayerStore((state) => state.volume)
@@ -178,10 +180,12 @@ export function NowPlayingTransport({
   const smartGeneratingThisSong =
     smartGeneratingSong === currentSong.id && smartStatus === 'generating'
   const etaSeconds = Math.max(0, Math.round(smartEtaMs / 1000))
+  const etaMinutes = Math.floor(etaSeconds / 60)
+  const etaRest = String(etaSeconds % 60).padStart(2, '0')
   const etaText =
     etaSeconds >= 60
-      ? `${Math.floor(etaSeconds / 60)}分${String(etaSeconds % 60).padStart(2, '0')}秒`
-      : `${etaSeconds}秒`
+      ? i18n._(msg`${etaMinutes}分${etaRest}秒`)
+      : i18n._(msg`${etaSeconds}秒`)
 
   const handleStemMode = async () => {
     // A click on the freshly-expanded stem selector can otherwise land on the
@@ -389,11 +393,7 @@ export function NowPlayingTransport({
         <button
           type="button"
           title={
-            mode === 'order'
-              ? i18n._(msg`顺序播放`)
-              : mode === 'random'
-                ? i18n._(msg`随机播放`)
-                : i18n._(msg`单曲循环`)
+            i18n._(PLAY_MODE_LABELS[mode])
           }
           onClick={cycleMode}
           className={cn(

@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import { Popover, PopoverTrigger } from '@pikoloo/darwin-ui'
 import { cn, formatDuration } from '../../lib/format'
+import { PLAY_MODE_LABELS } from '../../lib/playMode'
 import { seekAudio } from '../../lib/audio'
 import { usePlayerMenuTint } from '../../lib/menuSurface'
 import { toast } from '../../lib/toast'
@@ -32,7 +33,7 @@ import {
   PLAY_QUALITY_OPTIONS,
   useSettingsStore,
 } from '../../store/settings'
-import { usePlayerStore } from '../../store/player'
+import { selectOverlayTime, usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
 import { useLocalLibraryStore } from '../../store/localLibrary'
 import { useVideoPlaybackStore } from '../../store/videoPlayback'
@@ -65,7 +66,8 @@ export function ImmersivePlayerBar({
   const currentIndex = usePlayerStore((state) => state.currentIndex)
   const currentSong = queue[currentIndex]
   const playing = usePlayerStore((state) => state.playing)
-  const currentTime = usePlayerStore((state) => state.currentTime)
+  // Mounted (hidden) while the overlay is closed: don't tick in the background.
+  const currentTime = usePlayerStore(selectOverlayTime)
   const mode = usePlayerStore((state) => state.mode)
   const volume = usePlayerStore((state) => state.volume)
   const heartMode = usePlayerStore((state) => state.heartMode)
@@ -249,11 +251,7 @@ export function ImmersivePlayerBar({
             <button
               type="button"
               title={
-                mode === 'order'
-                  ? i18n._(msg`顺序播放`)
-                  : mode === 'random'
-                    ? i18n._(msg`随机播放`)
-                    : i18n._(msg`单曲循环`)
+                i18n._(PLAY_MODE_LABELS[mode])
               }
               onClick={cycleMode}
               className={cn(

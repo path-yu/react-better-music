@@ -72,6 +72,8 @@ function CommentVoice({
   const [total, setTotal] = useState(duration ?? 0)
   const [failed, setFailed] = useState(false)
   const failedOnceRef = useRef(false)
+  /** The music was playing when this voice note paused it. */
+  const resumeMusicRef = useRef(false)
 
   const fail = () => {
     setFailed(true)
@@ -115,6 +117,12 @@ function CommentVoice({
       setCurrent(0)
       audio.currentTime = 0
       if (activeVoiceAudio === audio) activeVoiceAudio = null
+      // Pick the music back up where the voice note interrupted it.
+      if (resumeMusicRef.current) {
+        resumeMusicRef.current = false
+        const player = usePlayerStore.getState()
+        if (!player.playing) void player.togglePlay()
+      }
     }
     audio.onerror = fail
     audioRef.current = audio
@@ -125,6 +133,8 @@ function CommentVoice({
   // comment immediately instead of letting both play over each other.
   useEffect(() => {
     if (!playerPlaying) return
+    // The user resumed the music themselves.
+    resumeMusicRef.current = false
     const audio = audioRef.current
     if (!audio || audio.paused) return
     audio.pause()
@@ -150,6 +160,7 @@ function CommentVoice({
       activeVoiceAudio.pause()
     }
     // A voice comment is its own listening moment: pause the song first.
+    if (usePlayerStore.getState().playing) resumeMusicRef.current = true
     getAudio()?.pause()
     usePlayerStore.getState().setPlaying(false)
     activeVoiceAudio = audio
@@ -404,6 +415,8 @@ export function CommentSection({
   const [replyContent, setReplyContent] = useState('')
   const [replySubmitting, setReplySubmitting] = useState(false)
   const requestIdRef = useRef(0)
+  /** Comments with a like request in flight; repeated clicks are ignored. */
+  const likePendingRef = useRef(new Set<number>())
   // Offset is tracked separately from the local list length: a posted comment
   // is prepended locally and must not shift the next server page.
   const serverCountRef = useRef(initial?.serverCount ?? 0)
@@ -591,11 +604,13 @@ export function CommentSection({
     }
   }
 
-  const handleLike = async (comment: Comment, hot: boolean) => {
+  const handleLike = async (comment: Comment) => {
     if (!isLogin) {
       toast.warning(i18n._(msg`请先登录`))
       return
     }
+    if (likePendingRef.current.has(comment.commentId)) return
+    likePendingRef.current.add(comment.commentId)
     const nextLiked = !comment.liked
     const requestId = requestIdRef.current
     try {
@@ -610,34 +625,25 @@ export function CommentSection({
         toast.error(i18n._(msg`操作失败`))
         return
       }
+      // The same comment can be listed under 热门 and 最新; update both.
+      const applyLike = (item: Comment) =>
+        item.commentId === comment.commentId
+          ? {
+              ...item,
+              liked: nextLiked,
+              likedCount: Math.max(0, item.likedCount + (nextLiked ? 1 : -1)),
+            }
+          : item
       setData((prev) => ({
         ...prev,
-        hotComments: hot
-          ? prev.hotComments?.map((item) =>
-              item.commentId === comment.commentId
-                ? {
-                    ...item,
-                    liked: nextLiked,
-                    likedCount: item.likedCount + (nextLiked ? 1 : -1),
-                  }
-                : item,
-            )
-          : prev.hotComments,
-        comments: hot
-          ? prev.comments
-          : prev.comments.map((item) =>
-              item.commentId === comment.commentId
-                ? {
-                    ...item,
-                    liked: nextLiked,
-                    likedCount: item.likedCount + (nextLiked ? 1 : -1),
-                  }
-                : item,
-            ),
+        hotComments: prev.hotComments?.map(applyLike),
+        comments: prev.comments.map(applyLike),
       }))
     } catch {
       if (requestIdRef.current === requestId)
         toast.error(i18n._(msg`操作失败`))
+    } finally {
+      likePendingRef.current.delete(comment.commentId)
     }
   }
 
@@ -733,7 +739,7 @@ export function CommentSection({
                   ) : null}
                   <button
                     type="button"
-                    onClick={() => void handleLike(comment, hot)}
+                    onClick={() => void handleLike(comment)}
                     className={cn(
                       'pressable flex items-center gap-1 transition-colors',
                       comment.liked ? 'text-[#ff2d55]' : 'hover:text-black/60',

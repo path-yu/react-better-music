@@ -1,4 +1,6 @@
 import { create } from 'zustand'
+import { msg } from '@lingui/core/macro'
+import { i18n } from '../i18n'
 import { getAudio } from '../lib/audio'
 import {
   createSpleeterJob,
@@ -97,8 +99,10 @@ function writePendingJob(job: PendingSpleeterJob) {
   }
 }
 
-function clearPendingJob() {
+/** Without an id, clear unconditionally; with one, only if it is still that job. */
+function clearPendingJob(jobId?: string) {
   try {
+    if (jobId && readPendingJob()?.jobId !== jobId) return
     window.localStorage.removeItem(PENDING_KEY)
   } catch {
     // Ignore storage failures.
@@ -163,11 +167,19 @@ async function pollSpleeterJob(
   estimatedMs: number,
   token: number,
 ) {
+  // A stuck job must not be polled forever.
+  const deadline = startedAt + Math.max(estimatedMs * 4, 10 * 60_000)
   let finished = await getSpleeterJob(jobId)
   while (finished.status !== 'done' && finished.status !== 'error') {
+    if (Date.now() > deadline) {
+      throw new Error(i18n._(msg`伴奏生成超时，请稍后重试`))
+    }
     await new Promise((resolve) => window.setTimeout(resolve, 900))
     finished = await getSpleeterJob(jobId)
-    if (token !== generationToken) return finished
+    // Keep following a job the user has moved away from: Spleeter cannot be
+    // cancelled, so its result is still cached for the next play. Only the
+    // progress display belongs to the current generation.
+    if (token !== generationToken) continue
     const elapsed = Date.now() - startedAt
     const estimatedProgress = Math.min(0.92, elapsed / estimatedMs)
     useSmartStemStore.setState((state) => ({
@@ -183,32 +195,42 @@ async function finishSpleeterJob(
   finished: SpleeterJob,
   token: number,
 ) {
-  if (token !== generationToken) return false
+  const current = token === generationToken
   if (finished.status === 'error') {
-    throw new Error(finished.error || 'Spleeter 分离失败')
+    clearPendingJob(finished.id)
+    if (!current) return false
+    throw new Error(finished.error || i18n._(msg`Spleeter 分离失败`))
   }
   if (!finished.stems?.accompaniment || !finished.stems.vocals) {
-    throw new Error('Spleeter 没有返回完整音轨')
+    clearPendingJob(finished.id)
+    if (!current) return false
+    throw new Error(i18n._(msg`Spleeter 没有返回完整音轨`))
   }
   const [accompaniment, vocals] = await Promise.all([
     fetchSpleeterStem(finished.stems.accompaniment),
     fetchSpleeterStem(finished.stems.vocals),
   ])
-  if (token !== generationToken) return false
+  // Cache even if the user switched tracks meanwhile: the slow part is done,
+  // and playing the song again must not start the separation from scratch.
   await putCachedStems(songId, { accompaniment, vocals })
-  clearPendingJob()
-  if (token !== generationToken) return false
+  clearPendingJob(finished.id)
   const settings = useSettingsStore.getState()
   const songSetting = settings.stemSongs?.[String(songId)]
+  if (useSmartStemStore.getState().activeSongId === songId) return true
   if (currentSongId() !== songId || !songSetting?.enabled) {
-    useSmartStemStore.setState({
-      status: 'idle',
-      progress: 0,
-      etaMs: 0,
-      generatingSongId: null,
-    })
+    // A newer generation owns the status display.
+    if (token === generationToken) {
+      useSmartStemStore.setState({
+        status: 'idle',
+        progress: 0,
+        etaMs: 0,
+        generatingSongId: null,
+      })
+    }
     return true
   }
+  // Applied even when stale: the user may have come back to this song while
+  // its job was still running (a new prepare is skipped while one is pending).
   if (songSetting.kind === 'karaoke') {
     applyStemBlob(songId, accompaniment, 'karaoke', vocals)
   } else {
@@ -286,7 +308,7 @@ export const useSmartStemStore = create<SmartStemState>((set, get) => ({
           installed: false,
           checking: false,
           status: stillBusy ? current.status : 'unavailable',
-          error: stillBusy ? current.error : '无法检测 Spleeter 环境',
+          error: stillBusy ? current.error : i18n._(msg`无法检测 Spleeter 环境`),
         })
         return false
       })
@@ -415,10 +437,8 @@ export const useSmartStemStore = create<SmartStemState>((set, get) => ({
           estimatedMs,
           token,
         )
-        if (token !== generationToken) return
-        set({ progress: 0.94, etaMs: 0 })
-        const applied = await finishSpleeterJob(songId, finished, token)
-        if (!applied) return
+        if (token === generationToken) set({ progress: 0.94, etaMs: 0 })
+        await finishSpleeterJob(songId, finished, token)
         return
       } catch {
         // The Bun process was restarted (or the job expired); start fresh.
@@ -437,7 +457,7 @@ export const useSmartStemStore = create<SmartStemState>((set, get) => ({
     if (!sourceUrl && !sourceBlob) {
       set({
         status: 'error',
-        error: '没有可上传的音频源：当前歌曲尚未加载到播放器',
+        error: i18n._(msg`没有可上传的音频源：当前歌曲尚未加载到播放器`),
       })
       return
     }
@@ -471,9 +491,8 @@ export const useSmartStemStore = create<SmartStemState>((set, get) => ({
       error: '',
     })
     if (currentSongId() === songId) {
-      toast.info(
-        `正在生成伴奏，预计约 ${Math.ceil(estimatedMs / 1000)} 秒`,
-      )
+      const seconds = Math.ceil(estimatedMs / 1000)
+      toast.info(i18n._(msg`正在生成伴奏，预计约 ${seconds} 秒`))
     }
     try {
       let job
@@ -486,7 +505,7 @@ export const useSmartStemStore = create<SmartStemState>((set, get) => ({
         )
       } else if (/^(blob|data):/i.test(sourceUrl)) {
         const audioResponse = await fetch(sourceUrl)
-        if (!audioResponse.ok) throw new Error('读取当前音频失败')
+        if (!audioResponse.ok) throw new Error(i18n._(msg`读取当前音频失败`))
         const audioBlob = await audioResponse.blob()
         if (token !== generationToken) return
         job = await createSpleeterJob(
@@ -507,7 +526,7 @@ export const useSmartStemStore = create<SmartStemState>((set, get) => ({
           )
         } catch {
           const audioResponse = await fetch(sourceUrl)
-          if (!audioResponse.ok) throw new Error('读取当前音频失败')
+          if (!audioResponse.ok) throw new Error(i18n._(msg`读取当前音频失败`))
           const audioBlob = await audioResponse.blob()
           if (token !== generationToken) return
           job = await createSpleeterJob(
@@ -518,20 +537,22 @@ export const useSmartStemStore = create<SmartStemState>((set, get) => ({
           )
         }
       }
-      if (token !== generationToken) return
-      writePendingJob({
-        songId,
-        jobId: job.id,
-        startedAt,
-        estimatedMs,
-      })
+      // Keep following a job created for a track the user has already left;
+      // only the current generation is resumed after a reload.
+      if (token === generationToken) {
+        writePendingJob({
+          songId,
+          jobId: job.id,
+          startedAt,
+          estimatedMs,
+        })
+      }
       const finished = await pollSpleeterJob(
         job.id,
         startedAt,
         estimatedMs,
         token,
       )
-      if (token !== generationToken) return
       const elapsed = Date.now() - startedAt
       if (durationMs > 0) {
         const measured = Math.min(
@@ -543,7 +564,7 @@ export const useSmartStemStore = create<SmartStemState>((set, get) => ({
           String(measured),
         )
       }
-      set({ progress: 0.94, etaMs: 0 })
+      if (token === generationToken) set({ progress: 0.94, etaMs: 0 })
       await finishSpleeterJob(songId, finished, token)
     } catch (error) {
       if (token !== generationToken) return
@@ -557,7 +578,7 @@ export const useSmartStemStore = create<SmartStemState>((set, get) => ({
       })
       console.error('[smart-stem] generation failed:', error)
       if (currentSongId() === songId) {
-        toast.warning(`Spleeter 伴奏生成失败：${message}`)
+        toast.warning(i18n._(msg`Spleeter 伴奏生成失败：${message}`))
       }
     }
     } finally {
@@ -574,7 +595,7 @@ export const useSmartStemStore = create<SmartStemState>((set, get) => ({
         getCachedStem(songId, 'vocals'),
       ])
       if (!accompaniment || !vocals) {
-        toast.info('当前歌曲缺少完整人声或伴奏缓存，无法开启随心唱')
+        toast.info(i18n._(msg`当前歌曲缺少完整人声或伴奏缓存，无法开启随心唱`))
         return
       }
       if (currentSongId() !== songId) return
@@ -586,8 +607,8 @@ export const useSmartStemStore = create<SmartStemState>((set, get) => ({
     if (!cached) {
       toast.info(
         kind === 'vocals'
-          ? '当前歌曲没有缓存人声轨'
-          : '当前歌曲没有缓存伴奏轨',
+          ? i18n._(msg`当前歌曲没有缓存人声轨`)
+          : i18n._(msg`当前歌曲没有缓存伴奏轨`),
       )
       return
     }
@@ -645,7 +666,7 @@ export const useSmartStemStore = create<SmartStemState>((set, get) => ({
       usePlayerStore.setState({ sourceTransition: 'stem' })
       await usePlayerStore.getState().refreshCurrentUrl()
     } catch {
-      toast.warning('恢复原声失败')
+      toast.warning(i18n._(msg`恢复原声失败`))
     }
   },
 }))

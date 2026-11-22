@@ -82,10 +82,11 @@ function SectionError({
   title: string
   onRetry: () => void
 }) {
+  const { i18n } = useLingui()
   return (
     <EmptyState
       title={title}
-      description="请检查网络或本地 API 服务"
+      description={i18n._(msg`请检查网络或本地 API 服务`)}
       action={
         <Button
           variant="secondary"
@@ -93,7 +94,7 @@ function SectionError({
           className="rounded-full text-[11.5px]"
           onClick={onRetry}
         >
-          重试
+          <Trans>重试</Trans>
         </Button>
       }
     />
@@ -207,7 +208,7 @@ function DailyHomeCard({ songs, now }: { songs: Song[]; now: Date }) {
 
       <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-center px-8">
         <p className="truncate text-[12px] font-semibold text-white/65">
-          {month}月{day}日 {weekday} ·{' '}
+          <Trans>{month}月{day}日</Trans> {weekday} ·{' '}
           {isLogin ? (
             <Trans>每天 6:00 更新</Trans>
           ) : (
@@ -399,7 +400,7 @@ function DiscoveryPage() {
     <div className="px-10 pb-16 pt-8 max-md:px-5">
       <header>
         <p className="text-[12px] font-semibold tracking-[0.4px] text-black/35">
-          {now.getMonth() + 1}月{now.getDate()}日 {weekday}
+          <Trans>{now.getMonth() + 1}月{now.getDate()}日</Trans> {weekday}
         </p>
         <h1 className="mt-1 text-[30px] font-bold leading-tight tracking-[-0.6px]">
           {hello}

@@ -1,3 +1,5 @@
+import { msg } from '@lingui/core/macro'
+import { i18n } from '../i18n'
 import { apiUrl } from '../lib/http'
 import { fetchWithBootRetry } from '../lib/apiFetch'
 import type { Playlist, Song } from '../types'
@@ -51,7 +53,7 @@ async function localRequest<T>(
     const message =
       (payload as { msg?: string; message?: string } | null)?.msg ??
       (payload as { message?: string } | null)?.message ??
-      `本地曲库请求失败 (${response.status})`
+      i18n._(msg`本地曲库请求失败 (${response.status})`)
     throw new Error(message)
   }
   return (payload as { data?: T })?.data as T

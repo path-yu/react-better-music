@@ -47,6 +47,9 @@ interface LocalLibraryState {
   clearRecent: () => Promise<void>
 }
 
+/** Songs with a favorite toggle in flight; repeated clicks are ignored. */
+const favoritePending = new Set<number>()
+
 export const useLocalLibraryStore = create<LocalLibraryState>()((set, get) => ({
   loaded: false,
   loading: false,
@@ -123,8 +126,11 @@ export const useLocalLibraryStore = create<LocalLibraryState>()((set, get) => ({
         ),
       }))
       return true
-    } catch {
-      toast.error(i18n._(msg`收藏失败`))
+    } catch (error) {
+      // The local API explains why (e.g. the song is already in the playlist).
+      toast.error(
+        error instanceof Error && error.message ? error.message : i18n._(msg`收藏失败`),
+      )
       return false
     }
   },
@@ -172,6 +178,14 @@ export const useLocalLibraryStore = create<LocalLibraryState>()((set, get) => ({
 
   async toggleFavorite(song) {
     const liked = get().favorites.some((item) => item.id === song.id)
+    if (favoritePending.has(song.id)) return liked
+    favoritePending.add(song.id)
+    // Show the change immediately; the response then replaces the list.
+    set((state) => ({
+      favorites: liked
+        ? state.favorites.filter((item) => item.id !== song.id)
+        : [song, ...state.favorites],
+    }))
     try {
       const favorites = liked
         ? await removeLocalFavorite(song.id)
@@ -179,8 +193,18 @@ export const useLocalLibraryStore = create<LocalLibraryState>()((set, get) => ({
       set({ favorites })
       return !liked
     } catch {
+      // Undo only this song so a concurrent toggle of another one survives.
+      set((state) => ({
+        favorites: liked
+          ? state.favorites.some((item) => item.id === song.id)
+            ? state.favorites
+            : [song, ...state.favorites]
+          : state.favorites.filter((item) => item.id !== song.id),
+      }))
       toast.error(i18n._(msg`收藏失败`))
       return liked
+    } finally {
+      favoritePending.delete(song.id)
     }
   },
 

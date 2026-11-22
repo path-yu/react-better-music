@@ -284,11 +284,31 @@ export function AppShell({ children }: { children: ReactNode }) {
     // to the top when it is entered.
     if (resetScrollOnEnter) return
     const key = `scroll:${pathname}`
+    // Scroll fires every frame; sessionStorage writes are synchronous. Keep
+    // the latest offset in memory and persist it at most every 150ms.
+    let latest: number | null = null
+    let timer: number | undefined
+    const flush = () => {
+      timer = undefined
+      if (latest === null) return
+      try {
+        sessionStorage.setItem(key, String(latest))
+      } catch {
+        // storage may be unavailable
+      }
+      latest = null
+    }
     const handleScroll = () => {
-      sessionStorage.setItem(key, String(element.scrollTop))
+      latest = element.scrollTop
+      if (timer === undefined) timer = window.setTimeout(flush, 150)
     }
     element.addEventListener('scroll', handleScroll, { passive: true })
-    return () => element.removeEventListener('scroll', handleScroll)
+    return () => {
+      element.removeEventListener('scroll', handleScroll)
+      if (timer !== undefined) window.clearTimeout(timer)
+      // Persist the last offset seen on this route before leaving it.
+      flush()
+    }
   }, [pathname, resetScrollOnEnter])
 
   return (

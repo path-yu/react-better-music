@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type SyntheticEvent } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type RefObject,
+  type SyntheticEvent,
+} from 'react'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
@@ -41,6 +47,8 @@ import { useUserStore } from '../../store/user'
 import { useLocalLibraryStore } from '../../store/localLibrary'
 import { useVideoPlaybackStore } from '../../store/videoPlayback'
 import { cn, formatArtists, formatDuration } from '../../lib/format'
+import { resizedImageUrl } from '../../lib/image'
+import { PLAY_MODE_LABELS } from '../../lib/playMode'
 import { usePlayerMenuTint } from '../../lib/menuSurface'
 import { useSettingsStore } from '../../store/settings'
 import { getAudio, registerAudio, seekAudio } from '../../lib/audio'
@@ -77,6 +85,46 @@ function canAnalyseAudio(url: string) {
   } catch {
     return false
   }
+}
+
+/** Seconds moved by ← / →. */
+const SEEK_STEP = 5
+/** Volume to restore when M unmutes. */
+let volumeBeforeMute = 0
+
+function seekBy(seconds: number) {
+  const video = useVideoPlaybackStore.getState()
+  if (video.active) {
+    video.seek(video.currentTime + seconds)
+    return
+  }
+  const audio = getAudio()
+  if (!audio || !audio.getAttribute('src') || !Number.isFinite(audio.duration)) return
+  const target = Math.max(
+    0,
+    Math.min(audio.duration - 0.25, audio.currentTime + seconds),
+  )
+  audio.currentTime = target
+  usePlayerStore.getState().setCurrentTime(target)
+}
+
+function toggleMute() {
+  const video = useVideoPlaybackStore.getState()
+  const player = usePlayerStore.getState()
+  const current = video.active ? video.volume : player.volume
+  if (current > 0) volumeBeforeMute = current
+  const next = current > 0 ? 0 : volumeBeforeMute || 80
+  if (video.active) video.setVolume(next)
+  else player.setVolume(next)
+}
+
+function toggleLikeCurrent() {
+  const player = usePlayerStore.getState()
+  const song = player.queue[player.currentIndex]
+  if (!song) return
+  const user = useUserStore.getState()
+  if (user.isLogin) void user.likeSong(song.id, !user.likedIds.includes(song.id))
+  else void useLocalLibraryStore.getState().toggleFavorite(song)
 }
 
 export function PlayerBar() {
@@ -134,8 +182,9 @@ export function PlayerBar() {
   const playing = usePlayerStore((state) => state.playing)
   const mode = usePlayerStore((state) => state.mode)
   const volume = usePlayerStore((state) => state.volume)
-  const currentTime = usePlayerStore((state) => state.currentTime)
-  const buffered = usePlayerStore((state) => state.buffered)
+  // currentTime/buffered are deliberately not subscribed here: they change ~4
+  // times per second, and only AudioProgressRow / the media-session effect
+  // need them. Subscribing re-rendered this whole bar on every timeupdate.
   const playToken = usePlayerStore((state) => state.playToken)
   const sourceReloadToken = usePlayerStore(
     (state) => state.sourceReloadToken ?? 0,
@@ -194,11 +243,8 @@ export function PlayerBar() {
 
   const videoActive = useVideoPlaybackStore((state) => state.active)
   const videoPlaying = useVideoPlaybackStore((state) => state.playing)
-  const videoCurrentTime = useVideoPlaybackStore((state) => state.currentTime)
-  const videoDuration = useVideoPlaybackStore((state) => state.duration)
   const videoVolume = useVideoPlaybackStore((state) => state.volume)
   const toggleVideo = useVideoPlaybackStore((state) => state.toggle)
-  const seekVideo = useVideoPlaybackStore((state) => state.seek)
   const setVideoVolume = useVideoPlaybackStore((state) => state.setVolume)
 
 
@@ -803,6 +849,41 @@ export function PlayerBar() {
         const next =
           event.code === 'ArrowUp' ? state.volume + step : state.volume - step
         state.setVolume(Math.min(100, Math.max(0, next)))
+        return
+      }
+      if (inDialog || event.defaultPrevented) return
+      // Focused sliders and tab lists use the arrow keys themselves.
+      if (
+        target?.closest(
+          '[role="slider"], [role="tablist"], [role="tab"], [role="radiogroup"]',
+        )
+      ) {
+        return
+      }
+      const modifier = event.ctrlKey || event.metaKey
+      if (
+        (event.code === 'ArrowLeft' || event.code === 'ArrowRight') &&
+        !event.altKey &&
+        !event.shiftKey
+      ) {
+        const forward = event.code === 'ArrowRight'
+        event.preventDefault()
+        if (modifier) {
+          if (event.repeat) return
+          const state = usePlayerStore.getState()
+          void (forward ? state.next() : state.prev())
+          return
+        }
+        seekBy(forward ? SEEK_STEP : -SEEK_STEP)
+        return
+      }
+      if (modifier || event.altKey || event.shiftKey || event.repeat) return
+      if (event.code === 'KeyM') {
+        event.preventDefault()
+        toggleMute()
+      } else if (event.code === 'KeyL') {
+        event.preventDefault()
+        toggleLikeCurrent()
       }
     }
     document.addEventListener('keydown', handler)
@@ -861,8 +942,10 @@ export function PlayerBar() {
   useEffect(() => {
     if (!('mediaSession' in navigator) || !currentSong) return
     if (!('MediaMetadata' in window)) return
-    const artwork = currentSong.al.picUrl
-      ? [{ src: currentSong.al.picUrl, sizes: '512x512', type: 'image/jpeg' }]
+    // Ask the CDN for a 512px copy instead of the multi-megapixel original.
+    const artworkUrl = resizedImageUrl(currentSong.al.picUrl, '512y512')
+    const artwork = artworkUrl
+      ? [{ src: artworkUrl, sizes: '512x512', type: 'image/jpeg' }]
       : []
     try {
       navigator.mediaSession.metadata = new MediaMetadata({
@@ -932,27 +1015,34 @@ export function PlayerBar() {
   }, [playing])
 
   // WebView2 can echo a position update back as a time update; update at most
-  // once per second so that echo can never become a render loop.
+  // once per second so that echo can never become a render loop. A store
+  // subscription keeps the position stream off the render path.
   const lastPositionRef = useRef(-1)
 
   useEffect(() => {
     if (!('mediaSession' in navigator) || !('setPositionState' in navigator.mediaSession)) {
       return
     }
-    if (Math.abs(currentTime - lastPositionRef.current) < 1) return
-    const durationSeconds = mediaSessionDuration / 1000
-    if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) return
-    lastPositionRef.current = currentTime
-    try {
-      navigator.mediaSession.setPositionState({
-        duration: durationSeconds,
-        playbackRate: 1,
-        position: Math.min(durationSeconds, Math.max(0, currentTime)),
-      })
-    } catch {
-      // Ignore transient invalid states while a track is switching.
+    const publish = (time: number) => {
+      if (Math.abs(time - lastPositionRef.current) < 1) return
+      const durationSeconds = mediaSessionDuration / 1000
+      if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) return
+      lastPositionRef.current = time
+      try {
+        navigator.mediaSession.setPositionState({
+          duration: durationSeconds,
+          playbackRate: 1,
+          position: Math.min(durationSeconds, Math.max(0, time)),
+        })
+      } catch {
+        // Ignore transient invalid states while a track is switching.
+      }
     }
-  }, [currentTime, mediaSessionDuration])
+    publish(usePlayerStore.getState().currentTime)
+    return usePlayerStore.subscribe((state, previous) => {
+      if (state.currentTime !== previous.currentTime) publish(state.currentTime)
+    })
+  }, [mediaSessionDuration])
 
   if (!queue.length || !currentSong) {
     return (
@@ -972,21 +1062,6 @@ export function PlayerBar() {
     trialDuration || (sourceMatches ? mediaDuration : 0) || currentSong.dt || 0
   const loadingSource = playing && !sourceReady
   const buffering = playing && sourceReady && !audioReady
-  const percent = duration ? Math.min(100, (currentTime * 1000 * 100) / duration) : 0
-  const pendingTime = pendingSeek !== null ? (pendingSeek / 100) * (duration / 1000) : null
-  // While the audio element still points at the previous track, force the
-  // progress UI to zero so stale timeupdate events can never leak through.
-  // A deferred seek keeps showing its target instead of snapping back to 0.
-  const displayTime = pendingTime ?? (sourceMatches ? currentTime : 0)
-  const displayPercent = pendingSeek ?? (sourceMatches ? percent : 0)
-  const displayBuffered = sourceMatches ? buffered : 0
-  const playbackTime = videoActive ? videoCurrentTime : displayTime
-  const playbackDurationMs = videoActive ? videoDuration * 1000 : duration
-  const playbackPercent = videoActive
-    ? videoDuration
-      ? Math.min(100, (videoCurrentTime / videoDuration) * 100)
-      : 0
-    : displayPercent
   const playbackPlaying = videoActive ? videoPlaying : playing
   const playbackBusy = videoActive ? false : busyVisible
 
@@ -1092,7 +1167,25 @@ export function PlayerBar() {
       const durationMs = Number.isFinite(value) && value > 0 ? value * 1000 : 0
       setLocalMediaDuration(durationMs)
       setMediaDuration(durationMs)
-      // A manual source switch keeps the position the user was at.
+      // A seek requested before the media became seekable (clicking the bar
+      // right after a restart) is what the user asked for: it wins over an
+      // automatic resume point. Previously a recovery reload's resumeAt of 0
+      // won and the click jumped back to the start.
+      const pending = pendingSeekRef.current
+      if (pending) {
+        pendingSeekRef.current = null
+        setPendingSeek(null)
+        if (pending.songId === currentSong.id) {
+          const mediaSeconds =
+            Number.isFinite(value) && value > 0 ? value : duration / 1000
+          const seconds = (pending.percent / 100) * mediaSeconds
+          audio.currentTime = seconds
+          if (audio === audioRef.current) setCurrentTime(seconds)
+          if (resumeAt != null) consumeResumeAt()
+          return
+        }
+      }
+      // A source switch, recovery reload or restored session keeps its position.
       if (resumeAt != null) {
         const target = Math.min(
           resumeAt,
@@ -1100,25 +1193,8 @@ export function PlayerBar() {
         )
         audio.currentTime = target
         if (audio === audioRef.current) setCurrentTime(target)
-        pendingSeekRef.current = null
-        setPendingSeek(null)
         consumeResumeAt()
-        return
       }
-      // Apply a seek that was requested before the media became seekable
-      // (e.g. clicking the bar right after a refresh).
-      const pending = pendingSeekRef.current
-      if (!pending) return
-      pendingSeekRef.current = null
-      if (pending.songId !== currentSong.id) {
-        setPendingSeek(null)
-        return
-      }
-      const mediaSeconds = Number.isFinite(value) && value > 0 ? value : duration / 1000
-      const seconds = (pending.percent / 100) * mediaSeconds
-      audio.currentTime = seconds
-      if (audio === audioRef.current) setCurrentTime(seconds)
-      setPendingSeek(null)
     },
     onLoadedData: (event: SyntheticEvent<HTMLAudioElement>) => {
       const audio = event.currentTarget
@@ -1356,15 +1432,7 @@ export function PlayerBar() {
           <Trans>打开播放页</Trans>
         </span>
       ) : null}
-      {videoActive ? (
-        <ImmersiveProgressBar
-          value={playbackPercent}
-          durationMs={playbackDurationMs}
-          onChange={(value) => {
-            if (videoDuration) seekVideo((value / 100) * videoDuration)
-          }}
-        />
-      ) : null}
+      {videoActive ? <VideoProgress /> : null}
       {showNowPlaying ? (
         <div className="flex min-w-0 items-center gap-2">
           <button
@@ -1574,11 +1642,7 @@ export function PlayerBar() {
           <button
             type="button"
             title={
-              mode === 'order'
-                ? i18n._(msg`顺序播放`)
-                : mode === 'random'
-                  ? i18n._(msg`随机播放`)
-                  : i18n._(msg`单曲循环`)
+              i18n._(PLAY_MODE_LABELS[mode])
             }
             onClick={cycleMode}
             className={cn(
@@ -1601,24 +1665,14 @@ export function PlayerBar() {
         </div>
 
         {!videoActive ? (
-          <div className="mt-1.5 grid h-5 w-full grid-cols-[36px_minmax(0,1fr)_36px] items-center gap-2.5 max-md:absolute max-md:inset-x-0 max-md:top-0 max-md:mt-0 max-md:px-3">
-            <span
-              data-testid="elapsed-time"
-              className="text-right text-[11px] leading-none tabular-nums text-black/35 max-md:hidden"
-            >
-              {formatDuration(playbackTime * 1000)}
-            </span>
-            <ProgressSlider
-              key={`${currentSong.id}-${playToken}-audio`}
-              value={playbackPercent}
-              buffered={displayBuffered}
-              onChange={handleSeek}
-              valueText={`${formatDuration(playbackTime * 1000)} / ${formatDuration(playbackDurationMs)}`}
-            />
-            <span className="text-[11px] leading-none tabular-nums text-black/35 max-md:hidden">
-              {formatDuration(playbackDurationMs)}
-            </span>
-          </div>
+          <AudioProgressRow
+            sliderKey={`${currentSong.id}-${playToken}-audio`}
+            audioRef={audioRef}
+            audioUrl={audioUrl}
+            durationMs={duration}
+            pendingSeek={pendingSeek}
+            onSeek={handleSeek}
+          />
         ) : null}
       </div>
 
@@ -1707,5 +1761,80 @@ export function PlayerBar() {
       <audio ref={audioARef} className="hidden" {...audioProps} />
       <audio ref={audioBRef} className="hidden" {...audioProps} />
     </div>
+  )
+}
+
+/**
+ * Elapsed / slider / duration row. It owns the currentTime and buffered
+ * subscriptions, so the ~4 Hz timeupdate stream re-renders this row only.
+ */
+function AudioProgressRow({
+  sliderKey,
+  audioRef,
+  audioUrl,
+  durationMs,
+  pendingSeek,
+  onSeek,
+}: {
+  sliderKey: string
+  audioRef: RefObject<HTMLAudioElement | null>
+  audioUrl: string
+  durationMs: number
+  pendingSeek: number | null
+  onSeek: (value: number) => void
+}) {
+  const currentTime = usePlayerStore((state) => state.currentTime)
+  const buffered = usePlayerStore((state) => state.buffered)
+  // Remembered position of a track that has not been loaded yet (restart).
+  const idleTime = usePlayerStore((state) => (state.audioUrl ? null : state.resumeAt))
+  // While the audio element still points at the previous track, force the
+  // progress UI to zero so stale timeupdate events can never leak through.
+  const sourceMatches =
+    Boolean(audioUrl) && audioRef.current?.getAttribute('src') === audioUrl
+  const percent = durationMs ? Math.min(100, (currentTime * 1000 * 100) / durationMs) : 0
+  const pendingTime =
+    pendingSeek !== null ? (pendingSeek / 100) * (durationMs / 1000) : null
+  // A deferred seek keeps showing its target instead of snapping back to 0.
+  const idlePercent =
+    idleTime && durationMs ? Math.min(100, (idleTime * 1000 * 100) / durationMs) : 0
+  const displayTime = pendingTime ?? (sourceMatches ? currentTime : (idleTime ?? 0))
+  const displayPercent = pendingSeek ?? (sourceMatches ? percent : idlePercent)
+  const displayBuffered = sourceMatches ? buffered : 0
+
+  return (
+    <div className="mt-1.5 grid h-5 w-full grid-cols-[36px_minmax(0,1fr)_36px] items-center gap-2.5 max-md:absolute max-md:inset-x-0 max-md:top-0 max-md:mt-0 max-md:px-3">
+      <span
+        data-testid="elapsed-time"
+        className="text-right text-[11px] leading-none tabular-nums text-black/35 max-md:hidden"
+      >
+        {formatDuration(displayTime * 1000)}
+      </span>
+      <ProgressSlider
+        key={sliderKey}
+        value={displayPercent}
+        buffered={displayBuffered}
+        onChange={onSeek}
+        valueText={`${formatDuration(displayTime * 1000)} / ${formatDuration(durationMs)}`}
+      />
+      <span className="text-[11px] leading-none tabular-nums text-black/35 max-md:hidden">
+        {formatDuration(durationMs)}
+      </span>
+    </div>
+  )
+}
+
+/** MV/video progress strip; subscribes to the video clock on its own. */
+function VideoProgress() {
+  const currentTime = useVideoPlaybackStore((state) => state.currentTime)
+  const duration = useVideoPlaybackStore((state) => state.duration)
+  const seek = useVideoPlaybackStore((state) => state.seek)
+  return (
+    <ImmersiveProgressBar
+      value={duration ? Math.min(100, (currentTime / duration) * 100) : 0}
+      durationMs={duration * 1000}
+      onChange={(value) => {
+        if (duration) seek((value / 100) * duration)
+      }}
+    />
   )
 }

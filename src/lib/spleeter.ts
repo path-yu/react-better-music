@@ -1,3 +1,5 @@
+import { msg } from '@lingui/core/macro'
+import { i18n } from '../i18n'
 import { bridgeFetch, requestJson } from './desktopBridge'
 
 export type SpleeterJob = {
@@ -84,7 +86,7 @@ async function pickSpleeterDir(path: string) {
   const response = await bridgeFetch(path, {
     method: 'POST',
   })
-  if (!response.ok) throw new Error(`选择目录失败 (${response.status})`)
+  if (!response.ok) throw new Error(i18n._(msg`选择目录失败 (${response.status})`))
   return (await response.json()) as {
     cancelled?: boolean
     status?: SpleeterStatus
@@ -117,7 +119,7 @@ export async function createSpleeterJob(
   )
   if (!response.ok) {
     const detail = await response.text().catch(() => '')
-    throw new Error(detail || `Spleeter 任务创建失败 (${response.status})`)
+    throw new Error(detail || i18n._(msg`Spleeter 任务创建失败 (${response.status})`))
   }
   return (await response.json()) as SpleeterJob
 }
@@ -148,7 +150,7 @@ export async function createSpleeterJobFromUrl(
   )
   if (!response.ok) {
     const detail = await response.text().catch(() => '')
-    throw new Error(detail || `Spleeter 任务创建失败 (${response.status})`)
+    throw new Error(detail || i18n._(msg`Spleeter 任务创建失败 (${response.status})`))
   }
   return (await response.json()) as SpleeterJob
 }
@@ -167,7 +169,7 @@ export async function waitForSpleeterJob(
     const job = await getSpleeterJob(id)
     onProgress?.(job)
     if (job.status === 'error') {
-      throw new Error(job.error || 'Spleeter 分离失败')
+      throw new Error(job.error || i18n._(msg`Spleeter 分离失败`))
     }
     if (job.status === 'done') return job
     await new Promise((resolve) => window.setTimeout(resolve, 800))
@@ -180,7 +182,7 @@ export async function fetchSpleeterStem(
 ) {
   const response = await bridgeFetch(path, undefined, timeoutMs)
   if (!response.ok) {
-    throw new Error(`音轨下载失败 (${response.status})`)
+    throw new Error(i18n._(msg`音轨下载失败 (${response.status})`))
   }
   return response.blob()
 }
