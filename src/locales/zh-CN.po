@@ -382,11 +382,11 @@ msgstr "下载到本地"
 msgid "下载失败"
 msgstr "下载失败"
 
-#: src/components/settings/UpdateCard.tsx:190
+#: src/components/settings/UpdateCard.tsx:200
 msgid "下载完成后可选择重启安装。"
 msgstr "下载完成后可选择重启安装。"
 
-#: src/components/settings/UpdateCard.tsx:200
+#: src/components/settings/UpdateCard.tsx:210
 msgid "下载更新"
 msgstr "下载更新"
 
@@ -1001,7 +1001,7 @@ msgid "双语对照"
 msgstr "双语对照"
 
 #. placeholder {0}: update.version
-#: src/components/settings/UpdateCard.tsx:187
+#: src/components/settings/UpdateCard.tsx:197
 msgid "发现新版本 {0}"
 msgstr "发现新版本 {0}"
 
@@ -1474,7 +1474,7 @@ msgstr "已选择 {0} / {1} 首"
 msgid "已重置配对，之前连接的手机需要重新扫码"
 msgstr "已重置配对，之前连接的手机需要重新扫码"
 
-#: src/components/settings/UpdateCard.tsx:108
+#: src/components/settings/UpdateCard.tsx:114
 msgid "开发版"
 msgstr "开发版"
 
@@ -1515,7 +1515,7 @@ msgstr "当前仅可试听 {trialEnd} 秒，登录或开通会员后可播放完
 msgid "当前使用网易云推荐的其他可播放版本"
 msgstr "当前使用网易云推荐的其他可播放版本"
 
-#: src/components/settings/UpdateCard.tsx:223
+#: src/components/settings/UpdateCard.tsx:233
 msgid "当前已是最新版本。"
 msgstr "当前已是最新版本。"
 
@@ -1537,7 +1537,7 @@ msgid "当前歌曲缺少完整人声或伴奏缓存，无法开启随心唱"
 msgstr "当前歌曲缺少完整人声或伴奏缓存，无法开启随心唱"
 
 #. placeholder {0}: state.local.version
-#: src/components/settings/UpdateCard.tsx:110
+#: src/components/settings/UpdateCard.tsx:116
 msgid "当前版本 {0}"
 msgstr "当前版本 {0}"
 
@@ -2014,7 +2014,7 @@ msgid "新歌加载失败"
 msgstr "新歌加载失败"
 
 #. placeholder {0}: update.version
-#: src/components/settings/UpdateCard.tsx:166
+#: src/components/settings/UpdateCard.tsx:176
 msgid "新版本 {0} 会在重启后安装，当前播放状态会结束。"
 msgstr "新版本 {0} 会在重启后安装，当前播放状态会结束。"
 
@@ -2252,7 +2252,7 @@ msgstr "更换头像"
 msgid "更改目录"
 msgstr "更改目录"
 
-#: src/components/settings/UpdateCard.tsx:163
+#: src/components/settings/UpdateCard.tsx:173
 msgid "更新已下载完成"
 msgstr "更新已下载完成"
 
@@ -2260,7 +2260,7 @@ msgstr "更新已下载完成"
 msgid "更新服务请求失败"
 msgstr "更新服务请求失败"
 
-#: src/components/settings/UpdateCard.tsx:141
+#: src/components/settings/UpdateCard.tsx:151
 msgid "更新配置不可用。"
 msgstr "更新配置不可用。"
 
@@ -2424,8 +2424,8 @@ msgstr "桌面歌词窗口暂不可用"
 msgid "桌面端"
 msgstr "桌面端"
 
-#: src/components/settings/UpdateCard.tsx:104
-#: src/components/settings/UpdateCard.tsx:127
+#: src/components/settings/UpdateCard.tsx:110
+#: src/components/settings/UpdateCard.tsx:137
 msgid "检查更新"
 msgstr "检查更新"
 
@@ -2584,11 +2584,11 @@ msgstr "歌词字号"
 msgid "歌词显示"
 msgstr "歌词显示"
 
-#: src/components/settings/UpdateCard.tsx:207
+#: src/components/settings/UpdateCard.tsx:217
 msgid "正在下载更新…"
 msgstr "正在下载更新…"
 
-#: src/components/settings/UpdateCard.tsx:230
+#: src/components/settings/UpdateCard.tsx:240
 msgid "正在准备重启并安装更新…"
 msgstr "正在准备重启并安装更新…"
 
@@ -3326,7 +3326,7 @@ msgstr "网络请求失败，请稍后重试"
 msgid "自动匹配"
 msgstr "自动匹配"
 
-#: src/components/settings/UpdateCard.tsx:133
+#: src/components/settings/UpdateCard.tsx:143
 msgid "自动更新只在安装版中启用；开发版请使用 desktop:release 验证更新流程。"
 msgstr "自动更新只在安装版中启用；开发版请使用 desktop:release 验证更新流程。"
 
@@ -3521,7 +3521,7 @@ msgstr "请选择图片文件"
 msgid "读取图片失败"
 msgstr "读取图片失败"
 
-#: src/components/settings/UpdateCard.tsx:112
+#: src/components/settings/UpdateCard.tsx:118
 msgid "读取当前版本…"
 msgstr "读取当前版本…"
 
@@ -3725,7 +3725,7 @@ msgstr "部分歌曲加载失败，可点击「刷新」重试"
 msgid "配色方案"
 msgstr "配色方案"
 
-#: src/components/settings/UpdateCard.tsx:178
+#: src/components/settings/UpdateCard.tsx:188
 msgid "重启并更新"
 msgstr "重启并更新"
 

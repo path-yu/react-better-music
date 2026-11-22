@@ -2,7 +2,13 @@ import { useCallback, useEffect, useState } from 'react'
 import { Trans } from '@lingui/react/macro'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
-import { CheckCircle2, Download, RefreshCw, RotateCcw } from 'lucide-react'
+import {
+  CheckCircle2,
+  Download,
+  Loader2,
+  RefreshCw,
+  RotateCcw,
+} from 'lucide-react'
 import { Button } from '@pikoloo/darwin-ui'
 import {
   applyDesktopUpdate,
@@ -116,16 +122,20 @@ export function UpdateCard() {
             ) : null}
           </p>
         </div>
-        <Button
-          variant="secondary"
-          size="sm"
-          loading={busy === 'check'}
+        <button
+          type="button"
+          aria-busy={busy === 'check'}
           disabled={!state?.supported || Boolean(busy)}
           onClick={() => void handleCheck()}
+          className="pressable inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-[var(--app-border)] px-3 text-[11px] font-medium text-ink-3 transition-colors hover:border-accent/30 hover:bg-accent/8 hover:text-ink-1 disabled:cursor-default disabled:opacity-40"
         >
-          <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+          {busy === 'check' ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <RefreshCw className="h-3.5 w-3.5" />
+          )}
           <Trans>检查更新</Trans>
-        </Button>
+        </button>
       </div>
 
       {!state?.packaged ? (

@@ -8,8 +8,16 @@
  * The update manifest is uploaded last so clients never see a release whose
  * archive or checksum is still missing.
  */
-import { existsSync, readFileSync, readdirSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { execFileSync } from 'node:child_process'
+import {
+  existsSync,
+  readFileSync,
+  readdirSync,
+  renameSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs'
+import { basename, dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { findGh, runGh } from './lib/gh.mjs'
 
@@ -41,16 +49,56 @@ const notesFile =
     ? resolve(root, process.argv[notesIndex + 1])
     : null
 
-const files = readdirSync(artifacts)
-  .filter((name) => !name.endsWith('-update.json'))
-  .sort()
-  .map((name) => join(artifacts, name))
 const manifest = join(artifacts, 'stable-win-x64-update.json')
 
 if (!existsSync(manifest)) {
   console.error('✗ 未找到 stable-win-x64-update.json')
   process.exit(1)
 }
+
+// GitHub strips non-ASCII characters from uploaded asset names. Hutch derives
+// the tar name from the Chinese app name, so normalize it and keep the manifest
+// in sync before uploading. Otherwise update.json points at a 404.
+function asciiArtifactName(name) {
+  if (/^[\x20-\x7e]+$/.test(name)) return name
+  if (name.endsWith('.tar.zst')) return 'stable-win-x64-app.tar.zst'
+  if (name.endsWith('-Setup.zip')) return 'win-x64-Setup.zip'
+  if (name.endsWith('.exe')) return 'Shengyu-Setup.exe'
+  return name
+    .replace(/[^\x20-\x7e]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
+const manifestData = JSON.parse(readFileSync(manifest, 'utf8'))
+const artifactName = manifestData?.artifact?.file
+if (artifactName && !/^[\x20-\x7e]+$/.test(artifactName)) {
+  const source = join(artifacts, artifactName)
+  const target = join(artifacts, asciiArtifactName(artifactName))
+  if (existsSync(source) && source !== target) {
+    renameSync(source, target)
+  }
+  if (existsSync(target)) {
+    manifestData.artifact.file = basename(target)
+    writeFileSync(manifest, JSON.stringify(manifestData), 'utf8')
+    console.log(`› 更新包已重命名为 ${basename(target)}`)
+  }
+}
+
+for (const name of readdirSync(artifacts)) {
+  const targetName = asciiArtifactName(name)
+  if (targetName !== name) {
+    const source = join(artifacts, name)
+    const target = join(artifacts, targetName)
+    renameSync(source, target)
+    console.log(`› 资产已重命名为 ${targetName}`)
+  }
+}
+
+const files = readdirSync(artifacts)
+  .filter((name) => !name.endsWith('-update.json'))
+  .sort()
+  .map((name) => join(artifacts, name))
 
 const ghExe = findGh()
 if (!ghExe) {
@@ -66,8 +114,14 @@ const gh = (args) =>
   })
 
 let createdDraft = false
+let releaseIsDraft = false
 try {
-  gh(['release', 'view', tag])
+  const raw = execFileSync(
+    ghExe,
+    ['release', 'view', tag, '--json', 'isDraft'],
+    { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
+  )
+  releaseIsDraft = Boolean(JSON.parse(raw).isDraft)
 } catch {
   gh([
     'release',
@@ -81,15 +135,21 @@ try {
       : ['--notes', `声屿 ${tag}`]),
   ])
   createdDraft = true
+  releaseIsDraft = true
 }
 
 for (const file of files) {
+  const size = statSync(file).size
+  console.log(
+    `↑ ${basename(file)} (${(size / 1024 / 1024).toFixed(1)} MB)`,
+  )
   gh(['release', 'upload', tag, file, '--clobber'])
 }
 // Clients read the manifest first; publish it only after every payload file.
+console.log('↑ stable-win-x64-update.json')
 gh(['release', 'upload', tag, manifest, '--clobber'])
 
-if (createdDraft) {
+if (createdDraft || releaseIsDraft) {
   gh(['release', 'edit', tag, '--draft=false'])
 }
 
