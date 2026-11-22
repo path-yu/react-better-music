@@ -24,7 +24,7 @@ export function VideoCard({ item, onClick, priority }: VideoCardProps) {
           imageClassName="transition-transform duration-500 group-hover:scale-[1.04]"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent opacity-70" />
-        <span className="absolute left-2 top-2 rounded-full bg-black/35 px-1.5 py-0.5 text-[10px] font-medium text-white/90 backdrop-blur-sm">
+        <span className="absolute left-2 top-2 rounded-full bg-black/35 px-1.5 py-0.5 text-[11px] font-medium text-white/90 backdrop-blur-sm">
           {item.kind === 'mv' ? 'MV' : <Trans>视频</Trans>}
         </span>
         {item.playCount ? (
@@ -42,10 +42,10 @@ export function VideoCard({ item, onClick, priority }: VideoCardProps) {
           <Play className="ml-0.5 h-3.5 w-3.5 fill-current" />
         </span>
       </div>
-      <p className="mt-2 line-clamp-1 text-[12.5px] font-medium text-black/75 group-hover:text-accent">
+      <p className="mt-2 line-clamp-1 text-[13px] font-medium text-ink-2 group-hover:text-accent">
         {item.title}
       </p>
-      <p className="mt-0.5 line-clamp-1 text-[11px] text-black/35">
+      <p className="mt-0.5 line-clamp-1 text-[11px] text-ink-4">
         {item.artist || (item.kind === 'mv' ? 'MV' : <Trans>视频</Trans>)}
       </p>
     </button>

@@ -10,6 +10,7 @@ import { Button } from '@pikoloo/darwin-ui'
 import { useLocalLibraryStore } from '../../store/localLibrary'
 import { useDocumentTitle } from '../../lib/title'
 
+import { PageHeader } from '../../components/common/PageHeader'
 export const Route = createFileRoute('/local/favorites')({
   component: LocalFavoritesPage,
 })
@@ -21,19 +22,12 @@ function LocalFavoritesPage() {
   const favorites = useLocalLibraryStore((state) => state.favorites)
 
   return (
-    <div className="px-8 pb-14 pt-6">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <h1 className="headline-lg flex items-center gap-2">
-            <Heart className="h-5 w-5 text-[#ff2d55]" />
-            <Trans>我喜欢的音乐</Trans>
-          </h1>
-          <p className="mt-1.5 text-[12px] text-black/35">
-            <Trans>保存在安装目录的本地收藏，不需要登录</Trans>
-          </p>
-        </div>
-        <PlayAllButton songs={favorites} playlistId="local-favorites" />
-      </div>
+    <div className="page">
+      <PageHeader
+        title={<Trans>我喜欢的音乐</Trans>}
+        description={<Trans>保存在安装目录的本地收藏，不需要登录</Trans>}
+        actions={<PlayAllButton songs={favorites} playlistId="local-favorites" />}
+      />
 
       <div className="mt-5">
         {favorites.length ? (

@@ -97,18 +97,18 @@ function VideoPage() {
 
 
   return (
-    <div className="px-8 pb-16 pt-5">
+    <div className="page">
       <button
         type="button"
         onClick={goBack}
-        className="pressable flex items-center gap-1.5 rounded-full px-2 py-1 text-[11.5px] text-black/40 transition-colors hover:bg-black/5 hover:text-black/70"
+        className="pressable flex items-center gap-1.5 rounded-full px-2 py-1 text-[12px] text-ink-3 transition-colors hover:bg-black/5 hover:text-ink-2"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         <Trans>返回</Trans>
       </button>
 
       <div className="mt-4 flex flex-col gap-6">
-        <div className="flex min-h-[260px] items-center justify-center rounded-[20px] bg-[#0b0b0d] p-3">
+        <div className="flex min-h-[260px] items-center justify-center rounded-[22px] bg-[#0b0b0d] p-3">
           {loading ? (
             <div className="flex flex-col items-center gap-2.5 text-white/50">
               <Loader2 className="h-6 w-6 animate-spin" />
@@ -117,7 +117,7 @@ function VideoPage() {
               </span>
             </div>
           ) : url ? (
-            <div className="w-full overflow-hidden rounded-[16px] bg-black">
+            <div className="w-full overflow-hidden rounded-[18px] bg-black">
               <MvVideoPlayer
                 key={url}
                 src={url}
@@ -158,10 +158,10 @@ function VideoPage() {
 
         <div>
           <p className="eyebrow">{kind === 'mlog' ? 'Mlog' : <Trans>视频</Trans>}</p>
-          <h1 className="headline-lg mt-1 text-[24px]">
+          <h1 className="headline-lg mt-1">
             {title || i18n._(msg`视频`)}
           </h1>
-          <p className="mt-2 text-[12px] text-black/40">
+          <p className="mt-2 text-[12px] text-ink-3">
             {artist || i18n._(msg`网易云音乐`)}
             {duration ? ` · ${formatDuration(duration)}` : ''}
           </p>

@@ -4,7 +4,6 @@ import type { MessageDescriptor } from '@lingui/core'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { Film } from 'lucide-react'
 import { Skeleton } from '@pikoloo/darwin-ui'
 import { MvCard } from '../components/cards/MvCard'
 import { EmptyState } from '../components/common/EmptyState'
@@ -15,6 +14,7 @@ import { useDocumentTitle } from '../lib/title'
 import { toast } from '../lib/toast'
 import type { Mv } from '../types'
 
+import { PageHeader } from '../components/common/PageHeader'
 export const Route = createFileRoute('/latest-mv')({
   component: LatestMvPage,
 })
@@ -96,18 +96,14 @@ function LatestMvPage() {
   }
 
   return (
-    <div className="px-8 pb-14 pt-6">
-      <div>
-        <h1 className="headline-lg flex items-center gap-2">
-          <Film className="h-5 w-5 text-accent" />
-          <Trans>最新 MV</Trans>
-        </h1>
-        <p className="mt-1.5 text-[12px] text-black/35">
-          <Trans>按地区、类型与热度浏览音乐视频</Trans>
-        </p>
-      </div>
+    <div className="page">
+      <PageHeader
+        eyebrow={<Trans>发现音乐</Trans>}
+        title={<Trans>最新 MV</Trans>}
+        description={<Trans>按地区、类型与热度浏览音乐视频</Trans>}
+      />
 
-      <div className="mt-5 space-y-2.5 rounded-[18px] border border-[var(--app-border)] bg-[var(--app-card)] px-4 py-3.5">
+      <div className="mt-5 space-y-2.5">
         <FilterRow
           label={msg`地区`}
           options={AREAS}
@@ -169,7 +165,7 @@ function FilterRow({
   const { i18n } = useLingui()
   return (
     <div className="flex items-center gap-3">
-      <span className="w-8 shrink-0 text-[11px] font-medium text-black/30 dark:text-white/35">
+      <span className="w-8 shrink-0 text-[11px] font-medium text-ink-4 dark:text-white/35">
         {i18n._(label)}
       </span>
       <div className="flex flex-wrap gap-1.5">
@@ -178,12 +174,8 @@ function FilterRow({
             key={option}
             type="button"
             onClick={() => onChange(option)}
-            className={cn(
-              'rounded-full px-2.5 py-1 text-[11px] transition-colors',
-              value === option
-                ? 'bg-accent text-white'
-                : 'text-black/45 hover:bg-black/5 hover:text-black/70 dark:text-white/50 dark:hover:bg-white/8 dark:hover:text-white/80',
-            )}
+            aria-pressed={value === option}
+            className={cn('chip', value === option && 'chip--selected')}
           >
             {FILTER_LABELS[option] ? i18n._(FILTER_LABELS[option]) : option}
           </button>

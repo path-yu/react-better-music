@@ -31,7 +31,7 @@ export function PlayAllButton({ songs, playlistId, label }: PlayAllButtonProps) 
       <Button
         variant="primary"
         size="sm"
-        className="pressable rounded-full px-4 text-[12.5px]"
+        className="pressable rounded-full px-4 text-[13px]"
         onClick={handlePlayAll}
       >
         <Play className="mr-1.5 h-3.5 w-3.5 fill-current" />

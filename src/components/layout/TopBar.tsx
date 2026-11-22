@@ -65,7 +65,7 @@ export function TopBar() {
           aria-label={i18n._(msg`打开导航`)}
           onClick={toggleSidebar}
           className={cn(
-            'pressable pointer-events-auto flex h-7 w-7 items-center justify-center rounded-[6px] text-black/45 transition-colors hover:bg-black/5 hover:text-black/75 max-md:h-10 max-md:w-10 md:hidden',
+            'pressable pointer-events-auto flex h-7 w-7 items-center justify-center rounded-[6px] text-ink-3 transition-colors hover:bg-black/5 hover:text-ink-2 max-md:h-10 max-md:w-10 md:hidden',
             desktopChrome && NO_DRAG_CLASS,
           )}
         >
@@ -81,7 +81,7 @@ export function TopBar() {
           }
           onClick={toggleSidebarCollapsed}
           className={cn(
-            'pressable pointer-events-auto flex h-7 w-7 items-center justify-center rounded-[6px] text-black/40 transition-colors hover:bg-black/5 hover:text-black/75 max-md:hidden',
+            'pressable pointer-events-auto flex h-7 w-7 items-center justify-center rounded-[6px] text-ink-3 transition-colors hover:bg-black/5 hover:text-ink-2 max-md:hidden',
             desktopChrome && NO_DRAG_CLASS,
           )}
         >
@@ -97,7 +97,7 @@ export function TopBar() {
             aria-label={i18n._(msg`后退`)}
             onClick={() => window.history.back()}
             className={cn(
-              'pressable flex h-7 w-7 items-center justify-center rounded-[6px] text-black/45 transition-colors hover:bg-black/5 hover:text-black/75 max-md:h-10 max-md:w-10',
+              'pressable flex h-7 w-7 items-center justify-center rounded-[6px] text-ink-3 transition-colors hover:bg-black/5 hover:text-ink-2 max-md:h-10 max-md:w-10',
               desktopChrome && NO_DRAG_CLASS,
             )}
           >
@@ -108,7 +108,7 @@ export function TopBar() {
             aria-label={i18n._(msg`前进`)}
             onClick={() => window.history.forward()}
             className={cn(
-              'pressable flex h-7 w-7 items-center justify-center rounded-[6px] text-black/45 transition-colors hover:bg-black/5 hover:text-black/75 max-md:h-10 max-md:w-10',
+              'pressable flex h-7 w-7 items-center justify-center rounded-[6px] text-ink-3 transition-colors hover:bg-black/5 hover:text-ink-2 max-md:h-10 max-md:w-10',
               desktopChrome && NO_DRAG_CLASS,
             )}
           >
@@ -131,7 +131,7 @@ export function TopBar() {
             }
             onClick={toggleTheme}
             className={cn(
-              'pressable flex h-7 w-7 items-center justify-center rounded-full text-black/40 transition-colors hover:bg-black/5 hover:text-black/75 max-md:hidden',
+              'pressable flex h-7 w-7 items-center justify-center rounded-full text-ink-3 transition-colors hover:bg-black/5 hover:text-ink-2 max-md:hidden',
               desktopChrome && NO_DRAG_CLASS,
             )}
           >
@@ -157,7 +157,7 @@ export function TopBar() {
               navigate({ to: '/settings', search: { tab: 'general' } })
             }
             className={cn(
-              'pressable flex h-7 w-7 items-center justify-center rounded-full text-black/40 transition-colors hover:bg-black/5 hover:text-black/75 max-md:h-10 max-md:w-10',
+              'pressable flex h-7 w-7 items-center justify-center rounded-full text-ink-3 transition-colors hover:bg-black/5 hover:text-ink-2 max-md:h-10 max-md:w-10',
               desktopChrome && NO_DRAG_CLASS,
             )}
           >

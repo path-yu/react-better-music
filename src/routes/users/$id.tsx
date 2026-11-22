@@ -150,7 +150,7 @@ function UserDetailPage() {
 
   if (failed || (!loading && !profile)) {
     return (
-      <div className="px-8 pt-10">
+      <div className="page">
         <EmptyState
           variant="error"
           title={i18n._(msg`用户不存在或无法访问`)}
@@ -163,12 +163,12 @@ function UserDetailPage() {
 
   if (loading || !profile) {
     return (
-      <div className="px-8 pb-14 pt-6">
+      <div className="page">
         <Skeleton className="h-[240px] w-full rounded-[22px]" />
         <Skeleton className="mt-5 h-4 w-24 rounded-full" />
         <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
           {Array.from({ length: 5 }).map((_, index) => (
-            <Skeleton key={index} className="aspect-square w-full rounded-[16px]" />
+            <Skeleton key={index} className="aspect-square w-full rounded-[18px]" />
           ))}
         </div>
       </div>
@@ -183,7 +183,7 @@ function UserDetailPage() {
     i18n._(msg`暂无简介`)
 
   return (
-    <div className="px-8 pb-14 pt-6">
+    <div className="page">
       <div className="relative overflow-hidden rounded-[22px] border border-black/[0.06] bg-white/55">
         {background ? (
           <img
@@ -197,7 +197,7 @@ function UserDetailPage() {
         <button
           type="button"
           onClick={goBack}
-          className="pressable absolute left-4 top-4 z-10 flex items-center gap-1.5 rounded-full bg-white/55 px-2.5 py-1 text-[11.5px] text-black/45 backdrop-blur-md transition-colors hover:bg-white/80 hover:text-black/75"
+          className="pressable absolute left-4 top-4 z-10 flex items-center gap-1.5 rounded-full bg-white/55 px-2.5 py-1 text-[12px] text-ink-3 backdrop-blur-md transition-colors hover:bg-white/80 hover:text-ink-2"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           <Trans>返回</Trans>
@@ -217,30 +217,30 @@ function UserDetailPage() {
                 <Trans>用户</Trans>
               </p>
               {level > 0 ? (
-                <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
+                <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent">
                   Lv.{level}
                 </span>
               ) : null}
             </div>
             <h1 className="headline-lg mt-1.5 line-clamp-1">{profile.nickname}</h1>
-            <p className="mt-1.5 line-clamp-2 max-w-[680px] text-[12px] leading-relaxed text-black/45">
+            <p className="mt-1.5 line-clamp-2 max-w-[680px] text-[12px] leading-relaxed text-ink-3">
               {profile.signature?.trim() || i18n._(msg`暂无简介`)}
             </p>
-            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11.5px] text-black/40">
+            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] text-ink-3">
               <span>
-                <strong className="font-semibold text-black/70">
+                <strong className="font-semibold text-ink-2">
                   {formatNumber(profile.follows)}
                 </strong>{' '}
                 <Trans>关注</Trans>
               </span>
               <span>
-                <strong className="font-semibold text-black/70">
+                <strong className="font-semibold text-ink-2">
                   {formatNumber(profile.followeds)}
                 </strong>{' '}
                 <Trans>粉丝</Trans>
               </span>
               <span>
-                <strong className="font-semibold text-black/70">
+                <strong className="font-semibold text-ink-2">
                   {formatNumber(profile.playlistCount)}
                 </strong>{' '}
                 <Trans>歌单</Trans>
@@ -260,7 +260,7 @@ function UserDetailPage() {
         <p className="eyebrow text-left">
           <Trans>简介</Trans>
         </p>
-        <p className="mt-1.5 whitespace-pre-wrap break-words text-[12.5px] leading-relaxed text-black/60">
+        <p className="mt-1.5 whitespace-pre-wrap break-words text-[13px] leading-relaxed text-ink-2">
           {bio}
         </p>
       </section>

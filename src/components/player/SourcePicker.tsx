@@ -68,7 +68,7 @@ export function SourcePicker({
             'pressable flex h-7 w-7 items-center justify-center rounded-full transition-colors max-md:h-10 max-md:w-10',
             immersive
               ? 'text-white/55 hover:bg-white/10 hover:text-white'
-              : 'text-black/45 hover:bg-black/5 hover:text-black/75',
+              : 'text-ink-3 hover:bg-black/5 hover:text-ink-2',
           )}
         >
           {switchingSource ? (
@@ -87,15 +87,15 @@ export function SourcePicker({
             <p
               className={cn(
                 'text-[11px]',
-                immersive ? 'text-white/45' : 'text-black/35',
+                immersive ? 'text-white/45' : 'text-ink-4',
               )}
             >
               <Trans>选择音源</Trans>
             </p>
             <p
               className={cn(
-                'max-w-[120px] truncate text-[10px]',
-                immersive ? 'text-white/40' : 'text-black/30',
+                'max-w-[120px] truncate text-[11px]',
+                immersive ? 'text-white/40' : 'text-ink-4',
               )}
               title={currentLabel}
             >
@@ -105,7 +105,7 @@ export function SourcePicker({
 
           <div
             className={cn(
-              'max-h-[min(46vh,320px)] space-y-0.5 overflow-y-auto rounded-[8px] p-0.5',
+              'max-h-[min(46vh,320px)] space-y-0.5 overflow-y-auto rounded-[10px] p-0.5',
               immersive ? 'bg-white/5' : 'bg-black/4',
             )}
           >
@@ -119,26 +119,26 @@ export function SourcePicker({
                   disabled={switchingSource}
                   onClick={() => handleSelect(option.value)}
                   className={cn(
-                    'flex w-full items-start justify-between gap-2 rounded-[7px] px-2 py-1.5 text-left transition-colors disabled:opacity-50',
+                    'flex w-full items-start justify-between gap-2 rounded-[6px] px-2 py-1.5 text-left transition-colors disabled:opacity-50',
                     active
                       ? immersive
                         ? 'bg-white/14 text-white shadow-sm'
                         : 'bg-white text-accent shadow-sm dark:bg-white/15 dark:text-white'
                       : immersive
                         ? 'text-white/65 hover:bg-white/8'
-                        : 'text-black/65 hover:bg-black/5 dark:text-white/60 dark:hover:bg-white/10',
+                        : 'text-ink-2 hover:bg-black/5 dark:text-white/60 dark:hover:bg-white/10',
                   )}
                 >
                   <span className="min-w-0">
-                    <span className="block text-[11.5px] font-medium">
+                    <span className="block text-[12px] font-medium">
                       {i18n._(option.label)}
                     </span>
                     <span
                       className={cn(
-                        'mt-0.5 block text-[10px] leading-relaxed',
+                        'mt-0.5 block text-[11px] leading-relaxed',
                         immersive
                           ? 'text-white/40'
-                          : 'text-black/35 dark:text-white/35',
+                          : 'text-ink-4 dark:text-white/35',
                       )}
                     >
                       {i18n._(option.description)}
@@ -152,8 +152,8 @@ export function SourcePicker({
 
           <p
             className={cn(
-              'px-2 pb-1 pt-1.5 text-[10px] leading-relaxed',
-              immersive ? 'text-white/35' : 'text-black/30 dark:text-white/30',
+              'px-2 pb-1 pt-1.5 text-[11px] leading-relaxed',
+              immersive ? 'text-white/35' : 'text-ink-4 dark:text-white/30',
             )}
           >
             <Trans>选择后立即重新获取当前歌曲；自动匹配会按内置顺序尝试。</Trans>

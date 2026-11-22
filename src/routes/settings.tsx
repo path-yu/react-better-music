@@ -86,6 +86,7 @@ import { formatDate, formatDuration } from '../lib/format'
 import { useDocumentTitle } from '../lib/title'
 import { toast } from '../lib/toast'
 
+import { PageHeader } from '../components/common/PageHeader'
 export const Route = createFileRoute('/settings')({
   validateSearch: (search: Record<string, unknown>) => {
     const tab = search.tab
@@ -219,6 +220,10 @@ function SettingsPage() {
   )
   const setVolumeNormalization = useSettingsStore(
     (state) => state.setVolumeNormalization,
+  )
+  const showRemainingTime = useSettingsStore((state) => state.showRemainingTime)
+  const setShowRemainingTime = useSettingsStore(
+    (state) => state.setShowRemainingTime,
   )
 
   useEffect(() => {
@@ -580,16 +585,11 @@ function SettingsPage() {
   }, [activeTab])
 
   return (
-    <div className="settings-page mx-auto max-w-[1200px] px-8 pb-4 pt-7 max-md:px-5">
-      {/* <div>
-        <h1 className="headline-lg flex items-center gap-2">
-          <Settings2 className="h-5 w-5 text-accent" />
-          <Trans>设置</Trans>
-        </h1>
-        <p className="mt-1.5 text-[12px] text-black/35">
-          <Trans>管理外观、播放、缓存与桌面功能</Trans>
-        </p>
-      </div> */}
+    <div className="page settings-page mx-auto max-w-[1200px] pb-4">
+      <PageHeader
+        title={<Trans>设置</Trans>}
+        description={<Trans>管理外观、播放、缓存与桌面功能</Trans>}
+      />
 
       <div className="settings-shell mt-6">
         <SettingsNav
@@ -614,7 +614,7 @@ function SettingsPage() {
         <section className="apple-card p-5 sm:p-6" data-settings-section="general">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
+              <h2 className="flex items-center gap-2 text-[15px] font-semibold text-ink-1">
                 <PaletteIcon className="h-4 w-4 text-accent" />
                 <Trans>外观</Trans>
               </h2>
@@ -626,8 +626,8 @@ function SettingsPage() {
                 aria-pressed={theme === 'light'}
                 className={`pressable flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] transition-colors ${
                   theme === 'light'
-                    ? 'bg-white text-black/75 shadow-sm dark:bg-white/15 dark:text-white'
-                    : 'text-black/40 hover:text-black/65 dark:text-white/45 dark:hover:text-white/80'
+                    ? 'bg-white text-ink-2 shadow-sm dark:bg-white/15 dark:text-white'
+                    : 'text-ink-3 hover:text-ink-2 dark:text-white/45 dark:hover:text-white/80'
                 }`}
               >
                 <Sun className="h-3 w-3" />
@@ -639,8 +639,8 @@ function SettingsPage() {
                 aria-pressed={theme === 'dark'}
                 className={`pressable flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] transition-colors ${
                   theme === 'dark'
-                    ? 'bg-white text-black/75 shadow-sm dark:bg-white/15 dark:text-white'
-                    : 'text-black/40 hover:text-black/65 dark:text-white/45 dark:hover:text-white/80'
+                    ? 'bg-white text-ink-2 shadow-sm dark:bg-white/15 dark:text-white'
+                    : 'text-ink-3 hover:text-ink-2 dark:text-white/45 dark:hover:text-white/80'
                 }`}
               >
                 <Moon className="h-3 w-3" />
@@ -651,10 +651,10 @@ function SettingsPage() {
 
           <div className="mt-6">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-[12px] font-medium text-black/65">
+              <p className="text-[12px] font-medium text-ink-2">
                 <Trans>配色方案</Trans>
               </p>
-              <span className="text-[10.5px] text-black/30">
+              <span className="text-[11px] text-ink-4">
                 <Trans>点击色点立即切换</Trans>
               </span>
             </div>
@@ -673,7 +673,7 @@ function SettingsPage() {
                     title={i18n._(option.description)}
                     aria-pressed={selected}
                     onClick={() => setPalette(option.id)}
-                    className={`group flex min-w-0 flex-col items-center gap-2 rounded-xl border px-2 py-3 transition-colors ${
+                    className={`group flex min-w-0 flex-col items-center gap-2 rounded-[14px] border px-2 py-3 transition-colors ${
                       selected
                         ? 'border-accent/25 bg-accent/5'
                         : 'border-transparent hover:bg-black/4 dark:hover:bg-white/5'
@@ -699,8 +699,8 @@ function SettingsPage() {
                     <span
                       className={`min-w-0 max-w-full truncate text-[11px] ${
                         selected
-                          ? 'font-medium text-black/80'
-                          : 'text-black/55'
+                          ? 'font-medium text-ink-1'
+                          : 'text-ink-2'
                       }`}
                     >
                       {i18n._(option.label)}
@@ -711,13 +711,13 @@ function SettingsPage() {
             </div>
           </div>
 
-          <div className="mt-5 divide-y divide-[var(--app-border)] overflow-hidden rounded-xl border border-[var(--app-border)] bg-black/[0.018] dark:bg-white/[0.025]">
+          <div className="mt-5 divide-y divide-[var(--app-border)] overflow-hidden settings-group">
             <div className="flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
-                <p className="text-[13px] font-medium text-black/75">
+                <p className="text-[13px] font-medium text-ink-2">
                   <Trans>WebGL 雾化背景</Trans>
                 </p>
-                <p className="mt-1 max-w-[560px] text-[11px] leading-relaxed text-black/40">
+                <p className="mt-1 max-w-[560px] text-[11px] leading-relaxed text-ink-3">
                   <Trans>
                     默认使用轻量的 CSS 动态渐变；开启后在歌曲详情页使用 GPU 绘制封面色彩雾气，不支持 WebGL 时自动回退。
                   </Trans>
@@ -732,10 +732,10 @@ function SettingsPage() {
 
             <div className="flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
-                <p className="text-[13px] font-medium text-black/75">
+                <p className="text-[13px] font-medium text-ink-2">
                   <Trans>播放页过渡动画</Trans>
                 </p>
-                <p className="mt-1 text-[11px] leading-relaxed text-black/40">
+                <p className="mt-1 text-[11px] leading-relaxed text-ink-3">
                   <Trans>进入和离开歌曲详情页时使用的动画效果。</Trans>
                 </p>
               </div>
@@ -756,11 +756,11 @@ function SettingsPage() {
 
             <div className="flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
-                <p className="flex items-center gap-2 text-[13px] font-medium text-black/75">
+                <p className="flex items-center gap-2 text-[13px] font-medium text-ink-2">
                   <Languages className="h-3.5 w-3.5 text-accent" />
                   <span>语言 / Language</span>
                 </p>
-                <p className="mt-1 text-[11px] leading-relaxed text-black/40">
+                <p className="mt-1 text-[11px] leading-relaxed text-ink-3">
                   <Trans>切换界面语言，语言资源加载后立即生效。</Trans>
                 </p>
               </div>
@@ -782,11 +782,11 @@ function SettingsPage() {
         <section className="apple-card p-6" data-settings-section="playback">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
+              <h2 className="flex items-center gap-2 text-[15px] font-semibold text-ink-1">
                 <Headphones className="h-4 w-4 text-accent" />
                 <Trans>播放</Trans>
               </h2>
-              <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-black/40">
+              <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-ink-3">
                 <Trans>
                   调整歌曲详情页的唱片样式，并让不同歌曲以更接近的响度播放。
                 </Trans>
@@ -795,10 +795,10 @@ function SettingsPage() {
           </div>
 
           <div className="mt-5">
-            <p className="text-[13px] font-medium text-black/75">
+            <p className="text-[13px] font-medium text-ink-2">
               <Trans>播放器样式</Trans>
             </p>
-            <p className="mt-1 max-w-[560px] text-[11px] leading-relaxed text-black/40">
+            <p className="mt-1 max-w-[560px] text-[11px] leading-relaxed text-ink-3">
               <Trans>选择歌曲详情页的封面呈现方式，立即生效。</Trans>
             </p>
             <PlayerStylePicker />
@@ -806,10 +806,10 @@ function SettingsPage() {
 
           <div className="mt-5 flex items-center justify-between gap-4 border-t border-[var(--app-border)] pt-4">
             <div>
-              <p className="text-[13px] font-medium text-black/75">
+              <p className="text-[13px] font-medium text-ink-2">
                 <Trans>音量均衡</Trans>
               </p>
-              <p className="mt-1 max-w-[560px] text-[11px] leading-relaxed text-black/40">
+              <p className="mt-1 max-w-[560px] text-[11px] leading-relaxed text-ink-3">
                 <Trans>
                   实时分析播放响度，自动压低过响的部分并补足偏轻的歌曲，减少切歌时的音量跳变。部分设备或受保护音源可能无法分析。
                 </Trans>
@@ -821,6 +821,24 @@ function SettingsPage() {
               aria-label={i18n._(msg`音量均衡`)}
             />
           </div>
+
+          <div className="mt-5 flex items-center justify-between gap-4 border-t border-[var(--app-border)] pt-4">
+            <div>
+              <p className="text-[13px] font-medium text-ink-2">
+                <Trans>进度条显示剩余时间</Trans>
+              </p>
+              <p className="mt-1 max-w-[560px] text-[11px] leading-relaxed text-ink-3">
+                <Trans>
+                  开启后，底部播放栏和歌曲详情页的进度条右侧显示剩余时间；关闭则显示总时长。也可以直接点击右侧的时间切换。
+                </Trans>
+              </p>
+            </div>
+            <Switch
+              checked={showRemainingTime}
+              onChange={setShowRemainingTime}
+              aria-label={i18n._(msg`进度条显示剩余时间`)}
+            />
+          </div>
         </section>
 
         {desktop ? (
@@ -828,23 +846,23 @@ function SettingsPage() {
           <section className="apple-card p-5 sm:p-6" data-settings-section="playback">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80 dark:text-white/85">
+                <h2 className="flex items-center gap-2 text-[15px] font-semibold text-ink-1 dark:text-white/85">
                   <WandSparkles className="h-4 w-4 text-accent" />
                   <Trans>智能伴奏 · Spleeter</Trans>
                 </h2>
-                <p className="mt-1 max-w-[620px] text-[11px] leading-relaxed text-black/40 dark:text-white/45">
+                <p className="mt-1 max-w-[620px] text-[11px] leading-relaxed text-ink-3 dark:text-white/45">
                   <Trans>
                     安装本地 Spleeter 后，可在歌曲详情页生成并切换原曲、人声或伴奏，结果会缓存到本机。
                   </Trans>
                 </p>
               </div>
               <span
-                className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium ${
+                className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${
                   spleeterStatus?.available
                     ? 'bg-emerald-500/10 text-emerald-700'
                     : spleeterStatus?.install?.installing
                       ? 'bg-accent/10 text-accent'
-                      : 'bg-black/5 text-black/40'
+                      : 'bg-black/5 text-ink-3'
                 }`}
               >
                 {spleeterStatus?.available
@@ -857,7 +875,7 @@ function SettingsPage() {
 
             <div className="mt-4">
               <label className="flex flex-col gap-1.5">
-                <span className="text-[10.5px] font-medium text-black/50 dark:text-white/55">
+                <span className="text-[11px] font-medium text-ink-3 dark:text-white/55">
                   <Trans>下载代理</Trans>
                 </span>
                 <input
@@ -866,9 +884,9 @@ function SettingsPage() {
                     setSpleeterProxyUrl(event.target.value)
                   }
                   placeholder="http://127.0.0.1:7890"
-                  className="h-8 w-full max-w-[420px] rounded-lg border border-[var(--app-border)] bg-[var(--app-card)] px-2 text-[11px] text-black/72 outline-none transition-colors focus:border-accent/50 dark:bg-white/[0.04] dark:text-white/72"
+                  className="h-8 w-full max-w-[420px] rounded-[10px] border border-[var(--app-border)] bg-[var(--app-card)] px-2 text-[11px] text-ink-2 outline-none transition-colors focus:border-accent/50 dark:bg-white/[0.04] dark:text-white/72"
                 />
-                <span className="text-[10px] leading-relaxed text-black/35 dark:text-white/40">
+                <span className="text-[11px] leading-relaxed text-ink-4 dark:text-white/40">
                   <Trans>
                     用于 Python、pip 和 FFprobe 下载。留空则直连；例如 Clash 的 http://127.0.0.1:7890。
                   </Trans>
@@ -876,13 +894,13 @@ function SettingsPage() {
               </label>
             </div>
 
-            <div className="mt-4 rounded-xl border border-[var(--app-border)] bg-black/[0.018] p-4 dark:bg-white/[0.025]">
+            <div className="mt-4 p-4 settings-group">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
-                  <p className="text-[12px] font-medium text-black/75 dark:text-white/80">
+                  <p className="text-[12px] font-medium text-ink-2 dark:text-white/80">
                     Python 3.9 · TensorFlow 2.9 · Spleeter 2.4
                   </p>
-                  <p className="mt-1 text-[10.5px] leading-relaxed text-black/40 dark:text-white/45">
+                  <p className="mt-1 text-[11px] leading-relaxed text-ink-3 dark:text-white/45">
                     <Trans>
                       安装约 1 GB，需要联网，通常耗时数分钟。模型会在第一次生成伴奏时下载。
                     </Trans>
@@ -929,20 +947,20 @@ function SettingsPage() {
                 </div>
               </div>
 
-              <div className="mt-3 rounded-lg border border-[var(--app-border)] bg-black/[0.02] p-2.5 dark:bg-white/[0.025]">
+              <div className="mt-3 rounded-[10px] bg-black/[0.02] p-2.5 dark:bg-white/[0.025]">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
-                    <p className="text-[10px] font-medium text-black/45 dark:text-white/50">
+                    <p className="text-[11px] font-medium text-ink-3 dark:text-white/50">
                       <Trans>安装目录</Trans>
                     </p>
                     <p
-                      className="mt-0.5 truncate font-mono text-[10.5px] text-black/65 dark:text-white/65"
+                      className="mt-0.5 truncate font-mono text-[11px] text-ink-2 dark:text-white/65"
                       title={spleeterStatus?.installRoot}
                     >
                       {spleeterStatus?.installRoot ||
                         i18n._(msg`正在读取…`)}
                     </p>
-                    <p className="mt-0.5 text-[9.5px] text-black/32 dark:text-white/35">
+                    <p className="mt-0.5 text-[11px] text-ink-4 dark:text-white/35">
                       <Trans>
                         默认安装到本地数据目录下的 qimiao-spleeter-runtime（使用短路径以兼容 TensorFlow）
                       </Trans>
@@ -970,20 +988,20 @@ function SettingsPage() {
                 </div>
               </div>
 
-              <div className="mt-3 rounded-lg border border-[var(--app-border)] bg-black/[0.02] p-2.5 dark:bg-white/[0.025]">
+              <div className="mt-3 rounded-[10px] bg-black/[0.02] p-2.5 dark:bg-white/[0.025]">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
-                    <p className="text-[10px] font-medium text-black/45 dark:text-white/50">
+                    <p className="text-[11px] font-medium text-ink-3 dark:text-white/50">
                       <Trans>伴奏保存目录</Trans>
                     </p>
                     <p
-                      className="mt-0.5 truncate font-mono text-[10.5px] text-black/65 dark:text-white/65"
+                      className="mt-0.5 truncate font-mono text-[11px] text-ink-2 dark:text-white/65"
                       title={spleeterStatus?.libraryRoot}
                     >
                       {spleeterStatus?.libraryRoot ||
                         i18n._(msg`正在读取…`)}
                     </p>
-                    <p className="mt-0.5 text-[9.5px] text-black/32 dark:text-white/35">
+                    <p className="mt-0.5 text-[11px] text-ink-4 dark:text-white/35">
                       <Trans>
                         每首歌生成独立文件夹，默认在应用目录下的 spleeter-library
                       </Trans>
@@ -1013,7 +1031,7 @@ function SettingsPage() {
 
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-[10.5px] font-medium text-black/50 dark:text-white/55">
+                  <span className="text-[11px] font-medium text-ink-3 dark:text-white/55">
                     <Trans>输出格式</Trans>
                   </span>
                   <Select
@@ -1031,7 +1049,7 @@ function SettingsPage() {
                   />
                 </label>
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-[10.5px] font-medium text-black/50 dark:text-white/55">
+                  <span className="text-[11px] font-medium text-ink-3 dark:text-white/55">
                     <Trans>输出码率</Trans>
                   </span>
                   <Select
@@ -1052,7 +1070,7 @@ function SettingsPage() {
                   />
                 </label>
               </div>
-              <p className="mt-2 text-[10px] leading-relaxed text-black/35 dark:text-white/40">
+              <p className="mt-2 text-[11px] leading-relaxed text-ink-4 dark:text-white/40">
                 {spleeterCodec === 'wav'
                   ? i18n._(msg`WAV 为未压缩 PCM，两条音轨约 70–100 MB/首。`)
                   : spleeterCodec === 'flac'
@@ -1064,7 +1082,7 @@ function SettingsPage() {
 
               {spleeterStatus?.venv ? (
                 <p
-                  className="mt-3 truncate rounded-lg bg-black/[0.035] px-2.5 py-1.5 text-[10.5px] text-black/45 dark:bg-white/[0.045] dark:text-white/50"
+                  className="mt-3 truncate rounded-[10px] bg-black/[0.035] px-2.5 py-1.5 text-[11px] text-ink-3 dark:bg-white/[0.045] dark:text-white/50"
                   title={spleeterStatus.venv}
                 >
                   {spleeterStatus.venv}
@@ -1073,7 +1091,7 @@ function SettingsPage() {
 
               {spleeterStatus?.install?.installing ? (
                 <div className="mt-3">
-                  <div className="mb-1.5 flex items-center justify-between text-[10.5px] text-black/45 dark:text-white/50">
+                  <div className="mb-1.5 flex items-center justify-between text-[11px] text-ink-3 dark:text-white/50">
                     <span className="truncate">
                       {spleeterStatus.install.log || i18n._(msg`准备安装…`)}
                     </span>
@@ -1087,17 +1105,17 @@ function SettingsPage() {
                   </div>
                 </div>
               ) : spleeterError || spleeterStatus?.install?.error ? (
-                <p className="mt-3 text-[10.5px] text-amber-700">
+                <p className="mt-3 text-[11px] text-amber-700">
                   {spleeterError || spleeterStatus?.install?.error}
                 </p>
               ) : spleeterStatus?.available ? (
-                <p className="mt-3 text-[10.5px] text-emerald-700">
+                <p className="mt-3 text-[11px] text-emerald-700">
                   <Trans>
                     智能模式可在歌曲详情页的心动模式按钮旁开启。生成过的伴奏会自动缓存。
                   </Trans>
                 </p>
               ) : (
-                <p className="mt-3 text-[10.5px] text-black/40">
+                <p className="mt-3 text-[11px] text-ink-3">
                   {spleeterStatus?.note || i18n._(msg`正在检查运行环境…`)}
                 </p>
               )}
@@ -1141,11 +1159,11 @@ function SettingsPage() {
         <section className="apple-card p-6" data-settings-section="cache">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
+              <h2 className="flex items-center gap-2 text-[15px] font-semibold text-ink-1">
                 <HardDrive className="h-4 w-4 text-accent" />
                 <Trans>音乐缓存</Trans>
               </h2>
-              <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-black/40">
+              <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-ink-3">
                 <Trans>
                   播放过的歌曲会转码为 Opus 并缓存到本地，用于加速之后的播放。修改品质只影响之后缓存的新歌曲，
                   已缓存的歌曲保持原品质。
@@ -1157,7 +1175,7 @@ function SettingsPage() {
               aria-label={i18n._(msg`刷新缓存信息`)}
               title={i18n._(msg`刷新`)}
               onClick={() => void loadCache()}
-              className="pressable flex h-7 w-7 flex-none items-center justify-center rounded-full text-black/35 transition-colors hover:bg-black/5 hover:text-black/70 max-md:h-10 max-md:w-10"
+              className="pressable flex h-7 w-7 flex-none items-center justify-center rounded-full text-ink-4 transition-colors hover:bg-black/5 hover:text-ink-2 max-md:h-10 max-md:w-10"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
             </button>
@@ -1165,7 +1183,7 @@ function SettingsPage() {
 
           <div className="mt-5 grid gap-4 sm:grid-cols-[1fr_1fr_180px]">
             <div>
-              <p className="mb-1.5 text-[11px] text-black/40">
+              <p className="mb-1.5 text-[11px] text-ink-3">
                 <Trans>缓存品质</Trans>
               </p>
               <Select
@@ -1177,14 +1195,14 @@ function SettingsPage() {
                 }))}
                 className="text-[12px]"
               />
-              <p className="mt-2 text-[11px] leading-relaxed text-black/30">
+              <p className="mt-2 text-[11px] leading-relaxed text-ink-4">
                 <Trans>
                   约 64kbps ≈ 1.9MB / 4 分钟，96kbps ≈ 2.9MB，128kbps ≈ 3.8MB。
                 </Trans>
               </p>
             </div>
             <div>
-              <p className="mb-1.5 text-[11px] text-black/40">
+              <p className="mb-1.5 text-[11px] text-ink-3">
                 <Trans>最大缓存容量</Trans>
               </p>
               <Select
@@ -1202,18 +1220,18 @@ function SettingsPage() {
                 }))}
                 className="text-[12px]"
               />
-              <p className="mt-2 text-[11px] leading-relaxed text-black/30">
+              <p className="mt-2 text-[11px] leading-relaxed text-ink-4">
                 <Trans>默认 200 MB，超出后按缓存时间从旧到新清理。</Trans>
               </p>
             </div>
             <div className="rounded-[14px] border border-[var(--app-border)] bg-[var(--app-card)] px-4 py-3">
-              <p className="text-[11px] text-black/40">
+              <p className="text-[11px] text-ink-3">
                 <Trans>当前缓存</Trans>
               </p>
-              <p className="mt-1 text-[18px] font-semibold leading-tight text-black/80">
+              <p className="mt-1 text-[19px] font-semibold leading-tight text-ink-1">
                 {loading ? '…' : <Trans>{items.length} 首</Trans>}
               </p>
-              <p className="text-[11px] text-black/35">
+              <p className="text-[11px] text-ink-4">
                 {loading ? (
                   <Trans>正在读取…</Trans>
                 ) : (
@@ -1227,10 +1245,10 @@ function SettingsPage() {
             <div className="mt-4 flex items-center gap-3 rounded-[14px] border border-[var(--app-border)] bg-[var(--app-card)] px-4 py-3">
               <FolderOpen className="h-4 w-4 flex-none text-accent" />
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] text-black/40">
+                <p className="text-[11px] text-ink-3">
                   <Trans>下载目录</Trans>
                 </p>
-                <p className="mt-0.5 truncate text-[12px] text-black/70" title={downloadDir}>
+                <p className="mt-0.5 truncate text-[12px] text-ink-2" title={downloadDir}>
                   {downloadDir || i18n._(msg`正在读取…`)}
                 </p>
               </div>
@@ -1252,10 +1270,10 @@ function SettingsPage() {
             <div className="mt-2 flex items-center gap-3 rounded-[14px] border border-[var(--app-border)] bg-[var(--app-card)] px-4 py-3">
               <HardDrive className="h-4 w-4 flex-none text-accent" />
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] text-black/40">
+                <p className="text-[11px] text-ink-3">
                   <Trans>缓存目录</Trans>
                 </p>
-                <p className="mt-0.5 truncate text-[12px] text-black/70" title={cacheDir}>
+                <p className="mt-0.5 truncate text-[12px] text-ink-2" title={cacheDir}>
                   {cacheDir || i18n._(msg`正在读取…`)}
                 </p>
               </div>
@@ -1283,11 +1301,11 @@ function SettingsPage() {
         <section className="apple-card p-6" data-settings-section="playback">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
+              <h2 className="flex items-center gap-2 text-[15px] font-semibold text-ink-1">
                 <RefreshCw className="h-4 w-4 text-accent" />
                 <Trans>音源匹配</Trans>
               </h2>
-              <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-black/40">
+              <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-ink-3">
                 <Trans>
                   VIP 歌曲无法播放或仅能试听时，自动尝试匹配其他音源；也可以在底部播放条点击
                   「切换其他音源」手动替换。
@@ -1305,11 +1323,11 @@ function SettingsPage() {
         <section className="apple-card p-6" data-settings-section="playback">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
+              <h2 className="flex items-center gap-2 text-[15px] font-semibold text-ink-1">
                 <ListMusic className="h-4 w-4 text-accent" />
                 <Trans>听歌打卡</Trans>
               </h2>
-              <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-black/40">
+              <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-ink-3">
                 <Trans>
                   开启后，真实播放达到歌曲的 50% 或 4 分钟后，向网易云上报一次听歌记录。默认关闭。
                 </Trans>
@@ -1327,11 +1345,11 @@ function SettingsPage() {
           <section className="apple-card p-6" data-settings-section="desktop">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
+                <h2 className="flex items-center gap-2 text-[15px] font-semibold text-ink-1">
                   <Shield className="h-4 w-4 text-accent" />
                   <Trans>桌面端</Trans>
                 </h2>
-                <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-black/40">
+                <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-ink-3">
                   <Trans>
                     禁用后，右键菜单与 F12 / Ctrl+Shift+I 等入口不再打开开发者工具。
                     当前窗口立即生效，WebView2 层面需要重启应用。
@@ -1344,7 +1362,7 @@ function SettingsPage() {
                 aria-label={i18n._(msg`禁用开发者工具`)}
               />
             </div>
-            <p className="mt-4 rounded-[10px] bg-black/4 px-3 py-2 text-[11px] leading-relaxed text-black/40">
+            <p className="mt-4 rounded-[10px] bg-black/4 px-3 py-2 text-[11px] leading-relaxed text-ink-3">
               <Trans>
                 桌面歌词：Ctrl / ⌘ + Shift + L 显示或隐藏，窗口始终置顶，可拖动到任意位置。
               </Trans>
@@ -1358,11 +1376,11 @@ function SettingsPage() {
         <section className="apple-card overflow-hidden" data-settings-section="cache">
           <div className="flex items-center justify-between gap-3 border-b border-black/6 px-6 py-4">
             <div>
-              <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
+              <h2 className="flex items-center gap-2 text-[15px] font-semibold text-ink-1">
                 <ListMusic className="h-4 w-4 text-accent" />
                 <Trans>缓存列表</Trans>
               </h2>
-              <p className="mt-1 text-[11px] text-black/35">
+              <p className="mt-1 text-[11px] text-ink-4">
                 {loading ? (
                   <Trans>正在读取缓存…</Trans>
                 ) : (
@@ -1400,7 +1418,7 @@ function SettingsPage() {
           </div>
 
           {!loading && items.length === 0 ? (
-            <div className="px-6 py-12 text-center text-[12px] text-black/30">
+            <div className="px-6 py-12 text-center text-[12px] text-ink-4">
               <Trans>暂无缓存音乐，播放歌曲后会自动缓存</Trans>
             </div>
           ) : (
@@ -1414,10 +1432,10 @@ function SettingsPage() {
                   onChange={toggleAll}
                   className="h-3.5 w-3.5 accent-accent"
                 />
-                <span className="text-[11px] text-black/40">
+                <span className="text-[11px] text-ink-3">
                   <Trans>全选</Trans>
                 </span>
-                <span className="ml-auto text-[11px] text-black/30">
+                <span className="ml-auto text-[11px] text-ink-4">
                   <Trans>已选 {selected.length} 首</Trans>
                 </span>
               </div>
@@ -1436,20 +1454,20 @@ function SettingsPage() {
                       className="h-3.5 w-3.5 flex-none accent-accent"
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[12.5px] font-medium text-black/80">
+                      <p className="truncate text-[13px] font-medium text-ink-1">
                         {item.name}
                       </p>
-                      <p className="mt-0.5 truncate text-[11px] text-black/35">
+                      <p className="mt-0.5 truncate text-[11px] text-ink-4">
                         {item.artists || i18n._(msg`未知歌手`)}
                         {item.bitrate ? ` · ${item.bitrate}kbps` : ''}
-                        <span className="mx-1.5 text-black/15">·</span>
+                        <span className="mx-1.5 text-ink-4">·</span>
                         {formatDate(item.createdAt)}
                       </p>
                     </div>
-                    <span className="w-12 flex-none text-right text-[11.5px] tabular-nums text-black/45">
+                    <span className="w-12 flex-none text-right text-[12px] tabular-nums text-ink-3">
                       {item.duration ? formatDuration(item.duration) : '--:--'}
                     </span>
-                    <span className="w-16 flex-none text-right text-[11px] tabular-nums text-black/35">
+                    <span className="w-16 flex-none text-right text-[11px] tabular-nums text-ink-4">
                       {formatBytes(item.size)}
                     </span>
                     <button
@@ -1458,7 +1476,7 @@ function SettingsPage() {
                       title={i18n._(msg`下载到本地`)}
                       disabled={downloadingId !== null}
                       onClick={() => void handleDownloadOne(item)}
-                      className="pressable flex h-7 w-7 flex-none items-center justify-center rounded-full text-black/35 transition-colors hover:bg-black/5 hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 max-md:h-10 max-md:w-10"
+                      className="pressable flex h-7 w-7 flex-none items-center justify-center rounded-full text-ink-4 transition-colors hover:bg-black/5 hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 max-md:h-10 max-md:w-10"
                     >
                       {downloadingId === item.id ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -1473,7 +1491,7 @@ function SettingsPage() {
           )}
 
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-black/6 px-6 py-3">
-            <p className="text-[11px] leading-relaxed text-black/30">
+            <p className="text-[11px] leading-relaxed text-ink-4">
               {desktop
                 ? (
                   <Trans>下载会保存为 .opus 文件到上方设置的下载目录。</Trans>
@@ -1497,11 +1515,11 @@ function SettingsPage() {
         </section>
 
         <section className="apple-card p-6" data-settings-section="desktop">
-          <h2 className="flex items-center gap-2 text-[14px] font-semibold text-black/80">
+          <h2 className="flex items-center gap-2 text-[15px] font-semibold text-ink-1">
             <Keyboard className="h-4 w-4 text-accent" />
             <Trans>快捷键</Trans>
             </h2>
-          <p className="mt-1 text-[12px] leading-relaxed text-black/40">
+          <p className="mt-1 text-[12px] leading-relaxed text-ink-3">
             <Trans>在页面任意位置可用（输入框内保留系统默认行为）。</Trans>
           </p>
           <dl className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -1510,7 +1528,7 @@ function SettingsPage() {
                 key={shortcut.label.id}
                 className="flex items-center justify-between gap-3 rounded-[10px] bg-black/4 px-3 py-2"
               >
-                <dt className="text-[12px] text-black/55">
+                <dt className="text-[12px] text-ink-2">
                   {i18n._(shortcut.label)}
                 </dt>
                 <dd className="flex shrink-0 items-center gap-1">
@@ -1519,7 +1537,7 @@ function SettingsPage() {
                     return (
                       <kbd
                         key={label}
-                        className="rounded-[6px] border border-black/10 bg-white px-1.5 py-0.5 text-[11px] font-medium text-black/60"
+                        className="rounded-[6px] border border-black/10 bg-white px-1.5 py-0.5 text-[11px] font-medium text-ink-2"
                       >
                         {label}
                       </kbd>

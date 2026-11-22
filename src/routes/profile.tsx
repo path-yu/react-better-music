@@ -17,6 +17,7 @@ import { useUnsavedChangesGuard } from '../lib/useUnsavedChangesGuard'
 import regionJson from '../data/region.json'
 import type { UserProfile } from '../types'
 
+import { PageHeader } from '../components/common/PageHeader'
 export const Route = createFileRoute('/profile')({
   component: ProfilePage,
 })
@@ -210,7 +211,7 @@ function ProfilePage() {
 
   if (!isLogin || !profile) {
     return (
-      <div className="px-8 pt-10">
+      <div className="page">
         <EmptyState
           icon={<UserRound className="h-6 w-6" />}
           title={i18n._(msg`登录后编辑个人信息`)}
@@ -318,16 +319,11 @@ function ProfilePage() {
   }
 
   return (
-    <div className="mx-auto max-w-[900px] px-8 pb-16 pt-7">
-      <div>
-        <h1 className="headline-lg flex items-center gap-2">
-          <UserRound className="h-5 w-5 text-accent" />
-          <Trans>个人信息</Trans>
-        </h1>
-        <p className="mt-1.5 text-[12px] text-black/35">
-          <Trans>修改昵称、头像、性别与地区资料</Trans>
-        </p>
-      </div>
+    <div className="page mx-auto max-w-[900px]">
+      <PageHeader
+        title={<Trans>个人信息</Trans>}
+        description={<Trans>修改昵称、头像、性别与地区资料</Trans>}
+      />
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_230px]">
         <div className="apple-card space-y-5 p-6">
@@ -337,7 +333,7 @@ function ProfilePage() {
               onChange={(event) => setNickname(event.target.value)}
               placeholder={i18n._(msg`请输入昵称`)}
               maxLength={24}
-              className="h-9 text-[12.5px]"
+              className="h-9 text-[13px]"
             />
           </Field>
 
@@ -348,7 +344,7 @@ function ProfilePage() {
               placeholder={i18n._(msg`介绍一下自己`)}
               maxLength={200}
               resize="none"
-              className="min-h-[84px] text-[12.5px]"
+              className="min-h-[84px] text-[13px]"
             />
           </Field>
 
@@ -359,10 +355,10 @@ function ProfilePage() {
                   key={option.value}
                   type="button"
                   onClick={() => setGender(option.value)}
-                  className={`rounded-full px-3 py-1.5 text-[11.5px] transition-colors ${
+                  className={`rounded-full px-3 py-1.5 text-[12px] transition-colors ${
                     gender === option.value
                       ? 'bg-accent text-white'
-                      : 'border border-black/8 bg-[#f5f5f7] text-black/50 hover:bg-[#ececf0]'
+                      : 'border border-black/8 bg-[#f5f5f7] text-ink-3 hover:bg-[#ececf0]'
                   }`}
                 >
                   {i18n._(option.label)}
@@ -371,7 +367,7 @@ function ProfilePage() {
             </div>
           </Field>
 
-          <Field label={i18n._(msg`生日`)} icon={<Cake className="h-3.5 w-3.5 text-black/30" />}>
+          <Field label={i18n._(msg`生日`)} icon={<Cake className="h-3.5 w-3.5 text-ink-4" />}>
             <div className="grid grid-cols-3 gap-2">
               <Select
                 value={year}
@@ -395,7 +391,7 @@ function ProfilePage() {
             </div>
           </Field>
 
-          <Field label={i18n._(msg`地区`)} icon={<MapPin className="h-3.5 w-3.5 text-black/30" />}>
+          <Field label={i18n._(msg`地区`)} icon={<MapPin className="h-3.5 w-3.5 text-ink-4" />}>
             <div className="grid grid-cols-2 gap-2">
               <Select
                 value={province}
@@ -448,8 +444,8 @@ function ProfilePage() {
               <Camera className="h-4 w-4" />
             </button>
           </div>
-          <p className="mt-4 text-[13px] font-medium text-black/75">{nickname || i18n._(msg`未设置昵称`)}</p>
-          <p className="mt-1 line-clamp-2 text-center text-[11px] text-black/35">
+          <p className="mt-4 text-[13px] font-medium text-ink-2">{nickname || i18n._(msg`未设置昵称`)}</p>
+          <p className="mt-1 line-clamp-2 text-center text-[11px] text-ink-4">
             {signature || i18n._(msg`这个人很懒，什么都没写`)}
           </p>
           <Button
@@ -492,7 +488,7 @@ function Field({
     <div>
       <div className="mb-1.5 flex items-center gap-1.5">
         {icon}
-        <span className="text-[11px] font-medium text-black/40">{label}</span>
+        <span className="text-[11px] font-medium text-ink-3">{label}</span>
       </div>
       {children}
     </div>

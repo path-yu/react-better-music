@@ -451,19 +451,19 @@ export function ImportPlaylistDialog({
             <ImageWithFallback
               src={collection.coverUrl}
               alt={collection.name}
-              rounded="rounded-[8px]"
+              rounded="rounded-[10px]"
               className="h-11 w-11 shrink-0"
               resize="128y128"
             />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-medium text-black/80 dark:text-white/85">
+              <p className="truncate text-[13px] font-medium text-ink-1 dark:text-white/85">
                 {collection.name}
               </p>
-              <p className="mt-0.5 text-[11px] text-black/35 dark:text-white/40">
+              <p className="mt-0.5 text-[11px] text-ink-4 dark:text-white/40">
                 <Trans>共 {collection.songs.length} 首歌曲</Trans>
                 {unmatched.length ? (
                   <span
-                    className="text-[#b36b00]"
+                    className="text-warn-ink"
                     title={unmatched.slice(0, 40).join('\n')}
                   >
                     {' · '}
@@ -482,7 +482,7 @@ export function ImportPlaylistDialog({
             </Button>
           </div>
 
-          <div className="flex items-center justify-between text-[11px] text-black/40 dark:text-white/45">
+          <div className="flex items-center justify-between text-[11px] text-ink-3 dark:text-white/45">
             <span>
               <Trans>
                 已选择 {selectedSongs.length} / {collection.songs.length} 首
@@ -525,14 +525,14 @@ export function ImportPlaylistDialog({
                   >
                     <Check className="h-2.5 w-2.5" strokeWidth={3} />
                   </span>
-                  <span className="w-6 shrink-0 text-right text-[10px] tabular-nums text-black/25 dark:text-white/30">
+                  <span className="w-6 shrink-0 text-right text-[11px] tabular-nums text-ink-4 dark:text-white/30">
                     {index + 1}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[12px] text-black/75 dark:text-white/80">
+                    <span className="block truncate text-[12px] text-ink-2 dark:text-white/80">
                       {song.name}
                     </span>
-                    <span className="mt-0.5 block truncate text-[10.5px] text-black/35 dark:text-white/40">
+                    <span className="mt-0.5 block truncate text-[11px] text-ink-4 dark:text-white/40">
                       {song.ar.map((artist) => artist.name).join(' / ')}
                     </span>
                   </span>
@@ -541,7 +541,7 @@ export function ImportPlaylistDialog({
             })}
           </div>
 
-          <label className="flex items-center gap-2 text-[11px] text-black/40 dark:text-white/45">
+          <label className="flex items-center gap-2 text-[11px] text-ink-3 dark:text-white/45">
             <span className="shrink-0">
               <Trans>歌单名称</Trans>
             </span>
@@ -550,24 +550,24 @@ export function ImportPlaylistDialog({
               disabled={loading}
               onChange={(event) => setPlaylistName(event.target.value)}
               maxLength={60}
-              className="h-8 min-w-0 flex-1 rounded-[7px] border border-black/10 bg-white/70 px-2 text-[12px] text-black/80 outline-none focus:border-accent/50 dark:border-white/10 dark:bg-white/10 dark:text-white/85"
+              className="h-8 min-w-0 flex-1 rounded-[6px] border border-black/10 bg-white/70 px-2 text-[12px] text-ink-1 outline-none focus:border-accent/50 dark:border-white/10 dark:bg-white/10 dark:text-white/85"
             />
           </label>
 
           {error ? (
-            <p className="rounded-[8px] bg-red-500/8 px-3 py-2 text-[11px] leading-relaxed text-red-500/90">
+            <p className="rounded-[10px] bg-red-500/8 px-3 py-2 text-[11px] leading-relaxed text-red-500/90">
               {error}
             </p>
           ) : null}
           {loading && status ? (
-            <p className="flex items-center gap-2 text-[11px] text-black/40 dark:text-white/45">
+            <p className="flex items-center gap-2 text-[11px] text-ink-3 dark:text-white/45">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
               {status}
             </p>
           ) : null}
 
           <div className="flex items-center justify-between gap-3">
-            <p className="text-[10.5px] text-black/30 dark:text-white/35">
+            <p className="text-[11px] text-ink-4 dark:text-white/35">
               {isLogin && profile ? (
                 <Trans>将导入到网易云歌单</Trans>
               ) : (
@@ -597,13 +597,13 @@ export function ImportPlaylistDialog({
         </div>
       ) : (
         <div className="flex flex-col gap-3 pb-1">
-          <p className="text-[12px] leading-relaxed text-black/45 dark:text-white/50">
+          <p className="text-[12px] leading-relaxed text-ink-3 dark:text-white/50">
             <Trans>
               粘贴网易云、QQ 音乐、Apple Music 或 YouTube Music 歌单链接。解析后可以选择需要导入的歌曲。登录后会创建网易云歌单；未登录时创建本地歌单。
             </Trans>
           </p>
-          <label className="flex h-9 items-center gap-2 rounded-[9px] border border-black/10 bg-white/70 px-3 dark:border-white/10 dark:bg-white/10">
-            <Link2 className="h-3.5 w-3.5 shrink-0 text-black/30 dark:text-white/35" />
+          <label className="flex h-9 items-center gap-2 rounded-[10px] border border-black/10 bg-white/70 px-3 dark:border-white/10 dark:bg-white/10">
+            <Link2 className="h-3.5 w-3.5 shrink-0 text-ink-4 dark:text-white/35" />
             <input
               autoFocus
               value={url}
@@ -616,16 +616,16 @@ export function ImportPlaylistDialog({
                 if (event.key === 'Enter') void resolvePlaylist()
               }}
               placeholder={i18n._(msg`粘贴歌单链接`)}
-              className="min-w-0 flex-1 bg-transparent text-[12px] text-black/80 outline-none placeholder:text-black/25 disabled:opacity-60 dark:text-white/85 dark:placeholder:text-white/25"
+              className="min-w-0 flex-1 bg-transparent text-[12px] text-ink-1 outline-none placeholder:text-ink-4 disabled:opacity-60 dark:text-white/85 dark:placeholder:text-white/25"
             />
           </label>
           {error ? (
-            <p className="rounded-[8px] bg-red-500/8 px-3 py-2 text-[11px] leading-relaxed text-red-500/90">
+            <p className="rounded-[10px] bg-red-500/8 px-3 py-2 text-[11px] leading-relaxed text-red-500/90">
               {error}
             </p>
           ) : null}
           {loading && status ? (
-            <p className="flex items-center gap-2 text-[11px] text-black/40 dark:text-white/45">
+            <p className="flex items-center gap-2 text-[11px] text-ink-3 dark:text-white/45">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
               {status}
             </p>

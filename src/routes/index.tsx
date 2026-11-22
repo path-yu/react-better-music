@@ -36,6 +36,7 @@ import { formatArtists } from '../lib/format'
 import { useDocumentTitle } from '../lib/title'
 import type { Playlist, Song, Toplist } from '../types'
 
+import { PageHeader } from '../components/common/PageHeader'
 export const Route = createFileRoute('/')({
   component: DiscoveryPage,
 })
@@ -91,7 +92,7 @@ function SectionError({
         <Button
           variant="secondary"
           size="sm"
-          className="rounded-full text-[11.5px]"
+          className="rounded-full text-[12px]"
           onClick={onRetry}
         >
           <Trans>重试</Trans>
@@ -143,13 +144,7 @@ function DailyHomeCard({ songs, now }: { songs: Song[]; now: Date }) {
   const initQueue = usePlayerStore((state) => state.initQueue)
   const isLogin = useUserStore((state) => state.isLogin)
   const [palette, setPalette] = useState<Palette>(FALLBACK_PALETTE)
-  const month = now.getMonth() + 1
   const day = now.getDate()
-  const weekday = useMemo(
-    () =>
-      new Intl.DateTimeFormat(i18n.locale, { weekday: 'long' }).format(now),
-    [i18n.locale, now],
-  )
   const cover = resizedImageUrl(songs[0]?.al.picUrl, '640y640')
   const colors = palette.colors.length ? palette.colors : FALLBACK_PALETTE.colors
 
@@ -185,7 +180,7 @@ function DailyHomeCard({ songs, now }: { songs: Song[]; now: Date }) {
         if (event.target !== event.currentTarget) return
         if (event.key === 'Enter') opensDaily()
       }}
-      className="group relative mt-5 flex h-[212px] w-full cursor-pointer overflow-hidden rounded-[24px] text-white shadow-[0_14px_34px_-14px_rgba(0,0,0,0.35)]"
+      className="group relative mt-5 flex h-[212px] w-full cursor-pointer overflow-hidden rounded-[22px] text-white shadow-[0_14px_34px_-14px_rgba(0,0,0,0.35)]"
       style={{
         background: `linear-gradient(105deg, ${withAlpha(colors[0], 0.96)}, ${withAlpha(colors[1], 0.88)} 58%, ${withAlpha(colors[2], 0.82)})`,
       }}
@@ -208,7 +203,6 @@ function DailyHomeCard({ songs, now }: { songs: Song[]; now: Date }) {
 
       <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-center px-8">
         <p className="truncate text-[12px] font-semibold text-white/65">
-          <Trans>{month}月{day}日</Trans> {weekday} ·{' '}
           {isLogin ? (
             <Trans>每天 6:00 更新</Trans>
           ) : (
@@ -242,7 +236,7 @@ function DailyHomeCard({ songs, now }: { songs: Song[]; now: Date }) {
               key={song.id}
               className={
                 front
-                  ? 'absolute left-[92px] z-30 h-[156px] w-[156px] overflow-hidden rounded-[16px] shadow-[0_18px_40px_-10px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:-translate-y-1'
+                  ? 'absolute left-[92px] z-30 h-[156px] w-[156px] overflow-hidden rounded-[18px] shadow-[0_18px_40px_-10px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:-translate-y-1'
                   : index === 1
                     ? 'absolute left-[52px] top-2 z-20 h-[140px] w-[140px] -rotate-[5deg] overflow-hidden rounded-[14px] opacity-90 shadow-[0_18px_40px_-10px_rgba(0,0,0,0.45)] transition-transform duration-500 group-hover:-translate-x-8 group-hover:-rotate-[10deg]'
                     : 'absolute left-[12px] top-4 z-10 h-[124px] w-[124px] -rotate-[10deg] overflow-hidden rounded-[14px] opacity-75 shadow-[0_18px_40px_-10px_rgba(0,0,0,0.45)] transition-transform duration-500 group-hover:-translate-x-16 group-hover:-rotate-[16deg]'
@@ -251,7 +245,7 @@ function DailyHomeCard({ songs, now }: { songs: Song[]; now: Date }) {
               <ImageWithFallback
                 src={song.al.picUrl}
                 alt={song.name}
-                rounded="rounded-[16px]"
+                rounded="rounded-[18px]"
                 resize="300y300"
                 priority={front}
                 className="h-full w-full"
@@ -273,7 +267,7 @@ function HomeSection({
 }) {
   return (
     <section className="mt-[34px]">
-      <h2 className="mb-3.5 text-[19px] font-bold tracking-[-0.3px]">
+      <h2 className="section-title mb-3.5">
         {title}
       </h2>
       {children}
@@ -295,11 +289,11 @@ function ChartCard({ list }: { list: Toplist }) {
       }
       className="group flex min-w-0 items-center gap-3.5 rounded-[14px] p-3 text-left transition-colors hover:bg-black/[0.04]"
     >
-      <div className="h-[84px] w-[84px] shrink-0 overflow-hidden rounded-[9px] shadow-[0_3px_10px_-2px_rgba(0,0,0,0.25)]">
+      <div className="h-[84px] w-[84px] shrink-0 overflow-hidden rounded-[10px] shadow-[0_3px_10px_-2px_rgba(0,0,0,0.25)]">
         <ImageWithFallback
           src={list.coverImgUrl}
           alt={list.name}
-          rounded="rounded-[9px]"
+          rounded="rounded-[10px]"
           resize="200y200"
           className="h-full w-full"
           imageClassName="transition-transform duration-500 group-hover:scale-[1.04]"
@@ -307,11 +301,11 @@ function ChartCard({ list }: { list: Toplist }) {
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-baseline gap-1.5">
-          <span className="truncate text-[14px] font-bold text-black/80">
+          <span className="truncate text-[15px] font-bold text-ink-1">
             {list.name}
           </span>
           {list.updateFrequency ? (
-            <span className="shrink-0 truncate text-[11px] text-black/30">
+            <span className="shrink-0 truncate text-[11px] text-ink-4">
               {list.updateFrequency}
             </span>
           ) : null}
@@ -320,15 +314,15 @@ function ChartCard({ list }: { list: Toplist }) {
           {preview.map((track, index) => (
             <p
               key={`${track.id ?? index}-${track.first ?? track.name ?? ''}`}
-              className="flex min-w-0 items-baseline gap-1.5 text-[11.5px]"
+              className="flex min-w-0 items-baseline gap-1.5 text-[12px]"
             >
-              <span className="w-2.5 shrink-0 font-bold tabular-nums text-black/35">
+              <span className="w-2.5 shrink-0 font-bold tabular-nums text-ink-4">
                 {index + 1}
               </span>
-              <span className="truncate font-medium text-black/70">
+              <span className="truncate font-medium text-ink-2">
                 {track.first ?? track.name}
               </span>
-              <span className="truncate text-black/30">
+              <span className="truncate text-ink-4">
                 {track.second ?? formatArtists(track.ar)}
               </span>
             </p>
@@ -397,15 +391,15 @@ function DiscoveryPage() {
   } = useSection(loadFeatured, [] as Playlist[], dailyRefreshKey)
 
   return (
-    <div className="px-10 pb-16 pt-8 max-md:px-5">
-      <header>
-        <p className="text-[12px] font-semibold tracking-[0.4px] text-black/35">
-          <Trans>{now.getMonth() + 1}月{now.getDate()}日</Trans> {weekday}
-        </p>
-        <h1 className="mt-1 text-[30px] font-bold leading-tight tracking-[-0.6px]">
-          {hello}
-        </h1>
-      </header>
+    <div className="page">
+      <PageHeader
+        eyebrow={
+          <>
+            <Trans>{now.getMonth() + 1}月{now.getDate()}日</Trans> {weekday}
+          </>
+        }
+        title={hello}
+      />
 
       {songFailed ? (
         <div className="mt-5">
@@ -415,7 +409,7 @@ function DiscoveryPage() {
           />
         </div>
       ) : songLoading ? (
-        <Skeleton className="mt-5 h-[212px] w-full rounded-[24px]" />
+        <Skeleton className="mt-5 h-[212px] w-full rounded-[22px]" />
       ) : (
         <DailyHomeCard songs={songs} now={now} />
       )}

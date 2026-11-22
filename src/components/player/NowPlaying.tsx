@@ -1125,7 +1125,7 @@ export function NowPlaying() {
               <Heart
                 className={cn(
                   'h-4 w-4',
-                  liked ? 'fill-[#ff2d55] text-[#ff2d55]' : 'text-white/60',
+                  liked ? 'fill-love text-love' : 'text-white/60',
                 )}
               />
             </button>
@@ -1217,9 +1217,9 @@ export function NowPlaying() {
           <div className="flex min-h-0 flex-col items-center justify-center max-md:h-fit max-md:min-h-fit max-md:justify-start">
             <div className="max-w-[360px] text-center">
               <div className="flex min-w-0 items-center justify-center gap-1.5">
-                <h2 className="headline-lg np-track-heading min-w-0 truncate text-[24px]">{currentSong.name}</h2>
+                <h2 className="headline-lg np-track-heading min-w-0 truncate">{currentSong.name}</h2>
                 {currentSong.trialEnd ? (
-                  <span className="shrink-0 rounded-[6px] bg-[#ff9500]/12 px-1.5 py-0.5 text-[10px] font-semibold text-[#b36b00]">
+                  <span className="shrink-0 rounded-[6px] bg-warn/12 px-1.5 py-0.5 text-[11px] font-semibold text-warn-ink">
                     <Trans>试听</Trans>
                   </span>
                 ) : null}
@@ -1230,20 +1230,20 @@ export function NowPlaying() {
                     title={i18n._(msg`切换到视频播放`)}
                     aria-pressed={mvMode}
                     onClick={() => void toggleMvMode()}
-                    className="np-mv-badge  shrink-0 rounded-[5px] border-0 bg-transparent px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-accent transition-colors hover:bg-white/10"
+                    className="np-mv-badge  shrink-0 rounded-[6px] border-0 bg-transparent px-1.5 py-0.5 text-[11px] font-semibold tracking-wide text-accent transition-colors hover:bg-white/10"
                   >
                     {videoBadgeLabel}
                   </button>
                 ) : null}
               </div>
               {currentSong.alia?.[0] ? (
-                <p className="mt-1 truncate text-[12px] text-black/35">{currentSong.alia[0]}</p>
+                <p className="mt-1 truncate text-[12px] text-ink-4">{currentSong.alia[0]}</p>
               ) : null}
-              <p className="np-track-meta mt-2 text-[13px] text-black/45">
+              <p className="np-track-meta mt-2 text-[13px] text-ink-3">
                 <ArtistLinks artists={currentSong.ar} />
                 {showAlbumMeta ? (
                   <>
-                    <span className="mx-2 text-black/20">·</span>
+                    <span className="mx-2 text-ink-4">·</span>
                     <button
                       type="button"
                       onClick={openAlbum}
@@ -1400,7 +1400,7 @@ export function NowPlaying() {
               {panel === 'lyrics' ? (
                 lyricLoading && !lyricLines.length ? (
                   <div
-                    className="flex h-full flex-col items-center justify-center gap-2.5 text-[12px] text-black/35"
+                    className="flex h-full flex-col items-center justify-center gap-2.5 text-[12px] text-ink-4"
                     role="status"
                     aria-live="polite"
                   >
@@ -1448,7 +1448,7 @@ export function NowPlaying() {
                         }}
                         placeholder={i18n._(msg`搜索待播歌曲`)}
                         aria-label={i18n._(msg`搜索待播歌曲`)}
-                        className="h-8 w-full rounded-full bg-white/10 pl-8 pr-7 text-[11.5px] text-white/85 outline-none shadow-none placeholder:text-white/30 focus:bg-white/14"
+                        className="h-8 w-full rounded-full bg-white/10 pl-8 pr-7 text-[12px] text-white/85 outline-none shadow-none placeholder:text-white/30 focus:bg-white/14"
                       />
                       {queueSearch ? (
                         <button
@@ -1690,7 +1690,7 @@ export function NowPlaying() {
                                 <ImageWithFallback
                                   src={song.al.picUrl}
                                   alt={song.name}
-                                  rounded="rounded-[7px]"
+                                  rounded="rounded-[6px]"
                                   className="h-[42px] w-[42px] shrink-0"
                                   resize="96y96"
                                 />
@@ -1807,7 +1807,7 @@ export function NowPlaying() {
                                           <ImageWithFallback
                                             src={song.al.picUrl}
                                             alt={song.name}
-                                            rounded="rounded-[12px]"
+                                            rounded="rounded-[14px]"
                                             className="h-full w-full"
                                             resize="240y240"
                                           />

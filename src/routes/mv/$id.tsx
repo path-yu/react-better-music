@@ -121,7 +121,7 @@ function MvDetailPage() {
 
   if (loading) {
     return (
-      <div className="px-8 pt-6">
+      <div className="page">
         <Skeleton className="h-4 w-24 rounded-full" />
         <div className="mt-4 flex gap-6">
           <div className="flex-1">
@@ -137,14 +137,14 @@ function MvDetailPage() {
 
   if (!detail) {
     return (
-      <div className="px-8 pt-10">
+      <div className="page">
         <EmptyState title={i18n._(msg`MV 不存在或无法访问`)} />
       </div>
     )
   }
 
   return (
-    <div className="px-8 pb-16 pt-5">
+    <div className="page">
       <button
         type="button"
         onClick={() => {
@@ -158,7 +158,7 @@ function MvDetailPage() {
             void navigate({ to: '/' })
           }
         }}
-        className="pressable flex items-center gap-1.5 rounded-full px-2 py-1 text-[11.5px] text-black/40 transition-colors hover:bg-black/5 hover:text-black/70"
+        className="pressable flex items-center gap-1.5 rounded-full px-2 py-1 text-[12px] text-ink-3 transition-colors hover:bg-black/5 hover:text-ink-2"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         <Trans>返回</Trans>
@@ -188,8 +188,8 @@ function MvDetailPage() {
             )}
           </div>
 
-          <h1 className="headline-lg mt-5 text-[24px]">{detail.name}</h1>
-          <div className="mt-2 flex flex-wrap items-center gap-4 text-[11px] text-black/35">
+          <h1 className="headline-lg mt-5">{detail.name}</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-4 text-[11px] text-ink-4">
             {detail.publishTime ? (
               <span className="flex items-center gap-1">
                 <CalendarDays className="h-3 w-3" />
@@ -211,9 +211,9 @@ function MvDetailPage() {
             <div className="mt-5 flex items-start gap-3 rounded-[18px] border border-black/8 bg-[#fafafc] p-4">
               <Avatar src={author.picUrl} alt={author.name} size="md" />
               <div className="min-w-0">
-                <p className="text-[13px] font-medium text-black/80">{author.name}</p>
+                <p className="text-[13px] font-medium text-ink-1">{author.name}</p>
                 {author.briefDesc ? (
-                  <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-black/40">
+                  <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-ink-3">
                     {author.briefDesc}
                   </p>
                 ) : null}
@@ -231,7 +231,7 @@ function MvDetailPage() {
         </div>
 
         <aside className="mv-related">
-          <p className="section-title mv-related__title text-[16px]">
+          <p className="section-title mv-related__title">
             <Trans>相关推荐</Trans>
           </p>
           <div className="mv-related__list mt-3">
@@ -251,15 +251,15 @@ function MvDetailPage() {
                   imageClassName="transition-transform duration-500 group-hover:scale-105"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="line-clamp-2 text-[11.5px] leading-snug text-black/70 group-hover:text-accent">
+                  <p className="line-clamp-2 text-[12px] leading-snug text-ink-2 group-hover:text-accent">
                     {mv.name}
                   </p>
-                  <p className="mt-1 truncate text-[11px] text-black/30">{mv.artistName}</p>
+                  <p className="mt-1 truncate text-[11px] text-ink-4">{mv.artistName}</p>
                 </div>
               </button>
             ))}
             {!similar.length ? (
-              <p className="py-6 text-center text-[11px] text-black/30">
+              <p className="py-6 text-center text-[11px] text-ink-4">
                 <Trans>暂无相关推荐</Trans>
               </p>
             ) : null}

@@ -38,11 +38,11 @@ export function PlaylistCard({ playlist, priority }: PlaylistCardProps) {
           {formatNumber(playlist.playCount)}
         </div>
       </div>
-      <p className="line-clamp-2 min-h-[35px] text-[13px] font-medium leading-[1.35] text-black/80 transition-colors duration-300 group-hover:text-accent">
+      <p className="line-clamp-2 text-[13px] font-medium leading-[1.35] text-ink-1 transition-colors duration-300 group-hover:text-accent">
         {playlist.name}
       </p>
       {playlist.creator?.nickname ? (
-        <p className="-mt-1 truncate text-[12px] text-black/35">
+        <p className="-mt-1 truncate text-[12px] text-ink-4">
           {playlist.creator.nickname}
         </p>
       ) : null}

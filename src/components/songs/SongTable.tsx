@@ -102,7 +102,7 @@ const SongRow = memo(function SongRow({
             )}
           />
         ) : (
-          <span className="text-center text-[10.5px] font-medium leading-none tabular-nums text-black/30 transition-opacity group-hover:opacity-0">
+          <span className="text-center text-[11px] font-medium leading-none tabular-nums text-ink-4 transition-opacity group-hover:opacity-0">
             {index + 1}
           </span>
         )}
@@ -135,8 +135,8 @@ const SongRow = memo(function SongRow({
           <div className="flex min-w-0 items-center gap-1.5">
             <span
               className={cn(
-                'truncate text-[12.5px]',
-                active ? 'font-medium text-accent' : 'text-black/80',
+                'truncate text-[13px]',
+                active ? 'font-medium text-accent' : 'text-ink-1',
               )}
             >
               {song.name}
@@ -147,15 +147,15 @@ const SongRow = memo(function SongRow({
               </span>
             ) : null}
             {song.fee === 1 ? (
-              <span className="shrink-0 rounded-[6px] bg-[#ff2d55]/10 px-1 text-[11px] font-medium text-[#ff2d55]">
+              <span className="shrink-0 rounded-[6px] bg-love/10 px-1 text-[11px] font-medium text-love">
                 VIP
               </span>
             ) : null}
           </div>
-          <p className="song-artist-mobile mt-0.5 truncate text-[11px] text-black/35">
+          <p className="song-artist-mobile mt-0.5 truncate text-[11px] text-ink-4">
             <ArtistLinks artists={song.ar} />
             {note ? (
-              <span className="ml-1.5 rounded-[6px] bg-black/6 px-1 text-[11px] text-black/35">
+              <span className="ml-1.5 rounded-[6px] bg-black/6 px-1 text-[11px] text-ink-4">
                 {note}
               </span>
             ) : null}
@@ -167,7 +167,7 @@ const SongRow = memo(function SongRow({
             aria-label={i18n._(msg`从歌单移除`)}
             title={i18n._(msg`从歌单移除`)}
             onClick={onRemove}
-            className="pressable shrink-0 text-black/30 opacity-0 transition-opacity hover:text-[#ff2d55] focus-visible:opacity-100 group-hover:opacity-100"
+            className="pressable shrink-0 text-ink-4 opacity-0 transition-opacity hover:text-love focus-visible:opacity-100 group-hover:opacity-100"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
@@ -186,23 +186,23 @@ const SongRow = memo(function SongRow({
           <Heart
             className={cn(
               'h-3.5 w-3.5',
-              liked ? 'fill-[#ff2d55] text-[#ff2d55]' : 'text-black/35',
+              liked ? 'fill-love text-love' : 'text-ink-4',
             )}
           />
         </button>
       </div>
 
       <div className="song-meta min-w-0">
-        <div className="flex min-w-0 items-center gap-1.5 text-[11.5px] text-black/45">
+        <div className="flex min-w-0 items-center gap-1.5 text-[12px] text-ink-3">
           <ArtistLinks artists={song.ar} className="min-w-0 truncate" />
           {note ? (
-            <span className="shrink-0 rounded-[6px] bg-black/6 px-1 text-[11px] text-black/35">
+            <span className="shrink-0 rounded-[6px] bg-black/6 px-1 text-[11px] text-ink-4">
               {note}
             </span>
           ) : null}
         </div>
       </div>
-      <p className="song-meta truncate text-[11.5px] text-black/40">
+      <p className="song-meta truncate text-[12px] text-ink-3">
         {song.al.id ? (
           <Link
             to="/albums/$id"
@@ -215,7 +215,7 @@ const SongRow = memo(function SongRow({
           song.al.name
         )}
       </p>
-      <p className="text-right text-[11px] tabular-nums text-black/30">
+      <p className="text-right text-[11px] tabular-nums text-ink-4">
         {formatDuration(song.dt)}
       </p>
     </div>
@@ -445,7 +445,7 @@ export function SongTable({
         SONG_GRID,
         // Follow the active palette instead of a neutral white/near-black
         // surface; custom dark themes were showing a grey strip here.
-        'border-b border-[var(--app-border)] bg-[var(--app-glass)] px-3 py-2 text-[11px] font-medium text-[var(--ink-3)] backdrop-blur-xl',
+        'border-b border-[var(--app-border)] bg-[var(--app-glass)] px-3 py-2 text-[11px] font-medium text-[var(--ink-4)] backdrop-blur-xl',
         !isVirtual && 'sticky top-0 z-10',
       )}
       style={!isVirtual && stickyTop !== undefined ? { top: stickyTop } : undefined}

@@ -119,7 +119,7 @@ export function Sidebar() {
                   'pressable flex h-9 w-9 items-center justify-center rounded-[10px] transition-colors',
                   isActive(item.to)
                     ? 'bg-accent/12 text-accent'
-                    : 'text-black/45 hover:bg-black/6 hover:text-black/75',
+                    : 'text-ink-3 hover:bg-black/6 hover:text-ink-2',
                 )}
               >
                 <Icon className="h-4 w-4" strokeWidth={1.75} />
@@ -138,7 +138,7 @@ export function Sidebar() {
               'pressable flex h-9 w-9 items-center justify-center rounded-[10px] transition-colors',
               isActive('/local/favorites')
                 ? 'bg-accent/12 text-accent'
-                : 'text-black/45 hover:bg-black/6 hover:text-black/75',
+                : 'text-ink-3 hover:bg-black/6 hover:text-ink-2',
             )}
           >
             <Heart className="h-4 w-4" strokeWidth={1.75} />
@@ -153,7 +153,7 @@ export function Sidebar() {
               'pressable flex h-9 w-9 items-center justify-center rounded-[10px] transition-colors',
               isActive('/recent')
                 ? 'bg-accent/12 text-accent'
-                : 'text-black/45 hover:bg-black/6 hover:text-black/75',
+                : 'text-ink-3 hover:bg-black/6 hover:text-ink-2',
             )}
           >
             <History className="h-4 w-4" strokeWidth={1.75} />
@@ -182,16 +182,16 @@ export function Sidebar() {
                     : void navigate({ to: item.to })
                 }
                 className={cn(
-                  'flex h-[30px] items-center gap-2.5 rounded-[10px] px-2.5 max-md:h-10 text-left text-[12.5px] transition-colors',
+                  'flex h-[30px] items-center gap-2.5 rounded-[10px] px-2.5 max-md:h-10 text-left text-[13px] transition-colors',
                   isActive(item.to)
-                    ? 'bg-black/8 font-medium text-black'
-                    : 'text-black/65 hover:bg-black/4 hover:text-black',
+                    ? 'bg-black/8 font-medium text-ink-1'
+                    : 'text-ink-2 hover:bg-black/4 hover:text-ink-1',
                 )}
               >
                 <Icon
                   className={cn(
                     'h-4 w-4 shrink-0',
-                    isActive(item.to) ? 'text-accent' : 'text-black/40',
+                    isActive(item.to) ? 'text-accent' : 'text-ink-3',
                   )}
                   strokeWidth={1.75}
                 />
@@ -212,7 +212,7 @@ export function Sidebar() {
             aria-label={i18n._(msg`导入歌单`)}
             title={i18n._(msg`导入歌单`)}
             onClick={openImportPlaylist}
-            className="pressable flex h-4 w-4 items-center justify-center rounded-full text-black/35 hover:text-black/70"
+            className="pressable flex h-4 w-4 items-center justify-center rounded-full text-ink-4 hover:text-ink-2"
           >
             <Download className="h-3.5 w-3.5" />
           </button>
@@ -224,16 +224,16 @@ export function Sidebar() {
               type="button"
               onClick={() => void navigate({ to: '/local/favorites' })}
               className={cn(
-                'flex h-[30px] items-center gap-2.5 rounded-[10px] px-2.5 max-md:h-10 text-left text-[12.5px] transition-colors',
+                'flex h-[30px] items-center gap-2.5 rounded-[10px] px-2.5 max-md:h-10 text-left text-[13px] transition-colors',
                 isActive('/local/favorites')
-                  ? 'bg-black/8 font-medium text-black'
-                  : 'text-black/65 hover:bg-black/4 hover:text-black',
+                  ? 'bg-black/8 font-medium text-ink-1'
+                  : 'text-ink-2 hover:bg-black/4 hover:text-ink-1',
               )}
             >
               <Heart
                 className={cn(
                   'h-4 w-4 shrink-0',
-                  isActive('/local/favorites') ? 'text-accent' : 'text-[#ff2d55]',
+                  isActive('/local/favorites') ? 'text-accent' : 'text-love',
                 )}
                 strokeWidth={1.75}
               />
@@ -241,7 +241,7 @@ export function Sidebar() {
                 <Trans>我喜欢的音乐</Trans>
               </span>
               {localFavorites.length ? (
-                <span className="text-[10px] text-black/25">{localFavorites.length}</span>
+                <span className="text-[11px] text-ink-4">{localFavorites.length}</span>
               ) : null}
             </button>
 
@@ -249,16 +249,16 @@ export function Sidebar() {
               type="button"
               onClick={() => void navigate({ to: '/recent' })}
               className={cn(
-                'flex h-[30px] items-center gap-2.5 rounded-[10px] px-2.5 max-md:h-10 text-left text-[12.5px] transition-colors',
+                'flex h-[30px] items-center gap-2.5 rounded-[10px] px-2.5 max-md:h-10 text-left text-[13px] transition-colors',
                 isActive('/recent')
-                  ? 'bg-black/8 font-medium text-black'
-                  : 'text-black/65 hover:bg-black/4 hover:text-black',
+                  ? 'bg-black/8 font-medium text-ink-1'
+                  : 'text-ink-2 hover:bg-black/4 hover:text-ink-1',
               )}
             >
               <History
                 className={cn(
                   'h-4 w-4 shrink-0',
-                  isActive('/recent') ? 'text-accent' : 'text-black/40',
+                  isActive('/recent') ? 'text-accent' : 'text-ink-3',
                 )}
                 strokeWidth={1.75}
               />
@@ -266,12 +266,12 @@ export function Sidebar() {
                 <Trans>最近播放</Trans>
               </span>
               {localRecent.length ? (
-                <span className="text-[10px] text-black/25">{localRecent.length}</span>
+                <span className="text-[11px] text-ink-4">{localRecent.length}</span>
               ) : null}
             </button>
 
             <div className="flex items-center justify-between px-2.5 pb-1 pt-3">
-              <p className="text-[11px] font-medium text-black/35">
+              <p className="sidebar-subheading">
                 <Trans>本地歌单</Trans>
               </p>
               <button
@@ -279,7 +279,7 @@ export function Sidebar() {
                 aria-label={i18n._(msg`创建歌单`)}
                 title={i18n._(msg`创建歌单`)}
                 onClick={() => setCreatingPlaylist((value) => !value)}
-                className="pressable flex h-4 w-4 items-center justify-center rounded-full text-black/35 hover:text-black/70"
+                className="pressable flex h-4 w-4 items-center justify-center rounded-full text-ink-4 hover:text-ink-2"
               >
                 <Plus className="h-3.5 w-3.5" />
               </button>
@@ -293,7 +293,7 @@ export function Sidebar() {
                   onChange={(event) => setPlaylistName(event.target.value)}
                   maxLength={60}
                   placeholder={i18n._(msg`歌单名称`)}
-                  className="h-7 w-full rounded-[7px] border border-black/10 bg-white/70 px-2 text-[11px] text-black/80 outline-none placeholder:text-black/30 focus:border-accent/50 dark:border-white/10 dark:bg-white/10 dark:text-white/85 dark:placeholder:text-white/30"
+                  className="h-7 w-full rounded-[6px] border border-black/10 bg-white/70 px-2 text-[11px] text-ink-1 outline-none placeholder:text-ink-4 focus:border-accent/50 dark:border-white/10 dark:bg-white/10 dark:text-white/85 dark:placeholder:text-white/30"
                 />
                 <div className="mt-1 flex justify-end gap-1">
                   <button
@@ -302,14 +302,14 @@ export function Sidebar() {
                       setCreatingPlaylist(false)
                       setPlaylistName('')
                     }}
-                    className="rounded-full px-2 py-1 text-[10px] text-black/35 hover:bg-black/5 dark:text-white/40 dark:hover:bg-white/10"
+                    className="rounded-full px-2 py-1 text-[11px] text-ink-4 hover:bg-black/5 dark:text-white/40 dark:hover:bg-white/10"
                   >
                     <Trans>取消</Trans>
                   </button>
                   <button
                     type="submit"
                     disabled={!playlistName.trim()}
-                    className="rounded-full bg-accent px-2.5 py-1 text-[10px] text-white disabled:opacity-40"
+                    className="rounded-full bg-accent px-2.5 py-1 text-[11px] text-white disabled:opacity-40"
                   >
                     <Trans>创建</Trans>
                   </button>
@@ -328,27 +328,27 @@ export function Sidebar() {
                   })
                 }
                 className={cn(
-                  'flex h-[30px] items-center gap-2.5 rounded-[10px] px-2.5 max-md:h-10 text-left text-[12.5px] transition-colors',
+                  'flex h-[30px] items-center gap-2.5 rounded-[10px] px-2.5 max-md:h-10 text-left text-[13px] transition-colors',
                   pathname === `/local/playlists/${playlist.id}`
-                    ? 'bg-black/8 font-medium text-black'
-                    : 'text-black/65 hover:bg-black/4 hover:text-black',
+                    ? 'bg-black/8 font-medium text-ink-1'
+                    : 'text-ink-2 hover:bg-black/4 hover:text-ink-1',
                 )}
               >
-                <ListMusic className="h-4 w-4 shrink-0 text-black/40" strokeWidth={1.75} />
+                <ListMusic className="h-4 w-4 shrink-0 text-ink-3" strokeWidth={1.75} />
                 <span className="min-w-0 flex-1 truncate">{playlist.name}</span>
-                <span className="text-[10px] text-black/25">{playlist.songs.length}</span>
+                <span className="text-[11px] text-ink-4">{playlist.songs.length}</span>
               </button>
             ))}
 
             {!localPlaylists.length && !creatingPlaylist ? (
-              <p className="px-2.5 py-2 text-[11px] text-black/30">
+              <p className="px-2.5 py-2 text-[11px] text-ink-4">
                 <Trans>暂无本地歌单</Trans>
               </p>
             ) : null}
 
             {localSubscribedPlaylists.length ? (
               <>
-                <p className="px-2.5 pb-1 pt-3 text-[11px] font-medium text-black/35">
+                <p className="sidebar-subheading px-2.5 pb-1 pt-3">
                   <Trans>收藏的歌单</Trans>
                 </p>
                 {localSubscribedPlaylists.map((playlist) => (
@@ -362,14 +362,14 @@ export function Sidebar() {
                       })
                     }
                     className={cn(
-                      'flex h-[30px] items-center gap-2.5 rounded-[10px] px-2.5 max-md:h-10 text-left text-[12.5px] transition-colors',
+                      'flex h-[30px] items-center gap-2.5 rounded-[10px] px-2.5 max-md:h-10 text-left text-[13px] transition-colors',
                       pathname === `/songlists/${playlist.id}`
-                        ? 'bg-black/8 font-medium text-black'
-                        : 'text-black/65 hover:bg-black/4 hover:text-black',
+                        ? 'bg-black/8 font-medium text-ink-1'
+                        : 'text-ink-2 hover:bg-black/4 hover:text-ink-1',
                     )}
                   >
                     <ListMusic
-                      className="h-4 w-4 shrink-0 text-black/40"
+                      className="h-4 w-4 shrink-0 text-ink-3"
                       strokeWidth={1.75}
                     />
                     <span className="min-w-0 flex-1 truncate">
@@ -381,7 +381,7 @@ export function Sidebar() {
             ) : null}
 
             <div className="mt-2 rounded-[14px] border border-black/8 bg-white/55 p-3">
-              <div className="flex items-center gap-2 text-[12px] text-black/45">
+              <div className="flex items-center gap-2 text-[12px] text-ink-3">
                 <UserRound className="h-4 w-4" />
                 <Trans>登录后可同步网易云歌单</Trans>
               </div>
@@ -402,16 +402,16 @@ export function Sidebar() {
               type="button"
               onClick={() => void navigate({ to: '/recent' })}
               className={cn(
-                'flex h-[30px] items-center gap-2.5 rounded-[10px] px-2.5 max-md:h-10 text-left text-[12.5px] transition-colors',
+                'flex h-[30px] items-center gap-2.5 rounded-[10px] px-2.5 max-md:h-10 text-left text-[13px] transition-colors',
                 isActive('/recent')
-                  ? 'bg-black/8 font-medium text-black'
-                  : 'text-black/65 hover:bg-black/4 hover:text-black',
+                  ? 'bg-black/8 font-medium text-ink-1'
+                  : 'text-ink-2 hover:bg-black/4 hover:text-ink-1',
               )}
             >
               <History
                 className={cn(
                   'h-4 w-4 shrink-0',
-                  isActive('/recent') ? 'text-accent' : 'text-black/40',
+                  isActive('/recent') ? 'text-accent' : 'text-ink-3',
                 )}
                 strokeWidth={1.75}
               />
@@ -423,13 +423,13 @@ export function Sidebar() {
                 type="button"
                 onClick={() => goPlaylist(likedPlaylist.id)}
                 className={cn(
-                  'flex h-[30px] items-center gap-2.5 rounded-[10px] px-2.5 max-md:h-10 text-left text-[12.5px] transition-colors',
+                  'flex h-[30px] items-center gap-2.5 rounded-[10px] px-2.5 max-md:h-10 text-left text-[13px] transition-colors',
                   playlistActive(likedPlaylist.id)
-                    ? 'bg-black/8 font-medium text-black'
-                    : 'text-black/65 hover:bg-black/4 hover:text-black',
+                    ? 'bg-black/8 font-medium text-ink-1'
+                    : 'text-ink-2 hover:bg-black/4 hover:text-ink-1',
                 )}
               >
-                <Heart className="h-4 w-4 shrink-0 text-[#ff2d55]" strokeWidth={1.75} />
+                <Heart className="h-4 w-4 shrink-0 text-love" strokeWidth={1.75} />
                 <span className="truncate">
                   <Trans>我喜欢的音乐</Trans>
                 </span>
@@ -437,7 +437,7 @@ export function Sidebar() {
             )}
 
             {myPlaylists.length > 0 && (
-              <p className="px-2.5 pb-1 pt-3 text-[11px] font-medium text-black/35">
+              <p className="sidebar-subheading px-2.5 pb-1 pt-3">
                 <Trans>创建的歌单</Trans>
               </p>
             )}
@@ -451,7 +451,7 @@ export function Sidebar() {
             ))}
 
             {collectedPlaylists.length > 0 && (
-              <p className="px-2.5 pb-1 pt-3 text-[11px] font-medium text-black/35">
+              <p className="sidebar-subheading px-2.5 pb-1 pt-3">
                 <Trans>收藏的歌单</Trans>
               </p>
             )}
@@ -466,7 +466,7 @@ export function Sidebar() {
             ))}
 
             {!createdPlaylists.length && !collectedPlaylists.length && profile && (
-              <p className="px-2.5 py-2 text-[11px] text-black/30">
+              <p className="px-2.5 py-2 text-[11px] text-ink-4">
                 <Trans>暂无歌单</Trans>
               </p>
             )}
@@ -508,12 +508,12 @@ function PlaylistRow({
       <span
         className={cn(
           'min-w-0 flex-1 truncate text-[12px]',
-          active ? 'font-medium text-black' : 'text-black/60',
+          active ? 'font-medium text-ink-1' : 'text-ink-2',
         )}
       >
         {playlist.name}
       </span>
-      {star ? <Star className="h-3 w-3 shrink-0 text-black/25" /> : null}
+      {star ? <Star className="h-3 w-3 shrink-0 text-ink-4" /> : null}
     </button>
   )
 }

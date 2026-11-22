@@ -10,6 +10,7 @@ import {
   formatDate,
   formatDuration,
   formatNumber,
+  formatRemaining,
   getArrLast,
   matchesKeyword,
 } from './format'
@@ -23,14 +24,27 @@ describe('cn', () => {
 
 describe('formatDuration', () => {
   it.each([
-    [undefined, '00:00'],
-    [0, '00:00'],
-    [-1, '00:00'],
-    [59_999, '00:59'],
-    [61_000, '01:01'],
-    [3_600_000, '60:00'],
+    [undefined, '0:00'],
+    [0, '0:00'],
+    [-1, '0:00'],
+    [59_999, '0:59'],
+    [61_000, '1:01'],
+    [600_000, '10:00'],
+    [3_600_000, '1:00:00'],
+    [3_661_000, '1:01:01'],
   ])('formats %s as %s', (input, expected) => {
     expect(formatDuration(input)).toBe(expected)
+  })
+})
+
+describe('formatRemaining', () => {
+  it.each([
+    [undefined, '-0:00'],
+    [-500, '-0:00'],
+    [146_000, '-2:26'],
+    [3_661_000, '-1:01:01'],
+  ])('formats %s as %s', (input, expected) => {
+    expect(formatRemaining(input)).toBe(expected)
   })
 })
 

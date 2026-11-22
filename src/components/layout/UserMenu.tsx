@@ -42,10 +42,10 @@ export function UserMenu() {
           className="electrobun-webkit-app-region-no-drag pressable flex items-center gap-2 rounded-full py-1 pl-1 pr-2.5 transition-colors hover:bg-black/5"
         >
           <Avatar src={profile.avatarUrl} alt={profile.nickname} size="xs" />
-          <span className="max-w-[92px] truncate text-[12px] font-medium text-black/75">
+          <span className="max-w-[92px] truncate text-[12px] font-medium text-ink-2">
             {profile.nickname}
           </span>
-          <ChevronDown className="h-3 w-3 text-black/35" />
+          <ChevronDown className="h-3 w-3 text-ink-4" />
         </button>
       </PopoverTrigger>
       {/* darwin-ui's motion animation overrides the translateX(-100%) used by
@@ -61,7 +61,7 @@ export function UserMenu() {
           <div className="flex items-center gap-3">
             <Avatar src={profile.avatarUrl} alt={profile.nickname} size="md" />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[14px] font-semibold text-black/85">
+              <p className="truncate text-[15px] font-semibold text-ink-1">
                 {profile.nickname}
               </p>
               <div className="mt-1 flex items-center gap-1.5">
@@ -84,8 +84,8 @@ export function UserMenu() {
               { label: i18n._(msg`粉丝`), value: profile.followeds ?? 0 },
             ].map((item) => (
               <div key={item.label} className="text-center">
-                <p className="text-[13px] font-semibold text-black/80">{item.value}</p>
-                <p className="mt-0.5 text-[11px] text-black/35">{item.label}</p>
+                <p className="text-[13px] font-semibold text-ink-1">{item.value}</p>
+                <p className="mt-0.5 text-[11px] text-ink-4">{item.label}</p>
               </div>
             ))}
           </div>
@@ -106,18 +106,18 @@ export function UserMenu() {
         <div className="border-t border-black/8 p-1.5">
           <button
             type="button"
-            className="flex w-full items-center gap-2 rounded-[10px] px-2.5 py-2 text-[12px] text-black/70 transition-colors hover:bg-black/5"
+            className="flex w-full items-center gap-2 rounded-[10px] px-2.5 py-2 text-[12px] text-ink-2 transition-colors hover:bg-black/5"
             onClick={() => {
               setOpen(false)
               void navigate({ to: '/profile' })
             }}
           >
-            <Settings2 className="h-4 w-4 text-black/40" />
+            <Settings2 className="h-4 w-4 text-ink-3" />
             <Trans>个人信息设置</Trans>
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 rounded-[10px] px-2.5 py-2 text-[12px] text-[#d70015] transition-colors hover:bg-[#d70015]/8"
+            className="flex w-full items-center gap-2 rounded-[10px] px-2.5 py-2 text-[12px] text-danger transition-colors hover:bg-danger/8"
             onClick={() => {
               setOpen(false)
               void logout()

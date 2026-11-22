@@ -40,10 +40,10 @@ function RootNotFound() {
     <div className="flex min-h-dvh items-center justify-center px-6">
       <div className="apple-card w-full max-w-[420px] p-8 text-center">
         <p className="eyebrow">404</p>
-        <h1 className="headline-lg mt-2 text-[24px]">
+        <h1 className="headline-lg mt-2">
           <Trans>页面不存在</Trans>
         </h1>
-        <p className="mt-2 text-[12px] leading-relaxed text-black/40">
+        <p className="mt-2 text-[12px] leading-relaxed text-ink-3">
           <Trans>链接可能已失效，或内容已被移除。</Trans>
         </p>
         <div className="mt-5 flex justify-center">
@@ -74,10 +74,10 @@ function RootError({ error, reset }: ErrorComponentProps) {
         <p className="eyebrow">
           <Trans>出错了</Trans>
         </p>
-        <h1 className="headline-lg mt-2 text-[24px]">
+        <h1 className="headline-lg mt-2">
           <Trans>页面暂时无法显示</Trans>
         </h1>
-        <p className="mt-2 break-words text-[12px] leading-relaxed text-black/40">
+        <p className="mt-2 break-words text-[12px] leading-relaxed text-ink-3">
           {message}
         </p>
         <div className="mt-5 flex items-center justify-center gap-2">

@@ -87,7 +87,7 @@ export function ExpandableDescription({
             <button
               type="button"
               onClick={() => setExpanded(false)}
-              className="inline-flex items-center gap-1 rounded-full border border-black/8 bg-white/90 px-2.5 py-1 text-[10.5px] text-accent shadow-sm backdrop-blur-md transition-colors hover:bg-white dark:border-white/10 dark:bg-black/55 dark:hover:bg-black/70"
+              className="inline-flex items-center gap-1 rounded-full border border-black/8 bg-white/90 px-2.5 py-1 text-[11px] text-accent shadow-sm backdrop-blur-md transition-colors hover:bg-white dark:border-white/10 dark:bg-black/55 dark:hover:bg-black/70"
             >
               <Trans>收起</Trans>
               <ChevronUp className="h-3 w-3" />
@@ -97,7 +97,7 @@ export function ExpandableDescription({
         <p
           ref={textRef}
           className={cn(
-            'whitespace-pre-wrap text-left text-[11.5px] leading-relaxed text-black/40',
+            'whitespace-pre-wrap text-left text-[12px] leading-relaxed text-ink-3',
             textClassName,
           )}
         >

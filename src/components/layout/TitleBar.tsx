@@ -59,7 +59,7 @@ export function TitleBar() {
           <span className="titlebar-subtitle font-normal">— {subtitle}</span>
         ) : null}
       </div>
-      <div className="ml-auto flex items-center gap-1.5 text-[11px] text-black/30">
+      <div className="ml-auto flex items-center gap-1.5 text-[11px] text-ink-4">
         <span className="hidden sm:inline">macOS Edition</span>
       </div>
     </div>

@@ -44,10 +44,10 @@ export function MvCard({ mv, className, priority }: MvCardProps) {
           <Play className="ml-0.5 h-3.5 w-3.5 fill-current" />
         </span>
       </div>
-      <p className="mt-2 line-clamp-1 text-[12.5px] font-medium text-black/75 group-hover:text-accent">
+      <p className="mt-2 line-clamp-1 text-[13px] font-medium text-ink-2 group-hover:text-accent">
         {mv.name}
       </p>
-      <p className="mt-0.5 line-clamp-1 text-[11px] text-black/35">{mv.artistName}</p>
+      <p className="mt-0.5 line-clamp-1 text-[11px] text-ink-4">{mv.artistName}</p>
     </button>
   )
 }

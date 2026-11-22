@@ -201,17 +201,17 @@ export function MorePlaybackOptions({
 
   const rowClass = immersive
     ? 'text-white/70 hover:bg-white/10 hover:text-white'
-    : 'text-black/65 hover:bg-black/5 hover:text-black'
-  const iconClass = immersive ? 'text-white/45' : 'text-black/40'
+    : 'text-ink-2 hover:bg-black/5 hover:text-ink-1'
+  const iconClass = immersive ? 'text-white/45' : 'text-ink-3'
   const metaClass = immersive
-    ? 'text-[10px] text-white/40'
-    : 'text-[10px] text-black/35'
+    ? 'text-[11px] text-white/40'
+    : 'text-[11px] text-ink-4'
   const activeClass = immersive
     ? 'bg-white/14 text-white'
     : 'bg-accent/10 text-accent'
   const inactiveClass = immersive
     ? 'text-white/65 hover:bg-white/8 hover:text-white/90'
-    : 'text-black/60 hover:bg-black/5 hover:text-black/85'
+    : 'text-ink-2 hover:bg-black/5 hover:text-ink-1'
   const surfaceClass = immersive
     ? 'absolute z-50 p-1.5'
     : 'absolute z-50 rounded-[10px] border border-black/10 bg-[#fbfbfd]/98 p-1.5 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.28)] backdrop-blur-xl'
@@ -238,7 +238,7 @@ export function MorePlaybackOptions({
       <p
         className={cn(
           'px-2 py-1 text-[11px]',
-          immersive ? 'text-white/45' : 'text-black/35',
+          immersive ? 'text-white/45' : 'text-ink-4',
         )}
       >
         <Trans>播放选项</Trans>
@@ -254,7 +254,7 @@ export function MorePlaybackOptions({
               onOpenRelatedVideos()
             }}
             className={cn(
-              'flex w-full items-center justify-between rounded-[7px] px-2 py-1.5 text-left text-[11.5px] transition-colors disabled:opacity-50',
+              'flex w-full items-center justify-between rounded-[6px] px-2 py-1.5 text-left text-[12px] transition-colors disabled:opacity-50',
               rowClass,
             )}
           >
@@ -276,7 +276,7 @@ export function MorePlaybackOptions({
           <p
             className={cn(
               'mb-1 flex items-center justify-between gap-2 text-[11px]',
-              immersive ? 'text-white/50' : 'text-black/40',
+              immersive ? 'text-white/50' : 'text-ink-3',
             )}
           >
             <span className="flex items-center gap-1.5">
@@ -285,7 +285,7 @@ export function MorePlaybackOptions({
             </span>
             <span className={metaClass}>{qualityLabel}</span>
           </p>
-          <div className={cn('space-y-0.5 rounded-[8px] p-0.5', sectionBoxClass)}>
+          <div className={cn('space-y-0.5 rounded-[10px] p-0.5', sectionBoxClass)}>
             {PLAY_QUALITY_OPTIONS.map((option) => (
               <button
                 key={option.value}
@@ -319,7 +319,7 @@ export function MorePlaybackOptions({
               openSubmenu('quality', event.currentTarget.parentElement!)
             }
             className={cn(
-              'flex w-full items-center justify-between rounded-[7px] px-2 py-1.5 text-left text-[11.5px] transition-colors',
+              'flex w-full items-center justify-between rounded-[6px] px-2 py-1.5 text-left text-[12px] transition-colors',
               rowClass,
             )}
           >
@@ -366,7 +366,7 @@ export function MorePlaybackOptions({
           <p
             className={cn(
               'mb-1 flex items-center justify-between gap-2 text-[11px]',
-              immersive ? 'text-white/50' : 'text-black/40',
+              immersive ? 'text-white/50' : 'text-ink-3',
             )}
           >
             <span className="flex items-center gap-1.5">
@@ -375,7 +375,7 @@ export function MorePlaybackOptions({
             </span>
             <span className={metaClass}>{sourceLabel}</span>
           </p>
-          <div className={cn('space-y-0.5 rounded-[8px] p-0.5', sectionBoxClass)}>
+          <div className={cn('space-y-0.5 rounded-[10px] p-0.5', sectionBoxClass)}>
             {SOURCE_OPTIONS.map((option) => {
               const active = preferredSource === option.value
               return (
@@ -412,7 +412,7 @@ export function MorePlaybackOptions({
               openSubmenu('source', event.currentTarget.parentElement!)
             }
             className={cn(
-              'flex w-full items-center justify-between rounded-[7px] px-2 py-1.5 text-left text-[11.5px] transition-colors',
+              'flex w-full items-center justify-between rounded-[6px] px-2 py-1.5 text-left text-[12px] transition-colors',
               rowClass,
             )}
           >
@@ -468,16 +468,16 @@ export function MorePlaybackOptions({
             <div>
               <p
                 className={cn(
-                  'text-[11.5px] font-medium',
-                  immersive ? 'text-white/80' : 'text-black/70',
+                  'text-[12px] font-medium',
+                  immersive ? 'text-white/80' : 'text-ink-2',
                 )}
               >
             <Trans>逐字播放</Trans>
           </p>
           <p
             className={cn(
-              'mt-0.5 text-[10px] leading-relaxed',
-              immersive ? 'text-white/40' : 'text-black/35',
+              'mt-0.5 text-[11px] leading-relaxed',
+              immersive ? 'text-white/40' : 'text-ink-4',
             )}
           >
             <Trans>关闭后只高亮整行，不做逐字动画</Trans>
@@ -498,7 +498,7 @@ export function MorePlaybackOptions({
             <p
               className={cn(
                 'mb-1 flex items-center justify-between gap-2 text-[11px]',
-                immersive ? 'text-white/50' : 'text-black/40',
+                immersive ? 'text-white/50' : 'text-ink-3',
               )}
             >
               <span className="flex items-center gap-1.5">
@@ -507,7 +507,7 @@ export function MorePlaybackOptions({
               </span>
               <span className={metaClass}>{lyricLabel}</span>
             </p>
-            <div className={cn('space-y-0.5 rounded-[8px] p-0.5', sectionBoxClass)}>
+            <div className={cn('space-y-0.5 rounded-[10px] p-0.5', sectionBoxClass)}>
               {LYRIC_DISPLAY_OPTIONS.map((option) => {
                 const active = lyricDisplayMode === option.value
                 return (
@@ -546,7 +546,7 @@ export function MorePlaybackOptions({
                 openSubmenu('lyrics', event.currentTarget.parentElement!)
               }
               className={cn(
-                'flex w-full items-center justify-between rounded-[7px] px-2 py-1.5 text-left text-[11.5px] transition-colors',
+                'flex w-full items-center justify-between rounded-[6px] px-2 py-1.5 text-left text-[12px] transition-colors',
                 rowClass,
               )}
             >
@@ -607,7 +607,7 @@ export function MorePlaybackOptions({
             openSubmenu('font', event.currentTarget.parentElement!)
           }
           className={cn(
-            'flex w-full items-center justify-between rounded-[7px] px-2 py-1.5 text-left text-[11.5px] transition-colors',
+            'flex w-full items-center justify-between rounded-[6px] px-2 py-1.5 text-left text-[12px] transition-colors',
             rowClass,
           )}
         >
@@ -663,7 +663,7 @@ export function MorePlaybackOptions({
             type="button"
             onClick={handleToggleDesktopLyrics}
             className={cn(
-              'flex w-full items-center gap-2 rounded-[7px] px-2 py-1.5 text-left text-[12px] transition-colors',
+              'flex w-full items-center gap-2 rounded-[6px] px-2 py-1.5 text-left text-[12px] transition-colors',
               rowClass,
             )}
           >
@@ -673,12 +673,12 @@ export function MorePlaybackOptions({
             </span>
             <span
               className={cn(
-                'text-[10.5px]',
+                'text-[11px]',
                 lyricsWindowOpen
                   ? 'text-accent'
                   : immersive
                     ? 'text-white/35'
-                    : 'text-black/30',
+                    : 'text-ink-4',
               )}
             >
               {lyricsWindowOpen ? i18n._(msg`已开启`) : i18n._(msg`已关闭`)}
@@ -688,7 +688,7 @@ export function MorePlaybackOptions({
             type="button"
             onClick={handleToggleMiniPlayer}
             className={cn(
-              'flex w-full items-center gap-2 rounded-[7px] px-2 py-1.5 text-left text-[12px] transition-colors',
+              'flex w-full items-center gap-2 rounded-[6px] px-2 py-1.5 text-left text-[12px] transition-colors',
               rowClass,
             )}
           >
@@ -698,12 +698,12 @@ export function MorePlaybackOptions({
             </span>
             <span
               className={cn(
-                'text-[10.5px]',
+                'text-[11px]',
                 miniWindowOpen
                   ? 'text-accent'
                   : immersive
                     ? 'text-white/35'
-                    : 'text-black/30',
+                    : 'text-ink-4',
               )}
             >
               {miniWindowOpen ? i18n._(msg`已开启`) : i18n._(msg`已关闭`)}

@@ -108,7 +108,7 @@ export function ToastBridge() {
             active={immersive}
             tint={immersive ? tint : undefined}
             className={cn(
-              'pointer-events-auto flex w-[min(380px,calc(100vw-24px))] items-start gap-3 rounded-xl p-4 animate-in slide-in-from-right duration-300',
+              'pointer-events-auto flex w-[min(380px,calc(100vw-24px))] items-start gap-3 rounded-[14px] p-4 animate-in slide-in-from-right duration-300',
               immersive
                 ? 'text-white'
                 : 'border border-black/10 bg-white/95 text-zinc-900 shadow-md backdrop-blur-md dark:border-white/10 dark:bg-zinc-900/95 dark:text-zinc-100',

@@ -72,7 +72,7 @@ function AlbumDetailPage() {
 
   if (loading) {
     return (
-      <div className="px-8 pt-8">
+      <div className="page">
         <div className="flex gap-6">
           <Skeleton className="h-[208px] w-[208px] rounded-[18px]" />
           <div className="flex-1">
@@ -90,7 +90,7 @@ function AlbumDetailPage() {
 
   if (!album) {
     return (
-      <div className="px-8 pt-10">
+      <div className="page">
         <EmptyState
           title={i18n._(msg`专辑不存在或无法访问`)}
           action={
@@ -116,7 +116,7 @@ function AlbumDetailPage() {
   const description = album.description || album.briefDesc
 
   return (
-    <div className="px-8 pb-16 pt-7">
+    <div className="page">
       <div className="flex gap-6">
         <ImageWithFallback
           src={album.picUrl}
@@ -130,9 +130,9 @@ function AlbumDetailPage() {
           <span className="inline-flex items-center rounded-full bg-accent/8 px-2.5 py-0.5 text-[11px] font-medium text-accent">
             <Trans>专辑</Trans>
           </span>
-          <h1 className="headline-lg mt-2.5 line-clamp-2 text-[28px]">{album.name}</h1>
+          <h1 className="headline-lg mt-2.5 line-clamp-2">{album.name}</h1>
 
-          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11.5px] text-black/40">
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] text-ink-3">
             <ArtistLinks artists={artists} className="font-medium text-accent" />
             {album.publishTime ? (
               <span className="flex items-center gap-1">
@@ -180,12 +180,12 @@ function AlbumDetailPage() {
         </div>
       </div>
 
-      <div className="sticky top-0 z-20 -mx-8 mt-7 flex items-center justify-between gap-4 border-b border-[var(--app-border)] bg-[var(--app-glass)] px-8 py-2 backdrop-blur-xl">
+      <div className="sticky top-0 z-20 mt-7 flex items-center justify-between gap-4 border-b border-[var(--app-border)] bg-[var(--app-glass)] py-2 backdrop-blur-xl page-bleed">
         <div className="flex items-baseline gap-1.5 whitespace-nowrap">
-          <span className="text-[12px] font-medium text-black/70">
+          <span className="text-[12px] font-medium text-ink-2">
             <Trans>歌曲列表</Trans>
           </span>
-          <span className="text-[11px] tabular-nums text-black/30">
+          <span className="text-[11px] tabular-nums text-ink-4">
             {songs.length}
           </span>
         </div>

@@ -281,7 +281,7 @@ function SearchPage() {
   const hasKeyword = Boolean(keyword.trim())
 
   return (
-    <div className="px-8 pb-14 pt-6">
+    <div className="page">
       <div className="mx-auto w-full max-w-[560px]">
         <SearchBox
           initialKeyword={keyword}
@@ -310,7 +310,7 @@ function SearchPage() {
       </div>
 
       <Tabs value={tab} onValueChange={changeTab} className="mt-5">
-        <div className="sticky top-0 z-20 -mx-8 flex items-center justify-between gap-3 border-b border-[var(--app-border)] bg-[var(--app-glass)] px-8 pb-2 pt-2 backdrop-blur-xl">
+        <div className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-[var(--app-border)] bg-[var(--app-glass)] pb-2 pt-2 backdrop-blur-xl page-bleed">
           <TabsList className="max-w-full overflow-x-auto">
             <TabsTrigger value="songs">
               <Trans>单曲</Trans>
@@ -351,7 +351,7 @@ function SearchPage() {
             />
           ) : (
             <>
-              <div className="mb-2 flex items-center justify-between text-[11px] text-black/35">
+              <div className="mb-2 flex items-center justify-between text-[11px] text-ink-4">
                 <span>
                   <Trans>共找到 {songTotal} 首单曲</Trans>
                 </span>
@@ -368,7 +368,7 @@ function SearchPage() {
         </TabsContent>
 
         <TabsContent value="playlists" className="mt-3">
-          <div className="mb-2 text-[11px] text-black/35">
+          <div className="mb-2 text-[11px] text-ink-4">
             <Trans>共找到 {playlistTotal} 个歌单</Trans>
           </div>
           {failed ? (
@@ -406,17 +406,17 @@ function SearchPage() {
                     resize="128y128"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="line-clamp-1 text-[12.5px] text-black/75 group-hover:text-accent">
+                    <p className="line-clamp-1 text-[13px] text-ink-2 group-hover:text-accent">
                       {playlist.name}
                     </p>
-                    <p className="mt-1 flex items-center gap-2 text-[11px] text-black/30">
+                    <p className="mt-1 flex items-center gap-2 text-[11px] text-ink-4">
                       <span>
                         <Trans>{playlist.trackCount} 首</Trans>
                       </span>
                       <span>by {playlist.creator?.nickname}</span>
                     </p>
                   </div>
-                  <span className="flex shrink-0 items-center gap-1 text-[11px] text-black/30">
+                  <span className="flex shrink-0 items-center gap-1 text-[11px] text-ink-4">
                     <ListMusic className="h-3 w-3" />
                     {formatNumber(playlist.playCount)}
                   </span>
@@ -429,7 +429,7 @@ function SearchPage() {
           <Pager page={page} pageCount={pageCount} onChange={setPage} className="mt-6" />
         </TabsContent>
         <TabsContent value="albums" className="mt-3">
-          <div className="mb-2 text-[11px] text-black/35">
+          <div className="mb-2 text-[11px] text-ink-4">
             <Trans>共找到 {albumTotal} 张专辑</Trans>
           </div>
           {failed ? (
@@ -463,7 +463,7 @@ function SearchPage() {
           <Pager page={page} pageCount={pageCount} onChange={setPage} className="mt-6" />
         </TabsContent>
         <TabsContent value="artists" className="mt-3">
-          <div className="mb-2 text-[11px] text-black/35">
+          <div className="mb-2 text-[11px] text-ink-4">
             <Trans>共找到 {artistTotal} 位歌手</Trans>
           </div>
           {failed ? (
@@ -501,15 +501,15 @@ function SearchPage() {
                     resize="128y128"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[12.5px] text-black/75 group-hover:text-accent">
+                    <p className="truncate text-[13px] text-ink-2 group-hover:text-accent">
                       {artist.name}
                     </p>
-                    <p className="mt-0.5 truncate text-[11px] text-black/35">
+                    <p className="mt-0.5 truncate text-[11px] text-ink-4">
                       {artist.alias?.[0] ??
                         artist.transNames?.[0] ??
                         i18n._(msg`${artist.albumSize ?? 0} 张专辑`)}
                     </p>
-                    <p className="mt-0.5 text-[11px] text-black/25">
+                    <p className="mt-0.5 text-[11px] text-ink-4">
                       <Trans>
                         {artist.albumSize ?? 0} 张专辑 · {artist.mvSize ?? 0} 个 MV
                       </Trans>
@@ -524,7 +524,7 @@ function SearchPage() {
           <Pager page={page} pageCount={pageCount} onChange={setPage} className="mt-6" />
         </TabsContent>
         <TabsContent value="users" className="mt-3">
-          <div className="mb-2 text-[11px] text-black/35">
+          <div className="mb-2 text-[11px] text-ink-4">
             <Trans>共找到 {userTotal} 位用户</Trans>
           </div>
           {failed ? (
@@ -556,7 +556,7 @@ function SearchPage() {
         </TabsContent>
 
         <TabsContent value="mvs" className="mt-3">
-          <div className="mb-2 text-[11px] text-black/35">
+          <div className="mb-2 text-[11px] text-ink-4">
             <Trans>共找到 {mvTotal} 个 MV</Trans>
           </div>
           {failed ? (
@@ -592,7 +592,7 @@ function SearchPage() {
           <Pager page={page} pageCount={pageCount} onChange={setPage} className="mt-6" />
         </TabsContent>
         <TabsContent value="videos" className="mt-3">
-          <div className="mb-2 text-[11px] text-black/35">
+          <div className="mb-2 text-[11px] text-ink-4">
             <Trans>共找到 {videoTotal} 个视频</Trans>
           </div>
           {failed ? (

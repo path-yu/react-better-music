@@ -285,7 +285,7 @@ export function SearchBox({
           }}
           // Keep the caret in the field while clearing, like a native search box.
           onMouseDown={(event) => event.preventDefault()}
-          className="electrobun-webkit-app-region-no-drag pressable absolute right-1.5 top-1/2 z-10 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-black/40 transition-colors hover:bg-black/10 hover:text-black/70 max-md:h-8 max-md:w-8"
+          className="electrobun-webkit-app-region-no-drag pressable absolute right-1.5 top-1/2 z-10 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-ink-3 transition-colors hover:bg-black/10 hover:text-ink-2 max-md:h-8 max-md:w-8"
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -299,13 +299,13 @@ export function SearchBox({
                 {searchHistory.length > 0 && (
                   <div className="px-4 pt-4">
                     <div className="flex items-center justify-between">
-                      <p className="flex items-center gap-1.5 text-[12px] font-medium text-black/45">
+                      <p className="flex items-center gap-1.5 text-[12px] font-medium text-ink-3">
                         <Clock3 className="h-3.5 w-3.5" />
                         <Trans>搜索历史</Trans>
                       </p>
                       <button
                         type="button"
-                        className="pressable flex items-center gap-1 text-[11px] text-black/35 hover:text-black/70"
+                        className="pressable flex items-center gap-1 text-[11px] text-ink-4 hover:text-ink-2"
                         onClick={() => clearSearchHistory()}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -316,7 +316,7 @@ export function SearchBox({
                       {searchHistory.map((item, index) => (
                         <span
                           key={`${item}-${index}`}
-                          className="group inline-flex items-center gap-1 rounded-full border border-black/8 bg-[#f5f5f7] px-2.5 py-1 text-[12px] text-black/70 transition-colors hover:bg-[#ececf0]"
+                          className="group inline-flex items-center gap-1 rounded-full border border-black/8 bg-[#f5f5f7] px-2.5 py-1 text-[12px] text-ink-2 transition-colors hover:bg-[#ececf0]"
                         >
                           <button type="button" onClick={() => goSearch(item)}>
                             {item}
@@ -324,7 +324,7 @@ export function SearchBox({
                           <button
                             type="button"
                             aria-label={i18n._(msg`移除`)}
-                            className="text-black/25 hover:text-black/60"
+                            className="text-ink-4 hover:text-ink-2"
                             onClick={() => removeSearchHistory(index)}
                           >
                             <X className="h-3 w-3" />
@@ -336,12 +336,12 @@ export function SearchBox({
                 )}
 
                 <div className="mt-3 px-4 pb-4">
-                  <p className="text-[12px] font-medium text-black/45">
+                  <p className="text-[12px] font-medium text-ink-3">
                     <Trans>热搜榜</Trans>
                   </p>
                   {hotLoading ? (
                     <div className="flex h-24 items-center justify-center">
-                      <Loader2 className="h-4 w-4 animate-spin text-black/30" />
+                      <Loader2 className="h-4 w-4 animate-spin text-ink-4" />
                     </div>
                   ) : (
                     <div className="mt-1">
@@ -354,15 +354,15 @@ export function SearchBox({
                         >
                           <span
                             className={`w-4 text-[13px] font-semibold ${
-                              index < 3 ? 'text-accent' : 'text-black/30'
+                              index < 3 ? 'text-accent' : 'text-ink-4'
                             }`}
                           >
                             {index + 1}
                           </span>
-                          <span className="flex-1 truncate text-[13px] text-black/80">
+                          <span className="flex-1 truncate text-[13px] text-ink-1">
                             {item.searchWord}
                           </span>
-                          <span className="text-[11px] text-black/25">{item.score}</span>
+                          <span className="text-[11px] text-ink-4">{item.score}</span>
                         </button>
                       ))}
                     </div>
@@ -380,7 +380,7 @@ export function SearchBox({
               >
                 {loading ? (
                   <div className="flex h-28 items-center justify-center">
-                    <Loader2 className="h-5 w-5 animate-spin text-black/30" />
+                    <Loader2 className="h-5 w-5 animate-spin text-ink-4" />
                   </div>
                 ) : (
                   <>
@@ -400,7 +400,7 @@ export function SearchBox({
                     {suggest.songs.length > 0 && (
                       <p
                         role="presentation"
-                        className="flex items-center gap-1.5 px-4 pb-1 pt-2 text-[11px] text-black/35"
+                        className="flex items-center gap-1.5 px-4 pb-1 pt-2 text-[11px] text-ink-4"
                       >
                         <Music2 className="h-3 w-3" />
                         <Trans>单曲</Trans>
@@ -420,13 +420,13 @@ export function SearchBox({
                           )}
                         >
                           <Play className="h-3 w-3 shrink-0 text-accent opacity-0 transition-opacity group-hover:opacity-100" />
-                          <span className="min-w-0 flex-1 truncate text-[13px] text-black/80">
+                          <span className="min-w-0 flex-1 truncate text-[13px] text-ink-1">
                             {song.name}
                             {song.alia?.[0] ? (
-                              <span className="text-black/35">（{song.alia[0]}）</span>
+                              <span className="text-ink-4">（{song.alia[0]}）</span>
                             ) : null}
                           </span>
-                          <span className="max-w-[140px] shrink-0 truncate text-[11px] text-black/35">
+                          <span className="max-w-[140px] shrink-0 truncate text-[11px] text-ink-4">
                             {song.ar.map((artist) => artist.name).join(' / ')}
                           </span>
                         </button>
@@ -436,7 +436,7 @@ export function SearchBox({
                     {suggest.playlists.length > 0 && (
                       <p
                         role="presentation"
-                        className="flex items-center gap-1.5 px-4 pb-1 pt-2 text-[11px] text-black/35"
+                        className="flex items-center gap-1.5 px-4 pb-1 pt-2 text-[11px] text-ink-4"
                       >
                         <Music2 className="h-3 w-3" />
                         <Trans>歌单</Trans>
@@ -455,10 +455,10 @@ export function SearchBox({
                             activeIndex === optionIndex && 'bg-black/6',
                           )}
                         >
-                          <span className="min-w-0 flex-1 truncate text-[13px] text-black/80">
+                          <span className="min-w-0 flex-1 truncate text-[13px] text-ink-1">
                             {playlist.name}
                           </span>
-                          <span className="shrink-0 text-[11px] text-black/30">
+                          <span className="shrink-0 text-[11px] text-ink-4">
                             <Trans>{playlist.trackCount} 首</Trans>
                           </span>
                         </button>
@@ -466,7 +466,7 @@ export function SearchBox({
                     })}
 
                     {!suggest.songs.length && !suggest.playlists.length && (
-                      <p className="px-4 py-8 text-center text-[12px] text-black/35">
+                      <p className="px-4 py-8 text-center text-[12px] text-ink-4">
                         <Trans>没有找到相关建议</Trans>
                       </p>
                     )}

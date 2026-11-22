@@ -137,7 +137,7 @@ export function PlaylistPicker({
             className={
               immersive
                 ? 'h-4 w-4 text-white/40 transition-colors hover:text-white/80'
-                : 'h-4 w-4 text-black/30 transition-colors hover:text-black/60'
+                : 'h-4 w-4 text-ink-4 transition-colors hover:text-ink-2'
             }
           />
         </button>
@@ -151,14 +151,14 @@ export function PlaylistPicker({
         <p
           className={cn(
             'px-2 py-1 text-[11px]',
-            immersive ? 'text-white/45' : 'text-black/35',
+            immersive ? 'text-white/45' : 'text-ink-4',
           )}
         >
           <Trans>收藏到歌单</Trans>
         </p>
         <div
           className={cn(
-            'max-h-[280px] overflow-y-auto rounded-[8px] p-0.5',
+            'max-h-[280px] overflow-y-auto rounded-[10px] p-0.5',
             immersive ? 'bg-white/5' : 'bg-black/4',
           )}
         >
@@ -167,7 +167,7 @@ export function PlaylistPicker({
               <Loader2
                 className={cn(
                   'h-4 w-4 animate-spin',
-                  immersive ? 'text-white/40' : 'text-black/30',
+                  immersive ? 'text-white/40' : 'text-ink-4',
                 )}
               />
             </div>
@@ -185,13 +185,13 @@ export function PlaylistPicker({
                   'flex h-9 w-full items-center gap-2 rounded-[6px] px-2 text-left text-[12px] transition-colors disabled:opacity-50',
                   immersive
                     ? 'text-white/70 hover:bg-white/8'
-                    : 'text-black/65 hover:bg-black/5',
+                    : 'text-ink-2 hover:bg-black/5',
                 )}
               >
                 <ListMusic
                   className={cn(
                     'h-3.5 w-3.5 shrink-0',
-                    immersive ? 'text-white/40' : 'text-black/35',
+                    immersive ? 'text-white/40' : 'text-ink-4',
                   )}
                 />
                 <span className="min-w-0 flex-1 truncate">{choice.name}</span>
@@ -202,7 +202,7 @@ export function PlaylistPicker({
             <p
               className={cn(
                 'px-2 py-4 text-center text-[11px]',
-                immersive ? 'text-white/40' : 'text-black/35',
+                immersive ? 'text-white/40' : 'text-ink-4',
               )}
             >
               {isLogin ? (

@@ -54,7 +54,7 @@ function LocalPlaylistPage() {
 
   if (!playlist) {
     return (
-      <div className="px-8 pb-14 pt-6">
+      <div className="page">
         {loaded ? (
           <EmptyState
             icon={<ListMusic className="h-6 w-6" />}
@@ -71,7 +71,7 @@ function LocalPlaylistPage() {
             }
           />
         ) : (
-          <div className="py-16 text-center text-[12px] text-black/35">
+          <div className="py-16 text-center text-[12px] text-ink-4">
             <Trans>正在读取本地歌单…</Trans>
           </div>
         )}
@@ -114,17 +114,17 @@ function LocalPlaylistPage() {
   }
 
   return (
-    <div className="px-8 pb-14 pt-6">
+    <div className="page">
       <button
         type="button"
         onClick={() => void navigate({ to: '/local/favorites' })}
-        className="mb-3 flex items-center gap-1 text-[11px] text-black/35 hover:text-black/65"
+        className="mb-3 flex items-center gap-1 text-[11px] text-ink-4 hover:text-ink-2"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         <Trans>本地收藏</Trans>
       </button>
 
-      <div className="flex items-end justify-between gap-4">
+      <div className="page-header">
         <div className="min-w-0">
           {editing ? (
             <div className="flex items-center gap-1.5">
@@ -140,7 +140,7 @@ function LocalPlaylistPage() {
                     setName(playlist.name)
                   }
                 }}
-                className="headline-lg h-9 w-[min(360px,60vw)] rounded-[8px] border border-black/10 bg-white/70 px-2 outline-none focus:border-accent/50"
+                className="headline-lg h-9 w-[min(360px,60vw)] rounded-[10px] border border-black/10 bg-white/70 px-2 outline-none focus:border-accent/50"
               />
               <button
                 type="button"
@@ -157,26 +157,25 @@ function LocalPlaylistPage() {
                   setName(playlist.name)
                 }}
                 aria-label={i18n._(msg`取消`)}
-                className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/35 hover:bg-black/5"
+                className="pressable flex h-7 w-7 items-center justify-center rounded-full text-ink-4 hover:bg-black/5"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
           ) : (
             <h1 className="headline-lg flex min-w-0 items-center gap-2">
-              <ListMusic className="h-5 w-5 shrink-0 text-accent" />
               <span className="truncate">{playlist.name}</span>
               <button
                 type="button"
                 onClick={() => setEditing(true)}
                 aria-label={i18n._(msg`重命名歌单`)}
-                className="pressable flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-black/25 hover:bg-black/5 hover:text-black/60"
+                className="pressable flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-ink-4 hover:bg-black/5 hover:text-ink-2"
               >
                 <Pencil className="h-3.5 w-3.5" />
               </button>
             </h1>
           )}
-          <p className="mt-1.5 text-[12px] text-black/35">
+          <p className="page-subtitle">
             <Trans>本地歌单 · {playlist.songs.length} 首</Trans>
           </p>
         </div>
@@ -187,7 +186,7 @@ function LocalPlaylistPage() {
             onClick={requestDelete}
             aria-label={i18n._(msg`删除歌单`)}
             title={i18n._(msg`删除歌单`)}
-            className="pressable flex h-8 w-8 items-center justify-center rounded-full border border-black/8 text-black/35 hover:border-[#ff2d55]/30 hover:text-[#ff2d55]"
+            className="pressable flex h-8 w-8 items-center justify-center rounded-full border border-black/8 text-ink-4 hover:border-love/30 hover:text-love"
           >
             <Trash2 className="h-4 w-4" />
           </button>

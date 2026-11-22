@@ -95,7 +95,7 @@ function DailyPage() {
 
   if (loading) {
     return (
-      <div className="px-8 pb-16 pt-7">
+      <div className="page">
         <div className="flex flex-wrap items-end gap-6 border-b border-[var(--app-border)] pb-6">
           <Skeleton className="h-[208px] w-[208px] rounded-[18px]" />
           <div className="flex-1">
@@ -115,7 +115,7 @@ function DailyPage() {
   }
 
   return (
-    <div className="px-8 pb-16 pt-7">
+    <div className="page">
       <div className="flex flex-wrap items-end gap-6 border-b border-[var(--app-border)] pb-6">
         <div className="relative h-[208px] w-[208px] shrink-0 overflow-hidden rounded-[18px] bg-[#3a3a40] artwork-shadow">
           {dailyCover ? (
@@ -145,16 +145,16 @@ function DailyPage() {
           <h1 className="headline-lg mt-1.5">
             <Trans>每日歌曲推荐</Trans>
           </h1>
-          <p className="mt-2 text-[12px] leading-relaxed text-black/40">
+          <p className="page-subtitle">
             <Trans>{songs.length} 首</Trans>
-            <span className="mx-1.5 text-black/20">·</span>
+            <span className="mx-1.5 text-ink-4">·</span>
             {blurb}
           </p>
           <div className="mt-5 flex flex-wrap items-center gap-2">
             <Button
               variant="primary"
               size="sm"
-              className="pressable rounded-full px-4 text-[12.5px]"
+              className="pressable rounded-full px-4 text-[13px]"
               onClick={playAll}
               disabled={!songs.length}
             >
@@ -164,7 +164,7 @@ function DailyPage() {
             <Button
               variant="secondary"
               size="sm"
-              className="pressable rounded-full px-4 text-[12.5px]"
+              className="pressable rounded-full px-4 text-[13px]"
               onClick={playShuffled}
               disabled={!songs.length}
             >

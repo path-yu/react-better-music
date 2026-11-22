@@ -38,6 +38,7 @@ pnpm i18n:extract && pnpm typecheck && pnpm typecheck:desktop && pnpm lint && pn
 | **切歌后伴奏继续在后台生成** | 结果写入缓存，切回该歌自动应用 | 这段时间 CPU 仍被占用（以前同样在跑，只是结果被丢弃） |
 | **登录 cookie 改走请求头** | Node API（`server/`）从 `X-NCM-Cookie` 请求头读取会话；Tauri 版仍用 `?cookie=` | 桌面版跨域请求会多一次预检（OPTIONS，本机耗时可忽略）；**Node API 与前端需同时更新**，旧 API 读不到请求头会按游客处理 |
 | **`pnpm dev:api` 只监听本机** | 加了 `--host 127.0.0.1` | 开发时要让局域网访问，改用 `node server/app.js` 或设 `HOST=0.0.0.0`；Docker 镜像不受影响 |
+| **底部播放栏右侧默认改为剩余时间** | 三处进度条统一，默认显示 `-m:ss` | 想看总时长可在设置里关掉，或直接点一下右侧的时间 |
 | **离开有未保存修改的页面会弹确认** | 歌单编辑页、个人资料页 | 网页版关闭或刷新标签页只能显示浏览器自带提示；桌面版不拦截 |
 
 ---
@@ -161,11 +162,30 @@ pnpm i18n:extract && pnpm typecheck && pnpm typecheck:desktop && pnpm lint && pn
 | 边听边缓存重复下载：`<audio>` 的缓冲 JS 读不到，播放 10 秒后缓存任务又向 CDN 完整下载一次 | 新增 `server/audioTee.js`：同一媒体地址第一次完整请求时全速下载到临时文件，播放、进度内拖动、缓存任务、重播都从这个正在增长的文件读；拖到未下载部分 2MB 以外仍直接请求 CDN；没人读的未完成下载 5 秒后放弃（快速切歌不会下完每一首）；最多 8 个 / 300MB，25 分钟过期；临时目录按进程区分，启动时清理已退出进程留下的目录。**自查修复**：读取端原先在写入流异步创建文件之前就去打开文件，首个播放请求可能因 ENOENT 失败，现在改为有数据写入后才打开；读取端在打开期间被销毁时，文件句柄会被关闭 | `server/audioTee.js`（新）、`server/server.js` |
 | vitest 未配置 Lingui，底层文件无法翻译 | `vitest.config.ts` 接入 `@lingui/vite-plugin`（与构建相同的宏转换和 `.po` 加载）；`songs.ts`「未知专辑」、`video.ts`「视频」、`image.ts` 两条错误改走多语言 | `vitest.config.ts`、`lib/songs.ts`、`lib/video.ts`、`lib/image.ts`、`lib/format.test.ts` |
 
+### 第 9 批：界面规范统一
+
+| 内容 | 说明 | 主要文件 |
+| --- | --- | --- |
+| 深色模式 bug | 5 处卡片悬停变成近白底（`hover:bg-white/80`）、本地歌单重命名输入框白底（`bg-white/70`），以及另外 7 个缺失的深色映射 | `styles.css` |
+| 文字灰度 | 18 档 `text-black/NN` 收敛为 `ink-1`～`ink-4` 四级（443 处），深色值由变量控制；沉浸播放页、二维码白底单独覆盖变量 | 全部组件、`styles.css` |
+| 语义色 | `#ff2d55`、`#ff9500`、`#b36b00`、`#d70015`、`#ff3b30` 改为 `love` / `warn` / `warn-ink` / `danger` 变量（47 处），深色值随主题切换 | 全部组件、`styles.css` |
+| 字号 | 小于 11px 的全部提到 11px；11.5/12.5/14/16/17/18/30 归到 12/13/15/19/28（127 处）；删除 12 处对 `.headline-lg` 等类无效的字号覆盖 | 全部组件 |
+| 圆角 | 收敛到 6/10/14/18/22/28（55 处，含 10 处命名圆角） | 全部组件 |
+| 页面结构 | 新增 `PageHeader` 和 `.page` / `.page-header` / `.page-subtitle` / `.page-bleed`；所有页面边距统一；首页、设置页、最新音乐、最新 MV、排行榜、个人资料、歌单编辑、本地收藏改用 `PageHeader`；页面标题去掉图标；「发现音乐」页统一加 eyebrow；设置页恢复页面标题 | `components/common/PageHeader.tsx`（新）、各 `routes/*` |
+| 区块标题 | 首页改用 `.section-title`，与其他页一致 | `routes/index.tsx` |
+| 筛选控件 | 推荐歌单、最新音乐、最新 MV 统一为 `.chip` 胶囊（带 `aria-pressed`）；最新 MV 去掉外层卡片 | `songlists/index.tsx`、`latest-music.tsx`、`latest-mv.tsx` |
+| 时间格式 | `formatDuration` 改为 `m:ss` / `h:mm:ss`；新增 `formatRemaining`（`-m:ss`）。三处进度条右侧统一用 `TimeToggle`：默认显示剩余时间，「设置 → 播放 → 进度条显示剩余时间」或点击右侧时间可切换为总时长，三处共用同一个设置 | `lib/format.ts`、`format.test.ts`、`components/player/TimeToggle.tsx`（新）、`store/settings.ts`、`PlayerBar.tsx`、`NowPlayingTransport.tsx`、`ImmersivePlayerBar.tsx`、`routes/settings.tsx` |
+| 播放按钮顺序 | 三处统一为 上一首 · 播放 · 下一首 · 模式 · 列表 | `NowPlayingTransport.tsx`、`ImmersivePlayerBar.tsx` |
+| 细节 | 歌单卡片不再预留两行标题高度；首页横幅去掉重复日期；侧栏二级分组标题改用 `.sidebar-subheading`；设置页卡片内分组去掉第二层边框 | `PlaylistCard.tsx`、`routes/index.tsx`、`Sidebar.tsx`、`routes/settings.tsx` |
+| 规范约束 | 新增 `designTokens.test.ts`：字号、圆角、`text-black`、语义色十六进制、未映射的浅色面板类，任一违规 `pnpm test` 失败；`DESIGN.md` 按应用实际重写 | `lib/designTokens.test.ts`（新）、`DESIGN.md` |
+
+> 更正：之前说「详情页标题有 24/28/32 三种」，实际 `.headline-lg` 等类不在 CSS layer 中，同元素上的 `text-[Npx]` 不生效，详情页标题本来都是 28px。这批改动只删除了这些无效类，视觉不变。
+
 ---
 
 ## 3. 改动文件汇总
 
-共 57 个文件，其中新增 5 个（标 ★）。
+前 8 批共 57 个文件，其中新增 5 个（标 ★）。第 9 批又改动约 60 个文件（大部分为全局替换），新增 `components/common/PageHeader.tsx`、`lib/designTokens.test.ts`。
 
 ```
 package.json, vitest.config.ts
@@ -253,6 +273,16 @@ src/
 - [ ] 生成伴奏途中切歌，再切回：生成完成后自动应用，不重新生成
 - [ ] 随心唱开启音量均衡：人声不再断续
 - [ ] 设置页「清除伴奏缓存」可用
+
+**界面规范**
+
+- [ ] 浅色、深色各过一遍：首页、推荐歌单、排行榜、最新音乐、最新 MV、搜索、歌单详情、歌手页、设置页，页面标题和左边距对齐，没有白块或看不清的文字
+- [ ] 深色模式：鼠标悬停用户卡片、歌手页专辑卡片、搜索结果卡片、排行榜卡片不再变白；本地歌单重命名输入框可见
+- [ ] 筛选胶囊在三个页面样式一致，选中态跟随配色方案
+- [ ] 底部栏、播放页、沉浸式播放栏的按钮顺序一致；时间都是 `m:ss`
+- [ ] 三处进度条右侧默认显示剩余时间（`-2:26`）；点击任意一处右侧时间，三处一起切换为总时长；设置页开关同步变化，重启后保持
+- [ ] 沉浸播放页里的浅色提示文字（评论时间、歌词提示）依然清晰
+- [ ] `pnpm test` 中 `designTokens.test.ts` 通过
 
 **多语言**
 

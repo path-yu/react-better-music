@@ -265,7 +265,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
             }}
           >
             <div>
-              <p className="mb-1.5 text-[11px] text-black/40">
+              <p className="mb-1.5 text-[11px] text-ink-3">
                 <Trans>手机号</Trans>
               </p>
               <Input
@@ -282,7 +282,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
             </div>
 
             <div>
-              <p className="mb-1.5 text-[11px] text-black/40">
+              <p className="mb-1.5 text-[11px] text-ink-3">
                 <Trans>验证码</Trans>
               </p>
               <div className="flex items-center gap-2">
@@ -330,13 +330,13 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
             {errorMessage ? (
               <div
                 role="alert"
-                className="rounded-[10px] border border-[#ff3b30]/15 bg-[#ff3b30]/10 px-3 py-2 text-[12px] leading-relaxed text-[#d70015] dark:text-[#ff6961]"
+                className="rounded-[10px] border border-danger/15 bg-danger/10 px-3 py-2 text-[12px] leading-relaxed text-danger dark:text-danger"
               >
                 {errorMessage}
               </div>
             ) : null}
 
-            <p className="text-center text-[11px] leading-relaxed text-black/30">
+            <p className="text-center text-[11px] leading-relaxed text-ink-4">
               <Trans>未注册的手机号登录后将自动创建账号</Trans>
             </p>
           </form>
@@ -345,7 +345,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
         <TabsContent value="qr" className="mt-4">
           <div className="flex flex-col items-center pb-1">
             <div className="qr-surface relative flex h-[min(210px,70vw)] w-[min(210px,70vw)] items-center justify-center overflow-hidden rounded-[18px] border border-black/8 bg-white">
-              {loading && <Loader2 className="h-7 w-7 animate-spin text-black/35" />}
+              {loading && <Loader2 className="h-7 w-7 animate-spin text-ink-4" />}
               {!loading && qrImage && (
                 <img
                   src={qrImage}
@@ -366,17 +366,17 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
               )}
             </div>
 
-            <p className="mt-5 flex items-center gap-1.5 text-[13px] text-black/45">
+            <p className="mt-5 flex items-center gap-1.5 text-[13px] text-ink-3">
               <Smartphone className="h-4 w-4" />
               <span>
                 <Trans>使用网易云音乐 App 扫码登录</Trans>
               </span>
             </p>
-            <p className="mt-1 h-4 text-[12px] text-black/35">
+            <p className="mt-1 h-4 text-[12px] text-ink-4">
               {STATUS_TEXT[status] ? i18n._(STATUS_TEXT[status]) : ''}
             </p>
 
-            <p className="mt-3 max-w-[260px] text-center text-[11px] leading-relaxed text-black/30">
+            <p className="mt-3 max-w-[260px] text-center text-[11px] leading-relaxed text-ink-4">
               <Trans>若二维码无法加载，请确认本地 API 服务已启动</Trans>
             </p>
           </div>

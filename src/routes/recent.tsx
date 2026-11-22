@@ -85,14 +85,13 @@ function RecentSongsPage() {
   )
 
   return (
-    <div className="px-8 pb-14 pt-6">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <h1 className="headline-lg flex items-center gap-2">
-            <History className="h-5 w-5 text-accent" />
+    <div className="page">
+      <div className="page-header">
+        <div className="min-w-0">
+          <h1 className="headline-lg">
             <Trans>最近播放</Trans>
           </h1>
-          <p className="mt-1.5 text-[12px] text-black/35">
+          <p className="page-subtitle">
             {isLogin ? (
               <Trans>最近听过的歌曲，最多显示 100 首</Trans>
             ) : (
@@ -108,7 +107,7 @@ function RecentSongsPage() {
               onClick={() => setAttempt((value) => value + 1)}
               aria-label={i18n._(msg`刷新最近播放`)}
               title={i18n._(msg`刷新最近播放`)}
-              className="pressable flex h-8 w-8 items-center justify-center rounded-full border border-black/8 text-black/35 hover:border-accent/30 hover:text-accent"
+              className="pressable flex h-8 w-8 items-center justify-center rounded-full border border-black/8 text-ink-4 hover:border-accent/30 hover:text-accent"
             >
               <RefreshCw className="h-3.5 w-3.5" />
             </button>
@@ -119,7 +118,7 @@ function RecentSongsPage() {
               onClick={() => void clearRecent()}
               aria-label={i18n._(msg`清空播放记录`)}
               title={i18n._(msg`清空播放记录`)}
-              className="pressable flex h-8 w-8 items-center justify-center rounded-full border border-black/8 text-black/35 hover:border-[#ff2d55]/30 hover:text-[#ff2d55]"
+              className="pressable flex h-8 w-8 items-center justify-center rounded-full border border-black/8 text-ink-4 hover:border-love/30 hover:text-love"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
@@ -136,7 +135,7 @@ function RecentSongsPage() {
           className="w-[240px] rounded-full text-[12px]"
         />
         {keyword.trim() ? (
-          <span className="shrink-0 text-[11px] tabular-nums text-black/35">
+          <span className="shrink-0 text-[11px] tabular-nums text-ink-4">
             <Trans>找到 {filteredSongs.length} 首</Trans>
           </span>
         ) : null}
@@ -168,7 +167,7 @@ function RecentSongsPage() {
             onRetry={() => setAttempt((value) => value + 1)}
           />
         ) : loading && !songs.length ? (
-          <div className="flex items-center justify-center gap-2 py-16 text-[12px] text-black/35">
+          <div className="flex items-center justify-center gap-2 py-16 text-[12px] text-ink-4">
             <Loader2 className="h-4 w-4 animate-spin text-accent" />
             <Trans>正在同步最近播放…</Trans>
           </div>

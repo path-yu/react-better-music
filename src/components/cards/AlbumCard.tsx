@@ -38,10 +38,10 @@ export function AlbumCard({ album, priority = false }: AlbumCardProps) {
           className="aspect-square w-full"
         />
       </div>
-      <span className="mt-2 line-clamp-2 block min-h-[34px] text-[12px] leading-[1.4] text-black/75 transition-colors group-hover:text-accent">
+      <span className="mt-2 line-clamp-2 block min-h-[34px] text-[12px] leading-[1.4] text-ink-2 transition-colors group-hover:text-accent">
         {album.name}
       </span>
-      <span className="mt-0.5 block truncate text-[11px] text-black/30">
+      <span className="mt-0.5 block truncate text-[11px] text-ink-4">
         {subtitle}
         {album.size ? (
           <Trans> · {album.size} 首</Trans>

@@ -19,12 +19,21 @@ export function formatNumber(value?: number | null) {
   return `${Math.round(value / 100000000)}亿`
 }
 
+/** `m:ss`, or `h:mm:ss` from one hour, everywhere a duration is shown. */
 export function formatDuration(ms?: number | null) {
-  if (!ms || ms < 0) return '00:00'
+  if (!ms || ms < 0) return '0:00'
   const totalSeconds = Math.floor(ms / 1000)
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = String(totalSeconds % 60).padStart(2, '0')
+  return hours
+    ? `${hours}:${String(minutes).padStart(2, '0')}:${seconds}`
+    : `${minutes}:${seconds}`
+}
+
+/** Time left as `-m:ss`, the alternative right-hand label of progress bars. */
+export function formatRemaining(ms?: number | null) {
+  return `-${formatDuration(Math.max(0, ms ?? 0))}`
 }
 
 export function formatDate(timestamp?: number | string | null, withTime = false) {

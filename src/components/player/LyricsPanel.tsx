@@ -187,7 +187,7 @@ export const LyricsPanel = memo(function LyricsPanel({
 
   if (!lines.length) {
     return (
-      <div className={cn('flex h-full items-center justify-center text-[12px] text-black/35', className)}>
+      <div className={cn('flex h-full items-center justify-center text-[12px] text-ink-4', className)}>
         <Trans>暂无歌词，请欣赏</Trans>
       </div>
     )

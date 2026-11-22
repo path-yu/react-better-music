@@ -182,7 +182,7 @@ export function QueuePanel() {
             <p
               className={cn(
                 'text-[13px] font-semibold',
-                immersive ? 'text-white/85' : 'text-black/80',
+                immersive ? 'text-white/85' : 'text-ink-1',
               )}
             >
               <Trans>播放列表</Trans>
@@ -190,7 +190,7 @@ export function QueuePanel() {
             <span
               className={cn(
                 'text-[11px]',
-                immersive ? 'text-white/40' : 'text-black/35',
+                immersive ? 'text-white/40' : 'text-ink-4',
               )}
             >
               <Trans>{queue.length} 首</Trans>
@@ -204,7 +204,7 @@ export function QueuePanel() {
                 'h-7 rounded-full px-2 text-[11px]',
                 immersive
                   ? 'text-white/45 hover:bg-white/8 hover:text-white/80'
-                  : 'text-black/40',
+                  : 'text-ink-3',
               )}
               onClick={() => {
                 if (!confirmClear) {
@@ -226,7 +226,7 @@ export function QueuePanel() {
                 'pressable flex h-7 w-7 items-center justify-center rounded-full max-md:h-10 max-md:w-10',
                 immersive
                   ? 'text-white/45 hover:bg-white/8 hover:text-white/80'
-                  : 'text-black/40 hover:bg-black/5 hover:text-black/70',
+                  : 'text-ink-3 hover:bg-black/5 hover:text-ink-2',
               )}
             >
               <X className="h-4 w-4" />
@@ -289,7 +289,7 @@ export function QueuePanel() {
                         <span
                           className={cn(
                             'text-[11px] tabular-nums',
-                            immersive ? 'text-white/30' : 'text-black/25',
+                            immersive ? 'text-white/30' : 'text-ink-4',
                           )}
                         >
                           {virtualRow.index + 1}
@@ -307,18 +307,18 @@ export function QueuePanel() {
                                 : 'font-medium text-accent'
                               : immersive
                                 ? 'text-white/85'
-                                : 'text-black/75',
+                                : 'text-ink-2',
                           )}
                         >
                           {song.name}
                         </span>
                         {song.fee === 1 ? (
-                          <span className="shrink-0 rounded bg-[#ff2d55]/10 px-1 text-[11px] text-[#ff2d55]">
+                          <span className="shrink-0 rounded-[6px] bg-love/10 px-1 text-[11px] text-love">
                             VIP
                           </span>
                         ) : null}
                         {song.mv || song.mvid ? (
-                          <span className="shrink-0 rounded-[4px] border-0 bg-accent/15 px-1 text-[10px] font-medium leading-[16px] text-accent">
+                          <span className="shrink-0 rounded-[6px] border-0 bg-accent/15 px-1 text-[11px] font-medium leading-[16px] text-accent">
                             MV
                           </span>
                         ) : null}
@@ -326,7 +326,7 @@ export function QueuePanel() {
                       <p
                         className={cn(
                           'flex min-w-0 items-center gap-1.5 text-[11px]',
-                          immersive ? 'text-white/40' : 'text-black/35',
+                          immersive ? 'text-white/40' : 'text-ink-4',
                         )}
                       >
                         <ArtistLinks artists={song.ar} className="min-w-0 truncate" />
@@ -336,7 +336,7 @@ export function QueuePanel() {
                               'shrink-0 rounded-[6px] px-1 text-[11px]',
                               immersive
                                 ? 'bg-white/8 text-white/40'
-                                : 'bg-black/6 text-black/35',
+                                : 'bg-black/6 text-ink-4',
                             )}
                           >
                             {note}
@@ -347,7 +347,7 @@ export function QueuePanel() {
                     <span
                       className={cn(
                         'shrink-0 text-[11px] tabular-nums',
-                        immersive ? 'text-white/30' : 'text-black/25',
+                        immersive ? 'text-white/30' : 'text-ink-4',
                       )}
                     >
                       {formatDuration(song.dt)}
@@ -389,7 +389,7 @@ export function QueuePanel() {
             'px-4 py-3 text-center text-[11px]',
             immersive
               ? 'border-t-0 text-white/35'
-              : 'border-t border-black/8 text-black/30',
+              : 'border-t border-black/8 text-ink-4',
           )}
         >
           <Trans>点击歌曲开始播放</Trans>

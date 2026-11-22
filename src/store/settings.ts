@@ -121,6 +121,8 @@ interface SettingsState {
   playerStyle: PlayerStyle
   /** Dynamically even out per-track loudness during playback. */
   volumeNormalization: boolean
+  /** Right-hand label of every progress bar: time left (true) or total length. */
+  showRemainingTime: boolean
   /** Instant approximation vs. cached Spleeter accompaniment. */
   stemMode: StemMode
   /** Which separated stem smart mode should play. */
@@ -155,6 +157,7 @@ interface SettingsState {
   setNowPlayingTransition: (value: NowPlayingTransition) => void
   setPlayerStyle: (value: PlayerStyle) => void
   setVolumeNormalization: (value: boolean) => void
+  setShowRemainingTime: (value: boolean) => void
   setStemMode: (value: StemMode) => void
   setStemKind: (value: StemKind) => void
   setSongStemEnabled: (
@@ -193,6 +196,8 @@ export const useSettingsStore = create<SettingsState>()(
       // Matches the reference player's default: analyse and even out loudness
       // without requiring ReplayGain tags in every file.
       volumeNormalization: true,
+      // Matches the original song page and Apple Music; click the label to flip.
+      showRemainingTime: true,
       stemMode: 'off',
       stemKind: 'accompaniment',
       stemSongs: {},
@@ -220,6 +225,7 @@ export const useSettingsStore = create<SettingsState>()(
       setPlayerStyle: (playerStyle) => set({ playerStyle }),
       setVolumeNormalization: (volumeNormalization) =>
         set({ volumeNormalization }),
+      setShowRemainingTime: (showRemainingTime) => set({ showRemainingTime }),
       setStemMode: (stemMode) => set({ stemMode }),
       setStemKind: (stemKind) => set({ stemKind }),
       setSongStemEnabled: (songId, enabled, kind) =>

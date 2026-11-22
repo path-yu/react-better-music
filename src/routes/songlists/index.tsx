@@ -162,13 +162,16 @@ function SonglistsPage() {
   }
 
   return (
-    <div className="px-8 pb-14 pt-6">
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="headline-lg">
+    <div className="page">
+      <div className="page-header">
+        <div className="min-w-0">
+          <p className="eyebrow">
+            <Trans>发现音乐</Trans>
+          </p>
+          <h1 className="headline-lg mt-1.5">
             <Trans>推荐歌单</Trans>
           </h1>
-          <p className="mt-1.5 text-[12px] text-black/35">
+          <p className="page-subtitle">
             <Trans>编辑精选的华语、欧美与器乐歌单</Trans>
           </p>
         </div>
@@ -179,7 +182,7 @@ function SonglistsPage() {
                 type="button"
                 aria-label={i18n._(msg`排序歌单`)}
                 title={i18n._(msg`排序歌单`)}
-                className="pressable flex h-8 items-center gap-1.5 rounded-full border border-black/8 px-3 text-[11.5px] text-black/45 hover:border-accent/30 hover:text-accent"
+                className="pressable flex h-8 items-center gap-1.5 rounded-full border border-black/8 px-3 text-[12px] text-ink-3 hover:border-accent/30 hover:text-accent"
               >
                 {sortOrder === 'desc' ? (
                   <ArrowDownWideNarrow className="h-3.5 w-3.5" />
@@ -213,10 +216,10 @@ function SonglistsPage() {
                     setSortMenuOpen(false)
                   }}
                   className={cn(
-                    'flex w-full items-center justify-between rounded-[7px] px-2.5 py-1.5 text-left text-[11.5px] transition-colors',
+                    'flex w-full items-center justify-between rounded-[6px] px-2.5 py-1.5 text-left text-[12px] transition-colors',
                     sortOrder === value
                       ? 'bg-accent/10 text-accent'
-                      : 'text-[var(--ink-2)] hover:bg-accent/10 hover:text-[var(--ink-1)]',
+                      : 'text-[var(--ink-3)] hover:bg-accent/10 hover:text-[var(--ink-1)]',
                   )}
                 >
                   {i18n._(label)}
@@ -230,14 +233,14 @@ function SonglistsPage() {
             onClick={retry}
             aria-label={i18n._(msg`刷新歌单`)}
             title={i18n._(msg`刷新歌单`)}
-            className="pressable flex h-8 w-8 items-center justify-center rounded-full border border-black/8 text-black/35 hover:border-accent/30 hover:text-accent"
+            className="pressable flex h-8 w-8 items-center justify-center rounded-full border border-black/8 text-ink-4 hover:border-accent/30 hover:text-accent"
           >
             <RefreshCw className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
 
-      <div className="sticky top-0 z-20 -mx-8 mt-5 border-b border-[var(--app-border)] bg-[var(--app-glass)] px-8 py-2.5 backdrop-blur-xl">
+      <div className="sticky top-0 z-20 mt-5 border-b border-[var(--app-border)] bg-[var(--app-glass)] py-2.5 backdrop-blur-xl page-bleed">
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -247,7 +250,7 @@ function SonglistsPage() {
               tagScrollerRef.current?.scrollBy({ left: -260, behavior: 'smooth' })
             }
             className={cn(
-              'pressable flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--app-border-strong)] bg-accent/10 text-[var(--ink-3)] hover:bg-accent/20 hover:text-[var(--ink-1)] max-md:h-9 max-md:w-9',
+              'pressable flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--app-border-strong)] bg-accent/10 text-[var(--ink-4)] hover:bg-accent/20 hover:text-[var(--ink-1)] max-md:h-9 max-md:w-9',
               !canScrollTagsLeft && 'pointer-events-none opacity-25',
             )}
           >
@@ -264,12 +267,8 @@ function SonglistsPage() {
                 type="button"
                 data-tag={tag}
                 onClick={() => selectTag(tag)}
-                className={cn(
-                  'shrink-0 rounded-full px-3 py-1.5 text-[11.5px] transition-colors',
-                  activeTag === tag
-                    ? 'bg-accent text-white'
-                    : 'border border-[var(--app-border-strong)] bg-accent/10 text-[var(--ink-2)] hover:bg-accent/20 hover:text-[var(--ink-1)]',
-                )}
+                aria-pressed={activeTag === tag}
+                className={cn('chip', activeTag === tag && 'chip--selected')}
               >
                 {tag === '全部'
                   ? i18n._(msg`全部`)
@@ -288,7 +287,7 @@ function SonglistsPage() {
               tagScrollerRef.current?.scrollBy({ left: 260, behavior: 'smooth' })
             }
             className={cn(
-              'pressable flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--app-border-strong)] bg-accent/10 text-[var(--ink-3)] hover:bg-accent/20 hover:text-[var(--ink-1)] max-md:h-9 max-md:w-9',
+              'pressable flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--app-border-strong)] bg-accent/10 text-[var(--ink-4)] hover:bg-accent/20 hover:text-[var(--ink-1)] max-md:h-9 max-md:w-9',
               !canScrollTagsRight && 'pointer-events-none opacity-25',
             )}
           >
@@ -299,7 +298,7 @@ function SonglistsPage() {
             <PopoverTrigger asChild>
               <button
                 type="button"
-                className="pressable flex h-7 shrink-0 items-center gap-1 rounded-full border border-[var(--app-border-strong)] bg-accent/10 px-2.5 text-[11px] text-[var(--ink-2)] hover:bg-accent/20 hover:text-[var(--ink-1)]"
+                className="pressable flex h-7 shrink-0 items-center gap-1 rounded-full border border-[var(--app-border-strong)] bg-accent/10 px-2.5 text-[11px] text-[var(--ink-3)] hover:bg-accent/20 hover:text-[var(--ink-1)]"
               >
                 <Trans>更多</Trans>
                 <ChevronDown className="h-3 w-3" />
@@ -312,7 +311,7 @@ function SonglistsPage() {
               glass
               className="w-[min(380px,calc(100vw-24px))] max-w-[calc(100vw-24px)] p-3"
             >
-              <p className="text-[11px] text-black/35">
+              <p className="text-[11px] text-ink-4">
                 <Trans>全部分类</Trans>
               </p>
               <div className="mt-2 flex max-h-[300px] flex-wrap gap-1.5 overflow-y-auto">
@@ -321,12 +320,8 @@ function SonglistsPage() {
                     key={tag}
                     type="button"
                     onClick={() => selectTag(tag, true)}
-                    className={cn(
-                      'rounded-full px-2.5 py-1 text-[11px] transition-colors',
-                      activeTag === tag
-                        ? 'bg-accent text-white'
-                        : 'bg-accent/10 text-[var(--ink-2)] hover:bg-accent/20 hover:text-[var(--ink-1)]',
-                    )}
+                    aria-pressed={activeTag === tag}
+                    className={cn('chip', activeTag === tag && 'chip--selected')}
                   >
                     {tag === '全部'
                       ? i18n._(msg`全部`)
@@ -374,7 +369,7 @@ function SonglistsPage() {
           <Button
             variant="secondary"
             size="sm"
-            className="rounded-full px-5 text-[11.5px]"
+            className="rounded-full px-5 text-[12px]"
             disabled={loadingMore}
             onClick={() => void loadMore()}
           >

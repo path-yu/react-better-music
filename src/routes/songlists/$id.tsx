@@ -219,7 +219,7 @@ function PlaylistDetailPage() {
 
   if (loading) {
     return (
-      <div className="px-8 pt-8">
+      <div className="page">
         <div className="flex gap-6">
           <Skeleton className="h-[208px] w-[208px] rounded-[18px]" />
           <div className="flex-1">
@@ -237,7 +237,7 @@ function PlaylistDetailPage() {
 
   if (!detail) {
     return (
-      <div className="px-8 pt-10">
+      <div className="page">
         <EmptyState
           title={i18n._(msg`歌单不存在或无法访问`)}
           action={
@@ -374,7 +374,7 @@ function PlaylistDetailPage() {
   }
 
   return (
-    <div className="px-8 pb-16 pt-7">
+    <div className="page">
       <div className="flex gap-6">
         <ImageWithFallback
           src={detail.coverImgUrl}
@@ -389,7 +389,7 @@ function PlaylistDetailPage() {
             <Trans>歌单</Trans>
           </span>
           <div className="mt-2.5 flex items-center gap-2.5">
-            <h1 className="headline-lg line-clamp-2 text-[28px]">{detail.name}</h1>
+            <h1 className="headline-lg line-clamp-2">{detail.name}</h1>
             {isOwner ? (
               <button
                 type="button"
@@ -400,14 +400,14 @@ function PlaylistDetailPage() {
                     params: { id: String(detail.id) },
                   })
                 }
-                className="pressable rounded-full p-1.5 text-black/35 transition-colors hover:bg-black/5 hover:text-accent"
+                className="pressable rounded-full p-1.5 text-ink-4 transition-colors hover:bg-black/5 hover:text-accent"
               >
                 <Pencil className="h-4 w-4" />
               </button>
             ) : null}
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center gap-3 text-[11.5px] text-black/40">
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-[12px] text-ink-3">
             <button
               type="button"
               onClick={() => void openCreator()}
@@ -438,13 +438,13 @@ function PlaylistDetailPage() {
 
           {detail.tags?.length ? (
             <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-              <span className="text-[11px] text-black/35">
+              <span className="text-[11px] text-ink-4">
                 <Trans>标签</Trans>
               </span>
               {detail.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full border border-black/8 px-2 py-0.5 text-[11px] text-black/50"
+                  className="rounded-full border border-black/8 px-2 py-0.5 text-[11px] text-ink-3"
                 >
                   {TAG_LABELS[tag] ? i18n._(TAG_LABELS[tag]) : tag}
                 </span>
@@ -504,7 +504,7 @@ function PlaylistDetailPage() {
                 <Star className="mr-1.5 h-3.5 w-3.5" />
               )}
               {subscribed ? <Trans>已收藏</Trans> : <Trans>收藏</Trans>}
-              <span className="ml-1 text-black/30">
+              <span className="ml-1 text-ink-4">
                 {formatNumber(subscribedCount)}
               </span>
             </Button>
@@ -516,29 +516,29 @@ function PlaylistDetailPage() {
             >
               <Share2 className="mr-1.5 h-3.5 w-3.5" />
               <Trans>分享</Trans>
-              <span className="ml-1 text-black/30">{formatNumber(detail.shareCount ?? 0)}</span>
+              <span className="ml-1 text-ink-4">{formatNumber(detail.shareCount ?? 0)}</span>
             </Button>
           </div>
         </div>
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="mt-7">
-        <div className="sticky top-0 z-20 -mx-8 flex items-center justify-between gap-4 border-b border-[var(--app-border)] bg-[var(--app-glass)] px-8 py-2 backdrop-blur-xl">
+        <div className="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-[var(--app-border)] bg-[var(--app-glass)] py-2 backdrop-blur-xl page-bleed">
           <TabsList className="border-[var(--app-border)] bg-[var(--app-glass)]">
             <TabsTrigger value="songs">
               <Trans>歌曲列表</Trans>
-              <span className="ml-1 text-[11px] text-black/30">{songs.length}</span>
+              <span className="ml-1 text-[11px] text-ink-4">{songs.length}</span>
             </TabsTrigger>
             <TabsTrigger value="comments">
               <Trans>评论</Trans>
-              <span className="ml-1 text-[11px] text-black/30">
+              <span className="ml-1 text-[11px] text-ink-4">
                 <Trans>热议</Trans>
               </span>
             </TabsTrigger>
             <TabsTrigger value="related">
               <Trans>相似歌单</Trans>
               {recommended?.playlists.length ? (
-                <span className="ml-1 text-[11px] text-black/30">
+                <span className="ml-1 text-[11px] text-ink-4">
                   {recommended.playlists.length}
                 </span>
               ) : null}
@@ -605,10 +605,10 @@ function PlaylistDetailPage() {
           ) : recommended?.playlists.length ? (
             <div>
               <div className="mb-4 flex items-end justify-between">
-                <h2 className="section-title text-[16px]">
+                <h2 className="section-title">
                   {recommended.title || i18n._(msg`相似歌单`)}
                 </h2>
-                <span className="text-[11px] tabular-nums text-black/25">
+                <span className="text-[11px] tabular-nums text-ink-4">
                   {recommended.playlists.length}
                 </span>
               </div>
@@ -629,8 +629,8 @@ function PlaylistDetailPage() {
       </Tabs>
 
       {detail.isMyLike ? (
-        <p className="mt-6 flex items-center justify-center gap-1.5 text-[11px] text-black/30">
-          <Heart className="h-3 w-3 text-[#ff2d55]" />
+        <p className="mt-6 flex items-center justify-center gap-1.5 text-[11px] text-ink-4">
+          <Heart className="h-3 w-3 text-love" />
           <Trans>这是你的「我喜欢的音乐」</Trans>
         </p>
       ) : null}

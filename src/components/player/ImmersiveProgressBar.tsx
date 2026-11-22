@@ -94,7 +94,7 @@ export function ImmersiveProgressBar({
 
       {hovering && duration > 0 ? (
         <div
-          className="pointer-events-none absolute bottom-3 -translate-x-1/2 whitespace-nowrap rounded-[5px] bg-black/75 px-1.5 py-0.5 text-[10px] tabular-nums text-white shadow-[0_2px_8px_rgba(0,0,0,0.35)] backdrop-blur-sm"
+          className="pointer-events-none absolute bottom-3 -translate-x-1/2 whitespace-nowrap rounded-[6px] bg-black/75 px-1.5 py-0.5 text-[11px] tabular-nums text-white shadow-[0_2px_8px_rgba(0,0,0,0.35)] backdrop-blur-sm"
           style={{ left: `${clamp(hoverPercent, 4, 96)}%` }}
         >
           {formatDuration(hoverTime)}

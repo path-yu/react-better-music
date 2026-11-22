@@ -322,12 +322,12 @@ export function SongContextMenu({
             role="menuitem"
             disabled={busy}
             onClick={() => void openRelatedVideos()}
-            className="flex h-8 w-full items-center gap-2 rounded-[6px] px-2.5 text-left text-black/70 transition-colors hover:bg-black/6 disabled:opacity-50"
+            className="flex h-8 w-full items-center gap-2 rounded-[6px] px-2.5 text-left text-ink-2 transition-colors hover:bg-black/6 disabled:opacity-50"
           >
             {busy ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
             ) : (
-              <Film className="h-3.5 w-3.5 text-black/40" />
+              <Film className="h-3.5 w-3.5 text-ink-3" />
             )}
             <Trans>相关视频</Trans>
           </button>
@@ -336,18 +336,18 @@ export function SongContextMenu({
             role="menuitem"
             disabled={busy}
             onClick={() => void queueAsNext()}
-            className="flex h-8 w-full items-center gap-2 rounded-[6px] px-2.5 text-left text-black/70 transition-colors hover:bg-black/6 disabled:opacity-50"
+            className="flex h-8 w-full items-center gap-2 rounded-[6px] px-2.5 text-left text-ink-2 transition-colors hover:bg-black/6 disabled:opacity-50"
           >
-            <CornerDownRight className="h-3.5 w-3.5 text-black/40" />
+            <CornerDownRight className="h-3.5 w-3.5 text-ink-3" />
             <Trans>下一首播放</Trans>
           </button>
           <button
             type="button"
             role="menuitem"
             onClick={() => void openPlaylistPicker()}
-            className="flex h-8 w-full items-center gap-2 rounded-[6px] px-2.5 text-left text-black/70 transition-colors hover:bg-black/6"
+            className="flex h-8 w-full items-center gap-2 rounded-[6px] px-2.5 text-left text-ink-2 transition-colors hover:bg-black/6"
           >
-            <ListPlus className="h-3.5 w-3.5 text-black/40" />
+            <ListPlus className="h-3.5 w-3.5 text-ink-3" />
             <Trans>收藏到歌单</Trans>
           </button>
 
@@ -360,9 +360,9 @@ export function SongContextMenu({
               type="button"
               role="menuitem"
               onClick={() => openArtist(Number(artist.id))}
-              className="flex h-8 w-full items-center gap-2 rounded-[6px] px-2.5 text-left text-black/70 transition-colors hover:bg-black/6"
+              className="flex h-8 w-full items-center gap-2 rounded-[6px] px-2.5 text-left text-ink-2 transition-colors hover:bg-black/6"
             >
-              <UserRound className="h-3.5 w-3.5 shrink-0 text-black/40" />
+              <UserRound className="h-3.5 w-3.5 shrink-0 text-ink-3" />
               <span className="min-w-0 truncate">
                 <Trans>查看歌手：{artist.name}</Trans>
               </span>
@@ -373,9 +373,9 @@ export function SongContextMenu({
               type="button"
               role="menuitem"
               onClick={() => openAlbum(Number(song.al.id))}
-              className="flex h-8 w-full items-center gap-2 rounded-[6px] px-2.5 text-left text-black/70 transition-colors hover:bg-black/6"
+              className="flex h-8 w-full items-center gap-2 rounded-[6px] px-2.5 text-left text-ink-2 transition-colors hover:bg-black/6"
             >
-              <Disc3 className="h-3.5 w-3.5 shrink-0 text-black/40" />
+              <Disc3 className="h-3.5 w-3.5 shrink-0 text-ink-3" />
               <span className="min-w-0 truncate">
                 <Trans>查看专辑：{song.al.name}</Trans>
               </span>
@@ -387,7 +387,7 @@ export function SongContextMenu({
               role="menuitem"
               disabled={busy}
               onClick={() => void removeFromPlaylist()}
-              className="flex h-8 w-full items-center gap-2 rounded-[6px] px-2.5 text-left text-[#ff2d55]/85 transition-colors hover:bg-[#ff2d55]/8 disabled:opacity-50"
+              className="flex h-8 w-full items-center gap-2 rounded-[6px] px-2.5 text-left text-love/85 transition-colors hover:bg-love/8 disabled:opacity-50"
             >
               <Trash2 className="h-3.5 w-3.5 shrink-0" />
               <Trans>从歌单移除</Trans>
@@ -399,11 +399,11 @@ export function SongContextMenu({
             type="button"
             role="menuitem"
             onClick={() => void toggleLike()}
-            className="flex h-8 w-full items-center gap-2 rounded-[6px] px-2.5 text-left text-black/70 transition-colors hover:bg-black/6"
+            className="flex h-8 w-full items-center gap-2 rounded-[6px] px-2.5 text-left text-ink-2 transition-colors hover:bg-black/6"
           >
             <Heart
               className={`h-3.5 w-3.5 ${
-                liked ? 'fill-[#ff2d55] text-[#ff2d55]' : 'text-black/40'
+                liked ? 'fill-love text-love' : 'text-ink-3'
               }`}
             />
             {liked ? <Trans>取消喜欢</Trans> : <Trans>喜欢</Trans>}
@@ -416,11 +416,11 @@ export function SongContextMenu({
               type="button"
               onClick={() => setMode('root')}
               aria-label={i18n._(msg`返回`)}
-              className="pressable flex h-6 w-6 items-center justify-center rounded-[5px] text-black/45 hover:bg-black/6"
+              className="pressable flex h-6 w-6 items-center justify-center rounded-[6px] text-ink-3 hover:bg-black/6"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
             </button>
-            <span className="text-[11px] font-medium text-black/55">
+            <span className="text-[11px] font-medium text-ink-2">
               <Trans>收藏到本地歌单</Trans>
             </span>
           </div>
@@ -434,17 +434,17 @@ export function SongContextMenu({
                   role="menuitem"
                   disabled={busy}
                   onClick={() => void saveToLocalPlaylist(playlist)}
-                  className="flex h-9 w-full items-center gap-2 rounded-[6px] px-2 text-left text-black/70 transition-colors hover:bg-black/6 disabled:opacity-50"
+                  className="flex h-9 w-full items-center gap-2 rounded-[6px] px-2 text-left text-ink-2 transition-colors hover:bg-black/6 disabled:opacity-50"
                 >
-                  <ListMusic className="h-3.5 w-3.5 text-black/35" />
+                  <ListMusic className="h-3.5 w-3.5 text-ink-4" />
                   <span className="min-w-0 flex-1 truncate">{playlist.name}</span>
-                  <span className="text-[10px] text-black/25">
+                  <span className="text-[11px] text-ink-4">
                     {playlist.songs.length}
                   </span>
                 </button>
               ))
             ) : (
-              <p className="px-2 py-4 text-center text-[11px] text-black/35">
+              <p className="px-2 py-4 text-center text-[11px] text-ink-4">
                 <Trans>暂无本地歌单，请先在侧栏创建</Trans>
               </p>
             )}
@@ -457,11 +457,11 @@ export function SongContextMenu({
               type="button"
               onClick={() => setMode('root')}
               aria-label={i18n._(msg`返回`)}
-              className="pressable flex h-6 w-6 items-center justify-center rounded-[5px] text-black/45 hover:bg-black/6"
+              className="pressable flex h-6 w-6 items-center justify-center rounded-[6px] text-ink-3 hover:bg-black/6"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
             </button>
-            <span className="text-[11px] font-medium text-black/55">
+            <span className="text-[11px] font-medium text-ink-2">
               <Trans>收藏到歌单</Trans>
             </span>
           </div>
@@ -469,7 +469,7 @@ export function SongContextMenu({
           <div className="max-h-[260px] overflow-y-auto">
             {loadingPlaylists ? (
               <div className="flex items-center justify-center py-5">
-                <Loader2 className="h-4 w-4 animate-spin text-black/30" />
+                <Loader2 className="h-4 w-4 animate-spin text-ink-4" />
               </div>
             ) : playlists.length ? (
               playlists.map((playlist) => (
@@ -479,18 +479,18 @@ export function SongContextMenu({
                   role="menuitem"
                   disabled={busy}
                   onClick={() => void saveToPlaylist(playlist)}
-                  className="flex h-9 w-full items-center gap-2 rounded-[6px] px-2 text-left text-black/70 transition-colors hover:bg-black/6 disabled:opacity-50"
+                  className="flex h-9 w-full items-center gap-2 rounded-[6px] px-2 text-left text-ink-2 transition-colors hover:bg-black/6 disabled:opacity-50"
                 >
                   <img
                     src={resizedImageUrl(playlist.coverImgUrl, '100y100') ?? undefined}
                     alt=""
-                    className="h-6 w-6 shrink-0 rounded-[4px] object-cover"
+                    className="h-6 w-6 shrink-0 rounded-[6px] object-cover"
                   />
                   <span className="truncate">{playlist.name}</span>
                 </button>
               ))
             ) : (
-              <p className="px-2 py-4 text-center text-[11px] text-black/35">
+              <p className="px-2 py-4 text-center text-[11px] text-ink-4">
                 <Trans>暂无可用歌单</Trans>
               </p>
             )}

@@ -31,13 +31,13 @@ export function UserCard({ user }: UserCardProps) {
         className="shrink-0"
       />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[12.5px] font-medium text-black/75 group-hover:text-accent">
+        <p className="truncate text-[13px] font-medium text-ink-2 group-hover:text-accent">
           {user.nickname}
         </p>
-        <p className="mt-0.5 truncate text-[11px] text-black/35">
+        <p className="mt-0.5 truncate text-[11px] text-ink-4">
           {user.signature?.trim() || i18n._(msg`暂无简介`)}
         </p>
-        <p className="mt-1 flex items-center gap-2 text-[11px] text-black/25">
+        <p className="mt-1 flex items-center gap-2 text-[11px] text-ink-4">
           <span>
             <Trans>{formatNumber(user.followeds)} 位粉丝</Trans>
           </span>

@@ -3,7 +3,6 @@ import { createFileRoute } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { Music2 } from 'lucide-react'
 import { SongTable } from '../components/songs/SongTable'
 import { PlayAllButton } from '../components/songs/PlayAllButton'
 import { fetchNewSongs } from '../api'
@@ -12,6 +11,7 @@ import { useDocumentTitle } from '../lib/title'
 import { toast } from '../lib/toast'
 import type { Song } from '../types'
 
+import { PageHeader } from '../components/common/PageHeader'
 export const Route = createFileRoute('/latest-music')({
   component: LatestMusicPage,
 })
@@ -52,32 +52,22 @@ function LatestMusicPage() {
   }, [type])
 
   return (
-    <div className="px-8 pb-14 pt-6">
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="headline-lg flex items-center gap-2">
-            <Music2 className="h-5 w-5 text-accent" />
-            <Trans>最新音乐</Trans>
-          </h1>
-          <p className="mt-1.5 text-[12px] text-black/35">
-            <Trans>每日更新的华语与全球新歌速递</Trans>
-          </p>
-        </div>
-        <PlayAllButton songs={songs} playlistId={`top-song-${type}`} />
-      </div>
+    <div className="page">
+      <PageHeader
+        eyebrow={<Trans>发现音乐</Trans>}
+        title={<Trans>最新音乐</Trans>}
+        description={<Trans>每日更新的华语与全球新歌速递</Trans>}
+        actions={<PlayAllButton songs={songs} playlistId={`top-song-${type}`} />}
+      />
 
-      <div className="sticky top-0 z-20 -mx-8 mt-4 flex gap-1.5 border-b border-[var(--app-border)] bg-[var(--app-glass)] px-8 py-2.5 backdrop-blur-xl">
+      <div className="sticky top-0 z-20 mt-4 flex gap-1.5 border-b border-[var(--app-border)] bg-[var(--app-glass)] py-2.5 backdrop-blur-xl page-bleed">
         {TYPES.map((item) => (
           <button
             key={item.value}
             type="button"
             onClick={() => setType(item.value)}
-            className={cn(
-              'rounded-full px-3.5 py-1.5 text-[11.5px] transition-colors',
-              type === item.value
-                ? 'bg-accent text-white'
-                : 'border border-black/8 bg-[#f5f5f7] text-black/55 hover:bg-[#ececf0] hover:text-black/75',
-            )}
+            aria-pressed={type === item.value}
+            className={cn('chip', type === item.value && 'chip--selected')}
           >
             {i18n._(item.label)}
           </button>

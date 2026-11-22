@@ -537,7 +537,7 @@ function PlayerArtworkBase({
     <ImageWithFallback
       src={song.al.picUrl}
       alt={song.name}
-      rounded="rounded-[2px]"
+      rounded="rounded-[6px]"
       className="h-full w-full"
       resize="320y320"
     />
@@ -715,7 +715,7 @@ function PlayerArtworkBase({
         className="pressable absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/35 text-white/80 shadow-[0_4px_14px_rgba(0,0,0,0.28)] backdrop-blur-md transition-colors hover:bg-black/50 hover:text-white max-md:hidden"
       >
         <Heart
-          className={cn('h-4 w-4', liked && 'fill-[#ff2d55] text-[#ff2d55]')}
+          className={cn('h-4 w-4', liked && 'fill-love text-love')}
         />
       </button>
     </div>
@@ -740,7 +740,7 @@ export const PlayerArtwork = memo(
 function ArtworkHint() {
   return (
     <span className="artwork-hint pointer-events-none absolute inset-0 z-[1] flex items-end justify-center rounded-[inherit] bg-black/25 p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100">
-      <span className="flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-[11px] font-medium text-black/80 shadow-sm">
+      <span className="flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-[11px] font-medium text-ink-1 shadow-sm">
         <Disc3 className="h-3.5 w-3.5" />
         <Trans>查看专辑</Trans>
       </span>

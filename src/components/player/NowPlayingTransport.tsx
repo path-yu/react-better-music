@@ -35,7 +35,8 @@ import {
   Popover,
   PopoverTrigger,
 } from '@pikoloo/darwin-ui'
-import { cn, formatDuration } from '../../lib/format'
+import { cn, formatDuration, formatRemaining } from '../../lib/format'
+import { TimeToggle } from './TimeToggle'
 import { PLAY_MODE_LABELS } from '../../lib/playMode'
 import { isInstrumentalSong } from '../../lib/songs'
 import { seekAudio } from '../../lib/audio'
@@ -77,6 +78,7 @@ export function NowPlayingTransport({
   const audioReady = usePlayerStore((state) => state.audioReady)
   // Mounted (hidden) while the overlay is closed: don't tick in the background.
   const currentTime = usePlayerStore(selectOverlayTime)
+  const showRemaining = useSettingsStore((state) => state.showRemainingTime)
   const mediaDuration = usePlayerStore((state) => state.mediaDuration)
   const mode = usePlayerStore((state) => state.mode)
   const volume = usePlayerStore((state) => state.volume)
@@ -285,7 +287,7 @@ export function NowPlayingTransport({
           className={cn(
             'pressable flex h-7 w-7 items-center justify-center transition-colors disabled:opacity-50',
             heartMode
-              ? 'text-[#ff2d55]'
+              ? 'text-love'
               : 'text-white/45 hover:text-white/80',
           )}
         >
@@ -392,21 +394,6 @@ export function NowPlayingTransport({
         ) : null}
         <button
           type="button"
-          title={
-            i18n._(PLAY_MODE_LABELS[mode])
-          }
-          onClick={cycleMode}
-          className={cn(
-            'pressable flex h-7 w-7 items-center justify-center transition-colors',
-            mode === 'order'
-              ? 'text-white/45 hover:text-white/80'
-              : 'text-white/80 hover:text-white',
-          )}
-        >
-          {modeIcon}
-        </button>
-        <button
-          type="button"
           aria-label={i18n._(msg`上一首`)}
           onClick={() => void prev()}
           className="pressable flex h-7 w-7 items-center justify-center text-white/80 hover:text-white"
@@ -452,6 +439,21 @@ export function NowPlayingTransport({
         </button>
         <button
           type="button"
+          title={
+            i18n._(PLAY_MODE_LABELS[mode])
+          }
+          onClick={cycleMode}
+          className={cn(
+            'pressable flex h-7 w-7 items-center justify-center transition-colors',
+            mode === 'order'
+              ? 'text-white/45 hover:text-white/80'
+              : 'text-white/80 hover:text-white',
+          )}
+        >
+          {modeIcon}
+        </button>
+        <button
+          type="button"
           onClick={() => toggleQueue()}
           className="pressable flex h-7 w-7 items-center justify-center rounded-full text-white/45 transition-colors hover:bg-white/10 hover:text-white/80"
           title={i18n._(msg`播放列表`)}
@@ -494,9 +496,17 @@ export function NowPlayingTransport({
           />
           {/* Apple places the clock under the scrubber so the line itself can
               use the full width of the artwork column. */}
-          <div className="mt-0.5 flex items-center justify-between px-0.5 text-[10.5px] tabular-nums text-white/45">
+          <div className="mt-0.5 flex items-center justify-between px-0.5 text-[11px] tabular-nums text-white/45">
             <span>{clock(playbackMs)}</span>
-            <span>-{clock(Math.max(0, durationMs - playbackMs))}</span>
+            <TimeToggle
+              className="tabular-nums hover:text-white/75"
+              showRemaining={showRemaining}
+              label={
+                showRemaining
+                  ? formatRemaining(durationMs - playbackMs)
+                  : clock(durationMs)
+              }
+            />
           </div>
         </div>
       ) : null}

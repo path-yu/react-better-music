@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { ArrowLeft, ImagePlus, Pencil, Save } from 'lucide-react'
+import { ArrowLeft, ImagePlus, Save } from 'lucide-react'
 import { Button, Input, Skeleton, Textarea } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../../components/common/ImageWithFallback'
 import { EmptyState } from '../../components/common/EmptyState'
@@ -22,6 +22,7 @@ import { useDocumentTitle } from '../../lib/title'
 import { useUnsavedChangesGuard } from '../../lib/useUnsavedChangesGuard'
 import type { Playlist } from '../../types'
 
+import { PageHeader } from '../../components/common/PageHeader'
 export const Route = createFileRoute('/songlists/$id/edit')({
   component: EditPlaylistPage,
 })
@@ -89,7 +90,7 @@ function EditPlaylistPage() {
 
   if (!isLogin) {
     return (
-      <div className="px-8 pt-10">
+      <div className="page">
         <EmptyState
           title={i18n._(msg`登录后才能编辑歌单`)}
           action={
@@ -104,7 +105,7 @@ function EditPlaylistPage() {
 
   if (loading) {
     return (
-      <div className="px-8 pt-8">
+      <div className="page">
         <Skeleton className="h-5 w-28 rounded-full" />
         <div className="mt-5 flex gap-5">
           <Skeleton className="h-[180px] w-[180px] rounded-[14px]" />
@@ -116,7 +117,7 @@ function EditPlaylistPage() {
 
   if (!detail) {
     return (
-      <div className="px-8 pt-10">
+      <div className="page">
         <EmptyState title={i18n._(msg`无法编辑该歌单`)} />
       </div>
     )
@@ -126,7 +127,7 @@ function EditPlaylistPage() {
 
   if (!isOwner) {
     return (
-      <div className="px-8 pt-10">
+      <div className="page">
         <EmptyState title={i18n._(msg`只能编辑自己创建的歌单`)} />
       </div>
     )
@@ -212,30 +213,26 @@ function EditPlaylistPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[900px] px-8 pb-16 pt-5">
+    <div className="page mx-auto max-w-[900px]">
       <button
         type="button"
         onClick={leave}
-        className="pressable flex items-center gap-1.5 rounded-full px-2 py-1 text-[11.5px] text-black/40 transition-colors hover:bg-black/5 hover:text-black/70"
+        className="pressable flex items-center gap-1.5 rounded-full px-2 py-1 text-[12px] text-ink-3 transition-colors hover:bg-black/5 hover:text-ink-2"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         <Trans>返回歌单</Trans>
       </button>
 
-      <div className="mt-4">
-        <h1 className="headline-lg flex items-center gap-2">
-          <Pencil className="h-5 w-5 text-accent" />
-          <Trans>编辑歌单信息</Trans>
-        </h1>
-        <p className="mt-1.5 text-[12px] text-black/35">
-          <Trans>修改歌单名称、标签、简介与封面</Trans>
-        </p>
-      </div>
+      <PageHeader
+        className="mt-4"
+        title={<Trans>编辑歌单信息</Trans>}
+        description={<Trans>修改歌单名称、标签、简介与封面</Trans>}
+      />
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_210px]">
         <div className="apple-card space-y-5 p-6">
           <div>
-            <p className="mb-1.5 text-[11px] font-medium text-black/40">
+            <p className="mb-1.5 text-[11px] font-medium text-ink-3">
               <Trans>歌单名</Trans>
             </p>
             <Input
@@ -243,14 +240,14 @@ function EditPlaylistPage() {
               onChange={(event) => setName(event.target.value)}
               placeholder={i18n._(msg`请输入歌单名`)}
               maxLength={40}
-              className="h-9 text-[12.5px]"
+              className="h-9 text-[13px]"
             />
           </div>
 
           <div>
-            <p className="mb-1.5 text-[11px] font-medium text-black/40">
+            <p className="mb-1.5 text-[11px] font-medium text-ink-3">
               <Trans>标签</Trans>
-              <span className="ml-1 font-normal text-black/25">
+              <span className="ml-1 font-normal text-ink-4">
                 <Trans>（最多 3 个）</Trans>
               </span>
             </p>
@@ -276,7 +273,7 @@ function EditPlaylistPage() {
                     className={`rounded-full px-2.5 py-1 text-[11px] transition-colors ${
                       tags.includes(tag)
                         ? 'bg-accent/10 text-accent'
-                        : 'bg-[#f5f5f7] text-black/45 hover:bg-[#ececf0] hover:text-black/70'
+                        : 'bg-[#f5f5f7] text-ink-3 hover:bg-[#ececf0] hover:text-ink-2'
                     }`}
                   >
                     {tag}
@@ -287,7 +284,7 @@ function EditPlaylistPage() {
           </div>
 
           <div>
-            <p className="mb-1.5 text-[11px] font-medium text-black/40">
+            <p className="mb-1.5 text-[11px] font-medium text-ink-3">
               <Trans>简介</Trans>
             </p>
             <Textarea
@@ -296,7 +293,7 @@ function EditPlaylistPage() {
               placeholder={i18n._(msg`介绍一下这个歌单`)}
               maxLength={1000}
               resize="none"
-              className="min-h-[120px] text-[12.5px]"
+              className="min-h-[120px] text-[13px]"
             />
           </div>
 

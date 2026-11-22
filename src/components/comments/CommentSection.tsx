@@ -201,7 +201,7 @@ function CommentVoice({
   const progress = total > 0 ? Math.min(1, current / total) : 0
 
   return (
-    <div className="mt-2 flex h-9 max-w-[310px] items-center gap-2 rounded-[10px] bg-black/5 px-2 text-black/45">
+    <div className="mt-2 flex h-9 max-w-[310px] items-center gap-2 rounded-[10px] bg-black/5 px-2 text-ink-3">
       <button
         type="button"
         onClick={toggle}
@@ -254,7 +254,7 @@ function CommentVoice({
             setCurrent(audio.currentTime)
           }
         }}
-        className="flex min-w-0 flex-1 cursor-pointer items-center gap-[2px] py-1 outline-none focus-visible:rounded focus-visible:ring-1 focus-visible:ring-accent/50"
+        className="flex min-w-0 flex-1 cursor-pointer items-center gap-[2px] py-1 outline-none focus-visible:rounded-[6px] focus-visible:ring-1 focus-visible:ring-accent/50"
       >
         {VOICE_BARS.map((height, index) => (
           <span
@@ -269,7 +269,7 @@ function CommentVoice({
           />
         ))}
       </div>
-      <span className="shrink-0 text-[10px] tabular-nums text-black/30">
+      <span className="shrink-0 text-[11px] tabular-nums text-ink-4">
         {formatDuration((total || duration || 0) * 1000)}
       </span>
     </div>
@@ -657,9 +657,9 @@ export function CommentSection({
     return (
       <div className="mt-6">
         {heading ? (
-          <p className="mb-2 text-[12px] font-semibold text-black/65">
+          <p className="mb-2 text-[12px] font-semibold text-ink-2">
             {heading}
-            <span className="ml-1.5 font-normal text-black/30">({list.length})</span>
+            <span className="ml-1.5 font-normal text-ink-4">({list.length})</span>
           </p>
         ) : null}
         <div className="comment-list">
@@ -693,13 +693,13 @@ export function CommentSection({
                     {comment.user?.nickname}
                   </button>
                   {hot ? (
-                    <span className="rounded bg-[#ff9500]/10 px-1 text-[8.5px] text-[#b36b00]">
+                    <span className="rounded-[6px] bg-warn/10 px-1 text-[11px] text-warn-ink">
                       <Trans>热门</Trans>
                     </span>
                   ) : null}
                 </div>
                 {commentVoiceUrl(comment) && isVoicePlaceholder(comment) ? null : (
-                  <p className="mt-1 whitespace-pre-wrap break-words text-[12.5px] leading-relaxed text-black/75">
+                  <p className="mt-1 whitespace-pre-wrap break-words text-[13px] leading-relaxed text-ink-2">
                     {comment.content}
                   </p>
                 )}
@@ -710,7 +710,7 @@ export function CommentSection({
                   />
                 ) : null}
                 {comment.beReplied?.[0] ? (
-                  <div className="mt-2 rounded-[10px] bg-black/4 px-3 py-2 text-[11.5px] leading-relaxed text-black/55">
+                  <div className="mt-2 rounded-[10px] bg-black/4 px-3 py-2 text-[12px] leading-relaxed text-ink-2">
                     {comment.beReplied[0].user?.userId ? (
                       <button
                         type="button"
@@ -729,7 +729,7 @@ export function CommentSection({
                     {comment.beReplied[0].content}
                   </div>
                 ) : null}
-                <div className="mt-2 flex items-center gap-4 text-[11px] text-black/30">
+                <div className="mt-2 flex items-center gap-4 text-[11px] text-ink-4">
                   <span>{formatDate(comment.time, true)}</span>
                   {comment.ipLocation?.location ? (
                     <span className="inline-flex items-center gap-0.5">
@@ -742,7 +742,7 @@ export function CommentSection({
                     onClick={() => void handleLike(comment)}
                     className={cn(
                       'pressable flex items-center gap-1 transition-colors',
-                      comment.liked ? 'text-[#ff2d55]' : 'hover:text-black/60',
+                      comment.liked ? 'text-love' : 'hover:text-ink-2',
                     )}
                   >
                     <Heart
@@ -752,7 +752,7 @@ export function CommentSection({
                   </button>
                   <button
                     type="button"
-                    className="pressable flex items-center gap-1 hover:text-black/60"
+                    className="pressable flex items-center gap-1 hover:text-ink-2"
                     onClick={() => {
                       if (!isLogin) {
                         toast.warning(i18n._(msg`请先登录`))
@@ -776,8 +776,8 @@ export function CommentSection({
   return (
     <section>
       <div className="flex items-center gap-2">
-        <h3 className="headline-md text-[17px]">{sectionTitle}</h3>
-        <span className="text-[11.5px] text-black/35">
+        <h3 className="headline-md">{sectionTitle}</h3>
+        <span className="text-[12px] text-ink-4">
           {data.total ? <Trans>{data.total} 条</Trans> : null}
         </span>
       </div>
@@ -794,10 +794,10 @@ export function CommentSection({
             }
             maxLength={140}
             resize="none"
-            className="min-h-[76px] border-0 bg-transparent text-[12.5px] focus:ring-0"
+            className="min-h-[76px] border-0 bg-transparent text-[13px] focus:ring-0"
           />
           <div className="mt-2 flex items-center justify-between">
-            <span className="text-[11px] text-black/25">{content.length}/140</span>
+            <span className="text-[11px] text-ink-4">{content.length}/140</span>
             <Button
               size="sm"
               variant="primary"
@@ -815,7 +815,7 @@ export function CommentSection({
 
       {loading ? (
         <div className="flex items-center justify-center py-10">
-          <Loader2 className="h-4 w-4 animate-spin text-black/30" />
+          <Loader2 className="h-4 w-4 animate-spin text-ink-4" />
         </div>
       ) : (
         <>
@@ -826,7 +826,7 @@ export function CommentSection({
           )}
           {renderList(data.comments, false, i18n._(msg`最新评论`))}
           {!data.comments.length && !data.hotComments?.length ? (
-            <p className="py-10 text-center text-[12px] text-black/35">
+            <p className="py-10 text-center text-[12px] text-ink-4">
               <Trans>还没有评论，快来抢沙发～</Trans>
             </p>
           ) : null}
@@ -836,7 +836,7 @@ export function CommentSection({
                 variant="secondary"
                 size="sm"
                 loading={loadingMore}
-                className="rounded-full px-4 text-[11.5px]  border-none"
+                className="rounded-full px-4 text-[12px]  border-none"
                 onClick={() => void handleLoadMore()}
               >
                 <CornerDownRight className="mr-1.5 h-3 w-3" />
@@ -861,7 +861,7 @@ export function CommentSection({
             maxLength={140}
             placeholder={i18n._(msg`回复内容`)}
             resize="none"
-            className="min-h-[92px] text-[12.5px]"
+            className="min-h-[92px] text-[13px]"
           />
           <div className="mt-3 flex justify-end gap-2">
             <Button size="sm" variant="secondary" className="rounded-full" onClick={() => setReplyTarget(null)}>

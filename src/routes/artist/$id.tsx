@@ -90,7 +90,7 @@ function ArtistPage() {
 
   if (loading) {
     return (
-      <div className="px-8 pb-16 pt-6">
+      <div className="page">
         <div className="flex flex-col items-center gap-6 rounded-[22px] border border-black/8 bg-white/55 p-6 md:flex-row md:items-end">
           <Skeleton className="h-[168px] w-[168px] rounded-full" />
           <div className="flex-1 space-y-3">
@@ -107,7 +107,7 @@ function ArtistPage() {
 
   if (!profile) {
     return (
-      <div className="px-8 pt-10">
+      <div className="page">
         <EmptyState title={i18n._(msg`歌手不存在或无法访问`)} />
       </div>
     )
@@ -140,7 +140,7 @@ function ArtistPage() {
   }
 
   return (
-    <div className="px-8 pb-16 pt-6">
+    <div className="page">
       <div className="rounded-[22px] border border-black/8 bg-white/55 p-6 backdrop-blur-xl">
         <div className="flex flex-col items-center gap-6 md:flex-row md:items-end">
           <ImageWithFallback
@@ -155,9 +155,9 @@ function ArtistPage() {
             <span className="eyebrow">
               <Trans>歌手</Trans>
             </span>
-            <h1 className="headline-lg mt-1.5 text-[32px]">{profile.name}</h1>
+            <h1 className="headline-lg mt-1.5">{profile.name}</h1>
             {aliasLine ? (
-              <p className="mt-1 text-[12px] text-black/45">{aliasLine}</p>
+              <p className="mt-1 text-[12px] text-ink-3">{aliasLine}</p>
             ) : null}
 
             {profile.identities?.length ? (
@@ -165,7 +165,7 @@ function ArtistPage() {
                 {profile.identities.map((identity) => (
                   <span
                     key={identity}
-                    className="rounded-full border border-black/8 bg-white/60 px-2 py-0.5 text-[11px] text-black/45"
+                    className="rounded-full border border-black/8 bg-white/60 px-2 py-0.5 text-[11px] text-ink-3"
                   >
                     {identity}
                   </span>
@@ -173,7 +173,7 @@ function ArtistPage() {
               </div>
             ) : null}
 
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] text-black/40 md:justify-start">
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] text-ink-3 md:justify-start">
               <span className="flex items-center gap-1.5">
                 <Music2 className="h-3.5 w-3.5" />
                 <Trans>{formatNumber(profile.musicSize)} 首单曲</Trans>
@@ -229,7 +229,7 @@ function ArtistPage() {
         </div>
 
         <TabsContent value="songs" className="mt-3">
-          <div className="mb-2 text-[11px] text-black/35">
+          <div className="mb-2 text-[11px] text-ink-4">
             <Trans>共 {songs.length} 首热门单曲</Trans>
           </div>
           <SongTable
@@ -264,10 +264,10 @@ function ArtistPage() {
                         resize="240y240"
                       />
                     </div>
-                    <span className="mt-2 line-clamp-2 block text-[12px] leading-[1.4] text-black/75 transition-colors group-hover:text-accent">
+                    <span className="mt-2 line-clamp-2 block text-[12px] leading-[1.4] text-ink-2 transition-colors group-hover:text-accent">
                       {album.name}
                     </span>
-                    <span className="mt-1 block text-[11px] text-black/30">
+                    <span className="mt-1 block text-[11px] text-ink-4">
                       {formatDate(album.publishTime).slice(0, 4)}
                       {album.size ? (
                         <Trans> · {album.size} 首</Trans>
@@ -310,7 +310,7 @@ function ArtistPage() {
 
       {similar.length ? (
         <section className="mt-10">
-          <p className="section-title text-[16px]">
+          <p className="section-title">
             <Trans>相似歌手</Trans>
           </p>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
@@ -331,10 +331,10 @@ function ArtistPage() {
                   resize="128y128"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[12.5px] text-black/75 group-hover:text-accent">
+                  <p className="truncate text-[13px] text-ink-2 group-hover:text-accent">
                     {artist.name}
                   </p>
-                  <p className="mt-0.5 truncate text-[11px] text-black/35">
+                  <p className="mt-0.5 truncate text-[11px] text-ink-4">
                     {artist.alias?.[0] ??
                       artist.transNames?.[0] ??
                       artist.fansCount ? (

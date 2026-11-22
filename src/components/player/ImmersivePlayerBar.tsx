@@ -23,7 +23,8 @@ import {
   VolumeX,
 } from 'lucide-react'
 import { Popover, PopoverTrigger } from '@pikoloo/darwin-ui'
-import { cn, formatDuration } from '../../lib/format'
+import { cn, formatDuration, formatRemaining } from '../../lib/format'
+import { TimeToggle } from './TimeToggle'
 import { PLAY_MODE_LABELS } from '../../lib/playMode'
 import { seekAudio } from '../../lib/audio'
 import { usePlayerMenuTint } from '../../lib/menuSurface'
@@ -68,6 +69,7 @@ export function ImmersivePlayerBar({
   const playing = usePlayerStore((state) => state.playing)
   // Mounted (hidden) while the overlay is closed: don't tick in the background.
   const currentTime = usePlayerStore(selectOverlayTime)
+  const showRemaining = useSettingsStore((state) => state.showRemainingTime)
   const mode = usePlayerStore((state) => state.mode)
   const volume = usePlayerStore((state) => state.volume)
   const heartMode = usePlayerStore((state) => state.heartMode)
@@ -223,7 +225,7 @@ export function ImmersivePlayerBar({
                 className={cn(
                   'h-4 w-4 transition-colors',
                   liked
-                    ? 'fill-[#ff2d55] text-[#ff2d55]'
+                    ? 'fill-love text-love'
                     : 'text-white/35 hover:text-white/70',
                 )}
               />
@@ -239,7 +241,7 @@ export function ImmersivePlayerBar({
               onClick={() => void toggleHeartMode()}
               className={cn(
                 'pressable flex h-8 w-8 items-center justify-center transition-colors disabled:opacity-50 max-md:hidden',
-                heartMode ? 'text-[#ff2d55]' : 'text-white/35 hover:text-white/70',
+                heartMode ? 'text-love' : 'text-white/35 hover:text-white/70',
               )}
             >
               {heartLoading ? (
@@ -247,21 +249,6 @@ export function ImmersivePlayerBar({
               ) : (
                 <Sparkles className="h-4 w-4" />
               )}
-            </button>
-            <button
-              type="button"
-              title={
-                i18n._(PLAY_MODE_LABELS[mode])
-              }
-              onClick={cycleMode}
-              className={cn(
-                'pressable flex h-8 w-8 items-center justify-center transition-colors max-md:h-10 max-md:w-10',
-                mode === 'order'
-                  ? 'text-white/35 hover:text-white/70'
-                  : 'text-white/75 hover:text-white',
-              )}
-            >
-              {modeIcon}
             </button>
             <button
               type="button"
@@ -298,6 +285,21 @@ export function ImmersivePlayerBar({
             </button>
             <button
               type="button"
+              title={
+                i18n._(PLAY_MODE_LABELS[mode])
+              }
+              onClick={cycleMode}
+              className={cn(
+                'pressable flex h-8 w-8 items-center justify-center transition-colors max-md:h-10 max-md:w-10',
+                mode === 'order'
+                  ? 'text-white/35 hover:text-white/70'
+                  : 'text-white/75 hover:text-white',
+              )}
+            >
+              {modeIcon}
+            </button>
+            <button
+              type="button"
               onClick={() => toggleQueue()}
               className="pressable flex h-8 w-8 items-center justify-center text-white/35 transition-colors hover:text-white/70 max-md:hidden"
               title={i18n._(msg`播放列表`)}
@@ -308,7 +310,7 @@ export function ImmersivePlayerBar({
 
           {!videoActive ? (
             <div className="flex w-full items-center gap-2.5 max-md:absolute max-md:inset-x-0 max-md:top-0 max-md:mt-0 max-md:px-3">
-              <span className="w-9 shrink-0 text-right text-[11px] tabular-nums text-white/45 max-md:hidden">
+              <span className="w-10 shrink-0 text-right text-[11px] tabular-nums text-white/45 max-md:hidden">
                 {clock(playbackMs)}
               </span>
               <ProgressSlider
@@ -318,9 +320,15 @@ export function ImmersivePlayerBar({
                 immersive
                 valueText={`${clock(playbackMs)} / ${clock(durationMs)}`}
               />
-              <span className="w-9 shrink-0 text-[11px] tabular-nums text-white/45 max-md:hidden">
-                -{clock(durationMs - playbackMs)}
-              </span>
+              <TimeToggle
+                className="w-10 shrink-0 text-left text-[11px] tabular-nums text-white/45 hover:text-white/75 max-md:hidden"
+                showRemaining={showRemaining}
+                label={
+                  showRemaining
+                    ? formatRemaining(durationMs - playbackMs)
+                    : clock(durationMs)
+                }
+              />
             </div>
           ) : null}
         </div>
@@ -426,10 +434,10 @@ export function ImmersivePlayerBar({
               </p>
               <div className="flex items-center justify-between gap-3 px-2 pb-1.5 pt-2">
                 <div>
-                  <p className="text-[11.5px] font-medium text-white/80">
+                  <p className="text-[12px] font-medium text-white/80">
                     <Trans>逐字播放</Trans>
                   </p>
-                  <p className="mt-0.5 text-[10px] leading-relaxed text-white/40">
+                  <p className="mt-0.5 text-[11px] leading-relaxed text-white/40">
                     <Trans>关闭后只高亮整行，不做逐字动画</Trans>
                   </p>
                 </div>
@@ -444,7 +452,7 @@ export function ImmersivePlayerBar({
                   <p className="mb-1 text-[11px] text-white/50">
                     <Trans>歌词显示</Trans>
                   </p>
-                  <div className="space-y-0.5 rounded-[8px] bg-white/5 p-0.5">
+                  <div className="space-y-0.5 rounded-[10px] bg-white/5 p-0.5">
                     {LYRIC_DISPLAY_OPTIONS.map((option) => {
                       const active = lyricDisplayMode === option.value
                       return (

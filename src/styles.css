@@ -64,6 +64,12 @@
   --color-ink-1: var(--ink-1);
   --color-ink-2: var(--ink-2);
   --color-ink-3: var(--ink-3);
+  --color-ink-4: var(--ink-4);
+  /* Semantic colours: liked / VIP, trial & warnings, destructive. */
+  --color-love: var(--app-love);
+  --color-warn: var(--app-warn);
+  --color-warn-ink: var(--app-warn-ink);
+  --color-danger: var(--app-danger);
 }
 
 :root,
@@ -85,10 +91,21 @@
   --apple-ink: #1d1d1f;
   --apple-body: #1d1d1f;
   --apple-muted: #7a7a7a;
-  /* Semantic text ink: hierarchy without inventing a class name per opacity. */
+  /* Semantic text ink, the only text greys in the app (DESIGN.md):
+     1 titles & primary text · 2 body & secondary controls ·
+     3 meta & descriptions · 4 hints, placeholders, separators. */
   --ink-1: rgba(0, 0, 0, 0.85);
-  --ink-2: rgba(0, 0, 0, 0.5);
-  --ink-3: rgba(0, 0, 0, 0.35);
+  --ink-2: rgba(0, 0, 0, 0.65);
+  --ink-3: rgba(0, 0, 0, 0.5);
+  --ink-4: rgba(0, 0, 0, 0.35);
+  --app-love: #ff2d55;
+  --app-warn: #ff9500;
+  --app-warn-ink: #b36b00;
+  --app-danger: #d70015;
+  /* Neutral fills for chips and grouped rows inside cards. */
+  --app-chip: rgba(0, 0, 0, 0.04);
+  --app-chip-hover: rgba(0, 0, 0, 0.08);
+  --app-group: rgba(0, 0, 0, 0.025);
   --apple-parchment: #f5f5f7;
   --apple-pearl: #fafafc;
   --apple-hairline: #e5e5ea;
@@ -2291,9 +2308,9 @@ html.desktop .app-window {
   color: rgba(255, 255, 255, 0.4);
 }
 
-/* `0/140` sits on the dark field at 34% white, which is too dim to read. */
-.nowplaying-overlay[class~='dark'] [class~='text-black/25'] {
-  color: rgba(255, 255, 255, 0.58);
+/* Hints sit on the artwork backdrop here; the default dark ink-4 is too dim. */
+.nowplaying-overlay.dark {
+  --ink-4: rgba(255, 255, 255, 0.52);
 }
 
 /* The bar rides on top of the same artwork backdrop, so it is a thin frosted
@@ -2695,8 +2712,16 @@ html.desktop .app-window {
   --apple-divider: rgba(255, 255, 255, 0.08);
   --apple-blue-dark: #2997ff;
   --ink-1: rgba(255, 255, 255, 0.92);
-  --ink-2: rgba(255, 255, 255, 0.62);
-  --ink-3: rgba(255, 255, 255, 0.46);
+  --ink-2: rgba(255, 255, 255, 0.78);
+  --ink-3: rgba(255, 255, 255, 0.62);
+  --ink-4: rgba(255, 255, 255, 0.46);
+  --app-love: #ff375f;
+  --app-warn: #ff9f0a;
+  --app-warn-ink: #ffb340;
+  --app-danger: #ff6961;
+  --app-chip: rgba(255, 255, 255, 0.07);
+  --app-chip-hover: rgba(255, 255, 255, 0.12);
+  --app-group: rgba(255, 255, 255, 0.04);
   --app-bg: radial-gradient(circle at 20% 0%, #26262c 0%, #111113 48%, #1a1a1e 100%);
   --app-surface: rgba(28, 28, 30, 0.94);
   --app-content: #1c1c1e;
@@ -3110,8 +3135,13 @@ html.desktop .app-window {
   background-color: #ffffff;
 }
 
-.dark .qr-surface [class~="text-black/35"] {
-  color: rgba(0, 0, 0, 0.35);
+/* Surfaces that stay white in dark mode keep the light ink. */
+.dark .qr-surface,
+.dark .media-chip {
+  --ink-1: rgba(0, 0, 0, 0.85);
+  --ink-2: rgba(0, 0, 0, 0.65);
+  --ink-3: rgba(0, 0, 0, 0.5);
+  --ink-4: rgba(0, 0, 0, 0.35);
 }
 
 .dark .disc-spindle {
@@ -5722,5 +5752,128 @@ html.dark[data-theme='dark'] body {
   .retro-tonearm { transition: none; }
 }
 
+/* ---------- shared layout & controls (DESIGN.md) ----------
+   In the components layer so a utility on the same element still wins. */
+@layer components {
+  .page {
+    --page-x: 32px;
+    padding: 24px var(--page-x) 64px;
+  }
 
+  @media (width < 48rem) {
+    .page {
+      --page-x: 20px;
+      padding-top: 20px;
+      padding-bottom: 48px;
+    }
+  }
 
+  /* Sticky filter / tab bars that run edge to edge inside a .page. */
+  .page-bleed {
+    margin-inline: calc(var(--page-x, 32px) * -1);
+    padding-inline: var(--page-x, 32px);
+  }
+
+  .page-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px 16px;
+  }
+
+  .page-header__actions {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .page-subtitle {
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--ink-3);
+  }
+
+  /* Filter chips: categories, areas, types. View switches use segmented tabs. */
+  .chip {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    height: 28px;
+    padding: 0 12px;
+    border: 1px solid var(--app-border);
+    border-radius: 9999px;
+    background: var(--app-chip);
+    color: var(--ink-2);
+    font-size: 12px;
+    white-space: nowrap;
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .chip:hover {
+    background: var(--app-chip-hover);
+    color: var(--ink-1);
+  }
+
+  .chip--selected,
+  .chip--selected:hover {
+    border-color: transparent;
+    background: var(--apple-blue);
+    color: #ffffff;
+  }
+
+  /* Grouped rows inside a card: a fill, never a second border. */
+  .settings-group {
+    border-radius: 14px;
+    background: var(--app-group);
+  }
+
+  .sidebar-subheading {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ink-4);
+  }
+}
+
+/* ---------- dark mappings the design-token guard found missing ----------
+   (designTokens.test.ts fails when a light-only surface class has none.) */
+.dark [class~="bg-black/[0.04]"] {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.dark [class~="bg-white/70"] {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark [class~="bg-[#fbfbfd]/98"] {
+  background-color: rgba(28, 28, 30, 0.98);
+}
+
+.dark [class~="border-black/[0.055]"] {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark [class~="border-black/[0.06]"] {
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+.dark [class~="hover:bg-black/6"]:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark [class~="hover:bg-black/[0.02]"]:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.dark [class~="hover:bg-black/[0.04]"]:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Cards hovered with 80% white turned into white blocks under white text. */
+.dark [class~="hover:bg-white/80"]:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}

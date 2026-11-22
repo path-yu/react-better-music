@@ -41,12 +41,18 @@ import {
   TRANSPORT_PAUSE_ICON,
   TRANSPORT_PLAY_ICON,
 } from './transportIcons'
+import { TimeToggle } from './TimeToggle'
 import { VolumeSlider } from './VolumeSlider'
 import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
 import { useLocalLibraryStore } from '../../store/localLibrary'
 import { useVideoPlaybackStore } from '../../store/videoPlayback'
-import { cn, formatArtists, formatDuration } from '../../lib/format'
+import {
+  cn,
+  formatArtists,
+  formatDuration,
+  formatRemaining,
+} from '../../lib/format'
 import { resizedImageUrl } from '../../lib/image'
 import { PLAY_MODE_LABELS } from '../../lib/playMode'
 import { usePlayerMenuTint } from '../../lib/menuSurface'
@@ -1049,7 +1055,7 @@ export function PlayerBar() {
 
   if (!queue.length || !currentSong) {
     return (
-      <div className="player-glass flex h-[76px] items-center justify-center text-[12px] text-black/35">
+      <div className="player-glass flex h-[76px] items-center justify-center text-[12px] text-ink-4">
         <Trans>选择一首歌曲开始播放</Trans>
       </div>
     )
@@ -1437,7 +1443,7 @@ export function PlayerBar() {
     >
       {resumeHint ? (
         <span
-          className="pointer-events-none fixed z-[80] rounded-[5px] bg-black/80 px-2 py-1 text-[11px] text-white shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
+          className="pointer-events-none fixed z-[80] rounded-[6px] bg-black/80 px-2 py-1 text-[11px] text-white shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
           style={{
             left: Math.min(resumeHint.x + 12, window.innerWidth - 100),
             top: Math.min(resumeHint.y + 18, window.innerHeight - 32),
@@ -1525,11 +1531,11 @@ export function PlayerBar() {
           }}
         >
           <div className="flex items-center gap-2">
-            <span className="min-w-0 truncate text-[12.5px] font-medium text-black/80 hover:text-accent">
+            <span className="min-w-0 truncate text-[13px] font-medium text-ink-1 hover:text-accent">
               {currentSong.name}
             </span>
             {currentSong.trialEnd ? (
-              <span className="shrink-0 rounded-[6px] bg-[#ff9500]/12 px-1 text-[11px] text-[#b36b00]">
+              <span className="shrink-0 rounded-[6px] bg-warn/12 px-1 text-[11px] text-warn-ink">
                 <Trans>试听</Trans>
               </span>
             ) : null}
@@ -1549,7 +1555,7 @@ export function PlayerBar() {
               </span>
             ) : null}
           </div>
-          <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-black/40">
+          <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-ink-3">
             {busyVisible && loadingSource ? (
               <>
                 <Loader2 className="h-3 w-3 flex-none animate-spin text-accent" />
@@ -1579,10 +1585,10 @@ export function PlayerBar() {
               className={cn(
                 'h-4 w-4 transition-colors',
                 liked
-                  ? 'fill-[#ff2d55] text-[#ff2d55]'
+                  ? 'fill-love text-love'
                   : showNowPlaying
                     ? 'text-white/35 hover:text-white/70'
-                    : 'text-black/35 hover:text-black/70',
+                    : 'text-ink-4 hover:text-ink-2',
               )}
             />
           </button>
@@ -1599,7 +1605,7 @@ export function PlayerBar() {
             onClick={() => void toggleHeartMode()}
             className={cn(
               'pressable flex h-8 w-8 items-center justify-center transition-colors disabled:opacity-50 max-md:hidden',
-              heartMode ? 'text-[#ff2d55]' : 'text-black/35 hover:text-black/70',
+              heartMode ? 'text-love' : 'text-ink-4 hover:text-ink-2',
             )}
           >
             {heartLoading ? (
@@ -1612,7 +1618,7 @@ export function PlayerBar() {
             type="button"
             aria-label={i18n._(msg`上一首`)}
             onClick={() => void prev()}
-            className="pressable flex h-8 w-8 items-center justify-center text-black/65 hover:text-black max-md:h-10 max-md:w-10"
+            className="pressable flex h-8 w-8 items-center justify-center text-ink-2 hover:text-ink-1 max-md:h-10 max-md:w-10"
           >
             <SkipBack className="h-5 w-5 fill-current" />
           </button>
@@ -1635,7 +1641,7 @@ export function PlayerBar() {
               if (videoActive) toggleVideo()
               else void togglePlay()
             }}
-            className="pressable flex h-10 w-10 items-center justify-center rounded-full text-black/65 transition-colors hover:bg-black/5 hover:text-black max-md:h-10 max-md:w-10"
+            className="pressable flex h-10 w-10 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-black/5 hover:text-ink-1 max-md:h-10 max-md:w-10"
           >
             {playbackBusy ? (
               <Loader2 className={TRANSPORT_BUSY_ICON} />
@@ -1649,7 +1655,7 @@ export function PlayerBar() {
             type="button"
             aria-label={i18n._(msg`下一首`)}
             onClick={() => void next()}
-            className="pressable flex h-8 w-8 items-center justify-center text-black/65 hover:text-black max-md:h-10 max-md:w-10"
+            className="pressable flex h-8 w-8 items-center justify-center text-ink-2 hover:text-ink-1 max-md:h-10 max-md:w-10"
           >
             <SkipForward className="h-5 w-5 fill-current" />
           </button>
@@ -1662,8 +1668,8 @@ export function PlayerBar() {
             className={cn(
               'pressable flex h-8 w-8 items-center justify-center transition-colors max-md:h-10 max-md:w-10',
               mode === 'order'
-                ? 'text-black/35 hover:text-black/70'
-                : 'text-black/65 hover:text-black',
+                ? 'text-ink-4 hover:text-ink-2'
+                : 'text-ink-2 hover:text-ink-1',
             )}
           >
             {modeIcon}
@@ -1671,7 +1677,7 @@ export function PlayerBar() {
           <button
             type="button"
             onClick={() => toggleQueue()}
-            className="pressable flex h-8 w-8 items-center justify-center text-black/35 transition-colors hover:text-black/70 max-md:hidden"
+            className="pressable flex h-8 w-8 items-center justify-center text-ink-4 transition-colors hover:text-ink-2 max-md:hidden"
             title={i18n._(msg`播放列表`)}
           >
             <ListMusic className="h-4 w-4" />
@@ -1699,7 +1705,7 @@ export function PlayerBar() {
                 'pressable flex h-7 w-7 items-center justify-center rounded-full transition-colors max-md:h-10 max-md:w-10',
                 showNowPlaying
                   ? 'text-white/55 hover:bg-white/10 hover:text-white'
-                  : 'text-black/45 hover:bg-black/5 hover:text-black/75',
+                  : 'text-ink-3 hover:bg-black/5 hover:text-ink-2',
               )}
               aria-label={i18n._(msg`音量`)}
               title={i18n._(msg`音量（Alt + ↑ / ↓）`)}
@@ -1725,7 +1731,7 @@ export function PlayerBar() {
                   value={videoActive ? videoVolume : volume}
                   onChange={videoActive ? setVideoVolume : setVolume}
                 />
-                <span className="text-[11px] tabular-nums text-black/35">
+                <span className="text-[11px] tabular-nums text-ink-4">
                   {volume}
                 </span>
               </div>
@@ -1747,7 +1753,7 @@ export function PlayerBar() {
               type="button"
               aria-label={i18n._(msg`更多播放选项`)}
               title={i18n._(msg`更多播放选项`)}
-              className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/45 transition-colors hover:bg-black/5 hover:text-black/75 max-md:h-10 max-md:w-10"
+              className="pressable flex h-7 w-7 items-center justify-center rounded-full text-ink-3 transition-colors hover:bg-black/5 hover:text-ink-2 max-md:h-10 max-md:w-10"
             >
               <Ellipsis className="h-4 w-4" />
             </button>
@@ -1764,7 +1770,7 @@ export function PlayerBar() {
           <button
             type="button"
             onClick={() => toggleNowPlaying()}
-            className="pressable flex h-7 w-7 items-center justify-center rounded-full text-black/45 transition-colors hover:bg-black/5 hover:text-black/75 max-md:h-10 max-md:w-10"
+            className="pressable flex h-7 w-7 items-center justify-center rounded-full text-ink-3 transition-colors hover:bg-black/5 hover:text-ink-2 max-md:h-10 max-md:w-10"
             aria-label={i18n._(msg`展开播放页`)}
           >
             <ChevronUp className="h-[16px] w-[16px]" />
@@ -1799,6 +1805,7 @@ function AudioProgressRow({
 }) {
   const currentTime = usePlayerStore((state) => state.currentTime)
   const buffered = usePlayerStore((state) => state.buffered)
+  const showRemaining = useSettingsStore((state) => state.showRemainingTime)
   // Where playback is about to resume (restored session, recovery reload,
   // source switch). The new media starts at 0 until loadedmetadata seeks it;
   // showing currentTime in between made the bar jump 0:00 -> 1:12.
@@ -1821,10 +1828,10 @@ function AudioProgressRow({
   const displayBuffered = sourceMatches ? buffered : 0
 
   return (
-    <div className="mt-1.5 grid h-5 w-full grid-cols-[36px_minmax(0,1fr)_36px] items-center gap-2.5 max-md:absolute max-md:inset-x-0 max-md:top-0 max-md:mt-0 max-md:px-3">
+    <div className="mt-1.5 grid h-5 w-full grid-cols-[40px_minmax(0,1fr)_40px] items-center gap-2.5 max-md:absolute max-md:inset-x-0 max-md:top-0 max-md:mt-0 max-md:px-3">
       <span
         data-testid="elapsed-time"
-        className="text-right text-[11px] leading-none tabular-nums text-black/35 max-md:hidden"
+        className="text-right text-[11px] leading-none tabular-nums text-ink-4 max-md:hidden"
       >
         {formatDuration(displayTime * 1000)}
       </span>
@@ -1835,9 +1842,15 @@ function AudioProgressRow({
         onChange={onSeek}
         valueText={`${formatDuration(displayTime * 1000)} / ${formatDuration(durationMs)}`}
       />
-      <span className="text-[11px] leading-none tabular-nums text-black/35 max-md:hidden">
-        {formatDuration(durationMs)}
-      </span>
+      <TimeToggle
+        className="text-left text-[11px] leading-none tabular-nums text-ink-4 hover:text-ink-2 max-md:hidden"
+        showRemaining={showRemaining}
+        label={
+          showRemaining
+            ? formatRemaining(durationMs - displayTime * 1000)
+            : formatDuration(durationMs)
+        }
+      />
     </div>
   )
 }

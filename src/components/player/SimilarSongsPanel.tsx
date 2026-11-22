@@ -83,7 +83,7 @@ export function SimilarSongsPanel({
           <p className="text-[11px] text-white/40">
             <Trans>根据当前歌曲推荐</Trans>
           </p>
-          <span className="text-[10px] tabular-nums text-white/25">
+          <span className="text-[11px] tabular-nums text-white/25">
             {songs.length}
           </span>
         </div>
@@ -103,14 +103,14 @@ export function SimilarSongsPanel({
               }}
               className="group flex w-full cursor-pointer items-center gap-3 rounded-[10px] px-2 py-2 text-left transition-colors hover:bg-white/7 focus-visible:bg-white/7 focus-visible:outline-none"
             >
-              <span className="w-5 shrink-0 text-right text-[10px] tabular-nums text-white/25">
+              <span className="w-5 shrink-0 text-right text-[11px] tabular-nums text-white/25">
                 {String(index + 1).padStart(2, '0')}
               </span>
-              <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-[7px]">
+              <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-[6px]">
                 <ImageWithFallback
                   src={song.al.picUrl}
                   alt={song.name}
-                  rounded="rounded-[7px]"
+                  rounded="rounded-[6px]"
                   className="h-full w-full"
                   resize="96y96"
                 />
@@ -124,10 +124,10 @@ export function SimilarSongsPanel({
                 </span>
                 <ArtistLinks
                   artists={song.ar}
-                  className="mt-0.5 block truncate text-[10.5px] text-white/40"
+                  className="mt-0.5 block truncate text-[11px] text-white/40"
                 />
               </span>
-              <span className="shrink-0 text-[10px] tabular-nums text-white/30">
+              <span className="shrink-0 text-[11px] tabular-nums text-white/30">
                 {formatDuration(song.dt)}
               </span>
             </div>
