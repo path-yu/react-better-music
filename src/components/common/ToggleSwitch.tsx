@@ -31,9 +31,11 @@ export function SwitchTrack({
       aria-hidden="true"
       className={cn(
         'flex h-5 w-9 shrink-0 items-center rounded-full px-0.5 transition-colors duration-200 motion-reduce:transition-none',
-        // Follow the active palette accent instead of a fixed green; the off
-        // track uses the theme's strong border tone so it works in both themes.
-        checked ? 'bg-accent' : 'bg-[var(--app-border-strong)]',
+        // `--app-accent` / `--app-switch-off` describe the app theme only, so
+        // this track looks the same on the settings page and inside the
+        // immersive menu (whose local `.dark` would otherwise flip it to the
+        // dark-theme blue).
+        checked ? 'bg-[var(--app-accent)]' : 'bg-[var(--app-switch-off)]',
         className,
       )}
     >

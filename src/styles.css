@@ -107,6 +107,15 @@
   --apple-blue-rgb: 0 102 204;
   /* Accent for content that stays on a white surface in both themes. */
   --apple-blue-on-light: #0066cc;
+  /*
+   * App-wide accent for controls that must look identical everywhere, e.g. the
+   * settings switches and the same switches inside the immersive player menu.
+   * The overlay re-declares `.dark` on its own subtree, which would otherwise
+   * flip `--apple-blue` there; `data-theme` only lives on <html>, so this one
+   * always describes the app theme.
+   */
+  --app-accent: #0066cc;
+  --app-switch-off: rgba(0, 0, 0, 0.16);
   --apple-ink: #1d1d1f;
   --apple-body: #1d1d1f;
   --apple-muted: #7a7a7a;
@@ -3325,6 +3334,12 @@ a.song-tag--outline:focus-visible {
   --secondary-foreground: 0 0% 98%;
 }
 
+/* Dark counterpart of `--app-accent`; see the comment in the light block. */
+[data-theme='dark'] {
+  --app-accent: #2997ff;
+  --app-switch-off: rgba(255, 255, 255, 0.24);
+}
+
 .dark body {
   background: var(--app-bg);
 }
@@ -4685,6 +4700,7 @@ html.desktop .mv-video-shell .media-cast-button {
   --accent: 32 100% 95%;
   --accent-foreground: 30 90% 25%;
   --apple-blue: #b45309;
+  --app-accent: #b45309;
   --apple-blue-focus: #d97706;
   --apple-blue-rgb: 180 83 9;
   --apple-blue-on-light: #b45309;
@@ -4707,6 +4723,7 @@ html.desktop .mv-video-shell .media-cast-button {
   --accent: 170 45% 94%;
   --accent-foreground: 175 70% 20%;
   --apple-blue: #0f766e;
+  --app-accent: #0f766e;
   --apple-blue-focus: #0d9488;
   --apple-blue-rgb: 15 118 110;
   --apple-blue-on-light: #0f766e;
@@ -4729,6 +4746,7 @@ html.desktop .mv-video-shell .media-cast-button {
   --accent: 24 40% 16%;
   --accent-foreground: 30 100% 85%;
   --apple-blue: #fb923c;
+  --app-accent: #fb923c;
   --apple-blue-focus: #fdba74;
   --apple-blue-rgb: 251 146 60;
   --apple-blue-on-light: #b45309;
@@ -4751,6 +4769,7 @@ html.desktop .mv-video-shell .media-cast-button {
   --accent: 170 30% 14%;
   --accent-foreground: 170 80% 82%;
   --apple-blue: #2dd4bf;
+  --app-accent: #2dd4bf;
   --apple-blue-focus: #5eead4;
   --apple-blue-rgb: 45 212 191;
   --apple-blue-on-light: #0f766e;
@@ -5033,6 +5052,7 @@ html.dark[data-theme='dark'] body {
 [data-theme='light'][data-palette='graphite'],
 [data-theme='light'][data-palette='mocha'] {
   --apple-blue: var(--palette-accent-light);
+  --app-accent: var(--palette-accent-light);
   --apple-blue-focus: var(--palette-focus-light);
   --apple-blue-rgb: var(--palette-rgb-light);
   --apple-blue-on-light: var(--palette-accent-light);
@@ -5071,6 +5091,7 @@ html.dark[data-theme='dark'] body {
 [data-theme='dark'][data-palette='graphite'],
 [data-theme='dark'][data-palette='mocha'] {
   --apple-blue: var(--palette-accent-dark);
+  --app-accent: var(--palette-accent-dark);
   --apple-blue-focus: var(--palette-focus-dark);
   --apple-blue-rgb: var(--palette-rgb-dark);
   --apple-blue-on-light: var(--palette-accent-light);
@@ -5266,8 +5287,9 @@ html.dark[data-theme='dark'] body {
   overscroll-behavior: contain;
   padding-right: 4px;
   /* The panel scrolls inside the page: fade its last 20px instead of cutting
-     a card off mid-row, and leave room so the final row clears the fade. */
-  padding-bottom: 24px;
+     a card off mid-row. Keep the trailing padding small so a card that already
+     fits does not push the panel into showing a scrollbar. */
+  padding-bottom: 8px;
   mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent);
 }
 
@@ -5282,7 +5304,7 @@ html.dark[data-theme='dark'] body {
 .settings-palette-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 6px;
 }
 
 @media (min-width: 640px) {
@@ -5291,7 +5313,10 @@ html.dark[data-theme='dark'] body {
   }
 }
 
-@media (min-width: 1024px) {
+/* Five columns fit comfortably from ~900px once the sidebar is subtracted; at
+   1024px the grid still fell back to three columns and pushed the card past
+   the panel height. */
+@media (min-width: 900px) {
   .settings-palette-grid {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
@@ -6937,4 +6962,16 @@ html.dark[data-theme='dark'] body {
 /* Cards hovered with 80% white turned into white blocks under white text. */
 .dark [class~="hover:bg-white/80"]:hover {
   background-color: rgba(255, 255, 255, 0.08);
+}
+
+/*
+ * Grouped-row hairlines on the settings cards. The markup used to carry
+ * `divide-[var(--app-border)]`, but a bare `var()` is ambiguous for Tailwind's
+ * divide utility, so no colour rule was emitted. This rule must also stay
+ * outside `@layer`: Tailwind's utilities layer carries a default border colour
+ * that beat the same declaration when it lived in `@layer components`, leaving
+ * the dividers almost invisible on the dark grouped fill.
+ */
+.settings-group > :not(:last-child) {
+  border-bottom-color: var(--app-border-strong);
 }
