@@ -14,6 +14,9 @@ export default {
   release: {
     baseUrl:
       'https://github.com/path-yu/react-better-music/releases/latest/download',
+    // Delta patches diff against the previous release's app.tar.zst, which is
+    // no longer published (updates ship as the Inno installer).
+    generatePatch: false,
   },
   build: {
     mainProcess: 'bun',

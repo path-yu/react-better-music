@@ -350,7 +350,7 @@ Start-Process .\build\installer\声屿-Setup-Custom.exe
 
 ### 桌面端自动更新
 
-正式版使用 Electrobun 自带的 Updater，静态更新地址配置在 `electrobun.config.ts`：
+更新通过 Inno Setup 安装包完成，不用 Electrobun 自带的 Updater（它只能在 Electrobun 固定的安装目录里工作，而用户可以自选安装目录）。应用读取最新 Release 里的 `win-x64-Setup-Custom.json`，下载 `win-x64-Setup-Custom.exe`，校验大小和 SHA-256 后运行，安装包会原地升级。发布地址配置在 `electrobun.config.ts`：
 
 ```ts
 release: {
@@ -383,7 +383,9 @@ winget install --id GitHub.cli
 gh auth login
 ```
 
-脚本会先上传压缩包、checksum 和安装包，最后上传 `stable-win-x64-update.json`，全部成功后才把草稿 Release 公开。`app.version`、tag 和清单版本必须一致；`/releases/latest` 只适用于 stable。
+一个 Release 只包含三个文件，脚本按顺序上传：`win-x64-Setup-Custom.exe` → `win-x64-Setup-Custom.json` → `stable-win-x64-update.json`（应用只在缺少前一个清单时读它的版本号），全部成功后才把草稿 Release 公开。`app.version`、tag 和清单版本必须一致；`/releases/latest` 只适用于 stable。
+
+Electrobun 打正式版时还会生成 `win-x64-Setup.zip`（它自己的固定目录安装器）和 `stable-win-x64-app.tar.zst` + `-checksum.json`（给它自带的 Updater 用）。这些都用不到，`desktop:installer` 会把它们从 `artifacts/` 删掉，也不会上传。如果还有用户停留在改用安装包更新之前的版本，他们无法在应用内更新，需要手动下载一次新安装包。
 
 ### 开发版与正式版的区别
 

@@ -326,7 +326,7 @@ Start-Process .\build\installer\声屿-Setup-Custom.exe
 
 ### Desktop auto-update
 
-Packaged stable builds use Electrobun's built-in Updater. The static release URL is configured in `electrobun.config.ts`:
+Updates ship as the Inno Setup installer, not through Electrobun's built-in Updater (it only works inside Electrobun's fixed install root, while users may pick any directory). The app reads `win-x64-Setup-Custom.json` from the latest release, downloads `win-x64-Setup-Custom.exe`, verifies its size and SHA-256, and runs it; the installer upgrades in place. The release URL is configured in `electrobun.config.ts`:
 
 ```ts
 release: {
@@ -359,7 +359,9 @@ winget install --id GitHub.cli
 gh auth login
 ```
 
-It uploads the archive, checksum and installer first, then `stable-win-x64-update.json` last, and publishes a draft Release only after all assets are present. Keep `app.version`, the tag and the manifest version aligned; `/releases/latest` covers stable only.
+A release contains three files: `win-x64-Setup-Custom.exe`, then `win-x64-Setup-Custom.json`, then `stable-win-x64-update.json` (the app falls back to its version). The helper uploads them in that order and publishes the draft only after all three are present. Keep `app.version`, the tag and the manifest version aligned; `/releases/latest` covers stable only.
+
+Electrobun's stable build also writes `win-x64-Setup.zip` (its own fixed-directory installer) and `stable-win-x64-app.tar.zst` + `-checksum.json` (for its built-in Updater). They are not used, so `desktop:installer` deletes them from `artifacts/` and they are not published. Clients from before the switch to installer updates, if any, cannot update in-app and need to download the new installer once.
 
 ### Dev vs release process
 

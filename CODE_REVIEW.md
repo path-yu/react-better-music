@@ -779,3 +779,29 @@ src/
 - [ ] 浅色模式下评论用户名颜色可读
 - [ ] 设置页「缓存」「桌面」分组里的下拉框（宽度 100% 的那几个）布局正常
 - [ ] `pnpm i18n:extract` 后新文案「点赞，{0} 人赞过」的占位符正确
+
+
+## 第 36 批：发布产物精简
+
+`pnpm desktop:release` 在 `artifacts/` 里会多出 Electrobun 自带的两套东西，现在的版本都用不到：
+
+| 文件 | 原来的用途 | 现在 |
+|---|---|---|
+| `win-x64-Setup.zip`（39 MB） | Electrobun 自带的固定目录安装器 | 不用：用户用可选目录的 Inno 安装包；两者同时安装还会产生两个卸载项 |
+| `stable-win-x64-app.tar.zst`（38.5 MB）+ `-checksum.json` | Electrobun 自带 Updater 的整包更新 | 不用：应用内更新下载并运行 `win-x64-Setup-Custom.exe`（`src/bun/index.ts`），Updater 只调用了 `getLocalInfo()` 读本机版本 |
+
+| 处理 | 文件 |
+|---|---|
+| Inno 安装包生成后，从 `artifacts/` 删除 `*-Setup.zip`、`*.tar.zst`、`*-checksum.json`（`desktop:release` 和 `desktop:release:fast` 都会经过这一步） | `scripts/installer/build.mjs` |
+| 发布改为白名单：只上传 `win-x64-Setup-Custom.exe` → `win-x64-Setup-Custom.json` → `stable-win-x64-update.json`；其余文件打印「不上传」。删掉了只为 tar.zst 服务的中文文件名改名逻辑 | `scripts/publish-update.mjs` |
+| `release.generatePatch: false`：增量补丁要和上一版的 tar.zst 做对比，这个文件不再发布 | `electrobun.config.ts` |
+| README 中「正式版使用 Electrobun 自带的 Updater」等过时说明改为实际流程 | `README.md`、`README.zh-CN.md` |
+
+每次发布少上传约 77 MB，Release 页面只剩一个安装包。
+
+**已知影响（用户已确认接受）**：如果还有用户停留在改用安装包更新之前、由 Electrobun 自带更新器更新的老版本，检查更新时会看到新版本但下载失败（tar.zst 404），需要手动下载一次新安装包。`stable-win-x64-update.json` 里的 `artifact.file` 仍指向 tar.zst，这个字段现在的应用不读。
+
+回归检查：
+- [ ] `pnpm desktop:release` 后 `artifacts/` 只剩 `win-x64-Setup-Custom.exe`、`win-x64-Setup-Custom.json`、`stable-win-x64-update.json`
+- [ ] `electrobun build` 接受 `generatePatch: false`（Electrobun 2.0.4 的配置类型里有这个字段）
+- [ ] 发布后在旧版本应用里「检查更新」能找到并安装新版本

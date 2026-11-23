@@ -20,6 +20,7 @@ import {
   copyFileSync,
   existsSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
   rmSync,
   statSync,
@@ -180,5 +181,20 @@ if (existsSync(output)) {
     'utf8',
   )
   console.log(`› 安装包清单：${manifest.version} · ${manifest.sha256.slice(0, 12)}…`)
+}
+
+// Electrobun's stable build also writes its own fixed-directory installer
+// (…-Setup.zip) and the full-app archive + checksum for its built-in Updater.
+// Neither is used: users install with the Inno installer above and in-app
+// updates download that installer (src/bun/index.ts). Drop them so artifacts/
+// holds exactly what publish-update.mjs uploads (~77 MB less per release).
+// stable-win-x64-update.json stays; the app reads its version as a fallback.
+const UNUSED_ARTIFACT = /(?:-Setup\.zip|\.tar\.zst|-checksum\.json)$/
+if (existsSync(artifactDir)) {
+  for (const name of readdirSync(artifactDir)) {
+    if (!UNUSED_ARTIFACT.test(name)) continue
+    rmSync(join(artifactDir, name), { force: true })
+    console.log(`› 已移除不发布的产物：${name}`)
+  }
 }
 process.exit(0)

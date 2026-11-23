@@ -5,18 +5,12 @@
  * Usage:
  *   pnpm desktop:publish-update [--tag v1.1.1]
  *
- * The update manifest is uploaded last so clients never see a release whose
- * archive or checksum is still missing.
+ * Uploads win-x64-Setup-Custom.exe, then its manifest, then
+ * stable-win-x64-update.json, so clients never see a manifest whose installer
+ * is still missing.
  */
 import { execFileSync } from 'node:child_process'
-import {
-  existsSync,
-  readFileSync,
-  readdirSync,
-  renameSync,
-  statSync,
-  writeFileSync,
-} from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { basename, dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { findGh, runGh } from './lib/gh.mjs'
@@ -56,46 +50,13 @@ if (!existsSync(manifest)) {
   process.exit(1)
 }
 
-// GitHub strips non-ASCII characters from uploaded asset names. Hutch derives
-// the tar name from the Chinese app name, so normalize it and keep the manifest
-// in sync before uploading. Otherwise update.json points at a 404.
-function asciiArtifactName(name) {
-  if (/^[\x20-\x7e]+$/.test(name)) return name
-  if (name.endsWith('.tar.zst')) return 'stable-win-x64-app.tar.zst'
-  if (name.endsWith('-Setup.zip')) return 'win-x64-Setup.zip'
-  if (name.endsWith('.exe')) return 'Shengyu-Setup.exe'
-  return name
-    .replace(/[^\x20-\x7e]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-}
-
-const manifestData = JSON.parse(readFileSync(manifest, 'utf8'))
-const artifactName = manifestData?.artifact?.file
-if (artifactName && !/^[\x20-\x7e]+$/.test(artifactName)) {
-  const source = join(artifacts, artifactName)
-  const target = join(artifacts, asciiArtifactName(artifactName))
-  if (existsSync(source) && source !== target) {
-    renameSync(source, target)
-  }
-  if (existsSync(target)) {
-    manifestData.artifact.file = basename(target)
-    writeFileSync(manifest, JSON.stringify(manifestData), 'utf8')
-    console.log(`› 更新包已重命名为 ${basename(target)}`)
-  }
-}
-
-for (const name of readdirSync(artifacts)) {
-  const targetName = asciiArtifactName(name)
-  if (targetName !== name) {
-    const source = join(artifacts, name)
-    const target = join(artifacts, targetName)
-    renameSync(source, target)
-    console.log(`› 资产已重命名为 ${targetName}`)
-  }
-}
-
-// In-app updates download the Inno installer described by this manifest.
+// Only the Inno installer and the two manifests are published. Electrobun's
+// own Setup.zip and the app.tar.zst / checksum for its built-in Updater are
+// not: the app updates by downloading and running the Inno installer
+// (src/bun/index.ts). scripts/installer/build.mjs already deletes them; this
+// allowlist also keeps stray files out of the release.
+// stable-win-x64-update.json is kept: the app reads its version when a
+// release has no installer manifest.
 const installerManifest = join(artifacts, 'win-x64-Setup-Custom.json')
 const installerExe = join(artifacts, 'win-x64-Setup-Custom.exe')
 if (!existsSync(installerManifest) || !existsSync(installerExe)) {
@@ -103,13 +64,16 @@ if (!existsSync(installerManifest) || !existsSync(installerExe)) {
   process.exit(1)
 }
 
-const files = readdirSync(artifacts)
-  .filter(
-    (name) =>
-      !name.endsWith('-update.json') && name !== basename(installerManifest),
-  )
-  .sort()
-  .map((name) => join(artifacts, name))
+const published = new Set([
+  basename(installerExe),
+  basename(installerManifest),
+  basename(manifest),
+])
+const skipped = readdirSync(artifacts).filter((name) => !published.has(name))
+if (skipped.length) {
+  console.log(`› 不上传：${skipped.join('、')}`)
+}
+const files = [installerExe]
 
 const ghExe = findGh()
 if (!ghExe) {
