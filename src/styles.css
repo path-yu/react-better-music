@@ -4142,7 +4142,8 @@ a.song-tag--outline:focus-visible {
 
 /* Mobile mini player: the seek line is the bar's top edge, flush with the
    left / right edges, square ends, 3px. The 14px hit area hangs below the
-   line inside the bar; the knob only shows while scrubbing or focused. */
+   line inside the bar. Hovering thickens the line and reveals the knob, the
+   same affordance as the video progress strip on the detail page. */
 @media (max-width: 767px) {
   .player-glass:not(.player-glass--immersive) .player-progress-row .seek-slider {
     height: 14px;
@@ -4151,7 +4152,15 @@ a.song-tag--outline:focus-visible {
 
   .player-glass:not(.player-glass--immersive) .player-progress-row .seek-slider__track,
   .player-glass:not(.player-glass--immersive) .player-progress-row .seek-slider__buffer,
-  .player-glass:not(.player-glass--immersive) .player-progress-row .seek-slider__fill,
+  .player-glass:not(.player-glass--immersive) .player-progress-row .seek-slider__fill {
+    top: 0;
+    height: 3px;
+    margin-top: 0;
+    border-radius: 0;
+  }
+
+  /* Hover needs its own rule: the desktop hover styles centre the line in the
+     taller hit area (top: 50%), which would detach it from the bar's edge. */
   .player-glass:not(.player-glass--immersive)
     .player-progress-row
     .seek-slider:hover
@@ -4165,9 +4174,8 @@ a.song-tag--outline:focus-visible {
     .seek-slider:hover
     .seek-slider__fill {
     top: 0;
-    height: 3px;
+    height: 5px;
     margin-top: 0;
-    border-radius: 0;
   }
 
   /* Round only the leading end of the played part, like a progress line. */
@@ -4176,19 +4184,25 @@ a.song-tag--outline:focus-visible {
     box-shadow: none;
   }
 
-  .player-glass:not(.player-glass--immersive) .player-progress-row .seek-slider__thumb,
-  .player-glass:not(.player-glass--immersive)
-    .player-progress-row
-    .seek-slider:hover
-    .seek-slider__thumb {
+  .player-glass:not(.player-glass--immersive) .player-progress-row .seek-slider__thumb {
     top: 1.5px;
     margin-top: -4.5px;
     opacity: 0;
     transform: scale(0.4);
   }
 
-  /* `.seek-slider:hover` repeated so these beat the hidden-on-hover rule
-     above, whatever the pointer is over. */
+  /* `top` is the knob's centre: 2.5px keeps it on the middle of the 5px line. */
+  .player-glass:not(.player-glass--immersive)
+    .player-progress-row
+    .seek-slider:hover
+    .seek-slider__thumb {
+    top: 2.5px;
+    opacity: 1;
+    transform: scale(1.4);
+  }
+
+  /* `.seek-slider:hover` repeated so these beat the thumb rules above,
+     whatever the pointer is over. */
   .player-glass:not(.player-glass--immersive)
     .player-progress-row
     .seek-slider:is(:hover, :not(:hover))
@@ -4197,7 +4211,7 @@ a.song-tag--outline:focus-visible {
     .player-progress-row
     .seek-slider:is(:hover, :not(:hover)):has(.seek-slider__input:focus-visible)
     .seek-slider__thumb {
-    top: 1.5px;
+    top: 2.5px;
     opacity: 1;
     transform: scale(1.4);
   }
