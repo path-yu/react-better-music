@@ -116,6 +116,9 @@
    */
   --app-accent: #0066cc;
   --app-switch-off: rgba(0, 0, 0, 0.16);
+  /* Neutral separator tone. Deliberately not palette-tinted: a pink or amber
+     divider reads as a highlight instead of a divider. */
+  --app-divider: rgba(0, 0, 0, 0.08);
   --apple-ink: #1d1d1f;
   --apple-body: #1d1d1f;
   --apple-muted: #7a7a7a;
@@ -3338,6 +3341,7 @@ a.song-tag--outline:focus-visible {
 [data-theme='dark'] {
   --app-accent: #2997ff;
   --app-switch-off: rgba(255, 255, 255, 0.24);
+  --app-divider: rgba(255, 255, 255, 0.15);
 }
 
 .dark body {
@@ -5287,9 +5291,8 @@ html.dark[data-theme='dark'] body {
   overscroll-behavior: contain;
   padding-right: 4px;
   /* The panel scrolls inside the page: fade its last 20px instead of cutting
-     a card off mid-row. Keep the trailing padding small so a card that already
-     fits does not push the panel into showing a scrollbar. */
-  padding-bottom: 8px;
+     a card off mid-row, and leave room so the final row clears the fade. */
+  padding-bottom: 24px;
   mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent);
 }
 
@@ -5304,7 +5307,7 @@ html.dark[data-theme='dark'] body {
 .settings-palette-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
+  gap: 8px;
 }
 
 @media (min-width: 640px) {
@@ -6965,13 +6968,24 @@ html.dark[data-theme='dark'] body {
 }
 
 /*
- * Grouped-row hairlines on the settings cards. The markup used to carry
- * `divide-[var(--app-border)]`, but a bare `var()` is ambiguous for Tailwind's
- * divide utility, so no colour rule was emitted. This rule must also stay
- * outside `@layer`: Tailwind's utilities layer carries a default border colour
- * that beat the same declaration when it lived in `@layer components`, leaving
- * the dividers almost invisible on the dark grouped fill.
+ * Settings row separators. Tailwind treats `border-[var(--x)]` as ambiguous
+ * (width or colour) and emits nothing, so the class lives here instead of in
+ * the markup. Both tones are neutral: the palette tints `--app-border`, and a
+ * pink or amber divider reads as a highlight rather than a separator.
+ */
+.settings-divider {
+  border-color: var(--app-divider);
+}
+
+/*
+ * Grouped-row hairlines on the settings cards, painted from the neutral
+ * `--app-divider` token rather than `--app-border` (which the palette tints).
+ * The markup used to carry `divide-[var(--app-border)]`, but a bare `var()` is
+ * ambiguous for Tailwind's divide utility, so no colour rule was emitted. This
+ * rule must also stay outside `@layer`: Tailwind's utilities layer carries a
+ * default border colour that beat the same declaration when it lived in
+ * `@layer components`.
  */
 .settings-group > :not(:last-child) {
-  border-bottom-color: var(--app-border-strong);
+  border-bottom-color: var(--app-divider);
 }

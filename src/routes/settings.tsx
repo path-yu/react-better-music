@@ -590,13 +590,13 @@ function SettingsPage() {
   }, [activeTab])
 
   return (
-    <div className="page settings-page max-w-[1200px] pb-4 pt-2">
+    <div className="page settings-page max-w-[1200px] pb-4">
       <PageHeader
         title={<Trans>设置</Trans>}
         description={<Trans>管理外观、播放、缓存与桌面功能</Trans>}
       />
 
-      <div className="settings-shell mt-4">
+      <div className="settings-shell mt-6">
         <SettingsNav
           active={activeTab}
           query={settingsQuery}
@@ -616,7 +616,7 @@ function SettingsPage() {
           data-active={activeTab}
         >
           <div className="grid gap-5">
-        <section className="apple-card p-4" data-settings-section="general">
+        <section className="apple-card p-5 sm:p-6" data-settings-section="general">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 className="flex items-center gap-2 text-[15px] font-semibold text-ink-1">
@@ -654,12 +654,12 @@ function SettingsPage() {
             </div>
           </div>
 
-          <div className="mt-4">
+          <div className="mt-6">
             <p className="text-[12px] font-medium text-ink-2">
               <Trans>配色方案</Trans>
             </p>
             <div
-              className="settings-palette-grid mt-2.5"
+              className="settings-palette-grid mt-3"
               role="group"
               aria-label={i18n._(msg`配色方案`)}
             >
@@ -681,7 +681,7 @@ function SettingsPage() {
                   >
                     <span
                       aria-hidden="true"
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-black/10 transition-transform duration-200 group-hover:scale-105 dark:border-white/15"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-black/10 transition-transform duration-200 group-hover:scale-105 dark:border-white/15"
                       style={{
                         backgroundColor: preview.accent,
                         boxShadow: selected
@@ -711,8 +711,8 @@ function SettingsPage() {
             </div>
           </div>
 
-          <div className="mt-4 divide-y overflow-hidden settings-group">
-            <div className="flex flex-col gap-3 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-5 divide-y overflow-hidden settings-group">
+            <div className="flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <p className="text-[13px] font-medium text-ink-2">
                   <Trans>播放页背景</Trans>
@@ -734,7 +734,7 @@ function SettingsPage() {
               />
             </div>
 
-            <div className="flex flex-col gap-3 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <p className="text-[13px] font-medium text-ink-2">
                   <Trans>播放页过渡动画</Trans>
@@ -755,7 +755,7 @@ function SettingsPage() {
               />
             </div>
 
-            <div className="flex flex-col gap-3 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <p className="text-[13px] font-medium text-ink-2">
                   <Trans>窄窗口自动收起侧栏</Trans>
@@ -771,7 +771,7 @@ function SettingsPage() {
               />
             </div>
 
-            <div className="flex flex-col gap-3 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <p className="flex items-center gap-2 text-[13px] font-medium text-ink-2">
                   <Languages className="h-3.5 w-3.5 text-accent" />
@@ -810,7 +810,7 @@ function SettingsPage() {
             <PlayerStylePicker />
           </div>
 
-          <div className="mt-5 flex items-center justify-between gap-4 border-t border-[var(--app-border)] pt-4">
+          <div className="mt-5 flex items-center justify-between gap-4 border-t settings-divider pt-4">
             <div>
               <p className="text-[13px] font-medium text-ink-2">
                 <Trans>音量均衡</Trans>
@@ -828,7 +828,7 @@ function SettingsPage() {
             />
           </div>
 
-          <div className="mt-5 flex items-center justify-between gap-4 border-t border-[var(--app-border)] pt-4">
+          <div className="mt-5 flex items-center justify-between gap-4 border-t settings-divider pt-4">
             <div>
               <p className="text-[13px] font-medium text-ink-2">
                 <Trans>进度条显示剩余时间</Trans>
@@ -1341,7 +1341,7 @@ function SettingsPage() {
         {desktop && import.meta.env.MODE !== 'tauri' ? <RemoteControlCard /> : null}
 
         <section className="apple-card overflow-hidden" data-settings-section="cache">
-          <div className="flex items-center justify-between gap-3 border-b border-black/6 px-6 py-4">
+          <div className="flex items-center justify-between gap-3 border-b settings-divider px-6 py-4">
             <div>
               <h2 className="flex items-center gap-2 text-[15px] font-semibold text-ink-1">
                 <ListMusic className="h-4 w-4 text-accent" />
@@ -1390,7 +1390,7 @@ function SettingsPage() {
             </div>
           ) : (
             <>
-              <div className="flex items-center gap-3 border-b border-black/6 bg-black/[0.015] px-6 py-2">
+              <div className="flex items-center gap-3 border-b settings-divider bg-black/[0.015] px-6 py-2">
                 <input
                   type="checkbox"
                   aria-label={i18n._(msg`全选`)}
@@ -1411,7 +1411,7 @@ function SettingsPage() {
                 {items.map((item) => (
                   <li
                     key={item.id}
-                    className="flex items-center gap-3 border-b border-black/5 px-6 py-2.5 last:border-b-0 hover:bg-black/[0.02]"
+                    className="flex items-center gap-3 border-b settings-divider px-6 py-2.5 last:border-b-0 hover:bg-black/[0.02]"
                   >
                     <input
                       type="checkbox"
@@ -1457,7 +1457,7 @@ function SettingsPage() {
             </>
           )}
 
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-black/6 px-6 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t settings-divider px-6 py-3">
             <p className="text-[11px] leading-relaxed text-ink-4">
               {desktop
                 ? (
