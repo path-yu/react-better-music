@@ -3,7 +3,7 @@ import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { Loader2, RefreshCw, Smartphone } from 'lucide-react'
-import { Button, Switch } from '@pikoloo/darwin-ui'
+import { Button } from '@pikoloo/darwin-ui'
 import {
   getRemoteControl,
   setRemoteControl,
@@ -11,6 +11,7 @@ import {
 } from '../../lib/desktopBridge'
 import { cn } from '../../lib/format'
 import { toast } from '../../lib/toast'
+import { ToggleSwitch } from '../common/ToggleSwitch'
 
 /** Poll while enabled so the listener state and phone count stay current. */
 const REFRESH_INTERVAL = 3000
@@ -78,7 +79,7 @@ export function RemoteControlCard() {
             </Trans>
           </p>
         </div>
-        <Switch
+        <ToggleSwitch
           checked={enabled}
           onChange={(value: boolean) => void update({ enabled: value })}
           aria-label={i18n._(msg`手机遥控`)}

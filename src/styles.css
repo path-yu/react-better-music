@@ -3840,6 +3840,171 @@ a.song-tag--outline:focus-visible {
   width: min(290px, calc(100vw - 24px));
 }
 
+/*
+ * App-themed popover surface for page menus (playlists sort / category).
+ * Darwin's `glass` is a white veil plus `dark:bg-zinc-900/70`, and its default
+ * `size="md"` also injects `p-4 w-72` that fights the caller's padding and
+ * width. Unlayered rules here always beat those utilities, so the surface can
+ * come from the app tokens and follow the in-app theme switch on its own.
+ */
+.app-popover {
+  padding: 6px;
+  border: 0.5px solid var(--app-border);
+  border-radius: 14px;
+  background: var(--app-surface);
+  color: var(--ink-1);
+  box-shadow:
+    0 0 0 0.5px rgb(0 0 0 / 0.05),
+    0 20px 48px -16px rgb(0 0 0 / 0.34);
+  backdrop-filter: saturate(180%) blur(26px);
+  -webkit-backdrop-filter: saturate(180%) blur(26px);
+}
+
+.dark .app-popover {
+  box-shadow:
+    0 0 0 0.5px rgb(255 255 255 / 0.1),
+    0 22px 56px -16px rgb(0 0 0 / 0.72);
+}
+
+.tag-sort-popover {
+  width: 176px;
+}
+
+/*
+ * Category picker (playlists page): one panel with a fixed header and three
+ * labelled groups separated by hairlines. Capped near 60% of the window so it
+ * never covers the cover grid, with the overflow scrolling inside the body.
+ * The selected row uses a low-opacity accent fill plus a hairline accent
+ * border instead of a saturated block, so it stays calm next to the artwork.
+ */
+.category-popover {
+  display: flex;
+  flex-direction: column;
+  width: min(420px, calc(100vw - 32px));
+  max-height: min(62vh, 540px);
+  padding: 0;
+  background: color-mix(in srgb, var(--app-content) 82%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    0 0 0 0.5px rgb(0 0 0 / 0.06),
+    0 24px 64px -20px rgb(0 0 0 / 0.42);
+  backdrop-filter: saturate(180%) blur(36px);
+  -webkit-backdrop-filter: saturate(180%) blur(36px);
+}
+
+.dark .category-popover {
+  background: color-mix(in srgb, var(--app-content) 78%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    0 0 0 0.5px rgb(255 255 255 / 0.1),
+    0 26px 70px -22px rgb(0 0 0 / 0.8);
+}
+
+.category-popover__header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px 10px;
+  border-bottom: 0.5px solid
+    color-mix(in srgb, var(--app-border) 65%, transparent);
+}
+
+.category-popover__title {
+  color: var(--ink-1);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.category-popover__reset {
+  padding: 2px 8px;
+  border-radius: 9999px;
+  color: var(--ink-3);
+  font-size: 11px;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.category-popover__reset:hover {
+  background: var(--app-chip-hover);
+  color: var(--ink-1);
+}
+
+.category-popover__reset:disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.category-popover__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 2px 8px 10px;
+  scrollbar-width: none;
+}
+
+.category-popover__body::-webkit-scrollbar {
+  display: none;
+}
+
+.category-popover__group {
+  padding-top: 10px;
+}
+
+.category-popover__group + .category-popover__group {
+  margin-top: 2px;
+  border-top: 0.5px solid
+    color-mix(in srgb, var(--app-border) 45%, transparent);
+}
+
+.category-popover__group-title {
+  padding: 0 6px 6px;
+  color: var(--ink-4);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+}
+
+.category-popover__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.category-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--ink-2);
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.category-item:hover {
+  background: var(--app-chip-hover);
+  color: var(--ink-1);
+}
+
+.category-item.is-active {
+  border-color: color-mix(in srgb, var(--apple-blue) 40%, transparent);
+  background: color-mix(in srgb, var(--apple-blue) 18%, transparent);
+  color: var(--apple-blue);
+}
+
 /* ---------- macOS-style sliders (seek bar / volume) ---------- */
 
 /*

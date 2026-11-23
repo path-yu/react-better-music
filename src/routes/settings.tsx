@@ -32,7 +32,6 @@ import {
   DialogHeader,
   DialogTitle,
   Select,
-  Switch,
 } from '@pikoloo/darwin-ui'
 import {
   CACHE_MAX_MB_OPTIONS,
@@ -49,6 +48,7 @@ import {
   SettingsNav,
   type SettingsTab,
 } from '../components/settings/SettingsNav'
+import { ToggleSwitch } from '../components/common/ToggleSwitch'
 import { PlayerStylePicker } from '../components/settings/PlayerStylePicker'
 import { RemoteControlCard } from '../components/settings/RemoteControlCard'
 import { UpdateCard } from '../components/settings/UpdateCard'
@@ -655,14 +655,9 @@ function SettingsPage() {
           </div>
 
           <div className="mt-6">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-[12px] font-medium text-ink-2">
-                <Trans>配色方案</Trans>
-              </p>
-              <span className="text-[11px] text-ink-4">
-                <Trans>点击色点立即切换</Trans>
-              </span>
-            </div>
+            <p className="text-[12px] font-medium text-ink-2">
+              <Trans>配色方案</Trans>
+            </p>
             <div
               className="settings-palette-grid mt-3"
               role="group"
@@ -678,10 +673,10 @@ function SettingsPage() {
                     title={i18n._(option.description)}
                     aria-pressed={selected}
                     onClick={() => setPalette(option.id)}
-                    className={`group flex min-w-0 flex-col items-center gap-2 rounded-[14px] border px-2 py-3 transition-colors ${
+                    className={`group flex min-w-0 flex-col items-center gap-1.5 rounded-[14px] border px-2 py-2 transition-colors ${
                       selected
-                        ? 'border-accent/25 bg-accent/5'
-                        : 'border-transparent hover:bg-black/4 dark:hover:bg-white/5'
+                        ? 'border-accent/30 bg-accent/5'
+                        : 'border-black/5 bg-black/[0.02] hover:bg-black/[0.045] dark:border-white/8 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]'
                     }`}
                   >
                     <span
@@ -744,9 +739,6 @@ function SettingsPage() {
                 <p className="text-[13px] font-medium text-ink-2">
                   <Trans>播放页过渡动画</Trans>
                 </p>
-                <p className="mt-1 text-[11px] leading-relaxed text-ink-3">
-                  <Trans>进入和离开歌曲详情页时使用的动画效果。</Trans>
-                </p>
               </div>
               <Select
                 value={nowPlayingTransition}
@@ -769,10 +761,10 @@ function SettingsPage() {
                   <Trans>窄窗口自动收起侧栏</Trans>
                 </p>
                 <p className="mt-1 max-w-[560px] text-[11px] leading-relaxed text-ink-3">
-                  <Trans>窗口宽度小于 1024px 时把侧栏收成图标栏，给内容留出空间。在窄窗口里手动展开侧栏后，这个开关会自动关闭。</Trans>
+                  <Trans>窗口宽度小于 1024px 时把侧栏收成图标栏；在窄窗口里手动展开后，这个开关会自动关闭。</Trans>
                 </p>
               </div>
-              <Switch
+              <ToggleSwitch
                 checked={sidebarAutoCollapse}
                 onChange={setSidebarAutoCollapse}
                 aria-label={i18n._(msg`窄窗口自动收起侧栏`)}
@@ -784,9 +776,6 @@ function SettingsPage() {
                 <p className="flex items-center gap-2 text-[13px] font-medium text-ink-2">
                   <Languages className="h-3.5 w-3.5 text-accent" />
                   <span>语言 / Language</span>
-                </p>
-                <p className="mt-1 text-[11px] leading-relaxed text-ink-3">
-                  <Trans>切换界面语言，语言资源加载后立即生效。</Trans>
                 </p>
               </div>
               <Select
@@ -811,20 +800,12 @@ function SettingsPage() {
                 <Headphones className="h-4 w-4 text-accent" />
                 <Trans>播放</Trans>
               </h2>
-              <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-ink-3">
-                <Trans>
-                  调整歌曲详情页的唱片样式，并让不同歌曲以更接近的响度播放。
-                </Trans>
-              </p>
             </div>
           </div>
 
           <div className="mt-5">
             <p className="text-[13px] font-medium text-ink-2">
               <Trans>播放器样式</Trans>
-            </p>
-            <p className="mt-1 max-w-[560px] text-[11px] leading-relaxed text-ink-3">
-              <Trans>选择歌曲详情页的封面呈现方式，立即生效。</Trans>
             </p>
             <PlayerStylePicker />
           </div>
@@ -840,7 +821,7 @@ function SettingsPage() {
                 </Trans>
               </p>
             </div>
-            <Switch
+            <ToggleSwitch
               checked={volumeNormalization}
               onChange={setVolumeNormalization}
               aria-label={i18n._(msg`音量均衡`)}
@@ -853,12 +834,10 @@ function SettingsPage() {
                 <Trans>进度条显示剩余时间</Trans>
               </p>
               <p className="mt-1 max-w-[560px] text-[11px] leading-relaxed text-ink-3">
-                <Trans>
-                  开启后，底部播放栏和歌曲详情页的进度条右侧显示剩余时间；关闭则显示总时长。也可以直接点击右侧的时间切换。
-                </Trans>
+                <Trans>也可以直接点击进度条右侧的时间切换。</Trans>
               </p>
             </div>
-            <Switch
+            <ToggleSwitch
               checked={showRemainingTime}
               onChange={setShowRemainingTime}
               aria-label={i18n._(msg`进度条显示剩余时间`)}
@@ -985,11 +964,6 @@ function SettingsPage() {
                       {spleeterStatus?.installRoot ||
                         i18n._(msg`正在读取…`)}
                     </p>
-                    <p className="mt-0.5 text-[11px] text-ink-4 dark:text-white/35">
-                      <Trans>
-                        默认安装到本地数据目录下的 qimiao-spleeter-runtime（使用短路径以兼容 TensorFlow）
-                      </Trans>
-                    </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-1.5">
                     {spleeterStatus?.customInstallRoot ? (
@@ -1025,11 +999,6 @@ function SettingsPage() {
                     >
                       {spleeterStatus?.libraryRoot ||
                         i18n._(msg`正在读取…`)}
-                    </p>
-                    <p className="mt-0.5 text-[11px] text-ink-4 dark:text-white/35">
-                      <Trans>
-                        每首歌生成独立文件夹，默认在应用目录下的 spleeter-library
-                      </Trans>
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-1.5">
@@ -1095,25 +1064,6 @@ function SettingsPage() {
                   />
                 </label>
               </div>
-              <p className="mt-2 text-[11px] leading-relaxed text-ink-4 dark:text-white/40">
-                {spleeterCodec === 'wav'
-                  ? i18n._(msg`WAV 为未压缩 PCM，两条音轨约 70–100 MB/首。`)
-                  : spleeterCodec === 'flac'
-                    ? i18n._(msg`FLAC 为无损压缩，两条音轨约 40–60 MB/首。`)
-                    : i18n._(msg`有损压缩，两条音轨合计约 6–14 MB/首。`)}
-                {' '}
-                <Trans>修改后仅影响之后新生成的伴奏，已缓存音轨不会重新编码。</Trans>
-              </p>
-
-              {spleeterStatus?.venv ? (
-                <p
-                  className="mt-3 truncate rounded-[10px] bg-black/[0.035] px-2.5 py-1.5 text-[11px] text-ink-3 dark:bg-white/[0.045] dark:text-white/50"
-                  title={spleeterStatus.venv}
-                >
-                  {spleeterStatus.venv}
-                </p>
-              ) : null}
-
               {spleeterStatus?.install?.installing ? (
                 <div className="mt-3">
                   <div className="mb-1.5 flex items-center justify-between text-[11px] text-ink-3 dark:text-white/50">
@@ -1133,13 +1083,7 @@ function SettingsPage() {
                 <p className="mt-3 text-[11px] text-amber-700">
                   {spleeterError || spleeterStatus?.install?.error}
                 </p>
-              ) : spleeterStatus?.available ? (
-                <p className="mt-3 text-[11px] text-emerald-700">
-                  <Trans>
-                    智能模式可在歌曲详情页的心动模式按钮旁开启。生成过的伴奏会自动缓存。
-                  </Trans>
-                </p>
-              ) : (
+              ) : spleeterStatus?.available ? null : (
                 <p className="mt-3 text-[11px] text-ink-3">
                   {spleeterStatus?.note || i18n._(msg`正在检查运行环境…`)}
                 </p>
@@ -1190,8 +1134,7 @@ function SettingsPage() {
               </h2>
               <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-ink-3">
                 <Trans>
-                  播放过的歌曲会转码为 Opus 并缓存到本地，用于加速之后的播放。修改品质只影响之后缓存的新歌曲，
-                  已缓存的歌曲保持原品质。
+                  播放过的歌曲会转码为 Opus 缓存到本地；修改品质只影响之后缓存的新歌曲，已缓存的歌曲保持原品质。
                 </Trans>
               </p>
             </div>
@@ -1337,7 +1280,7 @@ function SettingsPage() {
                 </Trans>
               </p>
             </div>
-            <Switch
+            <ToggleSwitch
               checked={autoReplaceVipSource}
               onChange={setAutoReplaceVipSource}
               aria-label={i18n._(msg`VIP 歌曲自动替换音源`)}
@@ -1358,7 +1301,7 @@ function SettingsPage() {
                 </Trans>
               </p>
             </div>
-            <Switch
+            <ToggleSwitch
               checked={autoScrobble}
               onChange={setAutoScrobble}
               aria-label={i18n._(msg`听歌打卡`)}
@@ -1381,7 +1324,7 @@ function SettingsPage() {
                   </Trans>
                 </p>
               </div>
-              <Switch
+              <ToggleSwitch
                 checked={disableDevTools}
                 onChange={handleToggleDevTools}
                 aria-label={i18n._(msg`禁用开发者工具`)}

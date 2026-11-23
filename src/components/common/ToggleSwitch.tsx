@@ -31,7 +31,9 @@ export function SwitchTrack({
       aria-hidden="true"
       className={cn(
         'flex h-5 w-9 shrink-0 items-center rounded-full px-0.5 transition-colors duration-200 motion-reduce:transition-none',
-        checked ? 'bg-emerald-500' : 'bg-zinc-600',
+        // Follow the active palette accent instead of a fixed green; the off
+        // track uses the theme's strong border tone so it works in both themes.
+        checked ? 'bg-accent' : 'bg-[var(--app-border-strong)]',
         className,
       )}
     >
@@ -78,7 +80,7 @@ export function ToggleSwitch({
         />
         <SwitchTrack
           checked={checked}
-          className="peer-focus-visible:ring-2 peer-focus-visible:ring-blue-500/50"
+          className="peer-focus-visible:ring-2 peer-focus-visible:ring-accent/50"
         />
       </span>
     </label>

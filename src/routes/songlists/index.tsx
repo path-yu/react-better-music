@@ -35,6 +35,66 @@ export const Route = createFileRoute('/songlists/')({
   component: SonglistsPage,
 })
 
+/**
+ * `/playlist/highquality/tags` returns one flat list. The picker groups it the
+ * way a desktop menu would: language/region, genre, then mood/scene/era. Tags
+ * the API adds later default to the genre group instead of disappearing.
+ */
+const CATEGORY_GROUPS = [
+  { key: 'language', label: msg`语种` },
+  { key: 'style', label: msg`流派与风格` },
+  { key: 'scene', label: msg`场景与情绪` },
+] as const
+
+const LANGUAGE_TAGS = new Set([
+  '华语',
+  '欧美',
+  '韩语',
+  '日语',
+  '粤语',
+  '小语种',
+])
+
+const MOOD_TAGS = new Set([
+  '清晨',
+  '夜晚',
+  '学习',
+  '工作',
+  '午休',
+  '下午茶',
+  '地铁',
+  '驾车',
+  '运动',
+  '旅行',
+  '散步',
+  '酒吧',
+  '怀旧',
+  '清新',
+  '浪漫',
+  '伤感',
+  '治愈',
+  '放松',
+  '孤独',
+  '感动',
+  '兴奋',
+  '快乐',
+  '安静',
+  '思念',
+  '影视原声',
+  '综艺',
+  '儿童',
+  '校园',
+  '游戏',
+  '70后',
+  '80后',
+  '90后',
+  '00后',
+  '网络歌曲',
+  'KTV',
+  '经典',
+  '翻唱',
+])
+
 function SonglistsPage() {
   const { i18n } = useLingui()
   useDocumentTitle(i18n._(msg`推荐歌单`))
@@ -142,6 +202,32 @@ function SonglistsPage() {
     })
   }, [playlists, sortOrder])
 
+  const tagLabel = (tag: string) =>
+    tag === '全部'
+      ? i18n._(msg`全部`)
+      : TAG_LABELS[tag]
+        ? i18n._(TAG_LABELS[tag])
+        : tag
+
+  const tagGroups = useMemo(() => {
+    const buckets = {
+      language: [] as string[],
+      style: [] as string[],
+      scene: [] as string[],
+    }
+    for (const tag of tags) {
+      if (tag === '全部') continue
+      if (LANGUAGE_TAGS.has(tag)) buckets.language.push(tag)
+      else if (MOOD_TAGS.has(tag)) buckets.scene.push(tag)
+      else buckets.style.push(tag)
+    }
+    return CATEGORY_GROUPS.map((group) => ({
+      key: group.key,
+      label: group.label,
+      tags: buckets[group.key],
+    })).filter((group) => group.tags.length > 0)
+  }, [tags])
+
   const loadMore = async () => {
     const last = getArrLast(playlists)
     if (!last || loadingMore) return
@@ -198,8 +284,7 @@ function SonglistsPage() {
               side="bottom"
               align="end"
               sideOffset={8}
-              glass
-              className="w-44 p-1.5"
+              className="app-popover tag-sort-popover"
             >
               {(
                 [
@@ -270,11 +355,7 @@ function SonglistsPage() {
                 aria-pressed={activeTag === tag}
                 className={cn('chip', activeTag === tag && 'chip--selected')}
               >
-                {tag === '全部'
-                  ? i18n._(msg`全部`)
-                  : TAG_LABELS[tag]
-                    ? i18n._(TAG_LABELS[tag])
-                    : tag}
+                {tagLabel(tag)}
               </button>
             ))}
           </div>
@@ -308,27 +389,44 @@ function SonglistsPage() {
               side="bottom"
               align="end"
               sideOffset={8}
-              glass
-              className="w-[min(380px,calc(100vw-24px))] max-w-[calc(100vw-24px)] p-3"
+              className="app-popover category-popover"
             >
-              <p className="text-[11px] text-ink-4">
-                <Trans>全部分类</Trans>
-              </p>
-              <div className="mt-2 flex max-h-[300px] flex-wrap gap-1.5 overflow-y-auto">
-                {tags.map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => selectTag(tag, true)}
-                    aria-pressed={activeTag === tag}
-                    className={cn('chip', activeTag === tag && 'chip--selected')}
-                  >
-                    {tag === '全部'
-                      ? i18n._(msg`全部`)
-                      : TAG_LABELS[tag]
-                        ? i18n._(TAG_LABELS[tag])
-                        : tag}
-                  </button>
+              <div className="category-popover__header">
+                <span className="category-popover__title">
+                  <Trans>全部分类</Trans>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => selectTag('全部', true)}
+                  disabled={activeTag === '全部'}
+                  className="category-popover__reset"
+                >
+                  <Trans>重置</Trans>
+                </button>
+              </div>
+              <div className="category-popover__body">
+                {tagGroups.map((group) => (
+                  <section key={group.key} className="category-popover__group">
+                    <p className="category-popover__group-title">
+                      {i18n._(group.label)}
+                    </p>
+                    <div className="category-popover__grid">
+                      {group.tags.map((tag) => (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => selectTag(tag, true)}
+                          aria-pressed={activeTag === tag}
+                          className={cn(
+                            'category-item',
+                            activeTag === tag && 'is-active',
+                          )}
+                        >
+                          {tagLabel(tag)}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
                 ))}
               </div>
             </PopoverContent>
