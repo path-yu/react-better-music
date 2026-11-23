@@ -174,6 +174,7 @@ function MvDetailPage() {
                 key={videoUrl}
                 src={videoUrl}
                 poster={resizedImageUrl(detail.cover, '640y360') ?? undefined}
+                autoPlay
                 onPlay={handleVideoPlay}
                 onEnded={resumeMusic}
                 onError={() => setVideoUrl('')}

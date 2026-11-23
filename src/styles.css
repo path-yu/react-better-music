@@ -350,7 +350,7 @@ input[type='search']::-webkit-search-decoration {
    * without this they render as squircles, a pill turning into a near-square.
    * designTokens.test.ts fails when a new one is missing here.
    */
-  :where(
+  /* :where(
       .arm-rest,
       .cassette-screw,
       .chip,
@@ -387,7 +387,7 @@ input[type='search']::-webkit-search-decoration {
       .volume-slider__track
     ) {
     corner-shape: round;
-  }
+  } */
 
   :where(
       .retro-reel,
