@@ -2167,6 +2167,26 @@ html.desktop .app-window {
   outline-offset: -2px;
 }
 
+/*
+ * Queue view switch (list / grid). The hairline lives here because
+ * `border-white/8` did not survive the bundled utility order and the pill
+ * ended up with the browser's default light border, which read as a hard edge
+ * on the dark pane.
+ */
+.queue-view-toggle {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/*
+ * Queue covers / rows scrolling under the search row. Only applied while
+ * scrolled, so the first row stays crisp at rest; once scrolling starts the
+ * top edge fades instead of being sliced flush against the search field.
+ */
+.np-queue-scroll.is-scrolled {
+  mask-image: linear-gradient(to bottom, transparent 0, #000 18px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 18px);
+}
+
 /* Queue pane ("待播清单"): a compact, virtualized list of what plays next. */
 .np-queue-row {
   position: relative;

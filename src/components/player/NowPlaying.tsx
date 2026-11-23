@@ -200,6 +200,10 @@ export function NowPlaying() {
   const [queueWidth, setQueueWidth] = useState(0)
   const [queueView, setQueueView] = useState<QueueView>('list')
   const [queueSearch, setQueueSearch] = useState('')
+  // Fade the top edge of the scrolling queue only once it is scrolled, so the
+  // first row stays crisp while the covers no longer get sliced by the search
+  // row above.
+  const [queueScrolled, setQueueScrolled] = useState(false)
   const [draggedQueueIndex, setDraggedQueueIndex] = useState<number | null>(
     null,
   )
@@ -1568,7 +1572,7 @@ export function NowPlaying() {
                 )
               ) : panel === 'queue' ? (
                 <div className="relative flex h-full min-h-0 flex-col">
-                  <div className="flex shrink-0 items-center gap-2 px-2 pt-2">
+                  <div className="flex shrink-0 items-center gap-2 px-2 pb-2 pt-2">
                     <div className="relative min-w-0 flex-1">
                       <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/35" />
                       <input
@@ -1600,19 +1604,32 @@ export function NowPlaying() {
                     <div
                       role="group"
                       aria-label={i18n._(msg`队列视图`)}
-                      className="flex shrink-0 items-center rounded-full bg-white/8 p-0.5"
+                      // Same 32px height and pill radius as the search field
+                      // next to it; the thumb is a separate layer so it can
+                      // slide and carry its own shadow without touching icons.
+                      className="queue-view-toggle relative flex h-8 shrink-0 items-center rounded-full bg-white/6 p-1 backdrop-blur-md"
                     >
+                      <span
+                        aria-hidden="true"
+                        className="absolute left-1 top-1 h-6 w-6 rounded-full bg-white/16 shadow-[0_1px_4px_rgba(0,0,0,0.28)] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                        style={{
+                          transform: `translateX(${queueView === 'grid' ? '24px' : '0px'})`,
+                        }}
+                      />
                       <button
                         type="button"
                         aria-label={i18n._(msg`列表视图`)}
                         title={i18n._(msg`列表视图`)}
                         aria-pressed={queueView === 'list'}
-                        onClick={() => setQueueView('list')}
+                        onClick={() => {
+                          setQueueView('list')
+                          setQueueScrolled(false)
+                        }}
                         className={cn(
-                          'flex h-7 w-7 items-center justify-center rounded-full transition-colors',
+                          'relative z-10 flex h-6 w-6 items-center justify-center rounded-full transition-colors duration-150',
                           queueView === 'list'
-                            ? 'bg-white/18 text-white'
-                            : 'text-white/45 hover:bg-white/10 hover:text-white/80',
+                            ? 'text-white'
+                            : 'text-white/65 hover:text-white/90',
                         )}
                       >
                         <List className="h-3.5 w-3.5" />
@@ -1622,12 +1639,15 @@ export function NowPlaying() {
                         aria-label={i18n._(msg`网格视图`)}
                         title={i18n._(msg`网格视图`)}
                         aria-pressed={queueView === 'grid'}
-                        onClick={() => setQueueView('grid')}
+                        onClick={() => {
+                          setQueueView('grid')
+                          setQueueScrolled(false)
+                        }}
                         className={cn(
-                          'flex h-7 w-7 items-center justify-center rounded-full transition-colors',
+                          'relative z-10 flex h-6 w-6 items-center justify-center rounded-full transition-colors duration-150',
                           queueView === 'grid'
-                            ? 'bg-white/18 text-white'
-                            : 'text-white/45 hover:bg-white/10 hover:text-white/80',
+                            ? 'text-white'
+                            : 'text-white/65 hover:text-white/90',
                         )}
                       >
                         <LayoutGrid className="h-3.5 w-3.5" />
@@ -1639,7 +1659,13 @@ export function NowPlaying() {
                     <>
                   <div
                     ref={queueListRef}
-                    className="min-h-0 flex-1 overflow-y-auto px-2 pb-16 pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    onScroll={(event) =>
+                      setQueueScrolled(event.currentTarget.scrollTop > 2)
+                    }
+                    className={cn(
+                      'np-queue-scroll min-h-0 flex-1 overflow-y-auto px-2 pb-16 pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+                      queueScrolled && 'is-scrolled',
+                    )}
                   >
                     {queue.length ? (
                       queueEntries.length ? (
@@ -1892,7 +1918,13 @@ export function NowPlaying() {
                   ) : (
                     <div
                       ref={queueScrollRef}
-                      className="min-h-0 flex-1 overflow-y-auto px-2 pb-8 pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                      onScroll={(event) =>
+                        setQueueScrolled(event.currentTarget.scrollTop > 2)
+                      }
+                      className={cn(
+                        'np-queue-scroll min-h-0 flex-1 overflow-y-auto px-2 pb-8 pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+                        queueScrolled && 'is-scrolled',
+                      )}
                     >
                       {queue.length ? (
                         queueEntries.length ? (
