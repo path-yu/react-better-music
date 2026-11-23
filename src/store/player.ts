@@ -165,14 +165,16 @@ async function hasVipPlaybackAccess(song: Song) {
 async function resolveSongSource(song: Song): Promise<SongSource> {
   const level = useSettingsStore.getState().playLevel
   const autoReplace = useSettingsStore.getState().autoReplaceVipSource
+  const preferUnblock = useSettingsStore.getState().preferUnblockSource
   const preferredSource = useSettingsStore.getState().preferredSource
   const requestedSource = preferredSource === 'auto' ? undefined : preferredSource
   const vipAccess = await hasVipPlaybackAccess(song)
 
   // Cache the match attempt so a VIP-first lookup and a trial fallback don't
   // request the same matcher twice in one resolution.
-  // NetEase's own recommendation is preferred over the third-party matcher:
-  // it is the same catalogue/edition and usually keeps lyrics and timing sane.
+  // NetEase's own recommendation reuses the same catalogue/edition and usually
+  // keeps lyrics and timing sane, so it is the fallback order by default and
+  // the preferred one when `preferUnblockSource` is off.
   let alternativePromise: Promise<SongSource | null> | null = null
   const getAlternative = () => {
     if (!alternativePromise) {
@@ -214,10 +216,7 @@ async function resolveSongSource(song: Song): Promise<SongSource> {
     }
     return matchedPromise
   }
-  const autoMatchedSource = async (): Promise<SongSource | null> => {
-    if (!autoReplace) return null
-    const alternative = await getAlternative()
-    if (alternative) return alternative
+  const matchedSource = async (): Promise<SongSource | null> => {
     const matched = await getMatched()
     return matched.url
       ? {
@@ -228,6 +227,23 @@ async function resolveSongSource(song: Song): Promise<SongSource> {
           matchedSource: matched.source || requestedSource,
         }
       : null
+  }
+  /**
+   * Automatic replacement, honouring the user's endpoint order: the matcher
+   * first by default (`preferUnblockSource`, on out of the box) and the
+   * official "other playable edition" as its fallback; turning the switch off
+   * restores the recommendation-first order.
+   */
+  const autoMatchedSource = async (): Promise<SongSource | null> => {
+    if (!autoReplace) return null
+    if (preferUnblock) {
+      const matched = await matchedSource()
+      if (matched) return matched
+      return getAlternative()
+    }
+    const alternative = await getAlternative()
+    if (alternative) return alternative
+    return matchedSource()
   }
 
   // Only true VIP tracks get the matcher before the official lookup. `fee`
@@ -257,18 +273,16 @@ async function resolveSongSource(song: Song): Promise<SongSource> {
     urlError = error
   }
 
-  // No official URL at all. NetEase's recommended playable edition is not a
-  // third-party source match, so try it even when `autoReplaceVipSource` is
-  // disabled; only `/song/url/match` is gated by that setting.
-  const alternative = await getAlternative()
-  if (alternative) return alternative
-
-  // If automatic matching is enabled, the external provider remains a second
-  // fallback after the official recommendation.
+  // No official URL at all. Automatic matching (when enabled) applies the
+  // user's endpoint order; the official recommended edition is still tried
+  // when it is off, because only `/song/url/match` is gated by that setting.
   if (!vipAccess && autoReplace) {
     const matched = await autoMatchedSource()
     if (matched) return matched
   }
+
+  const alternative = await getAlternative()
+  if (alternative) return alternative
 
   const hint = copyrightHint(song)
   if (!hint) {
@@ -305,6 +319,22 @@ async function resolveSongSource(song: Song): Promise<SongSource> {
 
 /** Songs already announced as matched to another provider (one toast each). */
 const unblockAnnounced = new Set<number>()
+
+/**
+ * A playlist full of gray/VIP tracks would otherwise show one toast per track.
+ * Keep the notice to the first match of a window; the player bar's source
+ * picker already says which provider is playing for the rest.
+ */
+const MATCH_NOTICE_COOLDOWN = 60_000
+let matchedNoticeAt = 0
+
+/** Show the "matched another source" notice unless it was just shown. */
+function announceMatch(show: () => void) {
+  const now = Date.now()
+  if (now - matchedNoticeAt < MATCH_NOTICE_COOLDOWN) return
+  matchedNoticeAt = now
+  show()
+}
 
 /**
  * `/audio/proxy` only accepts NetEase CDN hosts (enforced in server/server.js),
@@ -954,19 +984,22 @@ export const usePlayerStore = create<PlayerState>()(
             // Video mode has no audible audio source, so the source-match
             // notice would be noise over the MV. Keep it for audio playback.
             if (!useVideoPlaybackStore.getState().active) {
-              toast.info(
-                effectiveSong.fee === 0
-                  ? i18n._(msg`「${effectiveSong.name}」暂无官方音源，已为你匹配其他音源播放`)
-                  : i18n._(msg`「${effectiveSong.name}」VIP 歌曲已为你匹配其他音源播放`),
+              announceMatch(() =>
+                toast.info(
+                  effectiveSong.fee === 0
+                    ? i18n._(msg`「${effectiveSong.name}」暂无官方音源，已为你匹配其他音源播放`)
+                    : i18n._(msg`「${effectiveSong.name}」VIP 歌曲已为你匹配其他音源播放`),
+                ),
               )
             }
-          } else if (
-            alternativeVersion &&
-            !unblockAnnounced.has(song.id)
-          ) {
+          } else if (alternativeVersion && !unblockAnnounced.has(song.id)) {
             unblockAnnounced.add(song.id)
             if (!useVideoPlaybackStore.getState().active) {
-              toast.info(i18n._(msg`「${effectiveSong.name}」已为你切换到其他可播放版本`))
+              announceMatch(() =>
+                toast.info(
+                  i18n._(msg`「${effectiveSong.name}」已为你切换到其他可播放版本`),
+                ),
+              )
             }
           }
           // Stream through the local API: the WebView cannot load the CDN

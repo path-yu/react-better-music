@@ -153,6 +153,11 @@ interface SettingsState {
   disableDevTools: boolean
   /** Prefer a matched provider for VIP tracks (manual switch is always available). */
   autoReplaceVipSource: boolean
+  /**
+   * With `autoReplaceVipSource` on, ask `/song/url/match` before the official
+   * "other playable edition" recommendation (`/song/copyright/rcmd`).
+   */
+  preferUnblockSource: boolean
   /** Opt-in: report one completed listen to NetEase after real playback. */
   autoScrobble: boolean
   /** UI language; the source catalog is Simplified Chinese. */
@@ -185,6 +190,7 @@ interface SettingsState {
   setSpleeterProxyUrl: (value: string) => void
   setDisableDevTools: (value: boolean) => void
   setAutoReplaceVipSource: (value: boolean) => void
+  setPreferUnblockSource: (value: boolean) => void
   setAutoScrobble: (value: boolean) => void
   setLocale: (value: Locale) => void
 }
@@ -220,6 +226,10 @@ export const useSettingsStore = create<SettingsState>()(
       spleeterProxyUrl: '',
       disableDevTools: false,
       autoReplaceVipSource: false,
+      // Matching prefers the UnblockNeteaseMusic endpoint; the official edition
+      // recommendation is only the fallback. Existing installs keep this too,
+      // because zustand merges the persisted state over these defaults.
+      preferUnblockSource: true,
       // Reporting private listening logs is opt-in and never automatic.
       autoScrobble: false,
       locale: defaultLocale,
@@ -285,6 +295,8 @@ export const useSettingsStore = create<SettingsState>()(
         set({ spleeterProxyUrl: spleeterProxyUrl.trim() }),
       setDisableDevTools: (disableDevTools) => set({ disableDevTools }),
       setAutoReplaceVipSource: (autoReplaceVipSource) => set({ autoReplaceVipSource }),
+      setPreferUnblockSource: (preferUnblockSource) =>
+        set({ preferUnblockSource }),
       setAutoScrobble: (autoScrobble) => set({ autoScrobble }),
       setLocale: (locale) => {
         activateLocale(locale)

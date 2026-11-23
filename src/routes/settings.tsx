@@ -31,6 +31,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  Input,
   Select,
 } from '@pikoloo/darwin-ui'
 import {
@@ -85,7 +86,7 @@ import {
 import { getDevToolsPolicy, setDevToolsPolicy } from '../lib/desktopBridge'
 import { clearCachedStems } from '../lib/smartStemCache'
 import { locales, type Locale } from '../i18n'
-import { formatDate, formatDuration } from '../lib/format'
+import { formatDate, formatDuration, matchesKeyword } from '../lib/format'
 import { useDocumentTitle } from '../lib/title'
 import { toast } from '../lib/toast'
 
@@ -170,6 +171,12 @@ function SettingsPage() {
   const setAutoReplaceVipSource = useSettingsStore(
     (state) => state.setAutoReplaceVipSource,
   )
+  const preferUnblockSource = useSettingsStore(
+    (state) => state.preferUnblockSource,
+  )
+  const setPreferUnblockSource = useSettingsStore(
+    (state) => state.setPreferUnblockSource,
+  )
   const locale = useSettingsStore((state) => state.locale)
   const setLocale = useSettingsStore((state) => state.setLocale)
   const [activeTab, setActiveTab] = useState<SettingsTab>(search.tab)
@@ -178,6 +185,7 @@ function SettingsPage() {
   }, [search.tab])
   const [settingsQuery, setSettingsQuery] = useState('')
   const [items, setItems] = useState<CachedAudioItem[]>([])
+  const [cacheQuery, setCacheQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const settingsPanelsRef = useRef<HTMLDivElement>(null)
   const [selected, setSelected] = useState<number[]>([])
@@ -437,14 +445,30 @@ function SettingsPage() {
     }
   }, [])
 
+  // The cache list can hold hundreds of entries; filter by song and artist so a
+  // single track stays findable without scanning the whole list.
+  const filteredItems = useMemo(() => {
+    if (!cacheQuery.trim()) return items
+    return items.filter((item) =>
+      matchesKeyword(cacheQuery, item.name, item.artists),
+    )
+  }, [cacheQuery, items])
+
   const totalBytes = useMemo(
-    () => items.reduce((total, item) => total + item.size, 0),
-    [items],
+    () => filteredItems.reduce((total, item) => total + item.size, 0),
+    [filteredItems],
   )
-  const allSelected = items.length > 0 && selected.length === items.length
+  const allSelected =
+    filteredItems.length > 0 &&
+    filteredItems.every((item) => selected.includes(item.id))
 
   const toggleAll = () => {
-    setSelected(allSelected ? [] : items.map((item) => item.id))
+    const visibleIds = filteredItems.map((item) => item.id)
+    if (allSelected) {
+      setSelected((prev) => prev.filter((id) => !visibleIds.includes(id)))
+      return
+    }
+    setSelected((prev) => Array.from(new Set([...prev, ...visibleIds])))
   }
 
   const toggleOne = (id: number) => {
@@ -572,8 +596,8 @@ function SettingsPage() {
   }
 
   const handlePlayAll = async () => {
-    if (!items.length) return
-    const songs = items.map((item) => ({
+    if (!filteredItems.length) return
+    const songs = filteredItems.map((item) => ({
       id: item.id,
       name: item.name,
       ar: [],
@@ -717,11 +741,11 @@ function SettingsPage() {
                 <p className="text-[13px] font-medium text-ink-2">
                   <Trans>播放页背景</Trans>
                 </p>
-                <p className="mt-1 max-w-[560px] text-[11px] leading-relaxed text-ink-3">
+                {/* <p className="mt-1 max-w-[560px] text-[11px] leading-relaxed text-ink-3">
                   <Trans>
                     CSS 渐变最省电；WebGL 雾化用 GPU 绘制封面色彩雾气；Apple Music 是把封面扭曲、模糊后缓慢旋转的流动背景。后两种不支持 WebGL 时自动回退到 CSS 渐变。
                   </Trans>
-                </p>
+                </p> */}
               </div>
               <Select
                 value={backdropStyle}
@@ -760,9 +784,7 @@ function SettingsPage() {
                 <p className="text-[13px] font-medium text-ink-2">
                   <Trans>窄窗口自动收起侧栏</Trans>
                 </p>
-                <p className="mt-1 max-w-[560px] text-[11px] leading-relaxed text-ink-3">
-                  <Trans>窗口宽度小于 1024px 时把侧栏收成图标栏；在窄窗口里手动展开后，这个开关会自动关闭。</Trans>
-                </p>
+              
               </div>
               <ToggleSwitch
                 checked={sidebarAutoCollapse}
@@ -815,7 +837,7 @@ function SettingsPage() {
               <p className="text-[13px] font-medium text-ink-2">
                 <Trans>音量均衡</Trans>
               </p>
-              <p className="mt-1 max-w-[560px] text-[11px] leading-relaxed text-ink-3">
+              <p className="mt-1  text-[11px] leading-relaxed text-ink-3">
                 <Trans>
                   实时分析播放响度，自动压低过响的部分并补足偏轻的歌曲，减少切歌时的音量跳变。部分设备或受保护音源可能无法分析。
                 </Trans>
@@ -852,11 +874,7 @@ function SettingsPage() {
                   <WandSparkles className="h-4 w-4 text-accent" />
                   <Trans>智能伴奏 · Spleeter</Trans>
                 </h2>
-                <p className="mt-1 max-w-[620px] text-[11px] leading-relaxed text-ink-3 dark:text-white/45">
-                  <Trans>
-                    安装本地 Spleeter 后，可在歌曲详情页生成并切换原曲、人声或伴奏，结果会缓存到本机。
-                  </Trans>
-                </p>
+               
               </div>
               <span
                 className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${
@@ -1130,11 +1148,11 @@ function SettingsPage() {
                 <HardDrive className="h-4 w-4 text-accent" />
                 <Trans>音乐缓存</Trans>
               </h2>
-              <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-ink-3">
+              {/* <p className="mt-1 max-w-[560px] text-[12px] leading-relaxed text-ink-3">
                 <Trans>
                   播放过的歌曲会转码为 Opus 缓存到本地；修改品质只影响之后缓存的新歌曲，已缓存的歌曲保持原品质。
                 </Trans>
-              </p>
+              </p> */}
             </div>
             <button
               type="button"
@@ -1283,6 +1301,26 @@ function SettingsPage() {
               aria-label={i18n._(msg`VIP 歌曲自动替换音源`)}
             />
           </div>
+
+          {autoReplaceVipSource ? (
+            <div className="mt-5 flex flex-col gap-3 border-t settings-divider pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-[13px] font-medium text-ink-2">
+                  <Trans>优先调用解灰接口</Trans>
+                </p>
+                <p className="mt-1 max-w-[720px] text-[11px] leading-relaxed text-ink-3">
+                  <Trans>
+                    先请求 /song/url/match，没有可用结果时再尝试官方推荐的其他可播放版本；关闭后顺序相反。
+                  </Trans>
+                </p>
+              </div>
+              <ToggleSwitch
+                checked={preferUnblockSource}
+                onChange={setPreferUnblockSource}
+                aria-label={i18n._(msg`优先调用解灰接口`)}
+              />
+            </div>
+          ) : null}
         </section>
 
         <section className="apple-card p-6" data-settings-section="playback">
@@ -1341,7 +1379,7 @@ function SettingsPage() {
         {desktop && import.meta.env.MODE !== 'tauri' ? <RemoteControlCard /> : null}
 
         <section className="apple-card overflow-hidden" data-settings-section="cache">
-          <div className="flex items-center justify-between gap-3 border-b settings-divider px-6 py-4">
+          <div className="border-b settings-divider px-6 py-4">
             <div>
               <h2 className="flex items-center gap-2 text-[15px] font-semibold text-ink-1">
                 <ListMusic className="h-4 w-4 text-accent" />
@@ -1352,41 +1390,55 @@ function SettingsPage() {
                   <Trans>正在读取缓存…</Trans>
                 ) : (
                   <Trans>
-                    {items.length} 首 · {formatBytes(totalBytes)}
+                    {filteredItems.length} 首 · {formatBytes(totalBytes)}
                   </Trans>
                 )}
               </p>
             </div>
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <Button
-                variant="secondary"
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+              <Input.Search
+                value={cacheQuery}
+                onChange={(event) => setCacheQuery(event.target.value)}
+                placeholder={i18n._(msg`搜索缓存歌曲`)}
+                aria-label={i18n._(msg`搜索缓存歌曲`)}
                 size="sm"
-                leftIcon={<Play className="h-3.5 w-3.5" />}
-                disabled={!items.length || loading || downloading}
-                onClick={() => void handlePlayAll()}
-              >
-                <Trans>播放全部</Trans>
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                leftIcon={<Download className="h-3.5 w-3.5" />}
-                loading={downloading}
-                disabled={!selected.length || loading}
-                onClick={() => void handleDownloadSelected()}
-              >
-                {selected.length ? (
-                  <Trans>下载选中 ({selected.length})</Trans>
-                ) : (
-                  <Trans>下载选中</Trans>
-                )}
-              </Button>
+                className="w-[220px] rounded-full text-[12px]"
+              />
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  leftIcon={<Play className="h-3.5 w-3.5" />}
+                  disabled={!filteredItems.length || loading || downloading}
+                  onClick={() => void handlePlayAll()}
+                >
+                  <Trans>播放全部</Trans>
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  leftIcon={<Download className="h-3.5 w-3.5" />}
+                  loading={downloading}
+                  disabled={!selected.length || loading}
+                  onClick={() => void handleDownloadSelected()}
+                >
+                  {selected.length ? (
+                    <Trans>下载选中 ({selected.length})</Trans>
+                  ) : (
+                    <Trans>下载选中</Trans>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
 
           {!loading && items.length === 0 ? (
             <div className="px-6 py-12 text-center text-[12px] text-ink-4">
               <Trans>暂无缓存音乐，播放歌曲后会自动缓存</Trans>
+            </div>
+          ) : !loading && filteredItems.length === 0 ? (
+            <div className="px-6 py-12 text-center text-[12px] text-ink-4">
+              <Trans>没有匹配的缓存歌曲</Trans>
             </div>
           ) : (
             <>
@@ -1395,7 +1447,7 @@ function SettingsPage() {
                   type="checkbox"
                   aria-label={i18n._(msg`全选`)}
                   checked={allSelected}
-                  disabled={!items.length || loading}
+                  disabled={!filteredItems.length || loading}
                   onChange={toggleAll}
                   className="h-3.5 w-3.5 accent-accent"
                 />
@@ -1408,7 +1460,7 @@ function SettingsPage() {
               </div>
 
               <ul className="max-h-[min(46vh,360px)] overflow-y-auto overscroll-contain [scrollbar-width:thin]">
-                {items.map((item) => (
+                {filteredItems.map((item) => (
                   <li
                     key={item.id}
                     className="flex items-center gap-3 border-b settings-divider px-6 py-2.5 last:border-b-0 hover:bg-black/[0.02]"
