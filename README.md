@@ -12,25 +12,41 @@ A macOS-style third-party NetEase Cloud Music client rewritten with React 19 + T
 | --- | --- |
 | ![Discover](assets/screenshots/01-home.png) | ![Immersive player](assets/screenshots/06-now-playing.png) |
 
+| Immersive player · WebGL backdrop | Immersive player · CSS backdrop |
+| --- | --- |
+| ![WebGL backdrop](assets/screenshots/06-now-playing-webgl.png) | ![CSS backdrop](assets/screenshots/06-now-playing-webgl-css.png) |
+
+| Immersive player · Comments | Immersive player · Play queue |
+| --- | --- |
+| ![Comments](assets/screenshots/06-now-playing-comment.png) | ![Play queue](assets/screenshots/06-now-playing-quene.png) |
+
+| MV playback | MV detail |
+| --- | --- |
+| ![MV playback](assets/screenshots/06-now-playing-mv.png) | ![MV detail](assets/screenshots/12-mv-detail.png) |
+
 | New music | New MVs |
 | --- | --- |
 | ![New music](assets/screenshots/03-latest-music.png) | ![New MVs](assets/screenshots/08-latest-mv.png) |
+
+| Rankings | Playlist detail |
+| --- | --- |
+| ![Rankings](assets/screenshots/13-rank.png) | ![Playlist detail](assets/screenshots/14-playlist-detail.png) |
 
 | Playlists | Search |
 | --- | --- |
 | ![Playlists](assets/screenshots/02-songlists.png) | ![Search](assets/screenshots/04-search.png) |
 
-| Artist | Settings |
+| Artist | User profile |
 | --- | --- |
-| ![Artist](assets/screenshots/05-artist.png) | ![Settings](assets/screenshots/07-settings.png) |
+| ![Artist](assets/screenshots/05-artist.png) | ![User profile](assets/screenshots/15-user-detail.png) |
 
-| Smart stem separation | Queue |
+| Settings | Smart stem separation |
 | --- | --- |
-| ![Spleeter settings](assets/screenshots/10-spleeter.png) | ![Queue](assets/screenshots/11-queue.png) |
+| ![Settings](assets/screenshots/07-settings.png) | ![Spleeter settings](assets/screenshots/10-spleeter.png) |
 
-| Phone remote / PWA |
-| :---: |
-| <img src="assets/screenshots/09-remote.png" alt="Phone remote" width="360" /> |
+| Queue | Phone remote / PWA |
+| --- | --- |
+| ![Queue](assets/screenshots/11-queue.png) | <img src="assets/screenshots/09-remote.png" alt="Phone remote" width="360" /> |
 
 > Screenshots reflect the current development build; the actual UI follows the selected theme, font size, window width and album artwork.
 

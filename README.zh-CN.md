@@ -34,25 +34,41 @@
 | --- | --- |
 | ![发现音乐](assets/screenshots/01-home.png) | ![全屏播放](assets/screenshots/06-now-playing.png) |
 
+| 全屏播放 · WebGL 背景 | 全屏播放 · CSS 背景 |
+| --- | --- |
+| ![WebGL 背景](assets/screenshots/06-now-playing-webgl.png) | ![CSS 背景](assets/screenshots/06-now-playing-webgl-css.png) |
+
+| 全屏播放 · 评论 | 全屏播放 · 播放队列 |
+| --- | --- |
+| ![评论](assets/screenshots/06-now-playing-comment.png) | ![播放队列](assets/screenshots/06-now-playing-quene.png) |
+
+| MV 播放 | MV 详情 |
+| --- | --- |
+| ![MV 播放](assets/screenshots/06-now-playing-mv.png) | ![MV 详情](assets/screenshots/12-mv-detail.png) |
+
 | 最新音乐 | 最新 MV |
 | --- | --- |
 | ![最新音乐](assets/screenshots/03-latest-music.png) | ![最新 MV](assets/screenshots/08-latest-mv.png) |
+
+| 排行榜 | 歌单详情 |
+| --- | --- |
+| ![排行榜](assets/screenshots/13-rank.png) | ![歌单详情](assets/screenshots/14-playlist-detail.png) |
 
 | 推荐歌单 | 搜索结果 |
 | --- | --- |
 | ![推荐歌单](assets/screenshots/02-songlists.png) | ![搜索结果](assets/screenshots/04-search.png) |
 
-| 歌手详情 | 设置 |
+| 歌手详情 | 用户主页 |
 | --- | --- |
-| ![歌手详情](assets/screenshots/05-artist.png) | ![设置](assets/screenshots/07-settings.png) |
+| ![歌手详情](assets/screenshots/05-artist.png) | ![用户主页](assets/screenshots/15-user-detail.png) |
 
-| 智能伴奏与 Spleeter | 待播清单 |
+| 设置 | 智能伴奏与 Spleeter |
 | --- | --- |
-| ![Spleeter 设置](assets/screenshots/10-spleeter.png) | ![待播清单](assets/screenshots/11-queue.png) |
+| ![设置](assets/screenshots/07-settings.png) | ![Spleeter 设置](assets/screenshots/10-spleeter.png) |
 
-| 手机遥控 / PWA |
-| :---: |
-| <img src="assets/screenshots/09-remote.png" alt="手机遥控" width="360" /> |
+| 待播清单 | 手机遥控 / PWA |
+| --- | --- |
+| ![待播清单](assets/screenshots/11-queue.png) | <img src="assets/screenshots/09-remote.png" alt="手机遥控" width="360" /> |
 
 > 截图来自当前开发版本；实际界面会随主题、字号、窗口宽度和歌曲封面而变化。
 
