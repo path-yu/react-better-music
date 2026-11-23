@@ -325,9 +325,23 @@ function PlaylistDetailPage() {
   }
 
   const handleShare = async () => {
+    // Local dev and the desktop shells serve the app from localhost / a private
+    // protocol: the address bar URL only works on this machine. Fall back to
+    // the canonical NetEase page, which opens for anyone (web and the app).
+    const { protocol, hostname } = window.location
+    const localHost =
+      !/^https?:$/.test(protocol) ||
+      ['localhost', '127.0.0.1', '::1', '0.0.0.0'].includes(hostname)
+    const url = localHost
+      ? `https://music.163.com/#/playlist?id=${detail.id}`
+      : window.location.href
     try {
-      await navigator.clipboard.writeText(window.location.href)
-      toast.success(i18n._(msg`链接已复制`))
+      await navigator.clipboard.writeText(url)
+      toast.success(
+        localHost
+          ? i18n._(msg`已复制网易云歌单链接`)
+          : i18n._(msg`链接已复制`),
+      )
     } catch {
       toast.warning(i18n._(msg`复制链接失败`))
     }
