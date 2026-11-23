@@ -782,15 +782,9 @@ export const usePlayerStore = create<PlayerState>()(
           const start = () => {
             if (token !== prefetchToken || get().currentIndex !== index) return
             for (const result of results) {
-              // Third-party URLs cannot go through the NetEase-only audio
-              // proxy, so they stay streaming-only. A matched URL that still
-              // points at the NetEase CDN can replace the old trial cache.
-              if (
-                !result ||
-                (result.unblocked && !NETEASE_MEDIA.test(result.url ?? ''))
-              ) {
-                continue
-              }
+              // Matched third-party URLs are allow-listed by the API, so the
+              // proxy can download them just like NetEase's own CDN.
+              if (!result) continue
               void prefetchAudio(result.songId, result.url, result.trialEnd)
             }
           }
@@ -1614,6 +1608,9 @@ export const usePlayerStore = create<PlayerState>()(
               trialEnd: null,
               urlFetchedAt: Date.now(),
             })
+            // The cached file belongs to the previous provider; drop it so the
+            // next load caches the source the user just picked.
+            void removeCachedAudio(song.id)
             set((current) => ({
               audioUrl: playbackUrl(matched.url, true),
               sourceReady: true,

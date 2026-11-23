@@ -20,6 +20,10 @@ const { APP_CONF } = require('./util/config.json')
 const { createHttpAgent, createHttpsAgent } = require('./util/ipv4Agent')
 const { installRemoteControl } = require('./remoteControl')
 const audioTee = require('./audioTee')
+const matchedMedia = require('./util/matchedMedia')
+
+/** NetEase's own CDN, the only host the audio proxy always trusts. */
+const NETEASE_MEDIA_URL = /^https?:\/\/[^/]*music\.126\.net\//
 
 // Media proxy requests also force IPv4 with Happy Eyeballs disabled, otherwise
 // the first request can wait ~10s for an unreachable IPv6 connection.
@@ -322,7 +326,9 @@ async function constructServer(moduleDefs) {
     // Express has already decoded the query string; decoding again would throw
     // on media URLs that contain a literal percent sign.
     const raw = typeof req.query.url === 'string' ? req.query.url : ''
-    if (!raw || !/^https?:\/\/[^/]*music\.126\.net\//.test(raw)) {
+    // NetEase CDN plus the third-party URLs `/song/url/match` just resolved.
+    // Anything else stays rejected, so this endpoint is not an open proxy.
+    if (!raw || !(NETEASE_MEDIA_URL.test(raw) || matchedMedia.has(raw))) {
       res.status(400).json({ code: 400, msg: 'Invalid audio url' })
       return
     }
@@ -335,7 +341,10 @@ async function constructServer(moduleDefs) {
         httpsAgent: httpsProxyAgent,
         headers: {
           'User-Agent': 'Mozilla/5.0',
-          Referer: 'https://music.163.com/',
+          // Third-party providers may reject a foreign referer.
+          ...(NETEASE_MEDIA_URL.test(raw)
+            ? { Referer: 'https://music.163.com/' }
+            : {}),
           ...(range ? { Range: range } : {}),
         },
         validateStatus: () => true,
@@ -651,6 +660,8 @@ async function constructServer(moduleDefs) {
             const result = await matchID(req.query.id)
             song.url = result.data.url
             song.freeTrialInfo = null
+            // Same allow-list as `/song/url/match`, so this path can be cached.
+            if (song.url) matchedMedia.remember(song.url)
             logger.info('Unblock success! url:', song.url)
           }
           if (song.url && song.url.includes('kuwo')) {

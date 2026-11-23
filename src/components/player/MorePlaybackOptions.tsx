@@ -6,10 +6,13 @@ import { Trans } from '@lingui/react/macro'
 import {
   AudioLines,
   CaseSensitive,
+  Check,
+  ChevronDown,
   Film,
   Languages,
   Loader2,
   PictureInPicture2,
+  Radio,
   Subtitles,
   WholeWord,
 } from 'lucide-react'
@@ -32,6 +35,7 @@ import {
   PLAY_QUALITY_OPTIONS,
   useSettingsStore,
 } from '../../store/settings'
+import { SOURCE_OPTIONS } from '../../lib/sources'
 import type { PlayLevel } from '../../types'
 
 interface MorePlaybackOptionsProps {
@@ -155,7 +159,39 @@ export function MorePlaybackOptions({
   const setWordByWordLyrics = useSettingsStore(
     (state) => state.setWordByWordLyrics,
   )
+  const preferredSource = useSettingsStore((state) => state.preferredSource)
+  const setPreferredSource = useSettingsStore((state) => state.setPreferredSource)
+  const switchingSource = usePlayerStore((state) => state.switchingSource)
+  const switchToOtherSource = usePlayerStore((state) => state.switchToOtherSource)
+  const [sourceOpen, setSourceOpen] = useState(false)
   const tint = usePlayerMenuTint(immersive, currentSong?.al.picUrl)
+
+  // What is actually playing, so a wrong match is visible before switching.
+  const playingSource = currentSong?.unblocked
+    ? currentSong.matchedSource || preferredSource
+    : ''
+  const playingOption = SOURCE_OPTIONS.find(
+    (option) => option.value === playingSource,
+  )
+  const sourceLabel = playingSource
+    ? playingOption
+      ? i18n._(playingOption.label)
+      : playingSource === 'copyright-rcmd'
+        ? i18n._(msg`官方推荐版本`)
+        : playingSource
+    : currentSong?.alternativeVersion
+      ? i18n._(msg`官方推荐版本`)
+      : i18n._(msg`网易云官方`)
+
+  const handleSelectSource = (value: string) => {
+    setPreferredSource(value)
+    // Picking "auto" on a song that already has a full official URL should not
+    // replace it with a third-party match. Blocked/trial tracks still switch.
+    const shouldSwitch =
+      value !== 'auto' || Boolean(currentSong?.unblocked || currentSong?.trialEnd)
+    if (!shouldSwitch) return
+    void switchToOtherSource(value === 'auto' ? undefined : value, true)
+  }
 
   useEffect(() => {
     if (!desktopShell) return
@@ -231,6 +267,75 @@ export function MorePlaybackOptions({
         options={PLAY_QUALITY_OPTIONS}
         onChange={handleQualityChange}
       />
+
+      <button
+        type="button"
+        role="menuitem"
+        aria-expanded={sourceOpen}
+        onClick={() => setSourceOpen((value) => !value)}
+        className="menu-item"
+      >
+        <span className="menu-item__icon">
+          {switchingSource ? <Loader2 className="animate-spin" /> : <Radio />}
+        </span>
+        <span className="menu-item__label">
+          <Trans>切换音源</Trans>
+        </span>
+        <span
+          className={cn(
+            'max-w-[92px] truncate text-[11px]',
+            immersive ? 'text-white/45' : 'text-ink-4',
+          )}
+        >
+          {sourceLabel}
+        </span>
+        <ChevronDown
+          className={cn(
+            'h-3.5 w-3.5 shrink-0 transition-transform',
+            sourceOpen && 'rotate-180',
+            immersive ? 'text-white/40' : 'text-ink-4',
+          )}
+        />
+      </button>
+
+      {sourceOpen ? (
+        <div className="space-y-0.5 px-1 pb-1 pt-0.5">
+          {SOURCE_OPTIONS.map((option) => {
+            const active = option.value === preferredSource
+            return (
+              <button
+                key={option.value}
+                type="button"
+                role="menuitemradio"
+                aria-checked={active}
+                disabled={switchingSource}
+                onClick={() => handleSelectSource(option.value)}
+                className={cn(
+                  'flex w-full items-center justify-between gap-2 rounded-[6px] px-2 py-1.5 text-left text-[12px] transition-colors disabled:opacity-50',
+                  active
+                    ? immersive
+                      ? 'bg-white/14 text-white'
+                      : 'bg-white text-accent shadow-sm dark:bg-white/15 dark:text-white'
+                    : immersive
+                      ? 'text-white/65 hover:bg-white/8'
+                      : 'text-ink-2 hover:bg-black/5 dark:text-white/60 dark:hover:bg-white/10',
+                )}
+              >
+                <span className="min-w-0 truncate">{i18n._(option.label)}</span>
+                {active ? <Check className="h-3 w-3 shrink-0" /> : null}
+              </button>
+            )
+          })}
+          <p
+            className={cn(
+              'px-1 pb-0.5 pt-1 text-[11px] leading-relaxed',
+              immersive ? 'text-white/35' : 'text-ink-4',
+            )}
+          >
+            <Trans>选择后立即重新获取当前歌曲；自动匹配会按内置顺序尝试。</Trans>
+          </p>
+        </div>
+      ) : null}
 
       <div className="menu-separator" role="separator" />
 

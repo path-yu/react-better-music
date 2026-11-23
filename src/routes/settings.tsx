@@ -1396,7 +1396,9 @@ function SettingsPage() {
               </p>
             </div>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-              <Input.Search
+              
+                <div   style={{width:'223px'}}>
+                    <Input.Search
                 value={cacheQuery}
                 onChange={(event) => setCacheQuery(event.target.value)}
                 placeholder={i18n._(msg`搜索缓存歌曲`)}
@@ -1404,6 +1406,7 @@ function SettingsPage() {
                 size="sm"
                 className="w-[220px] rounded-full text-[12px]"
               />
+                </div>
               <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant="secondary"

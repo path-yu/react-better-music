@@ -3,6 +3,7 @@
 
 const createOption = require('../util/option.js')
 const logger = require('../util/logger.js')
+const matchedMedia = require('../util/matchedMedia.js')
 
 module.exports = async (query, request) => {
   try {
@@ -30,6 +31,9 @@ module.exports = async (query, request) => {
     if (url.includes('kuwo')) {
       proxyUrl = useProxy === 'true' ? proxy + url : url
     }
+    // The local audio proxy only accepts URLs the matcher produced, so the
+    // renderer can download the track for the offline cache.
+    matchedMedia.remember(url)
     return {
       status: 200,
       body: {

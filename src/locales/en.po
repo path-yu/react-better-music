@@ -87,13 +87,13 @@ msgstr "{0} fans"
 #: src/components/player/QueuePanel.tsx:203
 #: src/routes/daily.tsx:149
 #: src/routes/search.tsx:414
-#: src/routes/settings.tsx:1198
+#: src/routes/settings.tsx:1216
 msgid "{0} 首"
 msgstr "{0} tracks"
 
-#. placeholder {0}: items.length
+#. placeholder {0}: filteredItems.length
 #. placeholder {1}: formatBytes(totalBytes)
-#: src/routes/settings.tsx:1374
+#: src/routes/settings.tsx:1392
 msgid "{0} 首 · {1}"
 msgstr "{0} tracks · {1}"
 
@@ -141,33 +141,33 @@ msgid "{value}年"
 msgstr "{value}"
 
 #. placeholder {0}: effectiveSong.name
-#: src/store/player.ts:991
+#: src/store/player.ts:985
 msgid "「{0}」VIP 歌曲已为你匹配其他音源播放"
 msgstr "「{0}」VIP track matched to another source"
 
 #. placeholder {0}: effectiveSong.name
-#: src/store/player.ts:1000
+#: src/store/player.ts:994
 msgid "「{0}」已为你切换到其他可播放版本"
 msgstr ""
 
 #. placeholder {0}: effectiveSong.name
-#: src/store/player.ts:990
+#: src/store/player.ts:984
 msgid "「{0}」暂无官方音源，已为你匹配其他音源播放"
 msgstr "「{0}」has no official source; matched another source"
 
-#: src/routes/settings.tsx:138
+#: src/routes/settings.tsx:139
 msgid "128 kbps（更小）"
 msgstr "128 kbps (smaller)"
 
-#: src/routes/settings.tsx:139
+#: src/routes/settings.tsx:140
 msgid "192 kbps（推荐）"
 msgstr "192 kbps (recommended)"
 
-#: src/routes/settings.tsx:140
+#: src/routes/settings.tsx:141
 msgid "256 kbps"
 msgstr "256 kbps"
 
-#: src/routes/settings.tsx:141
+#: src/routes/settings.tsx:142
 msgid "320 kbps（最高）"
 msgstr "320 kbps (highest)"
 
@@ -199,7 +199,7 @@ msgstr "DDYR"
 #~ msgid "FLAC 为无损压缩，两条音轨约 40–60 MB/首。"
 #~ msgstr ""
 
-#: src/routes/settings.tsx:133
+#: src/routes/settings.tsx:134
 msgid "FLAC（无损）"
 msgstr "FLAC (lossless)"
 
@@ -207,11 +207,11 @@ msgstr "FLAC (lossless)"
 msgid "GD 音乐台"
 msgstr "GD Music"
 
-#: src/routes/settings.tsx:130
+#: src/routes/settings.tsx:131
 msgid "M4A / AAC（推荐）"
 msgstr "M4A / AAC (recommended)"
 
-#: src/routes/settings.tsx:132
+#: src/routes/settings.tsx:133
 msgid "MP3"
 msgstr "MP3"
 
@@ -241,7 +241,7 @@ msgstr "MV comments"
 msgid "MV 详情加载失败"
 msgstr "Failed to load MV details"
 
-#: src/routes/settings.tsx:131
+#: src/routes/settings.tsx:132
 msgid "OGG / Vorbis"
 msgstr "OGG / Vorbis"
 
@@ -272,7 +272,7 @@ msgstr "Couldn't generate the instrumental: {message}"
 msgid "Spleeter 分离失败"
 msgstr "Spleeter separation failed"
 
-#: src/routes/settings.tsx:871
+#: src/routes/settings.tsx:889
 msgid "Spleeter 已就绪"
 msgstr ""
 
@@ -284,7 +284,7 @@ msgstr ""
 msgid "Spleeter 没有返回完整音轨"
 msgstr "Spleeter didn't return complete tracks"
 
-#: src/routes/settings.tsx:361
+#: src/routes/settings.tsx:363
 msgid "Spleeter 环境已卸载"
 msgstr "Spleeter environment removed"
 
@@ -292,11 +292,11 @@ msgstr "Spleeter environment removed"
 msgid "UNM 聚合"
 msgstr "UNM aggregate"
 
-#: src/routes/settings.tsx:1275
+#: src/routes/settings.tsx:1293
 msgid "VIP 歌曲无法播放或仅能试听时，自动尝试匹配其他音源"
 msgstr "When a VIP song is unavailable or preview-only, the app can try another source automatically"
 
-#: src/routes/settings.tsx:1283
+#: src/routes/settings.tsx:1301
 msgid "VIP 歌曲自动替换音源"
 msgstr "Automatically replace VIP sources"
 
@@ -304,7 +304,7 @@ msgstr "Automatically replace VIP sources"
 #~ msgid "WAV 为未压缩 PCM，两条音轨约 70–100 MB/首。"
 #~ msgstr ""
 
-#: src/routes/settings.tsx:134
+#: src/routes/settings.tsx:135
 msgid "WAV（未压缩）"
 msgstr "WAV (uncompressed)"
 
@@ -317,7 +317,7 @@ msgstr "WebGL fog"
 #~ msgid "WebGL 雾化背景"
 #~ msgstr "WebGL fog backdrop"
 
-#: src/routes/settings.tsx:923
+#: src/routes/settings.tsx:941
 msgid "一键安装 Spleeter"
 msgstr ""
 
@@ -327,11 +327,11 @@ msgstr "Previous page"
 
 #: src/components/player/ImmersivePlayerBar.tsx:252
 #: src/components/player/NowPlayingTransport.tsx:420
-#: src/components/player/PlayerBar.tsx:1649
+#: src/components/player/PlayerBar.tsx:1642
 msgid "上一首"
 msgstr "Previous track"
 
-#: src/routes/settings.tsx:116
+#: src/routes/settings.tsx:117
 msgid "上一首 / 下一首"
 msgstr "Previous / next track"
 
@@ -345,7 +345,7 @@ msgstr "Next page"
 
 #: src/components/player/ImmersivePlayerBar.tsx:277
 #: src/components/player/NowPlayingTransport.tsx:457
-#: src/components/player/PlayerBar.tsx:1686
+#: src/components/player/PlayerBar.tsx:1679
 msgid "下一首"
 msgstr "Next track"
 
@@ -358,27 +358,27 @@ msgid "下午好"
 msgstr "Good afternoon"
 
 #. placeholder {0}: item.name
-#: src/routes/settings.tsx:1462
+#: src/routes/settings.tsx:1497
 msgid "下载 {0}"
 msgstr "Download {0}"
 
-#: src/routes/settings.tsx:881
+#: src/routes/settings.tsx:899
 msgid "下载代理"
 msgstr "Download proxy"
 
-#: src/routes/settings.tsx:1484
+#: src/routes/settings.tsx:1519
 msgid "下载会保存为 .opus 文件到上方设置的下载目录。"
 msgstr "Downloads are saved as .opus files in the folder above."
 
-#: src/routes/settings.tsx:1486
+#: src/routes/settings.tsx:1521
 msgid "下载会导出为 .opus 文件；多选下载会打包为一个 ZIP 压缩包。"
 msgstr "Downloads are exported as .opus files; selecting multiple tracks creates a ZIP archive."
 
-#: src/routes/settings.tsx:1463
+#: src/routes/settings.tsx:1498
 msgid "下载到本地"
 msgstr "Download"
 
-#: src/routes/settings.tsx:525
+#: src/routes/settings.tsx:543
 msgid "下载失败"
 msgstr "Download failed"
 
@@ -390,20 +390,20 @@ msgstr "Download failed"
 msgid "下载更新"
 msgstr ""
 
-#: src/routes/settings.tsx:1215
+#: src/routes/settings.tsx:1233
 msgid "下载目录"
 msgstr "Download folder"
 
-#: src/routes/settings.tsx:538
+#: src/routes/settings.tsx:556
 msgid "下载目录已更新"
 msgstr "Download folder updated"
 
-#: src/routes/settings.tsx:1401
+#: src/routes/settings.tsx:1431
 msgid "下载选中"
 msgstr "Download selected"
 
 #. placeholder {0}: selected.length
-#: src/routes/settings.tsx:1399
+#: src/routes/settings.tsx:1429
 msgid "下载选中 ({0})"
 msgstr "Download selected ({0})"
 
@@ -473,7 +473,7 @@ msgid "云音乐官方榜单，实时更新"
 msgstr "Official NetEase Cloud Music charts, updated in real time"
 
 #: src/store/player.ts:384
-#: src/store/player.ts:977
+#: src/store/player.ts:971
 msgid "亲爱的，暂无版权，已为你跳过"
 msgstr "Sorry, this track is unavailable due to copyright; skipping"
 
@@ -540,12 +540,12 @@ msgstr "Slide Up"
 msgid "从歌单移除"
 msgstr "Remove from playlist"
 
-#: src/routes/settings.tsx:1291
-#: src/routes/settings.tsx:1302
+#: src/routes/settings.tsx:1309
+#: src/routes/settings.tsx:1320
 msgid "优先调用解灰接口"
 msgstr "Prefer the unblock endpoint"
 
-#: src/routes/settings.tsx:992
+#: src/routes/settings.tsx:1010
 msgid "伴奏保存目录"
 msgstr ""
 
@@ -621,7 +621,7 @@ msgstr "Change the playlist name, tags, description and cover"
 msgid "倾诉"
 msgstr "Confession"
 
-#: src/routes/settings.tsx:1294
+#: src/routes/settings.tsx:1312
 msgid "先请求 /song/url/match，没有可用结果时再尝试官方推荐的其他可播放版本；关闭后顺序相反。"
 msgstr "Ask /song/url/match first and only fall back to another playable edition recommended by NetEase when it returns nothing; turn this off to reverse the order."
 
@@ -630,8 +630,8 @@ msgid "克制的玫瑰红，醒目但不刺眼"
 msgstr "A restrained rose red, vivid but not harsh"
 
 #: src/components/playlists/ImportPlaylistDialog.tsx:497
-#: src/routes/settings.tsx:1416
-#: src/routes/settings.tsx:1423
+#: src/routes/settings.tsx:1451
+#: src/routes/settings.tsx:1458
 msgid "全选"
 msgstr "Select all"
 
@@ -721,7 +721,7 @@ msgstr "Close navigation"
 
 #: src/components/player/ImmersivePlayerBar.tsx:233
 #: src/components/player/NowPlayingTransport.tsx:305
-#: src/components/player/PlayerBar.tsx:1629
+#: src/components/player/PlayerBar.tsx:1622
 msgid "关闭心动模式"
 msgstr "Turn off Heart Mode"
 
@@ -729,15 +729,15 @@ msgstr "Turn off Heart Mode"
 msgid "关闭播放列表"
 msgstr "Close queue"
 
-#: src/routes/settings.tsx:120
+#: src/routes/settings.tsx:121
 msgid "关闭播放页、播放列表、侧栏或搜索建议"
 msgstr "Close the immersive player, queue, sidebar or search suggestions"
 
-#: src/components/player/PlayerBar.tsx:1570
+#: src/components/player/PlayerBar.tsx:1563
 msgid "其他版本"
 msgstr ""
 
-#: src/components/player/PlayerBar.tsx:1577
+#: src/components/player/PlayerBar.tsx:1570
 #: src/components/player/SourcePicker.tsx:44
 msgid "其他音源"
 msgstr "Other source"
@@ -755,7 +755,7 @@ msgstr "Content not found or removed"
 msgid "最后一页"
 msgstr "Last page"
 
-#: src/routes/settings.tsx:944
+#: src/routes/settings.tsx:962
 msgid "最多保留最近使用的 30 首歌曲的伴奏"
 msgstr "Keeps instrumentals for up to the 30 most recently used songs"
 
@@ -772,7 +772,7 @@ msgstr "Select up to three tags"
 msgid "最大化"
 msgstr "Maximize"
 
-#: src/routes/settings.tsx:1172
+#: src/routes/settings.tsx:1190
 msgid "最大缓存容量"
 msgstr "Maximum Cache Size"
 
@@ -832,7 +832,7 @@ msgstr "Recently played"
 msgid "最近播放加载失败"
 msgstr "Failed to load recent plays"
 
-#: src/routes/settings.tsx:1069
+#: src/routes/settings.tsx:1087
 msgid "准备安装…"
 msgstr ""
 
@@ -862,9 +862,17 @@ msgstr "Switch to video"
 #~ msgid "切换界面语言，语言资源加载后立即生效。"
 #~ msgstr ""
 
-#: src/store/player.ts:1627
+#: src/store/player.ts:1624
 msgid "切换音源失败，请稍后再试"
 msgstr "Failed to switch sources. Try again later."
+
+#: src/components/player/MorePlaybackOptions.tsx:250
+msgid "切换音源"
+msgstr "Switch source"
+
+#: src/components/player/MorePlaybackOptions.tsx:259
+msgid "官方推荐版本"
+msgstr "Official alternative version"
 
 #: src/lib/playMode.ts:8
 msgid "列表循环"
@@ -917,7 +925,7 @@ msgid "删除歌单失败"
 msgstr "Failed to delete playlist"
 
 #: src/components/layout/LoginModal.tsx:363
-#: src/routes/settings.tsx:1142
+#: src/routes/settings.tsx:1160
 #: src/routes/songlists/$id.tsx:496
 #: src/routes/songlists/$id.tsx:497
 msgid "刷新"
@@ -933,7 +941,7 @@ msgstr "Refresh Recently Played"
 msgid "刷新歌单"
 msgstr "Refresh Playlists"
 
-#: src/routes/settings.tsx:1141
+#: src/routes/settings.tsx:1159
 msgid "刷新缓存信息"
 msgstr "Refresh cache info"
 
@@ -986,16 +994,16 @@ msgid "单曲循环"
 msgstr "Repeat one"
 
 #. placeholder {0}: formatBytes(totalBytes)
-#: src/routes/settings.tsx:1204
+#: src/routes/settings.tsx:1222
 msgid "占用 {0}"
 msgstr "Using {0}"
 
-#: src/routes/settings.tsx:1118
+#: src/routes/settings.tsx:1136
 msgid "卸载"
 msgstr ""
 
-#: src/routes/settings.tsx:937
-#: src/routes/settings.tsx:1095
+#: src/routes/settings.tsx:955
+#: src/routes/settings.tsx:1113
 msgid "卸载 Spleeter"
 msgstr "Uninstall Spleeter"
 
@@ -1044,7 +1052,7 @@ msgstr "An unknown error occurred"
 #: src/components/playlists/ImportPlaylistDialog.tsx:640
 #: src/routes/local/playlists/$id.tsx:159
 #: src/routes/local/playlists/$id.tsx:232
-#: src/routes/settings.tsx:1110
+#: src/routes/settings.tsx:1128
 #: src/routes/songlists/$id.edit.tsx:307
 msgid "取消"
 msgstr "Cancel"
@@ -1059,8 +1067,8 @@ msgstr "Clear selection"
 #: src/components/player/NowPlayingTransport.tsx:292
 #: src/components/player/PlayerArtwork.tsx:711
 #: src/components/player/PlayerArtwork.tsx:713
-#: src/components/player/PlayerBar.tsx:1599
-#: src/components/player/PlayerBar.tsx:1601
+#: src/components/player/PlayerBar.tsx:1592
+#: src/components/player/PlayerBar.tsx:1594
 #: src/components/songs/SongContextMenu.tsx:408
 #: src/components/songs/SongTable.tsx:246
 msgid "取消喜欢"
@@ -1077,7 +1085,7 @@ msgstr "Remove from library"
 msgid "取消收藏失败"
 msgstr "Failed to remove from library"
 
-#: src/components/player/PlayerBar.tsx:1742
+#: src/components/player/PlayerBar.tsx:1735
 msgid "取消静音"
 msgstr "Unmute"
 
@@ -1114,8 +1122,8 @@ msgstr "Browse categories to the left"
 msgid "听友评论"
 msgstr "Listener comments"
 
-#: src/routes/settings.tsx:1313
-#: src/routes/settings.tsx:1324
+#: src/routes/settings.tsx:1331
+#: src/routes/settings.tsx:1342
 msgid "听歌打卡"
 msgstr "Scrobble"
 
@@ -1129,14 +1137,14 @@ msgstr "Mocha Brown"
 #: src/components/player/NowPlayingTransport.tsx:292
 #: src/components/player/PlayerArtwork.tsx:711
 #: src/components/player/PlayerArtwork.tsx:713
-#: src/components/player/PlayerBar.tsx:1599
-#: src/components/player/PlayerBar.tsx:1601
+#: src/components/player/PlayerBar.tsx:1592
+#: src/components/player/PlayerBar.tsx:1594
 #: src/components/songs/SongContextMenu.tsx:408
 #: src/components/songs/SongTable.tsx:246
 msgid "喜欢"
 msgstr "Like"
 
-#: src/routes/settings.tsx:118
+#: src/routes/settings.tsx:119
 msgid "喜欢 / 取消喜欢当前歌曲"
 msgstr "Like / unlike the current track"
 
@@ -1171,7 +1179,7 @@ msgstr "Image must be 5 MB or smaller"
 msgid "图片解析失败"
 msgstr "Couldn't decode the image"
 
-#: src/routes/settings.tsx:119
+#: src/routes/settings.tsx:120
 msgid "在搜索建议中选择并进入"
 msgstr "Select a search suggestion and open it"
 
@@ -1196,7 +1204,7 @@ msgstr "Moods & occasions"
 msgid "复制链接失败"
 msgstr "Failed to copy the link"
 
-#: src/routes/settings.tsx:630
+#: src/routes/settings.tsx:648
 msgid "外观"
 msgstr "Appearance"
 
@@ -1241,7 +1249,7 @@ msgstr "Study"
 msgid "它可能已被删除，或保存在另一个安装目录。"
 msgstr "It may have been deleted or saved in another install directory."
 
-#: src/routes/settings.tsx:922
+#: src/routes/settings.tsx:940
 msgid "安装到当前目录"
 msgstr ""
 
@@ -1249,11 +1257,11 @@ msgstr ""
 #~ msgid "安装本地 Spleeter 后，可在歌曲详情页生成并切换原曲、人声或伴奏，结果会缓存到本机。"
 #~ msgstr ""
 
-#: src/routes/settings.tsx:956
+#: src/routes/settings.tsx:974
 msgid "安装目录"
 msgstr ""
 
-#: src/routes/settings.tsx:906
+#: src/routes/settings.tsx:924
 msgid "安装约 1 GB，需要联网，通常耗时数分钟。模型会在第一次生成伴奏时下载。"
 msgstr ""
 
@@ -1286,7 +1294,7 @@ msgstr "Locate current track"
 msgid "定位当前播放"
 msgstr "Locate now playing"
 
-#: src/routes/settings.tsx:823
+#: src/routes/settings.tsx:841
 msgid "实时分析播放响度，自动压低过响的部分并补足偏轻的歌曲，减少切歌时的音量跳变。部分设备或受保护音源可能无法分析。"
 msgstr "Analyse loudness in real time, gently lower loud passages, and lift quiet tracks to reduce volume jumps between songs. Some devices or protected sources may not be analysable."
 
@@ -1310,7 +1318,7 @@ msgstr "Import playlist"
 msgid "导入的歌单"
 msgstr "Imported playlist"
 
-#: src/routes/settings.tsx:508
+#: src/routes/settings.tsx:526
 msgid "导出缓存失败"
 msgstr "Failed to export cache"
 
@@ -1339,7 +1347,7 @@ msgstr ""
 msgid "将下载完整安装包（{sizeLabel}），下载完成后运行安装程序完成更新。"
 msgstr ""
 
-#: src/routes/settings.tsx:1098
+#: src/routes/settings.tsx:1116
 msgid "将删除本地虚拟环境、Python 运行时以及 FFmpeg/FFprobe 组件，不会删除已经生成的伴奏文件。"
 msgstr "This removes the local virtual environment, Python runtime, and FFmpeg/FFprobe components. Generated accompaniment files will be kept."
 
@@ -1373,11 +1381,11 @@ msgid "已从歌单移除"
 msgstr "Removed from playlist"
 
 #. placeholder {0}: item.name
-#: src/routes/settings.tsx:521
+#: src/routes/settings.tsx:539
 msgid "已保存「{0}」到下载目录"
 msgstr "Saved 「{0}」 to Downloads"
 
-#: src/routes/settings.tsx:418
+#: src/routes/settings.tsx:420
 msgid "已允许开发者工具，重启应用后完全生效"
 msgstr "Developer tools enabled. Restart the app to apply fully."
 
@@ -1386,11 +1394,11 @@ msgstr "Developer tools enabled. Restart the app to apply fully."
 #~ msgid "已关闭"
 #~ msgstr "Off"
 
-#: src/store/player.ts:1428
+#: src/store/player.ts:1422
 msgid "已关闭心动模式"
 msgstr "Heart Mode turned off"
 
-#: src/store/player.ts:1625
+#: src/store/player.ts:1622
 msgid "已切换到其他音源"
 msgstr "Switched to another source"
 
@@ -1415,19 +1423,19 @@ msgstr "NetEase playlist link copied"
 msgid "已导入 {0} 首到“{name}”"
 msgstr "Imported {0} tracks into “{name}”"
 
-#: src/routes/settings.tsx:505
+#: src/routes/settings.tsx:523
 msgid "已导出 {count} 首缓存音乐，请查看下载目录"
 msgstr "Exported {count} cached tracks to Downloads"
 
-#: src/routes/settings.tsx:504
+#: src/routes/settings.tsx:522
 msgid "已导出 {count} 首缓存音乐（ZIP 压缩包）"
 msgstr "Exported {count} cached tracks (ZIP archive)"
 
-#: src/routes/settings.tsx:501
+#: src/routes/settings.tsx:519
 msgid "已导出 {count} 首缓存音乐到 {downloadDir}"
 msgstr "Exported {count} cached tracks to {downloadDir}"
 
-#: src/routes/settings.tsx:502
+#: src/routes/settings.tsx:520
 msgid "已导出 {count} 首缓存音乐到下载目录"
 msgstr "Exported {count} cached tracks to Downloads"
 
@@ -1437,7 +1445,7 @@ msgstr "Exported {count} cached tracks to Downloads"
 #~ msgstr "On"
 
 #. placeholder {0}: item.name
-#: src/routes/settings.tsx:522
+#: src/routes/settings.tsx:540
 msgid "已开始下载「{0}」"
 msgstr "Started downloading 「{0}」"
 
@@ -1460,7 +1468,7 @@ msgid "已暂停"
 msgstr "Paused"
 
 #. placeholder {0}: additions.length
-#: src/store/player.ts:1340
+#: src/store/player.ts:1334
 msgid "已添加 {0} 首歌曲到播放列表"
 msgstr "Added {0} tracks to the queue"
 
@@ -1468,11 +1476,11 @@ msgstr "Added {0} tracks to the queue"
 msgid "已添加到我喜欢的音乐"
 msgstr "Added to Liked Songs"
 
-#: src/routes/settings.tsx:343
+#: src/routes/settings.tsx:345
 msgid "已清除 {count} 首歌曲的伴奏缓存"
 msgstr "Cleared cached instrumentals for {count} songs"
 
-#: src/routes/settings.tsx:417
+#: src/routes/settings.tsx:419
 msgid "已禁用开发者工具，重启应用后完全生效"
 msgstr "Developer tools disabled. Restart the app to apply fully."
 
@@ -1488,7 +1496,7 @@ msgstr ""
 #~ msgid "已超过 30 秒没有新进度，可能是无法连接 GitHub。请检查网络或代理设置，下载会在超时后自动报错。"
 #~ msgstr ""
 
-#: src/store/player.ts:1100
+#: src/store/player.ts:1094
 msgid "已跳过 {skipped} 首无法播放的歌曲"
 msgstr "Skipped {skipped} tracks that couldn't be played"
 
@@ -1501,7 +1509,7 @@ msgid "已退出登录"
 msgstr "Signed out"
 
 #. placeholder {0}: selected.length
-#: src/routes/settings.tsx:1426
+#: src/routes/settings.tsx:1461
 msgid "已选 {0} 首"
 msgstr "{0} selected"
 
@@ -1527,7 +1535,7 @@ msgstr "When this is on, a phone on the same local network can scan the QR code 
 #~ msgid "开启后，底部播放栏和歌曲详情页的进度条右侧显示剩余时间；关闭则显示总时长。也可以直接点击右侧的时间切换。"
 #~ msgstr "When on, the right side of the progress bar in the player bar and on the song page shows the time remaining; when off, it shows the total length. You can also click that time to switch."
 
-#: src/routes/settings.tsx:1316
+#: src/routes/settings.tsx:1334
 msgid "开启后，真实播放达到歌曲的 50% 或 4 分钟后，向网易云上报一次听歌记录。默认关闭。"
 msgstr "When enabled, report one listen to NetEase after real playback reaches 50% or four minutes. Off by default."
 
@@ -1535,7 +1543,7 @@ msgstr "When enabled, report one listen to NetEase after real playback reaches 5
 msgid "开启智能伴奏需要安装 Spleeter"
 msgstr "Spleeter is required for smart accompaniment"
 
-#: src/routes/settings.tsx:591
+#: src/routes/settings.tsx:609
 msgid "开始播放缓存音乐"
 msgstr "Playing cached music"
 
@@ -1544,15 +1552,15 @@ msgid "当前：{currentLabel}"
 msgstr "Current: {currentLabel}"
 
 #. placeholder {0}: prefetched.trialEnd
-#: src/store/player.ts:908
+#: src/store/player.ts:902
 msgid "当前仅可试听 {0} 秒，登录或开通会员后可播放完整版"
 msgstr "Preview only ({0}s). Sign in or get VIP for the full track."
 
-#: src/store/player.ts:1011
+#: src/store/player.ts:1005
 msgid "当前仅可试听 {trialEnd} 秒，登录或开通会员后可播放完整版"
 msgstr "Preview only ({trialEnd}s). Sign in or get VIP for the full track."
 
-#: src/components/player/PlayerBar.tsx:1568
+#: src/components/player/PlayerBar.tsx:1561
 msgid "当前使用网易云推荐的其他可播放版本"
 msgstr ""
 
@@ -1590,7 +1598,7 @@ msgstr ""
 msgid "当前环境不支持 Opus 编码"
 msgstr "This environment does not support Opus encoding"
 
-#: src/routes/settings.tsx:1195
+#: src/routes/settings.tsx:1213
 msgid "当前缓存"
 msgstr "Current cache"
 
@@ -1610,24 +1618,24 @@ msgstr "Visualizer"
 #: src/components/player/ImmersivePlayerBar.tsx:235
 #: src/components/player/NowPlayingTransport.tsx:305
 #: src/components/player/NowPlayingTransport.tsx:306
-#: src/components/player/PlayerBar.tsx:1630
-#: src/components/player/PlayerBar.tsx:1632
+#: src/components/player/PlayerBar.tsx:1623
+#: src/components/player/PlayerBar.tsx:1625
 msgid "心动模式"
 msgstr "Heart Mode"
 
-#: src/store/player.ts:1442
+#: src/store/player.ts:1436
 msgid "心动模式已开启，将为你推荐歌曲"
 msgstr "Heart Mode is on; recommendations will be added"
 
-#: src/store/player.ts:1075
+#: src/store/player.ts:1069
 msgid "心动模式暂不可用，请先登录"
 msgstr "Heart Mode is unavailable. Please sign in."
 
-#: src/routes/settings.tsx:1507
+#: src/routes/settings.tsx:1542
 msgid "快捷键"
 msgstr "Shortcuts"
 
-#: src/routes/settings.tsx:115
+#: src/routes/settings.tsx:116
 msgid "快退 / 快进 5 秒"
 msgstr "Back / forward 5 seconds"
 
@@ -1643,8 +1651,8 @@ msgstr "Gender"
 msgid "恢复原声失败"
 msgstr "Couldn't switch back to the original"
 
-#: src/routes/settings.tsx:973
-#: src/routes/settings.tsx:1009
+#: src/routes/settings.tsx:991
+#: src/routes/settings.tsx:1027
 msgid "恢复默认"
 msgstr ""
 
@@ -1676,8 +1684,8 @@ msgstr "Phone remote QR code"
 msgid "手机遥控设置失败，请稍后重试"
 msgstr "Couldn't update the phone remote. Please try again later."
 
-#: src/routes/settings.tsx:1230
-#: src/routes/settings.tsx:1261
+#: src/routes/settings.tsx:1248
+#: src/routes/settings.tsx:1279
 msgid "打开"
 msgstr "Open"
 
@@ -1692,9 +1700,9 @@ msgstr "Open album {0}"
 msgid "打开导航"
 msgstr "Open navigation"
 
-#: src/components/player/PlayerBar.tsx:1473
-#: src/components/player/PlayerBar.tsx:1515
-#: src/components/player/PlayerBar.tsx:1539
+#: src/components/player/PlayerBar.tsx:1466
+#: src/components/player/PlayerBar.tsx:1508
+#: src/components/player/PlayerBar.tsx:1532
 msgid "打开播放页"
 msgstr "Open Now Playing"
 
@@ -1818,6 +1826,11 @@ msgstr ""
 msgid "搜索结果"
 msgstr "Search results"
 
+#: src/routes/settings.tsx:1404
+#: src/routes/settings.tsx:1405
+msgid "搜索缓存歌曲"
+msgstr "Search cached songs"
+
 #: src/components/settings/SettingsNav.tsx:122
 msgid "搜索设置"
 msgstr "Search settings"
@@ -1833,16 +1846,16 @@ msgstr "Search songs, playlists, albums, artists, users, MVs or videos"
 #: src/components/player/ImmersivePlayerBar.tsx:261
 #: src/components/player/NowPlayingTransport.tsx:432
 #: src/components/player/NowPlayingTransport.tsx:439
+#: src/components/player/PlayerBar.tsx:1654
 #: src/components/player/PlayerBar.tsx:1661
-#: src/components/player/PlayerBar.tsx:1668
 #: src/components/settings/SettingsNav.tsx:16
 #: src/components/songs/SongTable.tsx:138
 #: src/routes/index.tsx:228
-#: src/routes/settings.tsx:805
+#: src/routes/settings.tsx:823
 msgid "播放"
 msgstr "Play"
 
-#: src/routes/settings.tsx:112
+#: src/routes/settings.tsx:113
 msgid "播放 / 暂停"
 msgstr "Play / Pause"
 
@@ -1864,21 +1877,21 @@ msgstr ""
 #: src/components/layout/Sidebar.tsx:253
 #: src/components/songs/PlayAllButton.tsx:17
 #: src/routes/daily.tsx:162
-#: src/routes/settings.tsx:1388
+#: src/routes/settings.tsx:1418
 msgid "播放全部"
 msgstr "Play all"
 
 #: src/components/player/ImmersivePlayerBar.tsx:302
 #: src/components/player/NowPlayingTransport.tsx:482
 #: src/components/player/NowPlayingTransport.tsx:483
-#: src/components/player/PlayerBar.tsx:1725
-#: src/components/player/PlayerBar.tsx:1727
+#: src/components/player/PlayerBar.tsx:1718
+#: src/components/player/PlayerBar.tsx:1720
 #: src/components/player/QueuePanel.tsx:159
 #: src/components/player/QueuePanel.tsx:195
 msgid "播放列表"
 msgstr "Queue"
 
-#: src/store/player.ts:1511
+#: src/store/player.ts:1505
 msgid "播放列表已清空"
 msgstr "Queue cleared"
 
@@ -1887,7 +1900,7 @@ msgstr "Queue cleared"
 #~ msgid "播放原曲"
 #~ msgstr ""
 
-#: src/routes/settings.tsx:812
+#: src/routes/settings.tsx:830
 msgid "播放器样式"
 msgstr "Player Style"
 
@@ -1962,11 +1975,11 @@ msgstr "Audio quality switched to {0}; reloading"
 msgid "播放音质已切换为{label}，正在重新加载"
 msgstr "Playback quality switched to {label}. Reloading."
 
-#: src/routes/settings.tsx:724
+#: src/routes/settings.tsx:742
 msgid "播放页背景"
 msgstr "Song page background"
 
-#: src/routes/settings.tsx:746
+#: src/routes/settings.tsx:764
 msgid "播放页过渡动画"
 msgstr "Now Playing Transition"
 
@@ -2036,7 +2049,7 @@ msgstr "Collapse sidebar"
 
 #: src/components/player/ImmersivePlayerBar.tsx:194
 #: src/components/player/NowPlaying.tsx:2044
-#: src/components/player/PlayerBar.tsx:1482
+#: src/components/player/PlayerBar.tsx:1475
 msgid "收起播放页"
 msgstr "Close Now Playing"
 
@@ -2076,11 +2089,11 @@ msgstr ""
 msgid "无动画"
 msgstr "None"
 
-#: src/routes/settings.tsx:551
+#: src/routes/settings.tsx:569
 msgid "无法打开下载目录"
 msgstr "Cannot open the download folder"
 
-#: src/routes/settings.tsx:576
+#: src/routes/settings.tsx:594
 msgid "无法打开缓存目录"
 msgstr "Cannot open the cache folder"
 
@@ -2096,11 +2109,11 @@ msgstr "This playlist cannot be edited"
 msgid "无法获取专辑信息"
 msgstr "Could not load album information"
 
-#: src/routes/settings.tsx:541
+#: src/routes/settings.tsx:559
 msgid "无法选择下载目录"
 msgstr "Cannot choose a download folder"
 
-#: src/routes/settings.tsx:566
+#: src/routes/settings.tsx:584
 msgid "无法选择缓存目录"
 msgstr "Cannot choose a cache folder"
 
@@ -2134,7 +2147,7 @@ msgstr "Nickname cannot be empty"
 msgid "晚上好"
 msgstr "Good evening"
 
-#: src/routes/settings.tsx:857
+#: src/routes/settings.tsx:875
 msgid "智能伴奏 · Spleeter"
 msgstr ""
 
@@ -2164,7 +2177,7 @@ msgstr ""
 msgid "智能伴奏生成失败：{0}"
 msgstr ""
 
-#: src/store/player.ts:1058
+#: src/store/player.ts:1052
 msgid "智能播放暂不可用，请先登录"
 msgstr "Smart play is unavailable. Please log in first."
 
@@ -2175,8 +2188,8 @@ msgstr "Smart play is unavailable. Please log in first."
 #: src/components/player/ImmersivePlayerBar.tsx:261
 #: src/components/player/NowPlayingTransport.tsx:431
 #: src/components/player/NowPlayingTransport.tsx:438
+#: src/components/player/PlayerBar.tsx:1653
 #: src/components/player/PlayerBar.tsx:1660
-#: src/components/player/PlayerBar.tsx:1667
 #: src/components/songs/SongTable.tsx:138
 #: src/routes/toplist.tsx:91
 msgid "暂停"
@@ -2275,15 +2288,7 @@ msgstr "No related videos"
 msgid "暂无简介"
 msgstr "No bio yet"
 
-#: src/routes/settings.tsx:1386
-msgid "搜索缓存歌曲"
-msgstr "Search cached songs"
-
-#: src/routes/settings.tsx:1414
-msgid "没有匹配的缓存歌曲"
-msgstr "No cached song matches"
-
-#: src/routes/settings.tsx:1409
+#: src/routes/settings.tsx:1440
 msgid "暂无缓存音乐，播放歌曲后会自动缓存"
 msgstr "No cached music yet. Songs are cached automatically after playback."
 
@@ -2295,8 +2300,8 @@ msgstr "More"
 #: src/components/player/ImmersivePlayerBar.tsx:418
 #: src/components/player/NowPlayingTransport.tsx:494
 #: src/components/player/NowPlayingTransport.tsx:495
-#: src/components/player/PlayerBar.tsx:1800
-#: src/components/player/PlayerBar.tsx:1801
+#: src/components/player/PlayerBar.tsx:1793
+#: src/components/player/PlayerBar.tsx:1794
 msgid "更多播放选项"
 msgstr "More playback options"
 
@@ -2309,8 +2314,8 @@ msgstr "More charts"
 msgid "更换头像"
 msgstr "Change avatar"
 
-#: src/routes/settings.tsx:982
-#: src/routes/settings.tsx:1018
+#: src/routes/settings.tsx:1000
+#: src/routes/settings.tsx:1036
 msgid "更改目录"
 msgstr ""
 
@@ -2337,11 +2342,11 @@ msgstr "{missing} tracks failed to load. Click Refresh to try again."
 #~ msgid "有未保存的修改，确定放弃吗？"
 #~ msgstr "You have unsaved changes. Discard them?"
 
-#: src/routes/settings.tsx:874
+#: src/routes/settings.tsx:892
 msgid "未安装"
 msgstr ""
 
-#: src/store/player.ts:1604
+#: src/store/player.ts:1598
 msgid "未找到其他可用音源"
 msgstr "No alternative source found"
 
@@ -2361,7 +2366,7 @@ msgstr "No local network address found. Make sure this computer is connected to 
 msgid "未知专辑"
 msgstr "Unknown album"
 
-#: src/routes/settings.tsx:1448
+#: src/routes/settings.tsx:1483
 msgid "未知歌手"
 msgstr "Unknown artist"
 
@@ -2474,7 +2479,7 @@ msgstr "Desktop service request failed ({0})"
 msgid "桌面歌词"
 msgstr "Desktop lyrics"
 
-#: src/routes/settings.tsx:1351
+#: src/routes/settings.tsx:1369
 msgid "桌面歌词：Ctrl / ⌘ + Shift + L 显示或隐藏，窗口始终置顶，可拖动到任意位置。"
 msgstr "Desktop lyrics: Ctrl / ⌘ + Shift + L to show or hide. The window stays on top and can be dragged anywhere."
 
@@ -2482,7 +2487,7 @@ msgstr "Desktop lyrics: Ctrl / ⌘ + Shift + L to show or hide. The window stays
 msgid "桌面歌词窗口暂不可用"
 msgstr "Desktop lyrics are unavailable"
 
-#: src/routes/settings.tsx:1335
+#: src/routes/settings.tsx:1353
 msgid "桌面端"
 msgstr "Desktop"
 
@@ -2604,8 +2609,8 @@ msgstr "Song"
 msgid "歌曲列表"
 msgstr "Tracks"
 
-#: src/store/player.ts:1027
-#: src/store/player.ts:1095
+#: src/store/player.ts:1021
+#: src/store/player.ts:1089
 msgid "歌曲加载失败"
 msgstr "Failed to load track"
 
@@ -2613,7 +2618,7 @@ msgstr "Failed to load track"
 msgid "歌曲加载超时，请重新播放"
 msgstr "Track loading timed out. Please play again."
 
-#: src/store/player.ts:1335
+#: src/store/player.ts:1329
 msgid "歌曲已在播放列表中"
 msgstr "Track is already in the queue"
 
@@ -2625,7 +2630,7 @@ msgstr "Song actions"
 msgid "歌曲评论"
 msgstr "Song comments"
 
-#: src/store/player.ts:1547
+#: src/store/player.ts:1541
 msgid "歌曲资源已失效"
 msgstr "Track source expired"
 
@@ -2688,12 +2693,12 @@ msgid "正在加载相似歌曲…"
 msgstr "Loading similar songs…"
 
 #: src/components/player/NowPlayingTransport.tsx:436
-#: src/components/player/PlayerBar.tsx:1663
+#: src/components/player/PlayerBar.tsx:1656
 msgid "正在加载音源"
 msgstr "Loading source"
 
 #: src/components/player/NowPlaying.tsx:1449
-#: src/components/player/PlayerBar.tsx:1585
+#: src/components/player/PlayerBar.tsx:1578
 msgid "正在加载音源…"
 msgstr "Loading source…"
 
@@ -2716,7 +2721,7 @@ msgstr ""
 msgid "正在启动遥控服务…"
 msgstr "Starting the remote service…"
 
-#: src/routes/settings.tsx:873
+#: src/routes/settings.tsx:891
 msgid "正在安装"
 msgstr ""
 
@@ -2748,7 +2753,7 @@ msgstr ""
 #~ msgid "正在检查本地已有的安装包…"
 #~ msgstr ""
 
-#: src/routes/settings.tsx:1086
+#: src/routes/settings.tsx:1104
 msgid "正在检查运行环境…"
 msgstr ""
 
@@ -2757,7 +2762,7 @@ msgid "正在生成伴奏，预计约 {seconds} 秒"
 msgstr "Generating the instrumental, about {seconds} seconds"
 
 #: src/components/player/NowPlayingTransport.tsx:435
-#: src/components/player/PlayerBar.tsx:1665
+#: src/components/player/PlayerBar.tsx:1658
 msgid "正在缓冲"
 msgstr "Buffering"
 
@@ -2786,11 +2791,11 @@ msgstr "Resolving the playlist link…"
 msgid "正在读取 {0} 歌单…"
 msgstr "Reading the {0} playlist…"
 
-#: src/routes/settings.tsx:963
-#: src/routes/settings.tsx:999
-#: src/routes/settings.tsx:1202
-#: src/routes/settings.tsx:1218
-#: src/routes/settings.tsx:1243
+#: src/routes/settings.tsx:981
+#: src/routes/settings.tsx:1017
+#: src/routes/settings.tsx:1220
+#: src/routes/settings.tsx:1236
+#: src/routes/settings.tsx:1261
 msgid "正在读取…"
 msgstr "Loading…"
 
@@ -2802,7 +2807,7 @@ msgstr "Loading local playlist…"
 msgid "正在读取歌单…"
 msgstr "Reading the playlist…"
 
-#: src/routes/settings.tsx:1372
+#: src/routes/settings.tsx:1390
 msgid "正在读取缓存…"
 msgstr "Loading cache…"
 
@@ -2855,6 +2860,10 @@ msgstr "No matching tracks could be imported"
 msgid "没有匹配的歌曲"
 msgstr "No matching tracks"
 
+#: src/routes/settings.tsx:1444
+msgid "没有匹配的缓存歌曲"
+msgstr "No cached song matches"
+
 #: src/components/settings/SettingsNav.tsx:148
 msgid "没有匹配的设置"
 msgstr "No matching settings"
@@ -2863,7 +2872,7 @@ msgstr "No matching settings"
 msgid "没有可上传的音频源：当前歌曲尚未加载到播放器"
 msgstr "No audio to upload: the current track hasn't loaded yet"
 
-#: src/routes/settings.tsx:344
+#: src/routes/settings.tsx:346
 msgid "没有可清除的伴奏缓存"
 msgstr "There are no cached instrumentals"
 
@@ -2911,7 +2920,7 @@ msgstr "Genres & styles"
 msgid "流行"
 msgstr "Pop"
 
-#: src/routes/settings.tsx:645
+#: src/routes/settings.tsx:663
 msgid "浅色"
 msgstr "Light"
 
@@ -2935,7 +2944,7 @@ msgstr "Fade"
 msgid "深海青"
 msgstr "Deep Teal"
 
-#: src/routes/settings.tsx:658
+#: src/routes/settings.tsx:676
 msgid "深色"
 msgstr "Dark"
 
@@ -2980,11 +2989,11 @@ msgstr "A clear blue, close to the system default"
 msgid "清除"
 msgstr "Clear"
 
-#: src/routes/settings.tsx:947
+#: src/routes/settings.tsx:965
 msgid "清除伴奏缓存"
 msgstr "Clear cached instrumentals"
 
-#: src/routes/settings.tsx:347
+#: src/routes/settings.tsx:349
 msgid "清除伴奏缓存失败"
 msgstr "Couldn't clear cached instrumentals"
 
@@ -2992,11 +3001,11 @@ msgstr "Couldn't clear cached instrumentals"
 msgid "清除搜索"
 msgstr "Clear search"
 
-#: src/routes/settings.tsx:1499
+#: src/routes/settings.tsx:1534
 msgid "清除缓存"
 msgstr "Clear cache"
 
-#: src/routes/settings.tsx:487
+#: src/routes/settings.tsx:505
 msgid "清除缓存失败"
 msgstr "Failed to clear cache"
 
@@ -3079,7 +3088,7 @@ msgstr "Amber Gold"
 msgid "生日"
 msgstr "Birthday"
 
-#: src/routes/settings.tsx:892
+#: src/routes/settings.tsx:910
 msgid "用于 Python、pip 和 FFprobe 下载。留空则直连；例如 Clash 的 http://127.0.0.1:7890。"
 msgstr "Used for Python, pip, and FFprobe downloads. Leave empty for a direct connection, for example Clash at http://127.0.0.1:7890."
 
@@ -3211,7 +3220,7 @@ msgstr "Delete this local playlist? This cannot be undone."
 msgid "确认清空？"
 msgstr "Clear all?"
 
-#: src/routes/settings.tsx:1499
+#: src/routes/settings.tsx:1534
 msgid "确认清除？"
 msgstr "Clear everything?"
 
@@ -3252,11 +3261,11 @@ msgstr "Video is temporarily unavailable, possibly removed or region-restricted"
 msgid "视频评论"
 msgstr "Video comments"
 
-#: src/routes/settings.tsx:1338
+#: src/routes/settings.tsx:1356
 msgid "禁用后，右键菜单与 F12 / Ctrl+Shift+I 等入口不再打开开发者工具。 当前窗口立即生效，WebView2 层面需要重启应用。"
 msgstr "Disables the context menu and F12 / Ctrl+Shift+I. Applies to this window immediately; WebView2 needs an app restart."
 
-#: src/routes/settings.tsx:1347
+#: src/routes/settings.tsx:1365
 msgid "禁用开发者工具"
 msgstr "Disable developer tools"
 
@@ -3284,12 +3293,12 @@ msgstr "Failed to remove track"
 msgid "稍后"
 msgstr "Later"
 
-#: src/routes/settings.tsx:112
+#: src/routes/settings.tsx:113
 msgid "空格"
 msgstr "Space"
 
-#: src/routes/settings.tsx:767
-#: src/routes/settings.tsx:774
+#: src/routes/settings.tsx:785
+#: src/routes/settings.tsx:792
 msgid "窄窗口自动收起侧栏"
 msgstr "Auto-collapse sidebar in narrow windows"
 
@@ -3342,7 +3351,7 @@ msgstr "Checked in"
 msgid "简介"
 msgstr "Bio"
 
-#: src/routes/settings.tsx:602
+#: src/routes/settings.tsx:620
 msgid "管理外观、播放、缓存与桌面功能"
 msgstr "Appearance, playback, cache and desktop features"
 
@@ -3371,7 +3380,7 @@ msgstr "Cantonese"
 msgid "精彩评论"
 msgstr "Top comments"
 
-#: src/routes/settings.tsx:1165
+#: src/routes/settings.tsx:1183
 msgid "约 64kbps ≈ 1.9MB / 4 分钟，96kbps ≈ 2.9MB，128kbps ≈ 3.8MB。"
 msgstr "About 64 kbps ≈ 1.9 MB / 4 min, 96 kbps ≈ 2.9 MB, 128 kbps ≈ 3.8 MB."
 
@@ -3383,23 +3392,23 @@ msgstr "Keep editing"
 msgid "缓存"
 msgstr "Cache"
 
-#: src/routes/settings.tsx:1368
+#: src/routes/settings.tsx:1386
 msgid "缓存列表"
 msgstr "Cached tracks"
 
-#: src/routes/settings.tsx:1153
+#: src/routes/settings.tsx:1171
 msgid "缓存品质"
 msgstr "Cache quality"
 
-#: src/routes/settings.tsx:1240
+#: src/routes/settings.tsx:1258
 msgid "缓存目录"
 msgstr "Cache folder"
 
-#: src/routes/settings.tsx:562
+#: src/routes/settings.tsx:580
 msgid "缓存目录已更新"
 msgstr "Cache folder updated"
 
-#: src/routes/settings.tsx:485
+#: src/routes/settings.tsx:503
 msgid "缓存音乐已清除"
 msgstr "Cached music cleared"
 
@@ -3477,7 +3486,7 @@ msgid "获取二维码失败，请检查本地 API 服务是否启动"
 msgstr "Failed to get the QR code. Check whether the local API is running."
 
 #: src/store/player.ts:383
-#: src/store/player.ts:976
+#: src/store/player.ts:970
 msgid "获取歌曲播放地址失败"
 msgstr "Failed to get the playback URL"
 
@@ -3501,8 +3510,8 @@ msgstr "Resolve"
 #: src/components/layout/TitleBar.tsx:27
 #: src/components/layout/TopBar.tsx:153
 #: src/components/layout/TopBar.tsx:154
-#: src/routes/settings.tsx:148
-#: src/routes/settings.tsx:601
+#: src/routes/settings.tsx:149
+#: src/routes/settings.tsx:619
 msgid "设置"
 msgstr "Settings"
 
@@ -3535,15 +3544,15 @@ msgid "评论成功"
 msgstr "Comment posted"
 
 #: src/components/player/NowPlaying.tsx:1401
-#: src/components/player/PlayerBar.tsx:1562
+#: src/components/player/PlayerBar.tsx:1555
 msgid "试听"
 msgstr "Preview"
 
-#: src/components/player/PlayerBar.tsx:1159
+#: src/components/player/PlayerBar.tsx:1152
 msgid "试听结束，登录或开通会员可播放完整版"
 msgstr "Preview ended. Sign in or get VIP to play the full track."
 
-#: src/store/player.ts:1234
+#: src/store/player.ts:1228
 msgid "该列表暂无可播放歌曲"
 msgstr "No playable tracks in this list"
 
@@ -3551,7 +3560,7 @@ msgstr "No playable tracks in this list"
 msgid "该歌曲暂不可用"
 msgstr "This track is currently unavailable"
 
-#: src/components/player/PlayerBar.tsx:1575
+#: src/components/player/PlayerBar.tsx:1568
 msgid "该歌曲没有官方音源，当前使用匹配到的其他音源"
 msgstr "No official source; using a matched source"
 
@@ -3586,7 +3595,7 @@ msgstr "Voice comment progress"
 msgid "说点什么…"
 msgstr "Say something…"
 
-#: src/store/player.ts:1433
+#: src/store/player.ts:1427
 msgid "请先播放歌曲"
 msgstr "Play a track first"
 
@@ -3684,11 +3693,11 @@ msgstr "Higher · 96kbps"
 msgid "输入关键词后按回车开始搜索"
 msgstr "Enter a keyword and press Enter to search"
 
-#: src/routes/settings.tsx:1027
+#: src/routes/settings.tsx:1045
 msgid "输出格式"
 msgstr ""
 
-#: src/routes/settings.tsx:1045
+#: src/routes/settings.tsx:1063
 msgid "输出码率"
 msgstr ""
 
@@ -3774,16 +3783,16 @@ msgstr "This song is already playing"
 #~ msgid "进入和离开歌曲详情页时使用的动画效果。"
 #~ msgstr ""
 
-#: src/routes/settings.tsx:838
-#: src/routes/settings.tsx:845
+#: src/routes/settings.tsx:856
+#: src/routes/settings.tsx:863
 msgid "进度条显示剩余时间"
 msgstr "Show time remaining"
 
-#: src/store/player.ts:1101
+#: src/store/player.ts:1095
 msgid "连续 {skipped} 首歌曲无法播放，已停止播放"
 msgstr "{skipped} tracks in a row couldn't be played. Playback stopped."
 
-#: src/components/player/PlayerBar.tsx:1411
+#: src/components/player/PlayerBar.tsx:1404
 msgid "连续多首歌曲无法播放，已暂停播放"
 msgstr "Several tracks in a row could not be played. Playback paused."
 
@@ -3800,11 +3809,11 @@ msgid "退出登录"
 msgstr "Sign out"
 
 #. placeholder {0}: item.name
-#: src/routes/settings.tsx:1438
+#: src/routes/settings.tsx:1473
 msgid "选择 {0}"
 msgstr "Select {0}"
 
-#: src/components/player/PlayerBar.tsx:1061
+#: src/components/player/PlayerBar.tsx:1054
 msgid "选择一首歌曲开始播放"
 msgstr "Select a song to start playing"
 
@@ -3812,8 +3821,8 @@ msgstr "Select a song to start playing"
 msgid "选择后立即重新获取当前歌曲；自动匹配会按内置顺序尝试。"
 msgstr "Selecting one refetches the current track immediately; auto match tries sources in built-in order."
 
-#: src/routes/settings.tsx:1227
-#: src/routes/settings.tsx:1253
+#: src/routes/settings.tsx:1245
+#: src/routes/settings.tsx:1271
 msgid "选择文件夹"
 msgstr "Choose folder"
 
@@ -3854,8 +3863,8 @@ msgstr "Some artist details failed to load"
 msgid "部分歌曲加载失败，可点击「刷新」重试"
 msgstr "Some tracks failed to load. Click Refresh to try again."
 
-#: src/routes/settings.tsx:665
-#: src/routes/settings.tsx:670
+#: src/routes/settings.tsx:683
+#: src/routes/settings.tsx:688
 msgid "配色方案"
 msgstr ""
 
@@ -3937,15 +3946,15 @@ msgstr ""
 msgid "随机播放"
 msgstr "Shuffle"
 
-#: src/components/player/PlayerBar.tsx:1742
+#: src/components/player/PlayerBar.tsx:1735
 msgid "静音"
 msgstr "Mute"
 
-#: src/routes/settings.tsx:117
+#: src/routes/settings.tsx:118
 msgid "静音 / 取消静音"
 msgstr "Mute / unmute"
 
-#: src/components/player/PlayerBar.tsx:1743
+#: src/components/player/PlayerBar.tsx:1736
 msgid "静音（M）"
 msgstr "Mute (M)"
 
@@ -3963,11 +3972,11 @@ msgstr "Korean"
 msgid "音乐"
 msgstr "Music"
 
-#: src/routes/settings.tsx:1131
+#: src/routes/settings.tsx:1149
 msgid "音乐缓存"
 msgstr "Audio cache"
 
-#: src/routes/settings.tsx:1272
+#: src/routes/settings.tsx:1290
 msgid "音源匹配"
 msgstr "Source matching"
 
@@ -3978,8 +3987,8 @@ msgstr "Couldn't download the track ({0})"
 
 #: src/components/player/ImmersivePlayerBar.tsx:379
 #: src/components/player/NowPlayingTransport.tsx:550
-#: src/components/player/PlayerBar.tsx:1755
-#: src/components/player/PlayerBar.tsx:1771
+#: src/components/player/PlayerBar.tsx:1748
+#: src/components/player/PlayerBar.tsx:1764
 #: src/components/player/VolumeSlider.tsx:81
 msgid "音量"
 msgstr "Volume"
@@ -3989,21 +3998,21 @@ msgstr "Volume"
 msgid "音量 {0}%"
 msgstr "Volume {0}%"
 
-#: src/routes/settings.tsx:114
+#: src/routes/settings.tsx:115
 msgid "音量 +1 / -1"
 msgstr "Volume +1 / -1"
 
-#: src/routes/settings.tsx:113
+#: src/routes/settings.tsx:114
 msgid "音量 +5 / -5"
 msgstr "Volume +5 / -5"
 
 #: src/components/player/ImmersivePlayerBar.tsx:380
-#: src/components/player/PlayerBar.tsx:1772
+#: src/components/player/PlayerBar.tsx:1765
 msgid "音量（Alt + ↑ / ↓）"
 msgstr "Volume (Alt + ↑ / ↓)"
 
-#: src/routes/settings.tsx:820
-#: src/routes/settings.tsx:831
+#: src/routes/settings.tsx:838
+#: src/routes/settings.tsx:849
 msgid "音量均衡"
 msgstr "Even Out Loudness"
 
@@ -4058,7 +4067,7 @@ msgstr "Vinyl"
 #~ msgid "默认"
 #~ msgstr "Default"
 
-#: src/routes/settings.tsx:1190
+#: src/routes/settings.tsx:1208
 msgid "默认 200 MB，超出后按缓存时间从旧到新清理。"
 msgstr "Defaults to 200 MB; when exceeded, the oldest cached tracks are removed first."
 
