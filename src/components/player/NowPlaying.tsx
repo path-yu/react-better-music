@@ -16,7 +16,6 @@ import {
   ChevronDown,
   Disc3,
   GripVertical,
-  Heart,
   LayoutGrid,
   List,
   Loader2,
@@ -158,6 +157,11 @@ export function NowPlaying() {
       ? likedIds.includes(currentSong.id)
       : localFavorites.some((song) => song.id === currentSong.id)
     : false
+  const toggleLike = () => {
+    if (!currentSong) return
+    if (isLogin) void likeSong(currentSong.id, !liked)
+    else void toggleLocalFavorite(currentSong)
+  }
   const bindVideo = useVideoPlaybackStore((state) => state.bind)
   const videoActive = useVideoPlaybackStore((state) => state.active)
   const nowPlayingMode = useSettingsStore((state) => state.nowPlayingMode)
@@ -1281,41 +1285,16 @@ export function NowPlaying() {
           videoActive ? 'pb-[76px]' : 'pb-4',
         )}
       >
+        {/* Top chrome spacer: keeps the overlay content clear of the window
+            title bar and of the fixed collapse button on mobile. The "like"
+            control moved down to the transport row next to heart mode. */}
         <div
           className={cn(
             'flex h-[58px] flex-none items-center justify-between px-6',
-            // Mobile: line up with the fixed collapse button (top-4, 36px);
-            // centring 40px buttons in the 58px row left them 7px higher.
             'max-md:items-start max-md:px-4 max-md:pt-4',
             mvMode && 'hidden',
           )}
-        >
-          {/* The floating player bar already exposes "like" on desktop; on
-              mobile it is hidden, so this row is its only entry point (the
-              queue is one of the top tabs).
-              `pl-11` clears the fixed collapse button (left-4, 36px) plus the
-              same 8px gap the row uses. */}
-          <div className="flex items-center gap-2 pl-11 md:hidden">
-            <button
-              type="button"
-              aria-label={liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)}
-              aria-pressed={liked}
-              title={liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)}
-              onClick={() => {
-                if (isLogin) void likeSong(currentSong.id, !liked)
-                else void toggleLocalFavorite(currentSong)
-              }}
-              className="np-round-button pressable flex h-9 w-9 items-center justify-center rounded-full"
-            >
-              <Heart
-                className={cn(
-                  'h-4 w-4',
-                  liked ? 'fill-love text-love' : 'text-white/60',
-                )}
-              />
-            </button>
-          </div>
-        </div>
+        />
 
         {mvMode ? (
           <>
@@ -1518,15 +1497,14 @@ export function NowPlaying() {
                       : undefined
                   }
                   onOpenAlbum={openAlbum}
-                  onToggleLike={() => {
-                    if (isLogin) void likeSong(currentSong.id, !liked)
-                    else void toggleLocalFavorite(currentSong)
-                  }}
+                  onToggleLike={toggleLike}
                 />
               </div>
             </div>
             <div className={cn('np-transport-panel mt-5', !mobileSongView && 'max-md:mt-3')}>
               <NowPlayingTransport
+                liked={liked}
+                onToggleLike={toggleLike}
                 onOpenRelatedVideos={() => void openRelatedVideos()}
                 videoLoading={videoLoading}
               />

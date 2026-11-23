@@ -6,6 +6,7 @@ import { Trans } from '@lingui/react/macro'
 import {
   AudioLines,
   Ellipsis,
+  Heart,
   ListMusic,
   Loader2,
   Mic2,
@@ -62,10 +63,15 @@ export function NowPlayingTransport({
   className,
   onOpenRelatedVideos,
   videoLoading = false,
+  liked = false,
+  onToggleLike,
 }: {
   className?: string
   onOpenRelatedVideos?: () => void
   videoLoading?: boolean
+  /** Rendered as a compact icon next to the heart-mode toggle on narrow screens. */
+  liked?: boolean
+  onToggleLike?: () => void
 }) {
   const { i18n } = useLingui()
   const navigate = useNavigate()
@@ -273,7 +279,27 @@ export function NowPlayingTransport({
         className,
       )}
     >
-      <div className="order-2 flex w-full items-center justify-center gap-4">
+      {/* Nine buttons no longer fit the artwork-width row on narrow screens, so
+          the gaps tighten there; desktop keeps the roomier spacing. */}
+      <div className="order-2 flex w-full items-center justify-center gap-4 max-md:gap-2">
+        {/* On mobile the floating player bar hides its "like" button, so this
+            row is its only entry point; it sits next to heart mode instead of
+            in the top chrome. */}
+        {onToggleLike ? (
+          <button
+            type="button"
+            title={liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)}
+            aria-label={liked ? i18n._(msg`取消喜欢`) : i18n._(msg`喜欢`)}
+            aria-pressed={liked}
+            onClick={onToggleLike}
+            className={cn(
+              'pressable flex h-7 w-7 items-center justify-center transition-colors md:hidden',
+              liked ? 'text-love' : 'text-white/45 hover:text-white/80',
+            )}
+          >
+            <Heart className={cn('h-4 w-4', liked && 'fill-love')} />
+          </button>
+        ) : null}
         <button
           type="button"
           title={heartMode ? i18n._(msg`关闭心动模式`) : i18n._(msg`心动模式`)}

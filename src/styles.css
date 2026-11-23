@@ -3261,6 +3261,17 @@ a.song-tag--outline:focus-visible {
   font-size: 0.85em;
 }
 
+/* Narrow screens: the lyrics tab spans the whole viewport instead of the
+   desktop's ~52% column, so the left-aligned rows hug the left edge and the
+   list reads as off-centre. Center the rows and let the active line scale
+   from its middle, the way the mobile Music app lays lyrics out. */
+@media (max-width: 767px) {
+  .lyric-line {
+    text-align: center;
+    transform-origin: center center;
+  }
+}
+
 @keyframes nowplaying-fade {
   from {
     opacity: 0;
