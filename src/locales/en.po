@@ -711,7 +711,7 @@ msgid "关闭到托盘"
 msgstr "Close to tray"
 
 #: src/components/player/ImmersivePlayerBar.tsx:438
-#: src/components/player/MorePlaybackOptions.tsx:240
+#: src/components/player/MorePlaybackOptions.tsx:345
 msgid "关闭后只高亮整行，不做逐字动画"
 msgstr "When off, only the whole line is highlighted; no word-by-word animation"
 
@@ -862,17 +862,13 @@ msgstr "Switch to video"
 #~ msgid "切换界面语言，语言资源加载后立即生效。"
 #~ msgstr ""
 
-#: src/store/player.ts:1624
-msgid "切换音源失败，请稍后再试"
-msgstr "Failed to switch sources. Try again later."
-
-#: src/components/player/MorePlaybackOptions.tsx:250
+#: src/components/player/MorePlaybackOptions.tsx:282
 msgid "切换音源"
 msgstr "Switch source"
 
-#: src/components/player/MorePlaybackOptions.tsx:259
-msgid "官方推荐版本"
-msgstr "Official alternative version"
+#: src/store/player.ts:1624
+msgid "切换音源失败，请稍后再试"
+msgstr "Failed to switch sources. Try again later."
 
 #: src/lib/playMode.ts:8
 msgid "列表循环"
@@ -1268,6 +1264,11 @@ msgstr ""
 #: src/routes/toplist.tsx:224
 msgid "完整榜单"
 msgstr "Full chart"
+
+#: src/components/player/MorePlaybackOptions.tsx:180
+#: src/components/player/MorePlaybackOptions.tsx:183
+msgid "官方推荐版本"
+msgstr "Official alternative version"
 
 #: src/routes/toplist.tsx:366
 msgid "官方榜"
@@ -1962,7 +1963,7 @@ msgstr "The queue is empty"
 #: src/components/player/ImmersivePlayerBar.tsx:338
 #: src/components/player/ImmersivePlayerBar.tsx:339
 #: src/components/player/ImmersivePlayerBar.tsx:352
-#: src/components/player/MorePlaybackOptions.tsx:229
+#: src/components/player/MorePlaybackOptions.tsx:265
 msgid "播放音质"
 msgstr "Playback quality"
 
@@ -1971,7 +1972,7 @@ msgstr "Playback quality"
 msgid "播放音质已切换为{0}，正在重新加载"
 msgstr "Audio quality switched to {0}; reloading"
 
-#: src/components/player/MorePlaybackOptions.tsx:194
+#: src/components/player/MorePlaybackOptions.tsx:230
 msgid "播放音质已切换为{label}，正在重新加载"
 msgstr "Playback quality switched to {label}. Reloading."
 
@@ -2475,7 +2476,7 @@ msgstr "Desktop service timed out"
 msgid "桌面服务请求失败 ({0})"
 msgstr "Desktop service request failed ({0})"
 
-#: src/components/player/MorePlaybackOptions.tsx:266
+#: src/components/player/MorePlaybackOptions.tsx:371
 msgid "桌面歌词"
 msgstr "Desktop lyrics"
 
@@ -2483,7 +2484,7 @@ msgstr "Desktop lyrics"
 msgid "桌面歌词：Ctrl / ⌘ + Shift + L 显示或隐藏，窗口始终置顶，可拖动到任意位置。"
 msgstr "Desktop lyrics: Ctrl / ⌘ + Shift + L to show or hide. The window stays on top and can be dragged anywhere."
 
-#: src/components/player/MorePlaybackOptions.tsx:177
+#: src/components/player/MorePlaybackOptions.tsx:213
 msgid "桌面歌词窗口暂不可用"
 msgstr "Desktop lyrics are unavailable"
 
@@ -2642,12 +2643,12 @@ msgstr "Lyrics"
 msgid "歌词、律动、播放队列、评论与相似歌曲"
 msgstr "Lyrics, motion, queue, comments, and similar songs"
 
-#: src/components/player/MorePlaybackOptions.tsx:255
+#: src/components/player/MorePlaybackOptions.tsx:360
 msgid "歌词字号"
 msgstr "Lyric Size"
 
 #: src/components/player/ImmersivePlayerBar.tsx:450
-#: src/components/player/MorePlaybackOptions.tsx:247
+#: src/components/player/MorePlaybackOptions.tsx:352
 msgid "歌词显示"
 msgstr "Lyrics display"
 
@@ -3189,7 +3190,7 @@ msgstr "Could not load similar songs"
 msgid "相关推荐"
 msgstr "Related"
 
-#: src/components/player/MorePlaybackOptions.tsx:220
+#: src/components/player/MorePlaybackOptions.tsx:256
 #: src/components/songs/SongContextMenu.tsx:451
 msgid "相关视频"
 msgstr "Related videos"
@@ -3435,6 +3436,7 @@ msgstr "Editor-picked Chinese, Western and instrumental playlists"
 msgid "缩放淡入"
 msgstr "Scale Fade"
 
+#: src/components/player/MorePlaybackOptions.tsx:184
 #: src/components/player/SourcePicker.tsx:45
 msgid "网易云官方"
 msgstr "NetEase official"
@@ -3796,11 +3798,11 @@ msgstr "{skipped} tracks in a row couldn't be played. Playback stopped."
 msgid "连续多首歌曲无法播放，已暂停播放"
 msgstr "Several tracks in a row could not be played. Playback paused."
 
-#: src/components/player/MorePlaybackOptions.tsx:272
+#: src/components/player/MorePlaybackOptions.tsx:377
 msgid "迷你播放器"
 msgstr "Mini player"
 
-#: src/components/player/MorePlaybackOptions.tsx:183
+#: src/components/player/MorePlaybackOptions.tsx:219
 msgid "迷你播放器暂不可用"
 msgstr "Mini player is unavailable"
 
@@ -3817,6 +3819,7 @@ msgstr "Select {0}"
 msgid "选择一首歌曲开始播放"
 msgstr "Select a song to start playing"
 
+#: src/components/player/MorePlaybackOptions.tsx:335
 #: src/components/player/SourcePicker.tsx:159
 msgid "选择后立即重新获取当前歌曲；自动匹配会按内置顺序尝试。"
 msgstr "Selecting one refetches the current track immediately; auto match tries sources in built-in order."
@@ -3843,7 +3846,7 @@ msgstr "Choose source"
 
 #: src/components/player/ImmersivePlayerBar.tsx:435
 #: src/components/player/ImmersivePlayerBar.tsx:444
-#: src/components/player/MorePlaybackOptions.tsx:239
+#: src/components/player/MorePlaybackOptions.tsx:344
 msgid "逐字播放"
 msgstr "Word-by-word playback"
 
