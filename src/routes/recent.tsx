@@ -4,7 +4,7 @@ import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { History, Loader2, RefreshCw, Trash2 } from 'lucide-react'
-import { Input } from '@pikoloo/darwin-ui'
+import { SearchInput } from '../components/common/SearchInput'
 import { SongTable } from '../components/songs/SongTable'
 import { PlayAllButton } from '../components/songs/PlayAllButton'
 import { EmptyState } from '../components/common/EmptyState'
@@ -127,12 +127,12 @@ function RecentSongsPage() {
       </div>
 
       <div className="mt-5 flex items-center justify-between gap-3">
-        <Input.Search
+        <SearchInput
           value={keyword}
-          onChange={(event) => setKeyword(event.target.value)}
+          onChange={setKeyword}
           placeholder={i18n._(msg`搜索歌曲、歌手或专辑`)}
-          size="sm"
-          className="w-[240px] rounded-full text-[12px]"
+          wrapperClassName="w-[240px] shrink-0"
+          className="rounded-full text-[12px]"
         />
         {keyword.trim() ? (
           <span className="shrink-0 text-[11px] tabular-nums text-ink-4">

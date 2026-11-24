@@ -1577,6 +1577,10 @@ msgstr "已开始下载「{0}」"
 msgid "已收藏"
 msgstr "已收藏"
 
+#: src/routes/albums/$id.tsx:104
+msgid "该专辑无法在线收藏，已收藏到本地"
+msgstr "该专辑无法在线收藏，已收藏到本地"
+
 #. placeholder {0}: choice.name
 #. placeholder {0}: playlist.name
 #: src/components/player/PlaylistPicker.tsx:116
@@ -2725,6 +2729,22 @@ msgstr "歌单解析失败"
 #: src/routes/search.tsx:325
 msgid "歌手"
 msgstr "歌手"
+
+#: src/routes/artist/$id.tsx:300
+msgid "{0} 热门歌曲"
+msgstr "{0} 热门歌曲"
+
+#: src/routes/artist/$id.tsx:306
+msgid "已收藏到本地歌单「{0}」"
+msgstr "已收藏到本地歌单「{0}」"
+
+#: src/routes/artist/$id.tsx:447
+msgid "收藏热门歌曲到本地歌单"
+msgstr "收藏热门歌曲到本地歌单"
+
+#: src/routes/artist/$id.tsx:454
+msgid "收藏热门歌曲"
+msgstr "收藏热门歌曲"
 
 #: src/routes/artist/$id.tsx:233
 msgid "歌手不存在或无法访问"

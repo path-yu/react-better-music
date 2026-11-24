@@ -5258,6 +5258,14 @@ html.dark[data-theme='dark'] body {
 
 .settings-search input::placeholder { color: currentColor; }
 
+/* Search fields render their own clear button (SearchInput / settings nav);
+   WebView2's native one would sit on top of it. */
+input[type='search']::-webkit-search-cancel-button,
+input[type='search']::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 .settings-nav__list {
   display: flex;
   flex-direction: column;

@@ -12,7 +12,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react'
-import { Input } from '@pikoloo/darwin-ui'
+import { SearchInput } from '../common/SearchInput'
 import {
   fetchAlbumDetail,
   fetchDefaultSearchKeyword,
@@ -167,7 +167,7 @@ export function SearchBox({
     void navigate({ to: '/songlists/$id', params: { id: String(id) } })
   }
 
-  // Whitespace-only input counts as empty: no suggestions and no clear button.
+  // Whitespace-only input counts as empty: no suggestions are requested.
   const hasQuery = keyword.trim().length > 0
   const songOffset = 1
   const playlistOffset = songOffset + suggest.songs.length
@@ -215,7 +215,7 @@ export function SearchBox({
         className ?? 'max-w-[420px]',
       )}
     >
-      <Input.Search
+      <SearchInput
         autoFocus={autoFocus}
         value={keyword}
         size="sm"
@@ -223,10 +223,12 @@ export function SearchBox({
           (i18n.locale.startsWith('zh') ? defaultKeyword : '') ||
           i18n._(msg`搜索音乐、歌单`)
         }
-        onChange={(event) => {
-          setKeyword(event.target.value)
+        onChange={(value) => {
+          setKeyword(value)
           setOpen(true)
         }}
+        onClear={() => setActiveIndex(-1)}
+        clearClassName="h-6 w-6 max-md:h-8 max-md:w-8 [&>svg]:h-3.5 [&>svg]:w-3.5"
         onFocus={() => setOpen(true)}
         // A lone space would otherwise keep the field looking empty while the
         // placeholder stays hidden; normalise it back to '' on blur.
@@ -271,25 +273,6 @@ export function SearchBox({
         wrapperClassName="w-full"
         className="app-search-input electrobun-webkit-app-region-no-drag rounded-full border border-[var(--app-border-strong)] bg-transparent pl-9 pr-9 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
       />
-
-      {/* Own clear button: the slot provided by the input was not clickable and
-          did not centre vertically, so it is positioned against the wrapper.
-          Hidden for whitespace-only input, which is empty for search purposes. */}
-      {hasQuery ? (
-        <button
-          type="button"
-          aria-label={i18n._(msg`清空搜索`)}
-          onClick={() => {
-            setKeyword('')
-            setActiveIndex(-1)
-          }}
-          // Keep the caret in the field while clearing, like a native search box.
-          onMouseDown={(event) => event.preventDefault()}
-          className="electrobun-webkit-app-region-no-drag pressable absolute right-1.5 top-1/2 z-10 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-ink-3 transition-colors hover:bg-black/10 hover:text-ink-2 max-md:h-8 max-md:w-8"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
-      ) : null}
 
       {open && (
         <div className="absolute left-0 top-full z-[80] mt-2 w-full min-w-[280px] overflow-hidden rounded-[18px] border border-[var(--app-border)] bg-[var(--app-glass)] shadow-[0_24px_60px_-20px_rgba(0,0,0,0.35)] backdrop-blur-xl fade-up">

@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { HardDrive, Headphones, Monitor, Search, Settings2 } from 'lucide-react'
+import { HardDrive, Headphones, Monitor, Search, Settings2, X } from 'lucide-react'
 import type { MessageDescriptor } from '@lingui/core'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
@@ -121,6 +121,19 @@ export function SettingsNav({
           placeholder={i18n._(msg`搜索`)}
           aria-label={i18n._(msg`搜索设置`)}
         />
+        {query ? (
+          <button
+            type="button"
+            aria-label={i18n._(msg`清除搜索`)}
+            title={i18n._(msg`清除搜索`)}
+            // Keep the caret in the field while clearing.
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => onQueryChange('')}
+            className="pressable flex h-4 w-4 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-black/10 hover:text-ink-2 dark:hover:bg-white/15 dark:hover:text-white"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        ) : null}
       </label>
 
       <nav className="settings-nav__list" role="tablist">

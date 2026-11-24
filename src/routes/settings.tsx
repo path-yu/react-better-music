@@ -31,7 +31,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  Input,
   Select,
 } from '@pikoloo/darwin-ui'
 import {
@@ -50,6 +49,7 @@ import {
   type SettingsTab,
 } from '../components/settings/SettingsNav'
 import { ToggleSwitch } from '../components/common/ToggleSwitch'
+import { SearchInput } from '../components/common/SearchInput'
 import { PlayerStylePicker } from '../components/settings/PlayerStylePicker'
 import { RemoteControlCard } from '../components/settings/RemoteControlCard'
 import { UpdateCard } from '../components/settings/UpdateCard'
@@ -1411,17 +1411,14 @@ function SettingsPage() {
               </p>
             </div>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-              
-                <div   style={{width:'223px'}}>
-                    <Input.Search
+              <SearchInput
                 value={cacheQuery}
-                onChange={(event) => setCacheQuery(event.target.value)}
+                onChange={setCacheQuery}
                 placeholder={i18n._(msg`搜索缓存歌曲`)}
-                aria-label={i18n._(msg`搜索缓存歌曲`)}
-                size="sm"
-                className="w-[220px] rounded-full text-[12px]"
+                ariaLabel={i18n._(msg`搜索缓存歌曲`)}
+                wrapperClassName="w-[220px] shrink-0"
+                className="rounded-full text-[12px]"
               />
-                </div>
               <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant="secondary"

@@ -15,7 +15,6 @@ import {
 import {
   Avatar,
   Button,
-  Input,
   Skeleton,
   Tabs,
   TabsContent,
@@ -23,6 +22,7 @@ import {
   TabsTrigger,
 } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../../components/common/ImageWithFallback'
+import { SearchInput } from '../../components/common/SearchInput'
 import { EmptyState } from '../../components/common/EmptyState'
 import { ExpandableDescription } from '../../components/common/ExpandableDescription'
 import { PlaylistCard } from '../../components/cards/PlaylistCard'
@@ -562,12 +562,12 @@ function PlaylistDetailPage() {
             </TabsTrigger>
           </TabsList>
           {tab === 'songs' ? (
-            <Input.Search
+            <SearchInput
               value={keyword}
-              onChange={(event) => setKeyword(event.target.value)}
+              onChange={setKeyword}
               placeholder={i18n._(msg`搜索歌单歌曲`)}
-              size="sm"
-              className="w-[190px] rounded-full text-[12px] max-sm:w-full"
+              wrapperClassName="w-[190px] shrink-0 max-sm:w-full"
+              className="rounded-full text-[12px]"
             />
           ) : null}
         </div>

@@ -3,7 +3,15 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { ArrowLeft, Check, Disc3, Music2, UserPlus, Video } from 'lucide-react'
+import {
+  ArrowLeft,
+  BookmarkPlus,
+  Check,
+  Disc3,
+  Music2,
+  UserPlus,
+  Video,
+} from 'lucide-react'
 import { Skeleton, Tabs, TabsContent, TabsList, TabsTrigger, Button } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../../components/common/ImageWithFallback'
 import { EmptyState } from '../../components/common/EmptyState'
@@ -66,8 +74,10 @@ function ArtistPage() {
   const cacheLocalArtist = useLocalLibraryStore(
     (state) => state.cacheSubscribedArtist,
   )
+  const createPlaylist = useLocalLibraryStore((state) => state.createPlaylist)
   const [followed, setFollowed] = useState(false)
   const [followBusy, setFollowBusy] = useState(false)
+  const [collecting, setCollecting] = useState(false)
   // How many albums were loaded on the previous visit; the route holds no
   // component state, so the list must be rebuilt before scroll can restore.
   const albumsRestoreRef = useRef(false)
@@ -273,6 +283,26 @@ function ArtistPage() {
     }
   }
 
+  /**
+   * Save the hot-song list as a local playlist named after the artist. This is
+   * the local library API on purpose: it works signed out and does not depend
+   * on the album/song being available to the account.
+   */
+  const handleCollectTopSongs = async () => {
+    if (!songs.length || collecting) return
+    const artistName = profile?.name?.trim() || i18n._(msg`歌手`)
+    const name = i18n._(msg`${artistName} 热门歌曲`)
+    setCollecting(true)
+    try {
+      const playlist = await createPlaylist(name, songs)
+      if (playlist) {
+        toast.success(i18n._(msg`已收藏到本地歌单「${name}」`))
+      }
+    } finally {
+      setCollecting(false)
+    }
+  }
+
   const handleLoadMoreAlbums = async () => {
     if (albumsLoadingMore || albumsDone) return
     setAlbumsLoadingMore(true)
@@ -436,11 +466,29 @@ function ArtistPage() {
             <TabsTrigger value="mvs">MV</TabsTrigger>
           </TabsList>
           {tab === 'songs' && songs.length ? (
-            <PlayAllButton
-            songs={songs}
-            playlistId={playlistId}
-            label={i18n._(msg`播放热门歌曲`)}
-          />
+            <div className="flex shrink-0 items-center gap-2">
+              <PlayAllButton
+                songs={songs}
+                playlistId={playlistId}
+                label={i18n._(msg`播放热门歌曲`)}
+              />
+              <Button
+                variant="secondary"
+                size="sm"
+                className="pressable rounded-full px-3 text-[12px]"
+                loading={collecting}
+                disabled={collecting}
+                onClick={() => void handleCollectTopSongs()}
+                title={i18n._(msg`收藏热门歌曲到本地歌单`)}
+                aria-label={i18n._(msg`收藏热门歌曲到本地歌单`)}
+              >
+                <BookmarkPlus className="mr-1.5 h-3.5 w-3.5" />
+                {/* Icon-only on narrow screens: the tabs row has no spare width. */}
+                <span className="max-md:hidden">
+                  <Trans>收藏热门歌曲</Trans>
+                </span>
+              </Button>
+            </div>
           ) : null}
         </div>
 

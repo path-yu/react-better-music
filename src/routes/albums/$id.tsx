@@ -4,12 +4,9 @@ import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { ArrowLeft, Building2, CalendarDays, Check, Star } from 'lucide-react'
-import {
-  Button,
-  Input,
-  Skeleton,
-} from '@pikoloo/darwin-ui'
+import { Button, Skeleton } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../../components/common/ImageWithFallback'
+import { SearchInput } from '../../components/common/SearchInput'
 import { EmptyState } from '../../components/common/EmptyState'
 import { ExpandableDescription } from '../../components/common/ExpandableDescription'
 import { ArtistLinks } from '../../components/common/ArtistLinks'
@@ -47,34 +44,77 @@ function AlbumDetailPage() {
   // re-derive the state whenever either side changes (login, id, local edits).
   useEffect(() => {
     if (!album) return
-    setSubscribed(
-      isLogin
-        ? Boolean(album.isSub)
-        : localAlbums.some((item) => Number(item.id) === Number(album.id)),
+    // A delisted / copyright-locked album can only live in the local library,
+    // even for a signed-in account.
+    const inLocal = localAlbums.some(
+      (item) => Number(item.id) === Number(album.id),
     )
+    setSubscribed(isLogin ? Boolean(album.isSub) || inLocal : inLocal)
   }, [album, isLogin, localAlbums])
 
   const handleToggleSubscribe = async () => {
     if (!album || subscribeBusy) return
     setSubscribeBusy(true)
     const next = !subscribed
+    const inLocal = localAlbums.some(
+      (item) => Number(item.id) === Number(album.id),
+    )
     try {
-      if (isLogin) {
-        if (!(await subscribeAlbum(album.id, next))) {
-          throw new Error('album/sub failed')
+      if (next) {
+        // Signed out: the local library *is* the normal target, not a
+        // fallback. Signed in: a delisted or copyright-locked album makes
+        // `/album/sub` fail, and then the local library is the only place that
+        // can still hold it.
+        let online = false
+        if (isLogin) {
+          try {
+            online = await subscribeAlbum(album.id, true)
+          } catch {
+            online = false
+          }
         }
-        setAlbum((current) =>
-          current ? { ...current, isSub: next } : current,
+        if (online) {
+          setAlbum((current) =>
+            current ? { ...current, isSub: true } : current,
+          )
+          // Keep the sidebar's "收藏的专辑" in step without a reload.
+          void useUserStore.getState().loadCollectedAlbums()
+        } else {
+          const result = await toggleLocalAlbum(album)
+          if (result === null) return
+        }
+        setSubscribed(true)
+        toast.success(
+          online || !isLogin
+            ? i18n._(msg`已收藏`)
+            : i18n._(msg`该专辑无法在线收藏，已收藏到本地`),
         )
-        setSubscribed(next)
-        // Keep the sidebar's "收藏的专辑" in step without a reload.
-        void useUserStore.getState().loadCollectedAlbums()
-      } else {
-        const result = await toggleLocalAlbum(album)
-        if (result === null) return
-        setSubscribed(result)
+        return
       }
-      toast.success(next ? i18n._(msg`已收藏`) : i18n._(msg`已取消收藏`))
+
+      // Uncollect from wherever it was collected.
+      let removed = false
+      if (isLogin && album.isSub) {
+        const ok = await subscribeAlbum(album.id, false).catch(() => false)
+        if (ok) {
+          setAlbum((current) =>
+            current ? { ...current, isSub: false } : current,
+          )
+          void useUserStore.getState().loadCollectedAlbums()
+          removed = true
+        }
+      }
+      if (inLocal) {
+        const result = await toggleLocalAlbum(album)
+        if (result !== null) removed = true
+      }
+      if (!removed) {
+        setSubscribed(Boolean(album.isSub))
+        toast.error(i18n._(msg`操作失败`))
+        return
+      }
+      setSubscribed(false)
+      toast.success(i18n._(msg`已取消收藏`))
     } catch {
       toast.error(i18n._(msg`操作失败`))
     } finally {
@@ -264,12 +304,12 @@ function AlbumDetailPage() {
             {songs.length}
           </span>
         </div>
-        <Input.Search
+        <SearchInput
           value={keyword}
-          onChange={(event) => setKeyword(event.target.value)}
+          onChange={setKeyword}
           placeholder={i18n._(msg`搜索专辑歌曲`)}
-          size="sm"
-          className="w-[190px] rounded-full text-[12px] max-sm:w-full"
+          wrapperClassName="w-[190px] shrink-0 max-sm:w-full"
+          className="rounded-full text-[12px]"
         />
       </div>
 
