@@ -11,6 +11,7 @@ import {
   Film,
   Languages,
   Loader2,
+  Moon,
   PictureInPicture2,
   Radio,
   Subtitles,
@@ -36,7 +37,22 @@ import {
   useSettingsStore,
 } from '../../store/settings'
 import { SOURCE_OPTIONS } from '../../lib/sources'
+import { listCachedSources } from '../../lib/songCache'
+import { useSleepTimerStore } from '../../store/sleepTimer'
 import type { PlayLevel } from '../../types'
+
+const SLEEP_OPTIONS = [
+  { minutes: 15, label: msg`15 分钟` },
+  { minutes: 30, label: msg`30 分钟` },
+  { minutes: 60, label: msg`60 分钟` },
+  { minutes: 90, label: msg`90 分钟` },
+]
+
+/** Countdown shown in the menu row, e.g. `28:15`. */
+function formatCountdown(ms: number) {
+  const total = Math.max(0, Math.ceil(ms / 1000))
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`
+}
 
 interface MorePlaybackOptionsProps {
   /** Dark cover-tinted surface for NowPlaying; default light popover outside. */
@@ -159,17 +175,26 @@ export function MorePlaybackOptions({
   const setWordByWordLyrics = useSettingsStore(
     (state) => state.setWordByWordLyrics,
   )
-  const preferredSource = useSettingsStore((state) => state.preferredSource)
   const setPreferredSource = useSettingsStore((state) => state.setPreferredSource)
   const switchingSource = usePlayerStore((state) => state.switchingSource)
   const switchToOtherSource = usePlayerStore((state) => state.switchToOtherSource)
+  const playCachedSource = usePlayerStore((state) => state.playCachedSource)
+  const switchToRecommendedVersion = usePlayerStore(
+    (state) => state.switchToRecommendedVersion,
+  )
   const [sourceOpen, setSourceOpen] = useState(false)
+  const [cachedSources, setCachedSources] = useState<string[]>([])
+  const sleepEndsAt = useSleepTimerStore((state) => state.endsAt)
+  const sleepRemaining = useSleepTimerStore((state) => state.remainingMs)
+  const sleepMinutes = useSleepTimerStore((state) => state.minutes)
+  const startSleepTimer = useSleepTimerStore((state) => state.start)
+  const cancelSleepTimer = useSleepTimerStore((state) => state.cancel)
+  const [sleepOpen, setSleepOpen] = useState(false)
   const tint = usePlayerMenuTint(immersive, currentSong?.al.picUrl)
 
   // What is actually playing, so a wrong match is visible before switching.
-  const playingSource = currentSong?.unblocked
-    ? currentSong.matchedSource || preferredSource
-    : ''
+  // `copyright-rcmd` is tracked here too, unlike the old `unblocked` test.
+  const playingSource = currentSong?.matchedSource ?? ''
   const playingOption = SOURCE_OPTIONS.find(
     (option) => option.value === playingSource,
   )
@@ -177,14 +202,30 @@ export function MorePlaybackOptions({
     ? playingOption
       ? i18n._(playingOption.label)
       : playingSource === 'copyright-rcmd'
-        ? i18n._(msg`官方推荐版本`)
+        ? i18n._(msg`推荐版本`)
         : playingSource
-    : currentSong?.alternativeVersion
-      ? i18n._(msg`官方推荐版本`)
-      : i18n._(msg`网易云官方`)
+    : i18n._(msg`网易云官方`)
+
+  // Cached copies are listed when the picker opens; they play from disk and
+  // therefore also work offline.
+  const currentSongId = currentSong?.id
+  useEffect(() => {
+    if (!sourceOpen || !currentSongId) return
+    let active = true
+    void listCachedSources(currentSongId).then((sources) => {
+      if (active) setCachedSources(sources)
+    })
+    return () => {
+      active = false
+    }
+  }, [sourceOpen, currentSongId])
 
   const handleSelectSource = (value: string) => {
     setPreferredSource(value)
+    if (cachedSources.includes(value)) {
+      void playCachedSource(value)
+      return
+    }
     // Picking "auto" on a song that already has a full official URL should not
     // replace it with a third-party match. Blocked/trial tracks still switch.
     const shouldSwitch =
@@ -300,8 +341,51 @@ export function MorePlaybackOptions({
 
       {sourceOpen ? (
         <div className="space-y-0.5 px-1 pb-1 pt-0.5">
+          <button
+            type="button"
+            role="menuitemradio"
+            aria-checked={playingSource === 'copyright-rcmd'}
+            disabled={switchingSource}
+            onClick={() =>
+              cachedSources.includes('copyright-rcmd')
+                ? void playCachedSource('copyright-rcmd')
+                : void switchToRecommendedVersion()
+            }
+            className={cn(
+              'flex w-full items-center justify-between gap-2 rounded-[6px] px-2 py-1.5 text-left text-[12px] transition-colors disabled:opacity-50',
+              playingSource === 'copyright-rcmd'
+                ? immersive
+                  ? 'bg-white/14 text-white'
+                  : 'bg-white text-accent shadow-sm dark:bg-white/15 dark:text-white'
+                : immersive
+                  ? 'text-white/65 hover:bg-white/8'
+                  : 'text-ink-2 hover:bg-black/5 dark:text-white/60 dark:hover:bg-white/10',
+            )}
+          >
+            <span className="flex min-w-0 items-center gap-1.5">
+              <span className="min-w-0 truncate">{i18n._(msg`推荐版本`)}</span>
+              {cachedSources.includes('copyright-rcmd') ? (
+                <span
+                  className={cn(
+                    'shrink-0 rounded-full px-1.5 py-0.5 text-[11px]',
+                    immersive
+                      ? 'bg-white/12 text-white/60'
+                      : 'bg-black/5 text-ink-4',
+                  )}
+                >
+                  {i18n._(msg`已缓存`)}
+                </span>
+              ) : null}
+            </span>
+            {playingSource === 'copyright-rcmd' ? (
+              <Check className="h-3 w-3 shrink-0" />
+            ) : null}
+          </button>
           {SOURCE_OPTIONS.map((option) => {
-            const active = option.value === preferredSource
+            // Only the source actually playing is checked. `preferredSource`
+            // is the fallback for the *next* match, so marking it here made an
+            // officially playing track look like it used the saved provider.
+            const active = option.value === playingSource
             return (
               <button
                 key={option.value}
@@ -321,7 +405,21 @@ export function MorePlaybackOptions({
                       : 'text-ink-2 hover:bg-black/5 dark:text-white/60 dark:hover:bg-white/10',
                 )}
               >
-                <span className="min-w-0 truncate">{i18n._(option.label)}</span>
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <span className="min-w-0 truncate">{i18n._(option.label)}</span>
+                  {cachedSources.includes(option.value) ? (
+                    <span
+                      className={cn(
+                        'shrink-0 rounded-full px-1.5 py-0.5 text-[11px]',
+                        immersive
+                          ? 'bg-white/12 text-white/60'
+                          : 'bg-black/5 text-ink-4',
+                      )}
+                    >
+                      {i18n._(msg`已缓存`)}
+                    </span>
+                  ) : null}
+                </span>
                 {active ? <Check className="h-3 w-3 shrink-0" /> : null}
               </button>
             )
@@ -334,6 +432,89 @@ export function MorePlaybackOptions({
           >
             <Trans>选择后立即重新获取当前歌曲；自动匹配会按内置顺序尝试。</Trans>
           </p>
+        </div>
+      ) : null}
+
+      <button
+        type="button"
+        role="menuitem"
+        aria-expanded={sleepOpen}
+        onClick={() => setSleepOpen((value) => !value)}
+        className="menu-item"
+      >
+        <span className="menu-item__icon">
+          <Moon />
+        </span>
+        <span className="menu-item__label">
+          <Trans>睡眠定时器</Trans>
+        </span>
+        <span
+          className={cn(
+            'max-w-[92px] truncate text-[11px] tabular-nums',
+            sleepEndsAt
+              ? immersive
+                ? 'text-white/70'
+                : 'text-accent'
+              : immersive
+                ? 'text-white/45'
+                : 'text-ink-4',
+          )}
+        >
+          {sleepEndsAt
+            ? formatCountdown(sleepRemaining)
+            : i18n._(msg`关闭`)}
+        </span>
+        <ChevronDown
+          className={cn(
+            'h-3.5 w-3.5 shrink-0 transition-transform',
+            sleepOpen && 'rotate-180',
+            immersive ? 'text-white/40' : 'text-ink-4',
+          )}
+        />
+      </button>
+
+      {sleepOpen ? (
+        <div className="space-y-0.5 px-1 pb-1 pt-0.5">
+          {SLEEP_OPTIONS.map((option) => {
+            const active = sleepMinutes === option.minutes
+            return (
+              <button
+                key={option.minutes}
+                type="button"
+                role="menuitemradio"
+                aria-checked={active}
+                onClick={() => startSleepTimer(option.minutes)}
+                className={cn(
+                  'flex w-full items-center justify-between gap-2 rounded-[6px] px-2 py-1.5 text-left text-[12px] transition-colors',
+                  active
+                    ? immersive
+                      ? 'bg-white/14 text-white'
+                      : 'bg-white text-accent shadow-sm dark:bg-white/15 dark:text-white'
+                    : immersive
+                      ? 'text-white/65 hover:bg-white/8'
+                      : 'text-ink-2 hover:bg-black/5 dark:text-white/60 dark:hover:bg-white/10',
+                )}
+              >
+                <span className="min-w-0 truncate">{i18n._(option.label)}</span>
+              </button>
+            )
+          })}
+          {sleepEndsAt ? (
+            <button
+              type="button"
+              onClick={cancelSleepTimer}
+              className={cn(
+                'flex w-full items-center justify-between gap-2 rounded-[6px] px-2 py-1.5 text-left text-[12px] transition-colors',
+                immersive
+                  ? 'text-white/65 hover:bg-white/8'
+                  : 'text-ink-2 hover:bg-black/5 dark:text-white/60 dark:hover:bg-white/10',
+              )}
+            >
+              <span>
+                <Trans>关闭定时器</Trans>
+              </span>
+            </button>
+          ) : null}
         </div>
       ) : null}
 

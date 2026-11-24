@@ -1559,7 +1559,11 @@ function uniqueDownloadPath(name: string) {
 /* --------------------------- filesystem audio cache ------------------------ */
 
 interface AudioCacheMeta {
+  /** `${id}` for the official stream, `${id}@${source}` for a matched copy. */
+  key: string
   id: number
+  /** Provider module of this copy; undefined for the official stream. */
+  source?: string
   name: string
   size: number
   createdAt: number
@@ -1567,10 +1571,17 @@ interface AudioCacheMeta {
   duration?: number
   bitrate?: number
   trialEnd?: number
+  /** Song id whose lyrics match this copy (other editions differ). */
+  lyricSongId?: number
   /** Original artwork URL; sidecar file name is `<id>.cover.<ext>`. */
   picUrl?: string
   /** Human-readable filename stored in the cache directory. */
   file?: string
+}
+
+/** Cache identity for one (song, source) pair. */
+function audioCacheKey(id: number, source?: string | null) {
+  return source ? `${id}@${source}` : String(id)
 }
 
 const AUDIO_CACHE_DIR_FILE = join(APP_DATA_DIR, 'audio-cache-dir.json')
@@ -1633,14 +1644,19 @@ function audioCacheFileFor(
   id: number,
   name: string,
   keep?: string,
+  key?: string,
+  source?: string,
 ) {
   if (keep && !keep.includes('/') && !keep.includes('\\') && !keep.includes('..')) {
     return keep
   }
-  const base = audioCacheStem(name, id)
+  const suffix = source
+    ? ` [${source.replace(/[\\/:*?"<>|]/g, '_')}]`
+    : ''
+  const base = `${audioCacheStem(name, id)}${suffix}`
   const used = new Set(
     items
-      .filter((item) => item.id !== id && item.file)
+      .filter((item) => item.key !== key && item.file)
       .map((item) => item.file as string),
   )
   let candidate = `${base}.opus`
@@ -1662,10 +1678,18 @@ function syncAudioCacheFiles(items: AudioCacheMeta[]) {
   for (const item of items) {
     if (item.file && existsSync(audioCachePath(item))) continue
     const legacy = join(audioCacheDir, `${item.id}.opus`)
-    const file = audioCacheFileFor(items, item.id, item.name, item.file)
+    const file = audioCacheFileFor(
+      items,
+      item.id,
+      item.name,
+      item.file,
+      item.key,
+      item.source,
+    )
     const target = join(audioCacheDir, file)
     try {
-      if (existsSync(legacy) && legacy !== target) {
+      // Only the official copy can own the legacy `<id>.opus` file.
+      if (!item.source && existsSync(legacy) && legacy !== target) {
         renameSync(legacy, target)
       }
     } catch {
@@ -1683,15 +1707,23 @@ function readAudioCacheIndex(): AudioCacheMeta[] {
       readFileSync(join(audioCacheDir, AUDIO_CACHE_INDEX), 'utf8'),
     ) as unknown
     if (!Array.isArray(parsed)) return []
-    return parsed.filter(
-      (item): item is AudioCacheMeta =>
-        Boolean(
-          item &&
-            typeof item === 'object' &&
-            Number.isFinite(Number((item as AudioCacheMeta).id)) &&
-            typeof (item as AudioCacheMeta).name === 'string',
-        ),
-    )
+    return parsed
+      .filter(
+        (item): item is AudioCacheMeta =>
+          Boolean(
+            item &&
+              typeof item === 'object' &&
+              Number.isFinite(Number((item as AudioCacheMeta).id)) &&
+              typeof (item as AudioCacheMeta).name === 'string',
+          ),
+      )
+      // Entries written before multi-source caching have no key; derive it so
+      // lookups work without rewriting the index on every read.
+      .map((item) =>
+        item.key
+          ? item
+          : { ...item, key: audioCacheKey(Number(item.id), item.source) },
+      )
   } catch {
     return []
   }
@@ -1782,21 +1814,21 @@ function pruneAudioCache(items: AudioCacheMeta[]) {
   const sorted = [...items].sort((a, b) => a.createdAt - b.createdAt)
   let count = sorted.length
   let bytes = sorted.reduce((total, item) => total + (item.size || 0), 0)
-  const removed: number[] = []
+  const removed: string[] = []
   for (const item of sorted) {
     if (count <= AUDIO_CACHE_MAX_ENTRIES && bytes <= AUDIO_CACHE_MAX_BYTES) {
       break
     }
-    removed.push(item.id)
+    removed.push(item.key)
     count -= 1
     bytes -= item.size || 0
   }
   for (const item of sorted) {
-    if (removed.includes(item.id)) {
+    if (removed.includes(item.key)) {
       rmSync(audioCachePath(item), { force: true })
     }
   }
-  return items.filter((item) => !removed.includes(item.id))
+  return items.filter((item) => !removed.includes(item.key))
 }
 
 /* ------------------------------ window controls ----------------------------- */
@@ -2334,7 +2366,10 @@ try {
           if (!Number.isSafeInteger(id) || id <= 0) {
             return Response.json({ error: 'invalid id' }, { status: 400, headers })
           }
-          const item = readAudioCacheIndex().find((entry) => entry.id === id)
+          const source = url.searchParams.get('source') || ''
+          const item = readAudioCacheIndex().find(
+            (entry) => entry.key === audioCacheKey(id, source),
+          )
           if (!item || !existsSync(audioCachePath(item))) {
             // A normal cache miss: 404 would show up as a red console error on
             // every uncached track even though the caller handles it.
@@ -2347,8 +2382,16 @@ try {
           if (!Number.isSafeInteger(id) || id <= 0) {
             return Response.json({ error: 'invalid id' }, { status: 400, headers })
           }
-          const item = readAudioCacheIndex().find((entry) => entry.id === id)
-          const target = item ? audioCachePath(item) : audioCachePath(id)
+          const source = url.searchParams.get('source') || ''
+          const item = readAudioCacheIndex().find(
+            (entry) => entry.key === audioCacheKey(id, source),
+          )
+          // Fall back to the legacy numeric filename only for the official copy.
+          const target = item
+            ? audioCachePath(item)
+            : source
+              ? ''
+              : join(audioCacheDir, `${id}.opus`)
           if (!existsSync(target)) {
             return new Response(null, { status: 204, headers })
           }
@@ -2497,18 +2540,32 @@ try {
             return Response.json({ error: 'empty audio' }, { status: 400, headers })
           }
           mkdirSync(audioCacheDir, { recursive: true })
+          const source =
+            typeof meta.source === 'string' ? meta.source.slice(0, 60) : ''
+          const key = audioCacheKey(id, source)
           const existing = readAudioCacheIndex()
-          const previous = existing.find((entry) => entry.id === id)
+          const previous = existing.find((entry) => entry.key === key)
           const name = String(meta.name ?? '').slice(0, 300)
-          const file = audioCacheFileFor(existing, id, name, previous?.file)
+          const file = audioCacheFileFor(
+            existing,
+            id,
+            name,
+            previous?.file,
+            key,
+            source,
+          )
           const target = join(audioCacheDir, file)
           await Bun.write(target, bytes)
+          // Matched copies get their own file; only the official copy replaces
+          // the legacy `<id>.opus` name.
           const legacy = join(audioCacheDir, `${id}.opus`)
-          if (legacy !== target && existsSync(legacy)) {
+          if (!source && legacy !== target && existsSync(legacy)) {
             rmSync(legacy, { force: true })
           }
           const item: AudioCacheMeta = {
+            key,
             id,
+            source: source || undefined,
             name,
             size: bytes.byteLength,
             createdAt: Number(meta.createdAt) || Date.now(),
@@ -2516,12 +2573,13 @@ try {
             duration: Number(meta.duration) || undefined,
             bitrate: Number(meta.bitrate) || undefined,
             trialEnd: Number(meta.trialEnd) || 0,
+            lyricSongId: Number(meta.lyricSongId) || undefined,
             picUrl: meta.picUrl
               ? String(meta.picUrl).slice(0, 1000)
               : undefined,
             file,
           }
-          const items = existing.filter((entry) => entry.id !== id)
+          const items = existing.filter((entry) => entry.key !== key)
           const next = pruneAudioCache([...items, item])
           writeAudioCacheIndex(next)
           return Response.json(item, { headers })
@@ -2534,10 +2592,21 @@ try {
               return Response.json({ error: 'invalid id' }, { status: 400, headers })
             }
             const items = readAudioCacheIndex()
-            const item = items.find((entry) => entry.id === id)
-            rmSync(item ? audioCachePath(item) : audioCachePath(id), { force: true })
-            rmSync(lyricsAssetPath(id), { force: true })
-            writeAudioCacheIndex(items.filter((entry) => entry.id !== id))
+            const source = url.searchParams.get('source') || ''
+            if (source) {
+              // Drop one provider's copy; the official one and the lyrics stay.
+              const key = audioCacheKey(id, source)
+              const item = items.find((entry) => entry.key === key)
+              if (item) rmSync(audioCachePath(item), { force: true })
+              writeAudioCacheIndex(items.filter((entry) => entry.key !== key))
+            } else {
+              for (const entry of items.filter((item) => item.id === id)) {
+                rmSync(audioCachePath(entry), { force: true })
+              }
+              rmSync(join(audioCacheDir, `${id}.opus`), { force: true })
+              rmSync(lyricsAssetPath(id), { force: true })
+              writeAudioCacheIndex(items.filter((entry) => entry.id !== id))
+            }
           } else {
             for (const item of readAudioCacheIndex()) {
               rmSync(audioCachePath(item), { force: true })

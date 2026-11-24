@@ -1,7 +1,13 @@
 import { bridgeFetch, requestJson } from './desktopBridge'
 
 export interface DesktopAudioCacheItem {
+  /** `${id}` or `${id}@${source}`; the on-disk index keys entries by it. */
+  key: string
   id: number
+  /** Provider module of this copy; empty for the official stream. */
+  source?: string
+  /** Song id whose lyrics match this copy. */
+  lyricSongId?: number
   name: string
   size: number
   createdAt: number
@@ -22,17 +28,26 @@ export async function desktopAudioCacheList(): Promise<DesktopAudioCacheList> {
   return requestJson<DesktopAudioCacheList>('/audio-cache')
 }
 
+/** One song can hold several cached copies, one per provider. */
+function sourceQuery(source?: string) {
+  return source ? `&source=${encodeURIComponent(source)}` : ''
+}
+
 export async function desktopAudioCacheMeta(
   id: number,
+  source?: string,
 ): Promise<DesktopAudioCacheItem | null> {
-  const response = await bridgeFetch(`/audio-cache/meta?id=${id}`)
+  const response = await bridgeFetch(`/audio-cache/meta?id=${id}${sourceQuery(source)}`)
   if (response.status === 204 || response.status === 404) return null
   if (!response.ok) throw new Error(`audio cache metadata failed: ${response.status}`)
   return (await response.json()) as DesktopAudioCacheItem
 }
 
-export async function desktopAudioCacheGet(id: number): Promise<Blob | null> {
-  const response = await bridgeFetch(`/audio-cache/file?id=${id}`)
+export async function desktopAudioCacheGet(
+  id: number,
+  source?: string,
+): Promise<Blob | null> {
+  const response = await bridgeFetch(`/audio-cache/file?id=${id}${sourceQuery(source)}`)
   if (response.status === 204 || response.status === 404) return null
   if (!response.ok) throw new Error(`audio cache read failed: ${response.status}`)
   return response.blob()
@@ -98,8 +113,11 @@ export async function desktopAudioCacheAssetRemove(
   if (!response.ok) throw new Error(`audio cache asset remove failed: ${response.status}`)
 }
 
-export async function desktopAudioCacheRemove(id: number): Promise<void> {
-  const response = await bridgeFetch(`/audio-cache?id=${id}`, {
+export async function desktopAudioCacheRemove(
+  id: number,
+  source?: string,
+): Promise<void> {
+  const response = await bridgeFetch(`/audio-cache?id=${id}${sourceQuery(source)}`, {
     method: 'DELETE',
   })
   if (!response.ok) throw new Error(`audio cache remove failed: ${response.status}`)

@@ -16,7 +16,14 @@ import { cacheCoverImage } from './coverCache'
 import { useSettingsStore } from '../store/settings'
 
 interface CacheMeta {
+  /** `${id}` for the official source, `${id}@${source}` for a matched one. */
+  key: string
+  /** NetEase song id; several sources of one song share it. */
   id: number
+  /** Provider module that produced this copy; '' for the official stream. */
+  source?: string
+  /** Song id whose lyrics match this audio (different for other editions). */
+  lyricSongId?: number
   name: string
   size: number
   createdAt: number
@@ -30,7 +37,7 @@ interface CacheMeta {
 }
 
 interface AudioRecord {
-  id: number
+  key: string
   blob: Blob
 }
 
@@ -38,6 +45,10 @@ export interface CacheableSong {
   id: number
   name: string
   url: string
+  /** Provider module for matched audio; empty for the official stream. */
+  source?: string
+  /** Song id whose lyrics match this audio (other editions differ). */
+  lyricSongId?: number
   artists?: string
   duration?: number
   trialEnd?: number | null
@@ -47,8 +58,29 @@ export interface CacheableSong {
   albumId?: number
 }
 
+/**
+ * One cached copy per (song, source) pair. Switching provider keeps the old
+ * file, so a track can hold several playable versions at once.
+ */
+export function cacheKeyFor(id: number, source?: string) {
+  return source ? `${id}@${source}` : String(id)
+}
+
+/**
+ * Which provider produced the currently playing URL. `copyright-rcmd` is a
+ * NetEase-recommended *other edition*, so it is its own variant instead of
+ * sharing the official copy's slot.
+ */
+export function cacheSourceOf(song: {
+  unblocked?: boolean
+  matchedSource?: string
+}) {
+  return song.matchedSource ?? ''
+}
+
 const DB_NAME = 'react-music-audio'
-const DB_VERSION = 2
+// v3 keys records by (song, source) so multiple providers can coexist.
+const DB_VERSION = 3
 const AUDIO_STORE = 'audio'
 const META_STORE = 'meta'
 // Cached audio is Opus (96kbps by default), roughly 2.9MB per four-minute song.
@@ -58,7 +90,7 @@ const cacheMaxBytes = () =>
 
 let dbPromise: Promise<IDBDatabase> | null = null
 let writeQueue: Promise<void> = Promise.resolve()
-const pending = new Map<number, Promise<void>>()
+const pending = new Map<string, Promise<void>>()
 let cacheWarningShown = false
 // Bumped by clearAudioCache so jobs queued before a clear cannot write back.
 let cacheEpoch = 0
@@ -72,15 +104,16 @@ function openDb() {
       const request = indexedDB.open(DB_NAME, DB_VERSION)
       request.onupgradeneeded = () => {
         const db = request.result
-        // v2 raises the cached Opus bitrate to 96kbps: drop old 48kbps entries.
+        // v2 raised the cached Opus bitrate, v3 keys entries by (song, source):
+        // both change what the old records mean, so rebuild the stores.
         if (db.objectStoreNames.contains(AUDIO_STORE)) {
           db.deleteObjectStore(AUDIO_STORE)
         }
         if (db.objectStoreNames.contains(META_STORE)) {
           db.deleteObjectStore(META_STORE)
         }
-        db.createObjectStore(AUDIO_STORE, { keyPath: 'id' })
-        const meta = db.createObjectStore(META_STORE, { keyPath: 'id' })
+        db.createObjectStore(AUDIO_STORE, { keyPath: 'key' })
+        const meta = db.createObjectStore(META_STORE, { keyPath: 'key' })
         meta.createIndex('createdAt', 'createdAt')
       }
       request.onsuccess = () => resolve(request.result)
@@ -108,10 +141,13 @@ function transactionDone(transaction: IDBTransaction) {
   })
 }
 
-export async function getCachedAudio(id: number): Promise<Blob | null> {
+export async function getCachedAudio(
+  id: number,
+  source?: string,
+): Promise<Blob | null> {
   if (isDesktopApp()) {
     try {
-      return await desktopAudioCacheGet(id)
+      return await desktopAudioCacheGet(id, source)
     } catch {
       return null
     }
@@ -120,7 +156,10 @@ export async function getCachedAudio(id: number): Promise<Blob | null> {
   try {
     const db = await openDb()
     const record = await requestResult<AudioRecord | undefined>(
-      db.transaction(AUDIO_STORE, 'readonly').objectStore(AUDIO_STORE).get(id),
+      db
+        .transaction(AUDIO_STORE, 'readonly')
+        .objectStore(AUDIO_STORE)
+        .get(cacheKeyFor(id, source)),
     )
     return record?.blob ?? null
   } catch {
@@ -128,11 +167,17 @@ export async function getCachedAudio(id: number): Promise<Blob | null> {
   }
 }
 
-/** Drop one cached track (used when a trial/source-matched URL is stale). */
-export async function removeCachedAudio(id: number): Promise<void> {
+/**
+ * Drop one cached copy. Without `source` every version of that song is removed,
+ * which is what "clear this entry" from the settings list expects.
+ */
+export async function removeCachedAudio(
+  id: number,
+  source?: string,
+): Promise<void> {
   if (isDesktopApp()) {
     try {
-      await desktopAudioCacheRemove(id)
+      await desktopAudioCacheRemove(id, source)
     } catch {
       // Cache maintenance is best-effort.
     }
@@ -141,19 +186,37 @@ export async function removeCachedAudio(id: number): Promise<void> {
   if (typeof indexedDB === 'undefined') return
   try {
     const db = await openDb()
+    const keys = source
+      ? [cacheKeyFor(id, source)]
+      : await cachedKeysForSong(db, id)
     const transaction = db.transaction([AUDIO_STORE, META_STORE], 'readwrite')
-    transaction.objectStore(AUDIO_STORE).delete(id)
-    transaction.objectStore(META_STORE).delete(id)
+    const audioStore = transaction.objectStore(AUDIO_STORE)
+    const metaStore = transaction.objectStore(META_STORE)
+    keys.forEach((key) => {
+      audioStore.delete(key)
+      metaStore.delete(key)
+    })
     await transactionDone(transaction)
   } catch {
     // Cache maintenance is best-effort.
   }
 }
 
-export async function getCachedAudioMeta(id: number): Promise<CacheMeta | null> {
+/** Every cache key belonging to one song (official + matched copies). */
+async function cachedKeysForSong(db: IDBDatabase, id: number) {
+  const metas = await requestResult<CacheMeta[]>(
+    db.transaction(META_STORE, 'readonly').objectStore(META_STORE).getAll(),
+  )
+  return metas.filter((meta) => meta.id === id).map((meta) => meta.key)
+}
+
+export async function getCachedAudioMeta(
+  id: number,
+  source?: string,
+): Promise<CacheMeta | null> {
   if (isDesktopApp()) {
     try {
-      return await desktopAudioCacheMeta(id)
+      return await desktopAudioCacheMeta(id, source)
     } catch {
       return null
     }
@@ -163,7 +226,10 @@ export async function getCachedAudioMeta(id: number): Promise<CacheMeta | null> 
     const db = await openDb()
     return (
       (await requestResult<CacheMeta | undefined>(
-        db.transaction(META_STORE, 'readonly').objectStore(META_STORE).get(id),
+        db
+          .transaction(META_STORE, 'readonly')
+          .objectStore(META_STORE)
+          .get(cacheKeyFor(id, source)),
       )) ?? null
     )
   } catch {
@@ -172,8 +238,8 @@ export async function getCachedAudioMeta(id: number): Promise<CacheMeta | null> 
 }
 
 /** True when the track already has a cached copy (cheap metadata read). */
-export async function hasCachedAudio(id: number): Promise<boolean> {
-  return Boolean(await getCachedAudioMeta(id))
+export async function hasCachedAudio(id: number, source?: string): Promise<boolean> {
+  return Boolean(await getCachedAudioMeta(id, source))
 }
 
 async function putCachedAudio(
@@ -181,6 +247,8 @@ async function putCachedAudio(
   name: string,
   blob: Blob,
   extra?: {
+    source?: string
+    lyricSongId?: number
     artists?: string
     duration?: number
     bitrate?: number
@@ -192,6 +260,7 @@ async function putCachedAudio(
   const maxBytes = cacheMaxBytes()
   if (blob.size > maxBytes) return
   const meta: CacheMeta = {
+    key: cacheKeyFor(id, extra?.source),
     id,
     name,
     size: blob.size,
@@ -213,7 +282,7 @@ async function putCachedAudio(
   }
   const db = await openDb()
   const transaction = db.transaction([AUDIO_STORE, META_STORE], 'readwrite')
-  const record: AudioRecord = { id, blob }
+  const record: AudioRecord = { key: meta.key, blob }
   transaction.objectStore(AUDIO_STORE).put(record)
   transaction.objectStore(META_STORE).put(meta)
   await transactionDone(transaction)
@@ -226,19 +295,19 @@ async function trimCache(db: IDBDatabase, maxBytes = cacheMaxBytes()) {
   )
   metas.sort((a, b) => a.createdAt - b.createdAt)
   let bytes = metas.reduce((total, meta) => total + meta.size, 0)
-  const removals: number[] = []
+  const removals: string[] = []
   for (const meta of metas) {
     if (bytes <= maxBytes) break
-    removals.push(meta.id)
+    removals.push(meta.key)
     bytes -= meta.size
   }
   if (!removals.length) return
   const transaction = db.transaction([AUDIO_STORE, META_STORE], 'readwrite')
   const audioStore = transaction.objectStore(AUDIO_STORE)
   const metaStore = transaction.objectStore(META_STORE)
-  removals.forEach((id) => {
-    audioStore.delete(id)
-    metaStore.delete(id)
+  removals.forEach((key) => {
+    audioStore.delete(key)
+    metaStore.delete(key)
   })
   await transactionDone(transaction)
 }
@@ -255,7 +324,7 @@ export async function trimAudioCacheToLimit(maxMb?: number): Promise<void> {
     let bytes = sorted.reduce((total, item) => total + item.size, 0)
     for (const item of sorted) {
       if (bytes <= limit) break
-      await desktopAudioCacheRemove(item.id)
+      await desktopAudioCacheRemove(item.id, item.source)
       bytes -= item.size
     }
     return
@@ -338,7 +407,7 @@ async function fetchAudioBlob(url: string): Promise<Blob> {
 async function transcodeAndStore(song: CacheableSong, epoch: number, source?: Blob) {
   if (epoch !== cacheEpoch) return
   // Metadata lookup avoids loading the whole cached file just to skip encoding.
-  if (await hasCachedAudio(song.id)) return
+  if (await hasCachedAudio(song.id, song.source)) return
 
   const bitrate = useSettingsStore.getState().cacheBitrate
   try {
@@ -348,6 +417,8 @@ async function transcodeAndStore(song: CacheableSong, epoch: number, source?: Bl
     const encoded = await encodeOpusOgg(input, bitrate)
     if (epoch !== cacheEpoch) return
     await putCachedAudio(song.id, song.name, encoded, {
+      source: song.source,
+      lyricSongId: song.lyricSongId,
       artists: song.artists,
       duration: song.duration,
       bitrate,
@@ -365,7 +436,8 @@ function enqueueCache(song: CacheableSong, source?: Blob) {
   // Cache artwork in parallel with audio; it is tiny and makes the cached row
   // usable offline without fetching the CDN again.
   void cacheCoverImage(song.picUrl, song.id)
-  if (typeof indexedDB === 'undefined' || pending.has(song.id)) return
+  const key = cacheKeyFor(song.id, song.source)
+  if (typeof indexedDB === 'undefined' || pending.has(key)) return
   const epoch = cacheEpoch
   // Encoding is memory-heavy, so cache jobs run in sequence.
   const task = writeQueue
@@ -384,10 +456,10 @@ function enqueueCache(song: CacheableSong, source?: Blob) {
       }
     })
     .finally(() => {
-      pending.delete(song.id)
+      pending.delete(key)
     })
   writeQueue = task
-  pending.set(song.id, task)
+  pending.set(key, task)
 }
 
 export function cacheSong(song: CacheableSong) {
@@ -400,7 +472,13 @@ export function cacheSongFromBlob(song: CacheableSong, blob: Blob) {
 }
 
 export interface CachedAudioItem {
+  /** Cache identity: `${id}` or `${id}@${source}`. */
+  key: string
   id: number
+  /** Provider module of this copy; empty for the official stream. */
+  source?: string
+  /** Song id whose lyrics match this copy. */
+  lyricSongId?: number
   name: string
   size: number
   createdAt: number
@@ -431,6 +509,12 @@ export async function listCachedAudio(): Promise<CachedAudioItem[]> {
   } catch {
     return []
   }
+}
+
+/** Every provider that holds a cached copy of this song ('' = official). */
+export async function listCachedSources(id: number): Promise<string[]> {
+  const items = await listCachedAudio()
+  return items.filter((item) => item.id === id).map((item) => item.source ?? '')
 }
 
 export async function clearAudioCache() {
@@ -471,15 +555,17 @@ function downloadBlob(blob: Blob, name: string) {
  * folder; browsers get a single ZIP because repeated automatic downloads are
  * blocked by many browsers.
  */
-export async function downloadCachedAudio(ids: number[]): Promise<number> {
-  if (!ids.length) return 0
+export async function downloadCachedAudio(
+  refs: Array<{ id: number; source?: string }>,
+): Promise<number> {
+  if (!refs.length) return 0
   const desktop = isDesktopApp()
   const entries: Array<{ meta: CacheMeta; blob: Blob }> = []
 
-  for (const id of ids) {
-    const meta = await getCachedAudioMeta(id)
+  for (const ref of refs) {
+    const meta = await getCachedAudioMeta(ref.id, ref.source)
     if (!meta) continue
-    const blob = await getCachedAudio(id)
+    const blob = await getCachedAudio(ref.id, ref.source)
     if (!blob) continue
     entries.push({ meta, blob })
   }

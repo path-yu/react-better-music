@@ -7,6 +7,8 @@ import {
 
 export interface CachedLyrics {
   id: number
+  /** Schema tag; records written before v2 may hold another edition's lyrics. */
+  version?: number
   lyric: string
   tlyric: string
   yrc: string
@@ -20,7 +22,10 @@ export type LyricsPatch = Pick<
 >
 
 const DB_NAME = 'react-music-lyrics'
-const DB_VERSION = 1
+const DB_VERSION = 2
+/** v2: older builds could store a recommended edition's lyrics under the
+ *  original song id, so those records are ignored and refetched once. */
+const LYRICS_CACHE_VERSION = 2
 const STORE = 'lyrics'
 /** Enough for a long queue history without growing WebView storage without bound. */
 const MAX_ENTRIES = 400
@@ -78,7 +83,9 @@ export async function getCachedLyrics(id: number): Promise<CachedLyrics | null> 
       const blob = await desktopAudioCacheAssetGet('lyrics', { id })
       if (blob?.size) {
         const record = JSON.parse(await blob.text()) as CachedLyrics
-        if (record && record.id === id) return record
+        if (record?.id === id && record.version === LYRICS_CACHE_VERSION) {
+          return record
+        }
       }
     } catch {
       // Older cache directories do not have a lyrics sidecar.
@@ -90,7 +97,8 @@ export async function getCachedLyrics(id: number): Promise<CachedLyrics | null> 
     const record = await requestResult<CachedLyrics | undefined>(
       db.transaction(STORE, 'readonly').objectStore(STORE).get(id),
     )
-    return record ?? null
+    if (!record || record.version !== LYRICS_CACHE_VERSION) return null
+    return record
   } catch {
     return null
   }
@@ -113,6 +121,7 @@ export async function saveCachedLyrics(
     const db = await openDb()
     const record: CachedLyrics = {
       id,
+      version: LYRICS_CACHE_VERSION,
       lyric: patch.lyric ?? '',
       tlyric: patch.tlyric ?? '',
       yrc: patch.yrc ?? '',

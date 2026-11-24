@@ -188,12 +188,13 @@ function SettingsPage() {
   const [cacheQuery, setCacheQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const settingsPanelsRef = useRef<HTMLDivElement>(null)
-  const [selected, setSelected] = useState<number[]>([])
+  // Selection holds cache keys: one song can have several cached versions.
+  const [selected, setSelected] = useState<string[]>([])
   const [clearing, setClearing] = useState(false)
   const [confirmingClear, setConfirmingClear] = useState(false)
   const clearConfirmTimer = useRef<number | null>(null)
   const [downloading, setDownloading] = useState(false)
-  const [downloadingId, setDownloadingId] = useState<number | null>(null)
+  const [downloadingId, setDownloadingId] = useState<string | null>(null)
   const desktop = isDesktopApp()
   const [downloadDir, setDownloadDir] = useState('')
   const [pickingDir, setPickingDir] = useState(false)
@@ -426,7 +427,7 @@ function SettingsPage() {
     try {
       const list = await listCachedAudio()
       setItems(list)
-      setSelected((prev) => prev.filter((id) => list.some((item) => item.id === id)))
+      setSelected((prev) => prev.filter((key) => list.some((item) => item.key === key)))
     } finally {
       setLoading(false)
     }
@@ -460,22 +461,28 @@ function SettingsPage() {
   )
   const allSelected =
     filteredItems.length > 0 &&
-    filteredItems.every((item) => selected.includes(item.id))
+    filteredItems.every((item) => selected.includes(item.key))
 
   const toggleAll = () => {
-    const visibleIds = filteredItems.map((item) => item.id)
+    const visibleKeys = filteredItems.map((item) => item.key)
     if (allSelected) {
-      setSelected((prev) => prev.filter((id) => !visibleIds.includes(id)))
+      setSelected((prev) => prev.filter((key) => !visibleKeys.includes(key)))
       return
     }
-    setSelected((prev) => Array.from(new Set([...prev, ...visibleIds])))
+    setSelected((prev) => Array.from(new Set([...prev, ...visibleKeys])))
   }
 
-  const toggleOne = (id: number) => {
+  const toggleOne = (key: string) => {
     setSelected((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+      prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key],
     )
   }
+
+  /** Cache entries behind the current selection, for export. */
+  const selectedRefs = () =>
+    items
+      .filter((item) => selected.includes(item.key))
+      .map((item) => ({ id: item.id, source: item.source }))
 
   const handleClear = async () => {
     if (clearing || loading || !items.length) return
@@ -512,7 +519,7 @@ function SettingsPage() {
     if (downloading || !selected.length) return
     setDownloading(true)
     try {
-      const count = await downloadCachedAudio(selected)
+      const count = await downloadCachedAudio(selectedRefs())
       toast.success(
         desktop
           ? downloadDir
@@ -531,9 +538,9 @@ function SettingsPage() {
 
   const handleDownloadOne = async (item: CachedAudioItem) => {
     if (downloadingId !== null) return
-    setDownloadingId(item.id)
+    setDownloadingId(item.key)
     try {
-      await downloadCachedAudio([item.id])
+      await downloadCachedAudio([{ id: item.id, source: item.source }])
       toast.success(
         desktop
           ? i18n._(msg`已保存「${item.name}」到下载目录`)
@@ -597,14 +604,22 @@ function SettingsPage() {
 
   const handlePlayAll = async () => {
     if (!filteredItems.length) return
-    const songs = filteredItems.map((item) => ({
-      id: item.id,
-      name: item.name,
-      ar: [],
-      al: { id: item.albumId ?? 0, name: '', picUrl: item.picUrl ?? '' },
-      dt: item.duration ?? 0,
-      fee: 0,
-    }))
+    // One song may be cached from several providers; queue it once.
+    const seen = new Set<number>()
+    const songs = filteredItems
+      .filter((item) => {
+        if (seen.has(item.id)) return false
+        seen.add(item.id)
+        return true
+      })
+      .map((item) => ({
+        id: item.id,
+        name: item.name,
+        ar: [],
+        al: { id: item.albumId ?? 0, name: '', picUrl: item.picUrl ?? '' },
+        dt: item.duration ?? 0,
+        fee: 0,
+      }))
     await usePlayerStore.getState().initQueue(songs, 0, 'cached-audio')
     toast.success(i18n._(msg`开始播放缓存音乐`))
   }
@@ -1465,19 +1480,26 @@ function SettingsPage() {
               <ul className="max-h-[min(46vh,360px)] overflow-y-auto overscroll-contain [scrollbar-width:thin]">
                 {filteredItems.map((item) => (
                   <li
-                    key={item.id}
+                    key={item.key}
                     className="flex items-center gap-3 border-b settings-divider px-6 py-2.5 last:border-b-0 hover:bg-black/[0.02]"
                   >
                     <input
                       type="checkbox"
                       aria-label={i18n._(msg`选择 ${item.name}`)}
-                      checked={selected.includes(item.id)}
-                      onChange={() => toggleOne(item.id)}
+                      checked={selected.includes(item.key)}
+                      onChange={() => toggleOne(item.key)}
                       className="h-3.5 w-3.5 flex-none accent-accent"
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[13px] font-medium text-ink-1">
-                        {item.name}
+                      <p className="flex min-w-0 items-center gap-1.5 text-[13px] font-medium text-ink-1">
+                        <span className="truncate">{item.name}</span>
+                        {item.source ? (
+                          <span className="shrink-0 rounded-full bg-black/5 px-1.5 py-0.5 text-[11px] font-normal text-ink-4 dark:bg-white/10 dark:text-white/45">
+                            {item.source === 'copyright-rcmd'
+                              ? i18n._(msg`推荐版本`)
+                              : item.source}
+                          </span>
+                        ) : null}
                       </p>
                       <p className="mt-0.5 truncate text-[11px] text-ink-4">
                         {item.artists || i18n._(msg`未知歌手`)}
@@ -1500,7 +1522,7 @@ function SettingsPage() {
                       onClick={() => void handleDownloadOne(item)}
                       className="pressable flex h-7 w-7 flex-none items-center justify-center rounded-full text-ink-4 transition-colors hover:bg-black/5 hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 max-md:h-10 max-md:w-10"
                     >
-                      {downloadingId === item.id ? (
+                      {downloadingId === item.key ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       ) : (
                         <Download className="h-3.5 w-3.5" />

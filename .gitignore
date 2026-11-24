@@ -19,6 +19,8 @@ build
 dist-electrobun
 dist-tauri
 src-tauri/target
+# Installers and update manifests belong to GitHub release assets, not the repo.
+artifacts/
 
 .venv-spleeter/
 .venv-spleeter39/

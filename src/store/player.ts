@@ -16,6 +16,7 @@ import { copyrightHint } from '../lib/songs'
 import { apiUrl } from '../lib/http'
 import { getAudio } from '../lib/audio'
 import {
+  cacheSourceOf,
   getCachedAudio,
   getCachedAudioMeta,
   hasCachedAudio,
@@ -111,6 +112,10 @@ interface PlayerState {
   ensureLyrics: () => Promise<void>
   /** Replace the current track with a matched provider source (manual picker). */
   switchToOtherSource: (source?: string, force?: boolean) => Promise<void>
+  /** Play a cached copy of the current track from the given provider. */
+  playCachedSource: (source: string) => Promise<void>
+  /** Switch to NetEase's recommended other edition (`/song/copyright/rcmd`). */
+  switchToRecommendedVersion: () => Promise<void>
   consumeResumeAt: () => void
   /**
    * The one seek entry point for every progress bar, the remote and media
@@ -375,6 +380,29 @@ function playbackUrl(url: string, unblocked: boolean) {
   return unblocked && !NETEASE_MEDIA.test(url) ? url : apiUrl('/audio/proxy', { url })
 }
 
+/**
+ * The `copyright-rcmd` path merges another edition's name/cover/duration into
+ * the queue item. Switching away has to undo that, otherwise the player keeps
+ * showing the cover version's title while a different audio plays.
+ */
+async function originalSongFields(id: number): Promise<Partial<Song> | null> {
+  try {
+    const detail = await fetchSongDetail(id)
+    if (!detail) return null
+    return {
+      name: detail.name,
+      ar: detail.ar,
+      al: detail.al,
+      dt: detail.dt,
+      fee: detail.fee,
+      alia: detail.alia,
+      tns: detail.tns,
+    }
+  } catch {
+    return null
+  }
+}
+
 async function enrichSong(song: Song): Promise<Song> {
   const source = await resolveSongSource(song)
   if (!source.url) {
@@ -406,9 +434,17 @@ async function enrichSong(song: Song): Promise<Song> {
   if (lyricPatch && !lyricPatch.isNotLyric && !buildLyricLines(lyricPatch).length) {
     lyricPatch = { ...lyricPatch, isNotLyric: true }
   }
+  // Leaving a previously recommended edition: put the track's own title,
+  // artists and cover back instead of keeping the other edition's metadata.
+  const restoredFields =
+    !source.alternativeSong && song.alternativeSongId
+      ? await originalSongFields(song.id)
+      : null
   const effectiveSong = source.alternativeSong
     ? { ...song, ...source.alternativeSong, id: song.id }
-    : song
+    : restoredFields
+      ? { ...song, ...restoredFields, id: song.id }
+      : song
   return {
     ...effectiveSong,
     url: source.url,
@@ -534,7 +570,7 @@ async function shouldBypassAudioCache(song: Song) {
   // Do not discard every VIP cache just because matching is enabled. Only a
   // cached 30s preview (or a legacy entry without trial metadata) is stale;
   // a full matched track must be reused or it is re-resolved on every play.
-  const meta = await getCachedAudioMeta(song.id)
+  const meta = await getCachedAudioMeta(song.id, cacheSourceOf(song))
   return Boolean(meta && (meta.trialEnd === undefined || meta.trialEnd > 0))
 }
 
@@ -646,6 +682,12 @@ function persistQueue(queue: Song[], currentIndex: number) {
     alia: song.alia,
     tns: song.tns,
     like: song.like,
+    // Keep the provider the track was left on. Without it a restart resolves
+    // again from scratch and may quietly pick another edition than the one the
+    // user chose (and already has cached).
+    matchedSource: song.matchedSource,
+    alternativeSongId: song.alternativeSongId,
+    alternativeVersion: song.alternativeVersion,
   }))
   persistedWindow = { source: queue, index: currentIndex, queue: compacted, offset }
   return persistedWindow
@@ -749,8 +791,12 @@ export const usePlayerStore = create<PlayerState>()(
 
         const resolves = uniqueNeighbors.map(async ({ index: neighborIndex, song }) => {
           const bypassAudioCache = await shouldBypassAudioCache(song)
-          if (bypassAudioCache) void removeCachedAudio(song.id)
-          if (!bypassAudioCache && (await hasCachedAudio(song.id))) return null
+          if (bypassAudioCache) {
+            void removeCachedAudio(song.id, cacheSourceOf(song))
+          }
+          if (!bypassAudioCache && (await hasCachedAudio(song.id, cacheSourceOf(song)))) {
+            return null
+          }
           let url = hasFreshUrl(song) ? (song.url ?? null) : null
           let trialEnd = song.trialEnd ?? null
           let unblocked = Boolean(song.unblocked)
@@ -825,6 +871,73 @@ export const usePlayerStore = create<PlayerState>()(
         }
       }
 
+      /**
+       * Play a cached copy of the current track for one provider. Used by the
+       * source menu, so returning to a provider that was played before works
+       * offline and keeps that edition's own lyrics.
+       */
+      const applyCachedVariant = async (song: Song, source: string) => {
+        const blob = await getCachedAudio(song.id, source)
+        if (!blob) return false
+        const meta = await getCachedAudioMeta(song.id, source)
+        const active = get()
+        const index = active.currentIndex
+        if (active.queue[index]?.id !== song.id) return false
+        const isRcmd = source === 'copyright-rcmd'
+        const requestId = active.loadRequestId + 1
+        let editionId = isRcmd ? meta?.lyricSongId : undefined
+        // Cached before lyric ids were stored: ask for the recommendation again
+        // so the edition still gets its own title and cover.
+        if (isRcmd && !editionId) {
+          try {
+            const rcmd = await fetchSongCopyrightRecommendation(song.id)
+            editionId = rcmd?.id
+          } catch {
+            // Offline: fall back to whatever the cache recorded.
+          }
+        }
+        // Switching to the recommended edition shows that edition's own
+        // title/cover; switching away restores this track's metadata.
+        const restored = isRcmd
+          ? editionId && editionId !== song.id
+            ? await originalSongFields(editionId)
+            : meta?.name
+              ? { name: meta.name }
+              : null
+          : await originalSongFields(song.id)
+        const patch: Partial<Song> = {
+          ...(restored ?? {}),
+          // The blob is the media now; there is no signed URL to keep.
+          url: '',
+          urlFetchedAt: 0,
+          unblocked: !isRcmd,
+          matchedSource: source,
+          trialEnd: null,
+          // Only the recommended edition needs a foreign lyric timeline.
+          alternativeSongId: isRcmd ? editionId : undefined,
+          alternativeVersion: isRcmd,
+          lyric: '',
+          tlyric: '',
+          yrc: '',
+          isNotLyric: false,
+        }
+        patchSong(index, patch)
+        set({
+          loadRequestId: requestId,
+          audioUrl: URL.createObjectURL(blob),
+          sourceReady: true,
+          audioFromCache: true,
+          audioBlob: null,
+          sourceTransition: 'none',
+          resumeAt: active.currentTime,
+          lyricLoading: true,
+          lyricLines: [],
+          playToken: active.playToken + 1,
+        })
+        await resolveLyrics(index, { ...song, ...patch }, requestId)
+        return true
+      }
+
       // Reason of the last failed load, for merged "skipped N tracks" notices.
       let lastLoadError = ''
 
@@ -870,8 +983,12 @@ export const usePlayerStore = create<PlayerState>()(
           // for VIP/trial tracks when source matching is enabled: those caches
           // may be the old 30s preview and must be refreshed.
           const bypassAudioCache = await shouldBypassAudioCache(song)
-          if (bypassAudioCache) void removeCachedAudio(song.id)
-          const cached = bypassAudioCache ? null : await getCachedAudio(song.id)
+          if (bypassAudioCache) {
+            void removeCachedAudio(song.id, cacheSourceOf(song))
+          }
+          const cached = bypassAudioCache
+            ? null
+            : await getCachedAudio(song.id, cacheSourceOf(song))
           if (get().loadRequestId !== requestId) return true
 
           if (cached) {
@@ -943,6 +1060,12 @@ export const usePlayerStore = create<PlayerState>()(
                   isNotLyric: false,
                 }
               : null
+            // Coming back from a recommended edition: restore this track's
+            // own title, artists and cover.
+            const restoredFields =
+              !alternativePatch && song.alternativeSongId
+                ? await originalSongFields(song.id)
+                : null
             if (alternativePatch) {
               effectiveSong = {
                 ...song,
@@ -950,10 +1073,12 @@ export const usePlayerStore = create<PlayerState>()(
                 alternativeSongId,
                 alternativeVersion,
               }
+            } else if (restoredFields) {
+              effectiveSong = { ...song, ...restoredFields, id: song.id }
             }
             if (url) {
               patchSong(index, {
-                ...(alternativePatch ?? {}),
+                ...(alternativePatch ?? restoredFields ?? {}),
                 url,
                 urlFetchedAt: Date.now(),
                 trialEnd,
@@ -961,6 +1086,38 @@ export const usePlayerStore = create<PlayerState>()(
                 matchedSource,
                 alternativeSongId,
                 alternativeVersion,
+              })
+            }
+          }
+          // A prefetched neighbour can still carry the recommended edition's
+          // metadata while the URL now belongs to another provider.
+          if (
+            fresh &&
+            url &&
+            song.alternativeSongId &&
+            matchedSource !== 'copyright-rcmd'
+          ) {
+            const restored = await originalSongFields(song.id)
+            if (restored) {
+              const resetLyrics: Partial<Song> = {
+                lyric: '',
+                tlyric: '',
+                yrc: '',
+                isNotLyric: false,
+              }
+              effectiveSong = {
+                ...effectiveSong,
+                ...restored,
+                ...resetLyrics,
+                alternativeSongId: undefined,
+                alternativeVersion: false,
+                id: song.id,
+              }
+              patchSong(index, {
+                ...restored,
+                ...resetLyrics,
+                alternativeSongId: undefined,
+                alternativeVersion: false,
               })
             }
           }
@@ -1551,7 +1708,9 @@ export const usePlayerStore = create<PlayerState>()(
           // Already resolved (including "no lyrics") — persist it and hydrate
           // the view without another network or cache read.
           if (song.lyric || song.yrc || song.isNotLyric) {
-            void saveCachedLyrics(song.id, {
+            // A recommended edition's lyrics belong to its own song id, never
+            // to the original track, or switching back would read them again.
+            void saveCachedLyrics(song.alternativeSongId ?? song.id, {
               lyric: song.lyric ?? '',
               tlyric: song.tlyric ?? '',
               yrc: song.yrc ?? '',
@@ -1593,7 +1752,16 @@ export const usePlayerStore = create<PlayerState>()(
           if (!force && song.unblocked) return
           set({ switchingSource: true })
           try {
-            const matched = await fetchMatchedSongUrl(song.id, source)
+            // A provider that was played before already has a file on disk:
+            // play it instead of asking the matcher for a fresh URL.
+            if (source && (await applyCachedVariant(song, source))) {
+              toast.success(i18n._(msg`已切换到缓存的音源`))
+              return
+            }
+            const [matched, restored] = await Promise.all([
+              fetchMatchedSongUrl(song.id, source),
+              originalSongFields(song.id),
+            ])
             if (!matched.url) {
               toast.info(i18n._(msg`未找到其他可用音源`))
               return
@@ -1601,25 +1769,118 @@ export const usePlayerStore = create<PlayerState>()(
             const active = get()
             if (active.queue[active.currentIndex]?.id !== song.id) return
             const resumeAt = active.currentTime
-            patchSong(active.currentIndex, {
+            const nextSource = matched.source || source || ''
+            const requestId = active.loadRequestId + 1
+            // Another provider is usually another edition, so the previous
+            // recommendation's id and lyrics must not survive the switch.
+            const patch: Partial<Song> = {
+              ...(restored ?? {}),
               url: matched.url,
               unblocked: true,
-              matchedSource: matched.source || source,
+              matchedSource: nextSource || undefined,
               trialEnd: null,
               urlFetchedAt: Date.now(),
-            })
-            // The cached file belongs to the previous provider; drop it so the
-            // next load caches the source the user just picked.
-            void removeCachedAudio(song.id)
-            set((current) => ({
+              alternativeSongId: undefined,
+              alternativeVersion: false,
+              lyric: '',
+              tlyric: '',
+              yrc: '',
+              isNotLyric: false,
+            }
+            patchSong(active.currentIndex, patch)
+            set({
+              loadRequestId: requestId,
               audioUrl: playbackUrl(matched.url, true),
               sourceReady: true,
               audioFromCache: false,
               audioBlob: null,
-              playToken: current.playToken + 1,
+              sourceTransition: 'none',
+              playToken: active.playToken + 1,
               resumeAt,
-            }))
+              lyricLoading: true,
+              lyricLines: [],
+            })
+            await resolveLyrics(active.currentIndex, { ...song, ...patch }, requestId)
             toast.success(i18n._(msg`已切换到其他音源`))
+          } catch {
+            toast.warning(i18n._(msg`切换音源失败，请稍后再试`))
+          } finally {
+            set({ switchingSource: false })
+          }
+        },
+
+        /** Play an already-cached copy of the current track, offline-safe. */
+        async playCachedSource(source) {
+          const state = get()
+          const song = state.queue[state.currentIndex]
+          if (!song) return
+          const applied = await applyCachedVariant(song, source)
+          if (!applied) {
+            toast.info(i18n._(msg`该音源还没有缓存`))
+            return
+          }
+          toast.success(i18n._(msg`已切换到缓存的音源`))
+        },
+
+        /** NetEase's own "other playable edition" for a grey/VIP track. */
+        async switchToRecommendedVersion() {
+          const state = get()
+          const song = state.queue[state.currentIndex]
+          if (!song || state.switchingSource) return
+          set({ switchingSource: true })
+          try {
+            if (await applyCachedVariant(song, 'copyright-rcmd')) {
+              toast.success(i18n._(msg`已切换到缓存的音源`))
+              return
+            }
+            const recommendation = await fetchSongCopyrightRecommendation(song.id)
+            if (!recommendation || recommendation.id === song.id) {
+              toast.info(i18n._(msg`没有找到其他可播放版本`))
+              return
+            }
+            const detail =
+              (await fetchSongDetail(recommendation.id).catch(() => null)) ??
+              recommendation
+            const level = useSettingsStore.getState().playLevel
+            const info = await fetchSongUrlInfo(detail.id, level)
+            if (!info.url) {
+              toast.info(i18n._(msg`没有找到其他可播放版本`))
+              return
+            }
+            const active = get()
+            if (active.queue[active.currentIndex]?.id !== song.id) return
+            const requestId = active.loadRequestId + 1
+            const patch: Partial<Song> = {
+              ...detail,
+              // Keep the queue identity; the streamed edition supplies the rest.
+              id: song.id,
+              url: info.url,
+              urlFetchedAt: Date.now(),
+              trialEnd: info.trialEnd,
+              unblocked: false,
+              matchedSource: 'copyright-rcmd',
+              alternativeSongId: detail.id,
+              alternativeVersion: true,
+              lyric: '',
+              tlyric: '',
+              yrc: '',
+              isNotLyric: false,
+            }
+            patchSong(active.currentIndex, patch)
+            set({
+              loadRequestId: requestId,
+              audioUrl: playbackUrl(info.url, false),
+              sourceReady: true,
+              audioFromCache: false,
+              audioBlob: null,
+              sourceTransition: 'none',
+              playToken: active.playToken + 1,
+              resumeAt: active.currentTime,
+              lyricLoading: true,
+              lyricLines: [],
+            })
+            await resolveLyrics(active.currentIndex, { ...song, ...patch }, requestId)
+            toast.success(i18n._(msg`已切换到推荐版本`))
           } catch {
             toast.warning(i18n._(msg`切换音源失败，请稍后再试`))
           } finally {

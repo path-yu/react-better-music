@@ -63,7 +63,11 @@ import {
   getAudioRmsLevel,
   resumeAudioAnalyser,
 } from '../../lib/audioAnalyser'
-import { cacheSong, cacheSongFromBlob } from '../../lib/songCache'
+import {
+  cacheSong,
+  cacheSongFromBlob,
+  cacheSourceOf,
+} from '../../lib/songCache'
 import { useScrobble } from '../../lib/scrobble'
 import { toast } from '../../lib/toast'
 
@@ -916,6 +920,9 @@ export function PlayerBar() {
         id: active.id,
         name: active.name,
         url: active.url ?? '',
+        // Each provider gets its own cached copy of the same song id.
+        source: cacheSourceOf(active),
+        lyricSongId: active.alternativeSongId ?? active.id,
         artists: formatArtists(active.ar),
         duration: active.dt,
         trialEnd: active.trialEnd ?? 0,
