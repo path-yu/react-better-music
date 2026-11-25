@@ -94,7 +94,7 @@ msgstr "{0} 粉丝"
 #: src/routes/library.tsx:287
 #: src/routes/library.tsx:310
 #: src/routes/library.tsx:351
-#: src/routes/library.tsx:610
+#: src/routes/library.tsx:612
 #: src/routes/search.tsx:414
 #: src/routes/settings.tsx:1231
 msgid "{0} 首"
@@ -444,7 +444,7 @@ msgstr "不再提示"
 #: src/routes/albums/$id.tsx:41
 #: src/routes/albums/$id.tsx:232
 #: src/routes/artist/$id.tsx:720
-#: src/routes/library.tsx:539
+#: src/routes/library.tsx:541
 #: src/routes/search.tsx:322
 msgid "专辑"
 msgstr "专辑"
@@ -489,7 +489,7 @@ msgstr "中午好"
 msgid "中性石墨灰，极简耐看"
 msgstr "中性石墨灰，极简耐看"
 
-#: src/components/layout/Sidebar.tsx:632
+#: src/components/layout/Sidebar.tsx:714
 #: src/routes/library.tsx:406
 #: src/routes/library.tsx:503
 msgid "主页"
@@ -742,7 +742,7 @@ msgid "共找到 {videoTotal} 个视频"
 msgstr "共找到 {videoTotal} 个视频"
 
 #: src/components/layout/UserMenu.tsx:84
-#: src/routes/library.tsx:543
+#: src/routes/library.tsx:545
 #: src/routes/users/$id.tsx:305
 msgid "关注"
 msgstr "关注"
@@ -760,15 +760,15 @@ msgstr "关注歌手"
 msgid "关注用户"
 msgstr "关注用户"
 
-#: src/components/layout/Sidebar.tsx:786
-#: src/components/layout/Sidebar.tsx:1055
-#: src/routes/library.tsx:655
+#: src/components/layout/Sidebar.tsx:826
+#: src/components/layout/Sidebar.tsx:1105
+#: src/routes/library.tsx:657
 msgid "关注的歌手"
 msgstr "关注的歌手"
 
-#: src/components/layout/Sidebar.tsx:830
-#: src/components/layout/Sidebar.tsx:1099
-#: src/routes/library.tsx:673
+#: src/components/layout/Sidebar.tsx:870
+#: src/components/layout/Sidebar.tsx:1149
+#: src/routes/library.tsx:675
 msgid "关注的用户"
 msgstr "关注的用户"
 
@@ -869,7 +869,7 @@ msgstr "最小化"
 msgid "最新"
 msgstr "最新"
 
-#: src/components/layout/Sidebar.tsx:92
+#: src/components/layout/Sidebar.tsx:93
 #: src/components/layout/TitleBar.tsx:23
 #: src/routes/latest-mv.tsx:46
 #: src/routes/latest-mv.tsx:102
@@ -885,7 +885,7 @@ msgstr "最新 MV"
 msgid "最新评论"
 msgstr "最新评论"
 
-#: src/components/layout/Sidebar.tsx:91
+#: src/components/layout/Sidebar.tsx:92
 #: src/components/layout/TitleBar.tsx:22
 #: src/routes/latest-music.tsx:31
 #: src/routes/latest-music.tsx:58
@@ -900,9 +900,9 @@ msgstr "最热"
 msgid "最近听过的歌曲，最多显示 100 首"
 msgstr "最近听过的歌曲，最多显示 100 首"
 
-#: src/components/layout/Sidebar.tsx:518
-#: src/components/layout/Sidebar.tsx:519
-#: src/components/layout/Sidebar.tsx:678
+#: src/components/layout/Sidebar.tsx:531
+#: src/components/layout/Sidebar.tsx:532
+#: src/components/layout/Sidebar.tsx:760
 #: src/routes/recent.tsx:24
 #: src/routes/recent.tsx:92
 msgid "最近播放"
@@ -956,13 +956,13 @@ msgid "列表循环"
 msgstr "列表循环"
 
 #: src/components/player/NowPlaying.tsx:1616
-#: src/routes/library.tsx:556
+#: src/routes/library.tsx:558
 msgid "列表视图"
 msgstr "列表视图"
 
-#: src/components/layout/Sidebar.tsx:564
-#: src/components/layout/Sidebar.tsx:1225
-#: src/routes/library.tsx:531
+#: src/components/layout/Sidebar.tsx:584
+#: src/components/layout/Sidebar.tsx:1275
+#: src/routes/library.tsx:533
 msgid "创建"
 msgstr "创建"
 
@@ -975,24 +975,24 @@ msgstr "创建本地歌单失败"
 #~ msgid "创建歌单"
 #~ msgstr "创建歌单"
 
-#: src/components/layout/Sidebar.tsx:225
+#: src/components/layout/Sidebar.tsx:238
 #: src/components/playlists/ImportPlaylistDialog.tsx:384
 #: src/store/localLibrary.ts:116
 msgid "创建歌单失败"
 msgstr "创建歌单失败"
 
-#: src/components/layout/Sidebar.tsx:872
+#: src/components/layout/Sidebar.tsx:912
 #: src/routes/users/$id.tsx:347
 msgid "创建的歌单"
 msgstr "创建的歌单"
 
-#: src/components/layout/Sidebar.tsx:1175
+#: src/components/layout/Sidebar.tsx:1225
 #: src/routes/local/playlists/$id.tsx:239
 msgid "删除"
 msgstr "删除"
 
-#: src/components/layout/Sidebar.tsx:457
-#: src/components/layout/Sidebar.tsx:1164
+#: src/components/layout/Sidebar.tsx:470
+#: src/components/layout/Sidebar.tsx:1214
 #: src/routes/local/playlists/$id.tsx:187
 #: src/routes/local/playlists/$id.tsx:188
 #: src/routes/local/playlists/$id.tsx:213
@@ -1114,7 +1114,7 @@ msgstr "双语对照"
 msgid "发现新版本 {0}"
 msgstr "发现新版本 {0}"
 
-#: src/components/layout/Sidebar.tsx:87
+#: src/components/layout/Sidebar.tsx:88
 #: src/components/layout/TitleBar.tsx:28
 #: src/routes/index.tsx:358
 #: src/routes/latest-music.tsx:57
@@ -1130,9 +1130,9 @@ msgid "发生未知错误"
 msgstr "发生未知错误"
 
 #: src/components/comments/CommentSection.tsx:882
-#: src/components/layout/Sidebar.tsx:557
-#: src/components/layout/Sidebar.tsx:1172
-#: src/components/layout/Sidebar.tsx:1215
+#: src/components/layout/Sidebar.tsx:577
+#: src/components/layout/Sidebar.tsx:1222
+#: src/components/layout/Sidebar.tsx:1265
 #: src/components/playlists/ImportPlaylistDialog.tsx:584
 #: src/components/playlists/ImportPlaylistDialog.tsx:640
 #: src/routes/local/playlists/$id.tsx:159
@@ -1146,15 +1146,15 @@ msgstr "取消"
 msgid "取消全选"
 msgstr "取消全选"
 
-#: src/components/layout/Sidebar.tsx:797
-#: src/components/layout/Sidebar.tsx:841
-#: src/components/layout/Sidebar.tsx:1066
-#: src/components/layout/Sidebar.tsx:1110
+#: src/components/layout/Sidebar.tsx:837
+#: src/components/layout/Sidebar.tsx:881
+#: src/components/layout/Sidebar.tsx:1116
+#: src/components/layout/Sidebar.tsx:1160
 msgid "取消关注"
 msgstr "取消关注"
 
-#: src/components/layout/Sidebar.tsx:326
-#: src/components/layout/Sidebar.tsx:345
+#: src/components/layout/Sidebar.tsx:339
+#: src/components/layout/Sidebar.tsx:358
 msgid "取消关注失败"
 msgstr "取消关注失败"
 
@@ -1171,16 +1171,16 @@ msgstr "取消关注失败"
 msgid "取消喜欢"
 msgstr "取消喜欢"
 
-#: src/components/layout/Sidebar.tsx:762
-#: src/components/layout/Sidebar.tsx:940
-#: src/components/layout/Sidebar.tsx:993
-#: src/components/layout/Sidebar.tsx:1001
+#: src/components/layout/Sidebar.tsx:802
+#: src/components/layout/Sidebar.tsx:990
+#: src/components/layout/Sidebar.tsx:1043
+#: src/components/layout/Sidebar.tsx:1051
 msgid "取消收藏"
 msgstr "取消收藏"
 
-#: src/components/layout/Sidebar.tsx:274
-#: src/components/layout/Sidebar.tsx:283
-#: src/components/layout/Sidebar.tsx:304
+#: src/components/layout/Sidebar.tsx:287
+#: src/components/layout/Sidebar.tsx:296
+#: src/components/layout/Sidebar.tsx:317
 #: src/routes/songlists/$id.tsx:307
 msgid "取消收藏失败"
 msgstr "取消收藏失败"
@@ -1202,11 +1202,11 @@ msgid "只能编辑自己创建的歌单"
 msgstr "只能编辑自己创建的歌单"
 
 #. placeholder {0}: mergeTargets.length
-#: src/components/layout/Sidebar.tsx:985
+#: src/components/layout/Sidebar.tsx:1035
 msgid "合并 {0} 张专辑为新歌单"
 msgstr "合并 {0} 张专辑为新歌单"
 
-#: src/components/layout/Sidebar.tsx:1190
+#: src/components/layout/Sidebar.tsx:1240
 msgid "合并为新歌单"
 msgstr "合并为新歌单"
 
@@ -1425,7 +1425,7 @@ msgstr "导入 {0} 首"
 msgid "导入中断：已导入 {index} 首，其余歌曲添加失败"
 msgstr "导入中断：已导入 {index} 首，其余歌曲添加失败"
 
-#: src/components/layout/Sidebar.tsx:593
+#: src/components/layout/Sidebar.tsx:675
 #: src/components/playlists/ImportPlaylistDialog.tsx:444
 msgid "导入歌单"
 msgstr "导入歌单"
@@ -1440,7 +1440,7 @@ msgstr "导入的歌单"
 msgid "导出缓存失败"
 msgstr "导出缓存失败"
 
-#: src/components/layout/Sidebar.tsx:470
+#: src/components/layout/Sidebar.tsx:483
 msgid "导航"
 msgstr "导航"
 
@@ -1458,7 +1458,7 @@ msgid "封面更新成功"
 msgstr "封面更新成功"
 
 #. placeholder {0}: mergeAlbums?.length ?? 0
-#: src/components/layout/Sidebar.tsx:1193
+#: src/components/layout/Sidebar.tsx:1243
 msgid "将 {0} 张专辑的歌曲合并到一个新的本地歌单。"
 msgstr "将 {0} 张专辑的歌曲合并到一个新的本地歌单。"
 
@@ -1558,7 +1558,7 @@ msgstr "已切换到推荐版本"
 msgid "已切换到缓存的音源"
 msgstr "已切换到缓存的音源"
 
-#: src/components/layout/Sidebar.tsx:407
+#: src/components/layout/Sidebar.tsx:420
 msgid "已创建歌单「{name}」"
 msgstr "已创建歌单「{name}」"
 
@@ -1567,10 +1567,10 @@ msgstr "已创建歌单「{name}」"
 msgid "已加载 {0} 张专辑"
 msgstr "已加载 {0} 张专辑"
 
-#: src/components/layout/Sidebar.tsx:316
-#: src/components/layout/Sidebar.tsx:323
-#: src/components/layout/Sidebar.tsx:335
-#: src/components/layout/Sidebar.tsx:342
+#: src/components/layout/Sidebar.tsx:329
+#: src/components/layout/Sidebar.tsx:336
+#: src/components/layout/Sidebar.tsx:348
+#: src/components/layout/Sidebar.tsx:355
 #: src/routes/artist/$id.tsx:368
 #: src/routes/users/$id.tsx:195
 msgid "已取消关注"
@@ -1580,10 +1580,10 @@ msgstr "已取消关注"
 msgid "已取消喜欢"
 msgstr "已取消喜欢"
 
-#: src/components/layout/Sidebar.tsx:277
-#: src/components/layout/Sidebar.tsx:289
-#: src/components/layout/Sidebar.tsx:294
-#: src/components/layout/Sidebar.tsx:301
+#: src/components/layout/Sidebar.tsx:290
+#: src/components/layout/Sidebar.tsx:302
+#: src/components/layout/Sidebar.tsx:307
+#: src/components/layout/Sidebar.tsx:314
 #: src/routes/albums/$id.tsx:117
 #: src/routes/songlists/$id.tsx:293
 #: src/routes/songlists/$id.tsx:318
@@ -1868,10 +1868,10 @@ msgstr "恢复原声失败"
 msgid "恢复默认"
 msgstr "恢复默认"
 
-#: src/components/layout/Sidebar.tsx:503
-#: src/components/layout/Sidebar.tsx:504
-#: src/components/layout/Sidebar.tsx:651
-#: src/components/layout/Sidebar.tsx:669
+#: src/components/layout/Sidebar.tsx:516
+#: src/components/layout/Sidebar.tsx:517
+#: src/components/layout/Sidebar.tsx:733
+#: src/components/layout/Sidebar.tsx:751
 #: src/routes/local/favorites.tsx:21
 #: src/routes/local/favorites.tsx:29
 #: src/store/user.ts:71
@@ -1882,7 +1882,7 @@ msgstr "我喜欢的音乐"
 #~ msgid "我的歌单"
 #~ msgstr "我的歌单"
 
-#: src/components/layout/Sidebar.tsx:623
+#: src/components/layout/Sidebar.tsx:705
 #: src/routes/library.tsx:502
 msgid "我的音乐"
 msgstr "我的音乐"
@@ -1971,14 +1971,14 @@ msgstr "排序"
 msgid "排序歌单"
 msgstr "排序歌单"
 
-#: src/components/layout/Sidebar.tsx:90
+#: src/components/layout/Sidebar.tsx:91
 #: src/components/layout/TitleBar.tsx:19
 #: src/routes/toplist.tsx:288
 #: src/routes/toplist.tsx:328
 msgid "排行榜"
 msgstr "排行榜"
 
-#: src/components/layout/Sidebar.tsx:89
+#: src/components/layout/Sidebar.tsx:90
 #: src/components/layout/TitleBar.tsx:21
 #: src/routes/index.tsx:488
 #: src/routes/songlists/index.tsx:100
@@ -1998,7 +1998,7 @@ msgid "推荐版本"
 msgstr "推荐版本"
 
 #: src/components/layout/SearchBox.tsx:239
-#: src/components/layout/Sidebar.tsx:86
+#: src/components/layout/Sidebar.tsx:87
 #: src/components/layout/TitleBar.tsx:25
 #: src/components/settings/SettingsNav.tsx:121
 #: src/routes/search.tsx:73
@@ -2100,7 +2100,7 @@ msgstr "播放人声"
 msgid "播放伴奏"
 msgstr "播放伴奏"
 
-#: src/components/layout/Sidebar.tsx:441
+#: src/components/layout/Sidebar.tsx:454
 #: src/components/songs/PlayAllButton.tsx:17
 #: src/routes/daily.tsx:162
 #: src/routes/settings.tsx:1430
@@ -2221,7 +2221,7 @@ msgid "操作失败"
 msgstr "操作失败"
 
 #: src/routes/albums/$id.tsx:292
-#: src/routes/library.tsx:535
+#: src/routes/library.tsx:537
 #: src/routes/songlists/$id.tsx:523
 msgid "收藏"
 msgstr "收藏"
@@ -2277,14 +2277,14 @@ msgstr "收藏热门歌曲"
 msgid "收藏热门歌曲到本地歌单"
 msgstr "收藏热门歌曲到本地歌单"
 
-#: src/components/layout/Sidebar.tsx:964
+#: src/components/layout/Sidebar.tsx:1014
 #: src/routes/local/favorites.tsx:65
 #: src/routes/users/$id.tsx:353
 msgid "收藏的专辑"
 msgstr "收藏的专辑"
 
-#: src/components/layout/Sidebar.tsx:743
-#: src/components/layout/Sidebar.tsx:923
+#: src/components/layout/Sidebar.tsx:783
+#: src/components/layout/Sidebar.tsx:973
 #: src/routes/users/$id.tsx:350
 msgid "收藏的歌单"
 msgstr "收藏的歌单"
@@ -2317,12 +2317,16 @@ msgstr "放弃修改"
 msgid "放弃未保存的修改？"
 msgstr "放弃未保存的修改？"
 
-#: src/components/layout/Sidebar.tsx:575
-#: src/components/layout/Sidebar.tsx:576
+#: src/components/layout/Sidebar.tsx:649
+#: src/components/layout/Sidebar.tsx:650
 msgid "新建或导入歌单"
 msgstr "新建或导入歌单"
 
-#: src/components/layout/Sidebar.tsx:587
+#: src/components/layout/Sidebar.tsx:669
+msgid "新建本地歌单"
+msgstr "新建本地歌单"
+
+#: src/components/layout/Sidebar.tsx:662
 msgid "新建歌单"
 msgstr "新建歌单"
 
@@ -2398,7 +2402,7 @@ msgstr "昵称"
 msgid "昵称不能为空"
 msgstr "昵称不能为空"
 
-#: src/routes/library.tsx:550
+#: src/routes/library.tsx:552
 msgid "显示方式"
 msgstr "显示方式"
 
@@ -2467,7 +2471,7 @@ msgstr "暂无 MV"
 msgid "暂无专辑"
 msgstr "暂无专辑"
 
-#: src/components/layout/Sidebar.tsx:252
+#: src/components/layout/Sidebar.tsx:265
 #: src/components/songs/PlayAllButton.tsx:23
 #: src/routes/toplist.tsx:61
 msgid "暂无可播放歌曲"
@@ -2492,7 +2496,7 @@ msgstr "暂无数据"
 msgid "暂无新歌"
 msgstr "暂无新歌"
 
-#: src/components/layout/Sidebar.tsx:734
+#: src/components/layout/Sidebar.tsx:638
 msgid "暂无本地歌单"
 msgstr "暂无本地歌单"
 
@@ -2506,7 +2510,7 @@ msgstr "暂无本地歌单，请先在侧栏创建"
 msgid "暂无榜单"
 msgstr "暂无榜单"
 
-#: src/components/layout/Sidebar.tsx:914
+#: src/components/layout/Sidebar.tsx:954
 msgid "暂无歌单"
 msgstr "暂无歌单"
 
@@ -2649,11 +2653,12 @@ msgstr "未知歌手"
 msgid "未设置昵称"
 msgstr "未设置昵称"
 
-#: src/components/layout/Sidebar.tsx:1028
+#: src/components/layout/Sidebar.tsx:617
+#: src/components/layout/Sidebar.tsx:1078
 #: src/routes/library.tsx:144
 #: src/routes/library.tsx:284
 #: src/routes/library.tsx:346
-#: src/routes/library.tsx:633
+#: src/routes/library.tsx:635
 msgid "本地"
 msgstr "本地"
 
@@ -2666,7 +2671,9 @@ msgstr "本地收藏"
 msgid "本地曲库请求失败 ({0})"
 msgstr "本地曲库请求失败 ({0})"
 
-#: src/components/layout/Sidebar.tsx:686
+#: src/components/layout/Sidebar.tsx:552
+#: src/components/layout/Sidebar.tsx:768
+#: src/components/layout/Sidebar.tsx:962
 #: src/components/songs/SongContextMenu.tsx:549
 #: src/routes/library.tsx:281
 #: src/routes/local/playlists/$id.tsx:49
@@ -2818,7 +2825,7 @@ msgstr "歌单不存在或无法访问"
 msgid "歌单信息已保存"
 msgstr "歌单信息已保存"
 
-#: src/components/layout/Sidebar.tsx:257
+#: src/components/layout/Sidebar.tsx:270
 #: src/components/player/PlaylistPicker.tsx:85
 #: src/components/songs/AddSelectedToPlaylist.tsx:83
 #: src/components/songs/SongContextMenu.tsx:207
@@ -2844,10 +2851,10 @@ msgstr "歌单名"
 msgid "歌单名不能为空"
 msgstr "歌单名不能为空"
 
-#: src/components/layout/Sidebar.tsx:545
-#: src/components/layout/Sidebar.tsx:1202
-#: src/components/layout/Sidebar.tsx:1203
-#: src/components/layout/Sidebar.tsx:1422
+#: src/components/layout/Sidebar.tsx:565
+#: src/components/layout/Sidebar.tsx:1252
+#: src/components/layout/Sidebar.tsx:1253
+#: src/components/layout/Sidebar.tsx:1472
 #: src/components/playlists/ImportPlaylistDialog.tsx:546
 msgid "歌单名称"
 msgstr "歌单名称"
@@ -3130,7 +3137,7 @@ msgstr "正在连接 GitHub 获取最新版本信息，通常需要几秒…"
 msgid "每天 6:00 更新"
 msgstr "每天 6:00 更新"
 
-#: src/components/layout/Sidebar.tsx:88
+#: src/components/layout/Sidebar.tsx:89
 #: src/routes/daily.tsx:33
 #: src/routes/daily.tsx:143
 #: src/routes/index.tsx:215
@@ -3241,7 +3248,7 @@ msgstr "浅色"
 msgid "浅色模式"
 msgstr "浅色模式"
 
-#: src/components/layout/Sidebar.tsx:604
+#: src/components/layout/Sidebar.tsx:686
 msgid "浏览"
 msgstr "浏览"
 
@@ -3432,7 +3439,7 @@ msgstr "用户加载失败"
 msgid "用手机相机或浏览器扫码打开，可「添加到主屏幕」作为遥控器使用。"
 msgstr "用手机相机或浏览器扫码打开，可「添加到主屏幕」作为遥控器使用。"
 
-#: src/components/layout/Sidebar.tsx:987
+#: src/components/layout/Sidebar.tsx:1037
 msgid "用这张专辑新建歌单"
 msgstr "用这张专辑新建歌单"
 
@@ -3448,7 +3455,7 @@ msgstr "登录"
 msgid "登录二维码"
 msgstr "登录二维码"
 
-#: src/components/layout/Sidebar.tsx:1153
+#: src/components/layout/Sidebar.tsx:1203
 msgid "登录同步网易云歌单"
 msgstr "登录同步网易云歌单"
 
@@ -3537,7 +3544,7 @@ msgid "石墨灰"
 msgstr "石墨灰"
 
 #. placeholder {0}: deleting?.name ?? ''
-#: src/components/layout/Sidebar.tsx:1167
+#: src/components/layout/Sidebar.tsx:1217
 msgid "确定删除「{0}」吗？此操作无法撤销。"
 msgstr "确定删除「{0}」吗？此操作无法撤销。"
 
@@ -3746,7 +3753,7 @@ msgstr "缓存音乐已清除"
 msgid "编辑「{0}」"
 msgstr "编辑「{0}」"
 
-#: src/components/layout/Sidebar.tsx:892
+#: src/components/layout/Sidebar.tsx:932
 #: src/routes/songlists/$id.edit.tsx:53
 #: src/routes/songlists/$id.tsx:410
 msgid "编辑歌单"
@@ -3779,7 +3786,7 @@ msgid "网易出品"
 msgstr "网易出品"
 
 #: src/components/player/NowPlaying.tsx:1621
-#: src/routes/library.tsx:561
+#: src/routes/library.tsx:563
 msgid "网格视图"
 msgstr "网格视图"
 
@@ -4015,6 +4022,10 @@ msgstr "读取当前音频失败"
 #~ msgid "调整歌曲详情页的唱片样式，并让不同歌曲以更接近的响度播放。"
 #~ msgstr "调整歌曲详情页的唱片样式，并让不同歌曲以更接近的响度播放。"
 
+#: src/components/layout/Sidebar.tsx:554
+msgid "账号歌单"
+msgstr "账号歌单"
+
 #: src/components/common/Pager.tsx:111
 msgid "跳转页码"
 msgstr "跳转页码"
@@ -4086,11 +4097,11 @@ msgstr "返回首页"
 msgid "还有 {0} 张专辑获取失败"
 msgstr "还有 {0} 张专辑获取失败"
 
-#: src/routes/library.tsx:688
+#: src/routes/library.tsx:690
 msgid "还没有关注的歌手或用户"
 msgstr "还没有关注的歌手或用户"
 
-#: src/routes/library.tsx:571
+#: src/routes/library.tsx:573
 msgid "还没有创建歌单"
 msgstr "还没有创建歌单"
 
@@ -4105,12 +4116,12 @@ msgstr "还没有喜欢的歌曲"
 msgid "还没有播放记录"
 msgstr "还没有播放记录"
 
-#: src/routes/library.tsx:625
+#: src/routes/library.tsx:627
 #: src/routes/users/$id.tsx:427
 msgid "还没有收藏专辑"
 msgstr "还没有收藏专辑"
 
-#: src/routes/library.tsx:586
+#: src/routes/library.tsx:588
 msgid "还没有收藏歌单"
 msgstr "还没有收藏歌单"
 
@@ -4126,7 +4137,7 @@ msgstr "这个人很懒，什么都没写"
 msgid "这个歌单还没有歌曲"
 msgstr "这个歌单还没有歌曲"
 
-#: src/components/layout/Sidebar.tsx:392
+#: src/components/layout/Sidebar.tsx:405
 msgid "这些专辑里没有可合并的歌曲"
 msgstr "这些专辑里没有可合并的歌曲"
 
@@ -4251,7 +4262,7 @@ msgstr "配色方案"
 #~ msgid "重启并更新"
 #~ msgstr "重启并更新"
 
-#: src/components/layout/Sidebar.tsx:451
+#: src/components/layout/Sidebar.tsx:464
 msgid "重命名"
 msgstr "重命名"
 

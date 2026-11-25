@@ -20,6 +20,7 @@ import {
   ChevronRight,
   Download,
   Film,
+  FolderPlus,
   Heart,
   History,
   Home,
@@ -151,6 +152,11 @@ export function Sidebar() {
     (state) => state.toggleSubscribedPlaylist,
   )
   const [creatingPlaylist, setCreatingPlaylist] = useState(false)
+  // Which API the inline create form uses: the account playlist endpoint or
+  // the local library one.
+  const [creatingMode, setCreatingMode] = useState<'account' | 'local'>(
+    'account',
+  )
   const [creating, setCreating] = useState(false)
   const [playlistName, setPlaylistName] = useState('')
   const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null)
@@ -206,8 +212,12 @@ export function Sidebar() {
 
   /* ------------------------------ actions ------------------------------ */
 
-  const startCreating = (group: string) => {
+  const startCreating = (
+    group: string,
+    mode: 'account' | 'local' = 'account',
+  ) => {
     if (!groupOpen(group)) toggleGroup(group)
+    setCreatingMode(mode)
     setPlaylistName('')
     setCreatingPlaylist(true)
   }
@@ -217,8 +227,11 @@ export function Sidebar() {
     const name = playlistName.trim()
     if (!name || creating) return
     setCreating(true)
+    // Guests have no account, so even "账号歌单" falls back to the local
+    // library there (the menu keeps the old behaviour for them).
+    const wantsAccount = creatingMode === 'account' && isLogin && profile
     try {
-      if (isLogin && profile) {
+      if (wantsAccount) {
         const created = await createPlaylist(name)
         const id = created.id ?? created.playlist?.id
         if (!id) {
@@ -534,6 +547,13 @@ export function Sidebar() {
 
   const createForm = creatingPlaylist ? (
     <form onSubmit={(event) => void submitPlaylist(event)} className="px-1 pb-1.5">
+      <p className="mb-1 px-0.5 text-[11px] text-ink-4">
+        {creatingMode === 'local' || !isLogin ? (
+          <Trans>本地歌单</Trans>
+        ) : (
+          <Trans>账号歌单</Trans>
+        )}
+      </p>
       <input
         autoFocus
         value={playlistName}
@@ -567,6 +587,60 @@ export function Sidebar() {
     </form>
   ) : null
 
+  /** Local playlist rows, shared by the guest group and the signed-in list. */
+  const localPlaylistRows = (
+    <>
+      {localPlaylists.map((playlist) =>
+        renaming?.id === playlist.id ? (
+          <RenameField
+            key={playlist.id}
+            value={renaming.name}
+            onChange={(name) => setRenaming({ id: playlist.id, name })}
+            onSave={() => void saveRename()}
+            onCancel={() => setRenaming(null)}
+          />
+        ) : (
+          <RowContextMenu key={playlist.id} items={localMenu(playlist)}>
+            <SidebarRow
+              active={pathname === `/local/playlists/${playlist.id}`}
+              icon={
+                <RowCover
+                  src={playlist.coverUrl ?? playlist.songs[0]?.al?.picUrl}
+                  alt={playlist.name}
+                />
+              }
+              label={
+                isLogin ? (
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <span className="min-w-0 truncate">{playlist.name}</span>
+                    <span className="shrink-0 rounded-full bg-black/6 px-1.5 py-0.5 text-[11px] font-normal text-ink-4 dark:bg-white/10 dark:text-white/50">
+                      <Trans>本地</Trans>
+                    </span>
+                  </span>
+                ) : (
+                  playlist.name
+                )
+              }
+              count={playlist.songs.length}
+              busy={loadingKey === `local-${playlist.id}`}
+              onClick={() =>
+                void navigate({
+                  to: '/local/playlists/$id',
+                  params: { id: playlist.id },
+                })
+              }
+            />
+          </RowContextMenu>
+        ),
+      )}
+      {!localPlaylists.length && !creatingPlaylist ? (
+        <p className="px-2.5 py-2 text-[11px] text-ink-4">
+          <Trans>暂无本地歌单</Trans>
+        </p>
+      ) : null}
+    </>
+  )
+
   const addButton = (group: string) => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -581,10 +655,18 @@ export function Sidebar() {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent glass align="start" side="bottom" sideOffset={6}>
-        <DropdownMenuItem onSelect={() => startCreating(group)}>
+        {isLogin ? (
+          <DropdownMenuItem onSelect={() => startCreating(group, 'account')}>
+            <span className="flex items-center gap-2">
+              {icon(Plus)}
+              <Trans>新建歌单</Trans>
+            </span>
+          </DropdownMenuItem>
+        ) : null}
+        <DropdownMenuItem onSelect={() => startCreating(group, 'local')}>
           <span className="flex items-center gap-2">
-            {icon(Plus)}
-            <Trans>新建歌单</Trans>
+            {icon(FolderPlus)}
+            <Trans>新建本地歌单</Trans>
           </span>
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={openImportPlaylist}>
@@ -691,49 +773,7 @@ export function Sidebar() {
               {groupOpen('local') ? (
                 <>
                   {createForm}
-                  {localPlaylists.map((playlist) =>
-                    renaming?.id === playlist.id ? (
-                      <RenameField
-                        key={playlist.id}
-                        value={renaming.name}
-                        onChange={(name) => setRenaming({ id: playlist.id, name })}
-                        onSave={() => void saveRename()}
-                        onCancel={() => setRenaming(null)}
-                      />
-                    ) : (
-                      <RowContextMenu
-                        key={playlist.id}
-                        items={localMenu(playlist)}
-                      >
-                        <SidebarRow
-                          active={pathname === `/local/playlists/${playlist.id}`}
-                          icon={
-                            <RowCover
-                              src={
-                                playlist.coverUrl ??
-                                playlist.songs[0]?.al?.picUrl
-                              }
-                              alt={playlist.name}
-                            />
-                          }
-                          label={playlist.name}
-                          count={playlist.songs.length}
-                          busy={loadingKey === `local-${playlist.id}`}
-                          onClick={() =>
-                            void navigate({
-                              to: '/local/playlists/$id',
-                              params: { id: playlist.id },
-                            })
-                          }
-                        />
-                      </RowContextMenu>
-                    ),
-                  )}
-                  {!localPlaylists.length && !creatingPlaylist ? (
-                    <p className="px-2.5 py-2 text-[11px] text-ink-4">
-                      <Trans>暂无本地歌单</Trans>
-                    </p>
-                  ) : null}
+                  {localPlaylistRows}
                 </>
               ) : null}
 
@@ -913,6 +953,16 @@ export function Sidebar() {
                     <p className="px-2.5 py-2 text-[11px] text-ink-4">
                       <Trans>暂无歌单</Trans>
                     </p>
+                  ) : null}
+                  {/* Local playlists stay visible while signed in: they are
+                      where 收藏热门歌曲 / 新建本地歌单 write. */}
+                  {localPlaylists.length ? (
+                    <>
+                      <p className="px-2.5 pb-1 pt-2 text-[11px] text-ink-4">
+                        <Trans>本地歌单</Trans>
+                      </p>
+                      {localPlaylistRows}
+                    </>
                   ) : null}
                 </>
               ) : null}

@@ -525,7 +525,9 @@ function LibraryPage() {
         />
       ) : (
         <Tabs value={tab} onValueChange={changeTab} className="mt-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          {/* Sticky across the whole page: the grids get long, and switching
+              tabs should not require scrolling back up. */}
+          <div className="page-bleed sticky-bar sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 py-3">
             <TabsList>
               <TabsTrigger value="created">
                 <Trans>创建</Trans>
