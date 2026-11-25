@@ -4,6 +4,8 @@ import { persist } from 'zustand/middleware'
 import {
   fetchAccount,
   fetchCollectedAlbums,
+  fetchCollectedArtists,
+  fetchFollowedUsers,
   fetchLikedIds,
   fetchLoginStatus,
   fetchUserDetail,
@@ -24,7 +26,7 @@ import {
 } from '../lib/session'
 import { usePlayerStore } from './player'
 import { i18n } from '../i18n'
-import type { Album, Playlist, UserProfile } from '../types'
+import type { Album, ArtistSummary, Playlist, UserProfile } from '../types'
 
 interface UserState {
   isLogin: boolean
@@ -37,11 +39,17 @@ interface UserState {
   collectedPlaylists: Playlist[]
   /** Albums collected by the signed-in account (album/sublist). */
   collectedAlbums: Album[]
+  /** Artists followed by the signed-in account (artist/sublist). */
+  collectedArtists: ArtistSummary[]
+  /** Accounts followed by the signed-in account (user/follows). */
+  followedUsers: UserProfile[]
   searchHistory: string[]
   initSession: () => Promise<void>
   refreshProfile: () => Promise<void>
   loadPlaylists: (uid: number) => Promise<void>
   loadCollectedAlbums: () => Promise<void>
+  loadCollectedArtists: () => Promise<void>
+  loadFollowedUsers: () => Promise<void>
   refreshLiked: (uid: number) => Promise<void>
   setProfile: (profile: UserProfile, level?: number) => void
   signIn: () => Promise<void>
@@ -138,6 +146,8 @@ export const useUserStore = create<UserState>()(
       createdPlaylists: [],
       collectedPlaylists: [],
       collectedAlbums: [],
+      collectedArtists: [],
+      followedUsers: [],
       searchHistory: [],
 
       initSession() {
@@ -179,6 +189,8 @@ export const useUserStore = create<UserState>()(
             ])
             // Sidebar-only data; do not hold up the session on it.
             void get().loadCollectedAlbums()
+            void get().loadCollectedArtists()
+            void get().loadFollowedUsers()
             // Rotate the cookie after each launch so the persisted session
             // never goes stale as long as the app is opened regularly.
             void refreshLogin()
@@ -264,6 +276,26 @@ export const useUserStore = create<UserState>()(
           set({ collectedAlbums: albums })
         } catch {
           // A sidebar nicety: a failed album list must not toast on startup.
+        }
+      },
+
+      async loadCollectedArtists() {
+        try {
+          const artists = await fetchCollectedArtists(100, 0)
+          set({ collectedArtists: artists })
+        } catch {
+          // A sidebar nicety: a failed artist list must not toast on startup.
+        }
+      },
+
+      async loadFollowedUsers() {
+        const uid = get().profile?.userId
+        if (!uid) return
+        try {
+          const users = await fetchFollowedUsers(uid, 100, 0)
+          set({ followedUsers: users })
+        } catch {
+          // A sidebar nicety: a failed follow list must not toast on startup.
         }
       },
 

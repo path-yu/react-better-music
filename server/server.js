@@ -536,6 +536,24 @@ async function constructServer(moduleDefs) {
     ),
   )
   app.post(
+    '/local/subscribed-artists',
+    localRoute((req) => localLibrary.addSubscribedArtist(req.body?.artist)),
+  )
+  app.delete(
+    '/local/subscribed-artists/:artistId',
+    localRoute((req) =>
+      localLibrary.removeSubscribedArtist(req.params.artistId),
+    ),
+  )
+  app.post(
+    '/local/subscribed-users',
+    localRoute((req) => localLibrary.addSubscribedUser(req.body?.user)),
+  )
+  app.delete(
+    '/local/subscribed-users/:userId',
+    localRoute((req) => localLibrary.removeSubscribedUser(req.params.userId)),
+  )
+  app.post(
     '/local/favorites',
     localRoute((req) => localLibrary.addFavorite(req.body?.song)),
   )

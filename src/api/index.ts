@@ -944,12 +944,57 @@ export async function searchAll(params: {
 /* --------------------------------- artist -------------------------------- */
 
 export async function fetchArtistProfile(id: number | string, signal?: AbortSignal) {
-  const res = await get<{ data?: { artist?: ArtistProfile } }>(
-    '/artist/detail',
-    { id },
-    signal,
-  )
-  return res.data?.artist ?? null
+  // `followed` sits next to the artist object, not inside it, but the page needs
+  // it to seed the follow button, so fold it in here.
+  const res = await get<{
+    data?: { artist?: ArtistProfile; followed?: boolean }
+  }>('/artist/detail', { id }, signal)
+  const artist = res.data?.artist
+  if (!artist) return null
+  return { ...artist, followed: Boolean(res.data?.followed) }
+}
+
+/** Follow / unfollow an artist for the signed-in account (`t=1` / `t=0`). */
+export async function subscribeArtist(
+  id: number | string,
+  subscribed: boolean,
+) {
+  const res = await get<{ code?: number }>('/artist/sub', {
+    id,
+    t: subscribed ? 1 : 0,
+    timestamp: Date.now(),
+  })
+  return res.code === 200
+}
+
+/**
+ * Artists followed by the signed-in account. Like `album/sublist`, the route is
+ * keyed by the session cookie rather than a uid parameter.
+ */
+export async function fetchCollectedArtists(
+  limit = 100,
+  offset = 0,
+  signal?: AbortSignal,
+): Promise<ArtistSummary[]> {
+  const res = await get<{
+    data?: Array<{
+      id?: number
+      name?: string
+      picUrl?: string
+      img1v1Url?: string
+      albumSize?: number
+      mvSize?: number
+    }>
+  }>('/artist/sublist', { limit, offset, timestamp: Date.now() }, signal)
+  return (res.data ?? [])
+    .filter((item) => Number.isFinite(Number(item?.id)) && Boolean(item?.name))
+    .map((item) => ({
+      id: Number(item.id),
+      name: String(item.name),
+      picUrl: item.picUrl ?? item.img1v1Url ?? '',
+      albumSize: Number(item.albumSize) || 0,
+      mvSize: Number(item.mvSize) || 0,
+    }))
 }
 
 export async function fetchArtistTopSongs(id: number | string, signal?: AbortSignal) {
@@ -1165,6 +1210,44 @@ export async function subscribeAlbum(
     timestamp: Date.now(),
   })
   return res.code === 200
+}
+
+/** Follow / unfollow another account for the signed-in user (`t=1` / `t=0`). */
+export async function subscribeUser(
+  id: number | string,
+  subscribed: boolean,
+) {
+  const res = await get<{ code?: number }>('/follow', {
+    id,
+    t: subscribed ? 1 : 0,
+    timestamp: Date.now(),
+  })
+  return res.code === 200
+}
+
+/** Accounts followed by `uid` (the signed-in user's own id for the sidebar). */
+export async function fetchFollowedUsers(
+  uid: number | string,
+  limit = 100,
+  offset = 0,
+  signal?: AbortSignal,
+): Promise<UserProfile[]> {
+  const res = await get<{
+    follow?: Array<
+      Partial<UserProfile> & { userId?: number; nickname?: string }
+    >
+  }>('/user/follows', { uid, limit, offset, timestamp: Date.now() }, signal)
+  return (res.follow ?? [])
+    .filter(
+      (item) =>
+        Number.isFinite(Number(item?.userId)) && Boolean(item?.nickname),
+    )
+    .map((item) => ({
+      userId: Number(item.userId),
+      nickname: String(item.nickname),
+      avatarUrl: item.avatarUrl ?? '',
+      signature: item.signature,
+    }))
 }
 
 export async function fetchLikedIds(uid: number | string) {

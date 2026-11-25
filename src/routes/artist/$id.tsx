@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { ArrowLeft, Disc3, Music2, Video } from 'lucide-react'
+import { ArrowLeft, Check, Disc3, Music2, UserPlus, Video } from 'lucide-react'
 import { Skeleton, Tabs, TabsContent, TabsList, TabsTrigger, Button } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../../components/common/ImageWithFallback'
 import { EmptyState } from '../../components/common/EmptyState'
@@ -17,7 +17,10 @@ import {
   fetchArtistProfile,
   fetchArtistTopSongs,
   fetchSimilarArtists,
+  subscribeArtist,
 } from '../../api'
+import { useLocalLibraryStore } from '../../store/localLibrary'
+import { useUserStore } from '../../store/user'
 import { formatDate, formatNumber } from '../../lib/format'
 import { useDocumentTitle } from '../../lib/title'
 import { toast } from '../../lib/toast'
@@ -53,6 +56,18 @@ function ArtistPage() {
   const tab = tabParam ?? 'songs'
   const [albumsLoadingMore, setAlbumsLoadingMore] = useState(false)
   const [albumsDone, setAlbumsDone] = useState(false)
+  const isLogin = useUserStore((state) => state.isLogin)
+  const localSubscribedArtists = useLocalLibraryStore(
+    (state) => state.subscribedArtists,
+  )
+  const toggleLocalArtist = useLocalLibraryStore(
+    (state) => state.toggleSubscribedArtist,
+  )
+  const cacheLocalArtist = useLocalLibraryStore(
+    (state) => state.cacheSubscribedArtist,
+  )
+  const [followed, setFollowed] = useState(false)
+  const [followBusy, setFollowBusy] = useState(false)
   // How many albums were loaded on the previous visit; the route holds no
   // component state, so the list must be rebuilt before scroll can restore.
   const albumsRestoreRef = useRef(false)
@@ -176,6 +191,25 @@ function ArtistPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, id])
 
+  // Guests follow into the local library, the signed-in account into NetEase;
+  // re-derive whenever either side changes (login, id, local edits). Kept
+  // above the early returns so the hook order never changes.
+  useEffect(() => {
+    if (!profile) return
+    const localRecord = localSubscribedArtists.find(
+      (item) => Number(item.id) === Number(profile.id),
+    )
+    // Follows saved before the cover/avatar fallback have no image; opening the
+    // artist page backfills it once.
+    if (!isLogin && localRecord && !localRecord.picUrl) {
+      void cacheLocalArtist({
+        ...profile,
+        picUrl: profile.picUrl || profile.cover || profile.avatar || '',
+      })
+    }
+    setFollowed(isLogin ? Boolean(profile.followed) : Boolean(localRecord))
+  }, [profile, isLogin, localSubscribedArtists, cacheLocalArtist])
+
   if (loading) {
     return (
       <div className="page">
@@ -205,6 +239,39 @@ function ArtistPage() {
     .filter(Boolean)
     .join(' / ')
   const playlistId = `artist-${id}`
+
+  const handleToggleFollow = async () => {
+    if (!profile || followBusy) return
+    setFollowBusy(true)
+    const next = !followed
+    try {
+      if (isLogin) {
+        if (!(await subscribeArtist(profile.id, next))) {
+          throw new Error('artist/sub failed')
+        }
+        setProfile((current) =>
+          current ? { ...current, followed: next } : current,
+        )
+        setFollowed(next)
+        // Keep the sidebar's "关注的歌手" in step without a reload.
+        void useUserStore.getState().loadCollectedArtists()
+      } else {
+        // `/artist/detail` leaves picUrl empty, so hand the sidebar the same
+        // cover the header uses.
+        const result = await toggleLocalArtist({
+          ...profile,
+          picUrl: profile.picUrl || profile.cover || profile.avatar || '',
+        })
+        if (result === null) return
+        setFollowed(result)
+      }
+      toast.success(next ? i18n._(msg`已关注`) : i18n._(msg`已取消关注`))
+    } catch {
+      toast.error(i18n._(msg`操作失败`))
+    } finally {
+      setFollowBusy(false)
+    }
+  }
 
   const handleLoadMoreAlbums = async () => {
     if (albumsLoadingMore || albumsDone) return
@@ -274,7 +341,24 @@ function ArtistPage() {
             <span className="eyebrow">
               <Trans>歌手</Trans>
             </span>
-            <h1 className="headline-lg mt-1.5">{profile.name}</h1>
+            <div className="mt-1.5 flex flex-wrap items-center justify-center gap-3 md:justify-start">
+              <h1 className="headline-lg">{profile.name}</h1>
+              <Button
+                variant={followed ? 'secondary' : 'primary'}
+                size="sm"
+                className="rounded-full px-3.5 text-[12px]"
+                disabled={followBusy}
+                aria-pressed={followed}
+                onClick={() => void handleToggleFollow()}
+              >
+                {followed ? (
+                  <Check className="mr-1.5 h-3.5 w-3.5" />
+                ) : (
+                  <UserPlus className="mr-1.5 h-3.5 w-3.5" />
+                )}
+                {followed ? <Trans>已关注</Trans> : <Trans>关注歌手</Trans>}
+              </Button>
+            </div>
             {aliasLine ? (
               <p className="mt-1 text-[12px] text-ink-3">{aliasLine}</p>
             ) : null}

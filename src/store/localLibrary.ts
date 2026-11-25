@@ -4,7 +4,9 @@ import {
   addLocalFavorite,
   addLocalPlaylistSong,
   addLocalSubscribedAlbum,
+  addLocalSubscribedArtist,
   addLocalSubscribedPlaylist,
+  addLocalSubscribedUser,
   clearLocalRecent,
   createLocalPlaylist,
   deleteLocalPlaylist,
@@ -14,16 +16,20 @@ import {
   removeLocalPlaylistSong,
   removeLocalRecent,
   removeLocalSubscribedAlbum,
+  removeLocalSubscribedArtist,
   removeLocalSubscribedPlaylist,
+  removeLocalSubscribedUser,
   renameLocalPlaylist,
   type LocalPlaylist,
   type LocalRecent,
   type LocalSubscribedAlbum,
+  type LocalSubscribedArtist,
   type LocalSubscribedPlaylist,
+  type LocalSubscribedUser,
 } from '../api/local'
 import { toast } from '../lib/toast'
 import { i18n } from '../i18n'
-import type { Album, Song } from '../types'
+import type { Album, ArtistSummary, Song, UserProfile } from '../types'
 
 interface LocalLibraryState {
   loaded: boolean
@@ -31,6 +37,8 @@ interface LocalLibraryState {
   playlists: LocalPlaylist[]
   subscribedPlaylists: LocalSubscribedPlaylist[]
   subscribedAlbums: LocalSubscribedAlbum[]
+  subscribedArtists: LocalSubscribedArtist[]
+  subscribedUsers: LocalSubscribedUser[]
   favorites: Song[]
   recent: LocalRecent[]
   load: (force?: boolean) => Promise<void>
@@ -47,6 +55,12 @@ interface LocalLibraryState {
   ) => Promise<void>
   /** Guest album collection; the signed-in path uses NetEase's album/sub. */
   toggleSubscribedAlbum: (album: Album) => Promise<boolean | null>
+  /** Guest artist follows; the signed-in path uses NetEase's artist/sub. */
+  toggleSubscribedArtist: (artist: ArtistSummary) => Promise<boolean | null>
+  /** Refresh a followed artist's snapshot (avatar backfill); never toggles. */
+  cacheSubscribedArtist: (artist: ArtistSummary) => Promise<void>
+  /** Guest account follows; the signed-in path uses NetEase's /follow. */
+  toggleSubscribedUser: (user: UserProfile) => Promise<boolean | null>
   toggleFavorite: (song: Song) => Promise<boolean>
   recordRecent: (song: Song) => Promise<void>
   removeRecent: (songId: number) => Promise<void>
@@ -62,6 +76,8 @@ export const useLocalLibraryStore = create<LocalLibraryState>()((set, get) => ({
   playlists: [],
   subscribedPlaylists: [],
   subscribedAlbums: [],
+  subscribedArtists: [],
+  subscribedUsers: [],
   favorites: [],
   recent: [],
 
@@ -76,6 +92,8 @@ export const useLocalLibraryStore = create<LocalLibraryState>()((set, get) => ({
         playlists: library.playlists ?? [],
         subscribedPlaylists: library.subscribedPlaylists ?? [],
         subscribedAlbums: library.subscribedAlbums ?? [],
+        subscribedArtists: library.subscribedArtists ?? [],
+        subscribedUsers: library.subscribedUsers ?? [],
         favorites: library.favorites ?? [],
         recent: library.recent ?? [],
       })
@@ -196,6 +214,52 @@ export const useLocalLibraryStore = create<LocalLibraryState>()((set, get) => ({
       return !subscribed
     } catch {
       toast.error(i18n._(msg`收藏失败`))
+      return null
+    }
+  },
+
+  async toggleSubscribedArtist(artist) {
+    const subscribed = get().subscribedArtists.some(
+      (item) => Number(item.id) === Number(artist.id),
+    )
+    try {
+      const next = subscribed
+        ? await removeLocalSubscribedArtist(artist.id)
+        : await addLocalSubscribedArtist(artist)
+      set({ subscribedArtists: next })
+      return !subscribed
+    } catch {
+      toast.error(i18n._(msg`关注失败`))
+      return null
+    }
+  },
+
+  async cacheSubscribedArtist(artist) {
+    try {
+      const next = await addLocalSubscribedArtist(artist)
+      set({ subscribedArtists: next })
+    } catch {
+      // Backfilling an avatar is best-effort; the follow action still works.
+    }
+  },
+
+  async toggleSubscribedUser(user) {
+    const subscribed = get().subscribedUsers.some(
+      (item) => Number(item.userId) === Number(user.userId),
+    )
+    try {
+      const next = subscribed
+        ? await removeLocalSubscribedUser(user.userId)
+        : await addLocalSubscribedUser({
+            userId: user.userId,
+            nickname: user.nickname,
+            avatarUrl: user.avatarUrl ?? '',
+            signature: user.signature,
+          })
+      set({ subscribedUsers: next })
+      return !subscribed
+    } catch {
+      toast.error(i18n._(msg`关注失败`))
       return null
     }
   },

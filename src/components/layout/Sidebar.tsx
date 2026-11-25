@@ -1,4 +1,5 @@
 import {
+  Fragment,
   forwardRef,
   useRef,
   useState,
@@ -42,10 +43,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   Input,
 } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../common/ImageWithFallback'
-import { SidebarMenu, type SidebarMenuItem } from './SidebarMenu'
 import { useUserStore } from '../../store/user'
 import { useUiStore } from '../../store/ui'
 import { usePlayerStore } from '../../store/player'
@@ -58,17 +62,21 @@ import {
   fetchPlaylistTracks,
   fetchRemainingPlaylistTracks,
   subscribeAlbum,
+  subscribeArtist,
+  subscribeUser,
   updatePlaylistSubscribe,
 } from '../../api'
 import type {
   LocalPlaylist,
   LocalSubscribedAlbum,
+  LocalSubscribedArtist,
   LocalSubscribedPlaylist,
+  LocalSubscribedUser,
 } from '../../api/local'
 import { invalidateApiCache } from '../../lib/http'
 import { cn } from '../../lib/format'
 import { toast } from '../../lib/toast'
-import type { Playlist, Song } from '../../types'
+import type { ArtistSummary, Playlist, Song, UserProfile } from '../../types'
 
 const primaryNav = [
   { to: '/search', label: msg`搜索`, icon: Search },
@@ -94,6 +102,12 @@ export function Sidebar() {
   const collectedPlaylists = useUserStore((state) => state.collectedPlaylists)
   const collectedAlbums = useUserStore((state) => state.collectedAlbums)
   const loadCollectedAlbums = useUserStore((state) => state.loadCollectedAlbums)
+  const collectedArtists = useUserStore((state) => state.collectedArtists)
+  const loadCollectedArtists = useUserStore(
+    (state) => state.loadCollectedArtists,
+  )
+  const followedUsers = useUserStore((state) => state.followedUsers)
+  const loadFollowedUsers = useUserStore((state) => state.loadFollowedUsers)
   const sidebarCollapsed = useSidebarCollapsed()
   const localPlaylists = useLocalLibraryStore((state) => state.playlists)
   const localSubscribedPlaylists = useLocalLibraryStore(
@@ -104,6 +118,18 @@ export function Sidebar() {
   )
   const toggleLocalSubscribedAlbum = useLocalLibraryStore(
     (state) => state.toggleSubscribedAlbum,
+  )
+  const localSubscribedArtists = useLocalLibraryStore(
+    (state) => state.subscribedArtists,
+  )
+  const toggleLocalArtist = useLocalLibraryStore(
+    (state) => state.toggleSubscribedArtist,
+  )
+  const localSubscribedUsers = useLocalLibraryStore(
+    (state) => state.subscribedUsers,
+  )
+  const toggleLocalUser = useLocalLibraryStore(
+    (state) => state.toggleSubscribedUser,
   )
   const localFavorites = useLocalLibraryStore((state) => state.favorites)
   const localRecent = useLocalLibraryStore((state) => state.recent)
@@ -116,12 +142,6 @@ export function Sidebar() {
   const [creatingPlaylist, setCreatingPlaylist] = useState(false)
   const [creating, setCreating] = useState(false)
   const [playlistName, setPlaylistName] = useState('')
-  const [menu, setMenu] = useState<{
-    x: number
-    y: number
-    label: string
-    items: SidebarMenuItem[]
-  } | null>(null)
   const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null)
   const [deleting, setDeleting] = useState<LocalPlaylist | null>(null)
   const [loadingKey, setLoadingKey] = useState<string | null>(null)
@@ -261,6 +281,44 @@ export function Sidebar() {
   const openAlbum = (albumId: number) =>
     void navigate({ to: '/albums/$id', params: { id: String(albumId) } })
 
+  const openArtist = (artistId: number) =>
+    void navigate({ to: '/artist/$id', params: { id: String(artistId) } })
+
+  const unsubscribeLocalArtist = async (artist: LocalSubscribedArtist) => {
+    const next = await toggleLocalArtist(artist)
+    if (next === false) toast.success(i18n._(msg`已取消关注`))
+  }
+
+  const unsubscribeOnlineArtist = async (artist: ArtistSummary) => {
+    try {
+      if (await subscribeArtist(artist.id, false)) {
+        await loadCollectedArtists()
+        toast.success(i18n._(msg`已取消关注`))
+      }
+    } catch {
+      toast.error(i18n._(msg`取消关注失败`))
+    }
+  }
+
+  const openUser = (userId: number) =>
+    void navigate({ to: '/users/$id', params: { id: String(userId) } })
+
+  const unsubscribeLocalUser = async (user: LocalSubscribedUser) => {
+    const next = await toggleLocalUser(user)
+    if (next === false) toast.success(i18n._(msg`已取消关注`))
+  }
+
+  const unsubscribeOnlineUser = async (user: UserProfile) => {
+    try {
+      if (await subscribeUser(user.userId, false)) {
+        await loadFollowedUsers()
+        toast.success(i18n._(msg`已取消关注`))
+      }
+    } catch {
+      toast.error(i18n._(msg`取消关注失败`))
+    }
+  }
+
   /** Ctrl/Cmd-click toggles a guest album into the merge selection. */
   const toggleAlbumSelection = (album: LocalSubscribedAlbum) => {
     setSelectedAlbumIds((current) =>
@@ -341,25 +399,9 @@ export function Sidebar() {
     }
   }
 
-  const openMenu = (
-    event: ReactMouseEvent<HTMLElement>,
-    label: string,
-    items: SidebarMenuItem[],
-  ) => {
-    event.preventDefault()
-    const anchor =
-      event.type === 'contextmenu'
-        ? { x: event.clientX, y: event.clientY }
-        : (() => {
-            const rect = event.currentTarget.getBoundingClientRect()
-            return { x: rect.left, y: rect.bottom + 4 }
-          })()
-    setMenu({ ...anchor, label, items })
-  }
-
   const icon = (Icon: LucideIcon) => <Icon className="h-3.5 w-3.5 text-ink-3" />
 
-  const playItem = (onSelect: () => void): SidebarMenuItem => ({
+  const playItem = (onSelect: () => void): SidebarMenuAction => ({
     key: 'play',
     label: <Trans>播放全部</Trans>,
     icon: icon(Play),
@@ -367,7 +409,7 @@ export function Sidebar() {
     disabled: Boolean(loadingKey),
   })
 
-  const localMenu = (playlist: LocalPlaylist): SidebarMenuItem[] => [
+  const localMenu = (playlist: LocalPlaylist): SidebarMenuAction[] => [
     playItem(() => void playSongs(`local-${playlist.id}`, () => playlist.songs)),
     {
       key: 'rename',
@@ -379,23 +421,8 @@ export function Sidebar() {
       key: 'delete',
       label: <Trans>删除歌单</Trans>,
       icon: <Trash2 className="h-3.5 w-3.5" />,
-      danger: true,
+      destructive: true,
       onSelect: () => setDeleting(playlist),
-    },
-  ]
-
-  const createMenu = (group: string): SidebarMenuItem[] => [
-    {
-      key: 'new',
-      label: <Trans>新建歌单</Trans>,
-      icon: icon(Plus),
-      onSelect: () => startCreating(group),
-    },
-    {
-      key: 'import',
-      label: <Trans>导入歌单</Trans>,
-      icon: icon(Download),
-      onSelect: openImportPlaylist,
     },
   ]
 
@@ -506,16 +533,33 @@ export function Sidebar() {
   ) : null
 
   const addButton = (group: string) => (
-    <button
-      type="button"
-      aria-label={i18n._(msg`新建或导入歌单`)}
-      title={i18n._(msg`新建或导入歌单`)}
-      aria-haspopup="menu"
-      onClick={(event) => openMenu(event, i18n._(msg`新建或导入歌单`), createMenu(group))}
-      className="pressable flex h-5 w-5 items-center justify-center rounded-full text-ink-4 hover:bg-black/5 hover:text-ink-2"
-    >
-      <Plus className="h-3.5 w-3.5" />
-    </button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label={i18n._(msg`新建或导入歌单`)}
+          title={i18n._(msg`新建或导入歌单`)}
+          aria-haspopup="menu"
+          className="pressable flex h-5 w-5 items-center justify-center rounded-full text-ink-4 hover:bg-black/5 hover:text-ink-2"
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent glass align="start" side="bottom" sideOffset={6}>
+        <DropdownMenuItem onSelect={() => startCreating(group)}>
+          <span className="flex items-center gap-2">
+            {icon(Plus)}
+            <Trans>新建歌单</Trans>
+          </span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={openImportPlaylist}>
+          <span className="flex items-center gap-2">
+            {icon(Download)}
+            <Trans>导入歌单</Trans>
+          </span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 
   return (
@@ -548,38 +592,42 @@ export function Sidebar() {
           {/* Same order and row style signed in or not. */}
           {isLogin ? (
             likedPlaylist ? (
-              <SidebarRow
-                active={playlistActive(likedPlaylist.id)}
-                icon={<RowIcon Icon={Heart} className="text-love" />}
-                label={<Trans>我喜欢的音乐</Trans>}
-                count={likedPlaylist.trackCount}
-                busy={loadingKey === String(likedPlaylist.id)}
-                onClick={() => goPlaylist(likedPlaylist.id)}
-                onContextMenu={(event) =>
-                  openMenu(event, likedPlaylist.name, [
-                    playItem(
-                      () =>
-                        void playSongs(String(likedPlaylist.id), () =>
-                          loadOnlineSongs(likedPlaylist),
-                        ),
-                    ),
-                  ])
-                }
-              />
+              <RowContextMenu
+                items={[
+                  playItem(
+                    () =>
+                      void playSongs(String(likedPlaylist.id), () =>
+                        loadOnlineSongs(likedPlaylist),
+                      ),
+                  ),
+                ]}
+              >
+                <SidebarRow
+                  active={playlistActive(likedPlaylist.id)}
+                  icon={<RowIcon Icon={Heart} className="text-love" />}
+                  label={<Trans>我喜欢的音乐</Trans>}
+                  count={likedPlaylist.trackCount}
+                  busy={loadingKey === String(likedPlaylist.id)}
+                  onClick={() => goPlaylist(likedPlaylist.id)}
+                />
+              </RowContextMenu>
             ) : null
           ) : (
-            <SidebarRow
-              active={isActive('/local/favorites')}
-              icon={<RowIcon Icon={Heart} className="text-love" />}
-              label={<Trans>我喜欢的音乐</Trans>}
-              count={localFavorites.length}
-              onClick={() => void navigate({ to: '/local/favorites' })}
-              onContextMenu={(event) =>
-                openMenu(event, i18n._(msg`我喜欢的音乐`), [
-                  playItem(() => void playSongs('local-favorites', () => localFavorites)),
-                ])
-              }
-            />
+            <RowContextMenu
+              items={[
+                playItem(() =>
+                  void playSongs('local-favorites', () => localFavorites),
+                ),
+              ]}
+            >
+              <SidebarRow
+                active={isActive('/local/favorites')}
+                icon={<RowIcon Icon={Heart} className="text-love" />}
+                label={<Trans>我喜欢的音乐</Trans>}
+                count={localFavorites.length}
+                onClick={() => void navigate({ to: '/local/favorites' })}
+              />
+            </RowContextMenu>
           )}
           <SidebarRow
             active={isActive('/recent')}
@@ -610,28 +658,29 @@ export function Sidebar() {
                         onCancel={() => setRenaming(null)}
                       />
                     ) : (
-                      <SidebarRow
+                      <RowContextMenu
                         key={playlist.id}
-                        active={pathname === `/local/playlists/${playlist.id}`}
-                        icon={
-                          <RowCover
-                            src={playlist.songs[0]?.al?.picUrl}
-                            alt={playlist.name}
-                          />
-                        }
-                        label={playlist.name}
-                        count={playlist.songs.length}
-                        busy={loadingKey === `local-${playlist.id}`}
-                        onClick={() =>
-                          void navigate({
-                            to: '/local/playlists/$id',
-                            params: { id: playlist.id },
-                          })
-                        }
-                        onContextMenu={(event) =>
-                          openMenu(event, playlist.name, localMenu(playlist))
-                        }
-                      />
+                        items={localMenu(playlist)}
+                      >
+                        <SidebarRow
+                          active={pathname === `/local/playlists/${playlist.id}`}
+                          icon={
+                            <RowCover
+                              src={playlist.songs[0]?.al?.picUrl}
+                              alt={playlist.name}
+                            />
+                          }
+                          label={playlist.name}
+                          count={playlist.songs.length}
+                          busy={loadingKey === `local-${playlist.id}`}
+                          onClick={() =>
+                            void navigate({
+                              to: '/local/playlists/$id',
+                              params: { id: playlist.id },
+                            })
+                          }
+                        />
+                      </RowContextMenu>
                     ),
                   )}
                   {!localPlaylists.length && !creatingPlaylist ? (
@@ -651,33 +700,35 @@ export function Sidebar() {
                   />
                   {groupOpen('localSubscribed')
                     ? localSubscribedPlaylists.map((playlist) => (
-                        <SidebarRow
+                        <RowContextMenu
                           key={playlist.id}
-                          active={playlistActive(playlist.id)}
-                          icon={<RowCover src={playlist.coverImgUrl} alt={playlist.name} />}
-                          label={playlist.name}
-                          count={playlist.songs?.length ?? playlist.trackCount}
-                          busy={loadingKey === String(playlist.id)}
-                          onClick={() => goPlaylist(playlist.id)}
-                          onContextMenu={(event) =>
-                            openMenu(event, playlist.name, [
-                              playItem(
-                                () =>
-                                  void playSongs(String(playlist.id), () =>
-                                    playlist.songs?.length
-                                      ? playlist.songs
-                                      : loadOnlineSongs(playlist),
-                                  ),
-                              ),
-                              {
-                                key: 'unsubscribe',
-                                label: <Trans>取消收藏</Trans>,
-                                icon: icon(StarOff),
-                                onSelect: () => void unsubscribeLocal(playlist),
-                              },
-                            ])
-                          }
-                        />
+                          items={[
+                            playItem(
+                              () =>
+                                void playSongs(String(playlist.id), () =>
+                                  playlist.songs?.length
+                                    ? playlist.songs
+                                    : loadOnlineSongs(playlist),
+                                ),
+                            ),
+                            {
+                              key: 'unsubscribe',
+                              label: <Trans>取消收藏</Trans>,
+                              icon: icon(StarOff),
+                              destructive: true,
+                              onSelect: () => void unsubscribeLocal(playlist),
+                            },
+                          ]}
+                        >
+                          <SidebarRow
+                            active={playlistActive(playlist.id)}
+                            icon={<RowCover src={playlist.coverImgUrl} alt={playlist.name} />}
+                            label={playlist.name}
+                            count={playlist.songs?.length ?? playlist.trackCount}
+                            busy={loadingKey === String(playlist.id)}
+                            onClick={() => goPlaylist(playlist.id)}
+                          />
+                        </RowContextMenu>
                       ))
                     : null}
                 </>
@@ -702,50 +753,138 @@ export function Sidebar() {
                             )
                           : [album]
                         return (
-                          <ContextMenu key={album.id}>
-                            <ContextMenu.Trigger asChild>
-                              <SidebarRow
-                                active={pathname === `/albums/${album.id}`}
-                                selected={selected}
-                                icon={
-                                  <RowCover
-                                    src={album.picUrl}
-                                    alt={album.name}
-                                  />
+                          <RowContextMenu
+                            key={album.id}
+                            items={[
+                              {
+                                key: 'merge',
+                                label:
+                                  mergeTargets.length > 1
+                                    ? i18n._(
+                                        msg`合并 ${mergeTargets.length} 张专辑为新歌单`,
+                                      )
+                                    : i18n._(msg`用这张专辑新建歌单`),
+                                onSelect: () => openMergeDialog(mergeTargets),
+                              },
+                              {
+                                key: 'unsubscribe',
+                                label: <Trans>取消收藏</Trans>,
+                                icon: icon(StarOff),
+                                destructive: true,
+                                separatorBefore: true,
+                                onSelect: () => void unsubscribeLocalAlbum(album),
+                              },
+                            ]}
+                          >
+                            <SidebarRow
+                              active={pathname === `/albums/${album.id}`}
+                              selected={selected}
+                              icon={
+                                <RowCover
+                                  src={album.picUrl}
+                                  alt={album.name}
+                                />
+                              }
+                              label={album.name}
+                              count={album.size}
+                              onClick={(event) => {
+                                if (event.ctrlKey || event.metaKey) {
+                                  toggleAlbumSelection(album)
+                                  return
                                 }
-                                label={album.name}
-                                count={album.size}
-                                onClick={(event) => {
-                                  if (event.ctrlKey || event.metaKey) {
-                                    toggleAlbumSelection(album)
-                                    return
-                                  }
-                                  setSelectedAlbumIds([])
-                                  openAlbum(album.id)
-                                }}
-                              />
-                            </ContextMenu.Trigger>
-                            <ContextMenu.Content glass>
-                              <ContextMenu.Item
-                                onSelect={() => openMergeDialog(mergeTargets)}
-                              >
-                                {mergeTargets.length > 1
-                                  ? i18n._(
-                                      msg`合并 ${mergeTargets.length} 张专辑为新歌单`,
-                                    )
-                                  : i18n._(msg`用这张专辑新建歌单`)}
-                              </ContextMenu.Item>
-                              <ContextMenu.Separator />
-                              <ContextMenu.Item
-                                destructive
-                                onSelect={() => void unsubscribeLocalAlbum(album)}
-                              >
-                                <Trans>取消收藏</Trans>
-                              </ContextMenu.Item>
-                            </ContextMenu.Content>
-                          </ContextMenu>
+                                setSelectedAlbumIds([])
+                                openAlbum(album.id)
+                              }}
+                            />
+                          </RowContextMenu>
                         )
                       })
+                    : null}
+                </>
+              ) : null}
+
+              {localSubscribedArtists.length ? (
+                <>
+                  <GroupHeading
+                    label={<Trans>关注的歌手</Trans>}
+                    open={groupOpen('localArtists')}
+                    onToggle={() => toggleGroup('localArtists')}
+                  />
+                  {groupOpen('localArtists')
+                    ? localSubscribedArtists.map((artist) => (
+                        <RowContextMenu
+                          key={artist.id}
+                          items={[
+                            {
+                              key: 'unfollow',
+                              label: <Trans>取消关注</Trans>,
+                              icon: icon(StarOff),
+                              destructive: true,
+                              onSelect: () =>
+                                void unsubscribeLocalArtist(artist),
+                            },
+                          ]}
+                        >
+                          <SidebarRow
+                            active={pathname === `/artist/${artist.id}`}
+                            icon={
+                              artist.picUrl ? (
+                                <RowCover
+                                  src={artist.picUrl}
+                                  alt={artist.name}
+                                />
+                              ) : (
+                                <RowIcon Icon={UserRound} />
+                              )
+                            }
+                            label={artist.name}
+                            count={artist.albumSize}
+                            onClick={() => openArtist(artist.id)}
+                          />
+                        </RowContextMenu>
+                      ))
+                    : null}
+                </>
+              ) : null}
+
+              {localSubscribedUsers.length ? (
+                <>
+                  <GroupHeading
+                    label={<Trans>关注的用户</Trans>}
+                    open={groupOpen('localUsers')}
+                    onToggle={() => toggleGroup('localUsers')}
+                  />
+                  {groupOpen('localUsers')
+                    ? localSubscribedUsers.map((user) => (
+                        <RowContextMenu
+                          key={user.userId}
+                          items={[
+                            {
+                              key: 'unfollow',
+                              label: <Trans>取消关注</Trans>,
+                              icon: icon(StarOff),
+                              destructive: true,
+                              onSelect: () => void unsubscribeLocalUser(user),
+                            },
+                          ]}
+                        >
+                          <SidebarRow
+                            active={pathname === `/users/${user.userId}`}
+                            icon={
+                              user.avatarUrl ? (
+                                <RowCover
+                                  src={user.avatarUrl}
+                                  alt={user.nickname}
+                                />
+                              ) : (
+                                <RowIcon Icon={UserRound} />
+                              )
+                            }
+                            label={user.nickname}
+                            onClick={() => openUser(user.userId)}
+                          />
+                        </RowContextMenu>
+                      ))
                     : null}
                 </>
               ) : null}
@@ -762,35 +901,36 @@ export function Sidebar() {
                 <>
                   {createForm}
                   {myPlaylists.map((playlist) => (
-                    <SidebarRow
+                    <RowContextMenu
                       key={playlist.id}
-                      active={playlistActive(playlist.id)}
-                      icon={<RowCover src={playlist.coverImgUrl} alt={playlist.name} />}
-                      label={playlist.name}
-                      count={playlist.trackCount}
-                      busy={loadingKey === String(playlist.id)}
-                      onClick={() => goPlaylist(playlist.id)}
-                      onContextMenu={(event) =>
-                        openMenu(event, playlist.name, [
-                          playItem(
-                            () =>
-                              void playSongs(String(playlist.id), () =>
-                                loadOnlineSongs(playlist),
-                              ),
-                          ),
-                          {
-                            key: 'edit',
-                            label: <Trans>编辑歌单</Trans>,
-                            icon: icon(Pencil),
-                            onSelect: () =>
-                              void navigate({
-                                to: '/songlists/$id/edit',
-                                params: { id: String(playlist.id) },
-                              }),
-                          },
-                        ])
-                      }
-                    />
+                      items={[
+                        playItem(
+                          () =>
+                            void playSongs(String(playlist.id), () =>
+                              loadOnlineSongs(playlist),
+                            ),
+                        ),
+                        {
+                          key: 'edit',
+                          label: <Trans>编辑歌单</Trans>,
+                          icon: icon(Pencil),
+                          onSelect: () =>
+                            void navigate({
+                              to: '/songlists/$id/edit',
+                              params: { id: String(playlist.id) },
+                            }),
+                        },
+                      ]}
+                    >
+                      <SidebarRow
+                        active={playlistActive(playlist.id)}
+                        icon={<RowCover src={playlist.coverImgUrl} alt={playlist.name} />}
+                        label={playlist.name}
+                        count={playlist.trackCount}
+                        busy={loadingKey === String(playlist.id)}
+                        onClick={() => goPlaylist(playlist.id)}
+                      />
+                    </RowContextMenu>
                   ))}
                   {!myPlaylists.length && !creatingPlaylist && profile ? (
                     <p className="px-2.5 py-2 text-[11px] text-ink-4">
@@ -809,31 +949,33 @@ export function Sidebar() {
                   />
                   {groupOpen('collected')
                     ? collectedPlaylists.map((playlist) => (
-                        <SidebarRow
+                        <RowContextMenu
                           key={playlist.id}
-                          active={playlistActive(playlist.id)}
-                          icon={<RowCover src={playlist.coverImgUrl} alt={playlist.name} />}
-                          label={playlist.name}
-                          count={playlist.trackCount}
-                          busy={loadingKey === String(playlist.id)}
-                          onClick={() => goPlaylist(playlist.id)}
-                          onContextMenu={(event) =>
-                            openMenu(event, playlist.name, [
-                              playItem(
-                                () =>
-                                  void playSongs(String(playlist.id), () =>
-                                    loadOnlineSongs(playlist),
-                                  ),
-                              ),
-                              {
-                                key: 'unsubscribe',
-                                label: <Trans>取消收藏</Trans>,
-                                icon: icon(StarOff),
-                                onSelect: () => void unsubscribeOnline(playlist),
-                              },
-                            ])
-                          }
-                        />
+                          items={[
+                            playItem(
+                              () =>
+                                void playSongs(String(playlist.id), () =>
+                                  loadOnlineSongs(playlist),
+                                ),
+                            ),
+                            {
+                              key: 'unsubscribe',
+                              label: <Trans>取消收藏</Trans>,
+                              icon: icon(StarOff),
+                              destructive: true,
+                              onSelect: () => void unsubscribeOnline(playlist),
+                            },
+                          ]}
+                        >
+                          <SidebarRow
+                            active={playlistActive(playlist.id)}
+                            icon={<RowCover src={playlist.coverImgUrl} alt={playlist.name} />}
+                            label={playlist.name}
+                            count={playlist.trackCount}
+                            busy={loadingKey === String(playlist.id)}
+                            onClick={() => goPlaylist(playlist.id)}
+                          />
+                        </RowContextMenu>
                       ))
                     : null}
                 </>
@@ -848,29 +990,117 @@ export function Sidebar() {
                   />
                   {groupOpen('collectedAlbums')
                     ? collectedAlbums.map((album) => (
-                        <SidebarRow
+                        <RowContextMenu
                           key={album.id}
-                          active={pathname === `/albums/${album.id}`}
-                          icon={
-                            <RowCover
-                              src={album.picUrl ?? album.blurPicUrl}
-                              alt={album.name}
-                            />
-                          }
-                          label={album.name}
-                          count={album.size}
-                          onClick={() => openAlbum(album.id)}
-                          onContextMenu={(event) =>
-                            openMenu(event, album.name, [
-                              {
-                                key: 'unsubscribe',
-                                label: <Trans>取消收藏</Trans>,
-                                icon: icon(StarOff),
-                                onSelect: () => void unsubscribeOnlineAlbum(album),
-                              },
-                            ])
-                          }
-                        />
+                          items={[
+                            {
+                              key: 'unsubscribe',
+                              label: <Trans>取消收藏</Trans>,
+                              icon: icon(StarOff),
+                              destructive: true,
+                              onSelect: () => void unsubscribeOnlineAlbum(album),
+                            },
+                          ]}
+                        >
+                          <SidebarRow
+                            active={pathname === `/albums/${album.id}`}
+                            icon={
+                              <RowCover
+                                src={album.picUrl ?? album.blurPicUrl}
+                                alt={album.name}
+                              />
+                            }
+                            label={album.name}
+                            count={album.size}
+                            onClick={() => openAlbum(album.id)}
+                          />
+                        </RowContextMenu>
+                      ))
+                    : null}
+                </>
+              ) : null}
+
+              {collectedArtists.length ? (
+                <>
+                  <GroupHeading
+                    label={<Trans>关注的歌手</Trans>}
+                    open={groupOpen('collectedArtists')}
+                    onToggle={() => toggleGroup('collectedArtists')}
+                  />
+                  {groupOpen('collectedArtists')
+                    ? collectedArtists.map((artist) => (
+                        <RowContextMenu
+                          key={artist.id}
+                          items={[
+                            {
+                              key: 'unfollow',
+                              label: <Trans>取消关注</Trans>,
+                              icon: icon(StarOff),
+                              destructive: true,
+                              onSelect: () =>
+                                void unsubscribeOnlineArtist(artist),
+                            },
+                          ]}
+                        >
+                          <SidebarRow
+                            active={pathname === `/artist/${artist.id}`}
+                            icon={
+                              artist.picUrl ? (
+                                <RowCover
+                                  src={artist.picUrl}
+                                  alt={artist.name}
+                                />
+                              ) : (
+                                <RowIcon Icon={UserRound} />
+                              )
+                            }
+                            label={artist.name}
+                            count={artist.albumSize}
+                            onClick={() => openArtist(artist.id)}
+                          />
+                        </RowContextMenu>
+                      ))
+                    : null}
+                </>
+              ) : null}
+
+              {followedUsers.length ? (
+                <>
+                  <GroupHeading
+                    label={<Trans>关注的用户</Trans>}
+                    open={groupOpen('followedUsers')}
+                    onToggle={() => toggleGroup('followedUsers')}
+                  />
+                  {groupOpen('followedUsers')
+                    ? followedUsers.map((user) => (
+                        <RowContextMenu
+                          key={user.userId}
+                          items={[
+                            {
+                              key: 'unfollow',
+                              label: <Trans>取消关注</Trans>,
+                              icon: icon(StarOff),
+                              destructive: true,
+                              onSelect: () => void unsubscribeOnlineUser(user),
+                            },
+                          ]}
+                        >
+                          <SidebarRow
+                            active={pathname === `/users/${user.userId}`}
+                            icon={
+                              user.avatarUrl ? (
+                                <RowCover
+                                  src={user.avatarUrl}
+                                  alt={user.nickname}
+                                />
+                              ) : (
+                                <RowIcon Icon={UserRound} />
+                              )
+                            }
+                            label={user.nickname}
+                            onClick={() => openUser(user.userId)}
+                          />
+                        </RowContextMenu>
                       ))
                     : null}
                 </>
@@ -896,16 +1126,6 @@ export function Sidebar() {
             <ChevronRight className="h-3.5 w-3.5 shrink-0 text-ink-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" />
           </button>
         </div>
-      ) : null}
-
-      {menu ? (
-        <SidebarMenu
-          x={menu.x}
-          y={menu.y}
-          label={menu.label}
-          items={menu.items}
-          onClose={() => setMenu(null)}
-        />
       ) : null}
 
       <Dialog open={Boolean(deleting)} onOpenChange={(open) => !open && setDeleting(null)}>
@@ -989,6 +1209,52 @@ export function Sidebar() {
  * slot (covers are 20px with negative margins so the text lines up), and the
  * song count only on hover / when selected.
  */
+type SidebarMenuAction = {
+  key: string
+  label: ReactNode
+  icon?: ReactNode
+  disabled?: boolean
+  destructive?: boolean
+  separatorBefore?: boolean
+  onSelect: () => void
+}
+
+/**
+ * One right-click menu for every sidebar row, built from darwin's ContextMenu
+ * so playlists, albums and the rail share the same surface, radius and
+ * keyboard behaviour.
+ */
+function RowContextMenu({
+  items,
+  children,
+}: {
+  items: SidebarMenuAction[]
+  children: ReactNode
+}) {
+  return (
+    <ContextMenu>
+      <ContextMenu.Trigger asChild>{children}</ContextMenu.Trigger>
+      <ContextMenu.Content glass>
+        {items.map((item) => (
+          <Fragment key={item.key}>
+            {item.separatorBefore ? <ContextMenu.Separator /> : null}
+            <ContextMenu.Item
+              disabled={item.disabled}
+              destructive={item.destructive}
+              onSelect={item.onSelect}
+            >
+              <span className="flex items-center gap-2">
+                {item.icon}
+                {item.label}
+              </span>
+            </ContextMenu.Item>
+          </Fragment>
+        ))}
+      </ContextMenu.Content>
+    </ContextMenu>
+  )
+}
+
 const SidebarRow = forwardRef<
   HTMLButtonElement,
   {

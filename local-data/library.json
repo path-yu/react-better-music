@@ -1,8 +1,10 @@
 {
-  "version": 3,
+  "version": 5,
   "playlists": [],
   "subscribedPlaylists": [],
   "subscribedAlbums": [],
+  "subscribedArtists": [],
+  "subscribedUsers": [],
   "favorites": [],
   "recent": []
 }

@@ -74,12 +74,16 @@ class LocalLibraryError extends Error {
 
 function emptyState() {
   return {
-    version: 3,
+    version: 5,
     playlists: [],
     subscribedPlaylists: [],
     // Albums saved by a guest. Kept separate from the NetEase account library
     // so signing out never mixes the two.
     subscribedAlbums: [],
+    // Same idea for artists the guest follows.
+    subscribedArtists: [],
+    // And for user accounts the guest follows.
+    subscribedUsers: [],
     favorites: [],
     recent: [],
   }
@@ -152,13 +156,19 @@ function load() {
     state = {
       ...emptyState(),
       ...parsed,
-      version: Math.max(3, Number(parsed.version) || 0),
+      version: Math.max(5, Number(parsed.version) || 0),
       playlists: Array.isArray(parsed.playlists) ? parsed.playlists : [],
       subscribedPlaylists: Array.isArray(parsed.subscribedPlaylists)
         ? parsed.subscribedPlaylists
         : [],
       subscribedAlbums: Array.isArray(parsed.subscribedAlbums)
         ? parsed.subscribedAlbums
+        : [],
+      subscribedArtists: Array.isArray(parsed.subscribedArtists)
+        ? parsed.subscribedArtists
+        : [],
+      subscribedUsers: Array.isArray(parsed.subscribedUsers)
+        ? parsed.subscribedUsers
         : [],
       favorites: Array.isArray(parsed.favorites) ? parsed.favorites : [],
       recent: Array.isArray(parsed.recent) ? parsed.recent : [],
@@ -320,6 +330,97 @@ function normalizeAlbum(album) {
   }
 }
 
+/** Artist snapshot for the guest library: only what the sidebar row renders. */
+function normalizeArtist(artist) {
+  if (
+    !artist ||
+    typeof artist !== 'object' ||
+    !Number.isFinite(Number(artist.id))
+  ) {
+    throw new LocalLibraryError('Invalid artist')
+  }
+  // `/artist/detail` leaves picUrl and img1v1Url empty for most artists and
+  // only fills cover/avatar, so fall through every available field.
+  const picUrl = [artist.picUrl, artist.img1v1Url, artist.avatar, artist.cover]
+    .find((value) => typeof value === 'string' && value.trim())
+    ?.trim()
+  return {
+    id: Number(artist.id),
+    name: typeof artist.name === 'string' ? artist.name : '',
+    picUrl: picUrl ?? '',
+    albumSize: Number(artist.albumSize) || 0,
+    mvSize: Number(artist.mvSize) || 0,
+  }
+}
+
+function addSubscribedArtist(artist) {
+  const snapshot = normalizeArtist(artist)
+  const data = load()
+  const existing = data.subscribedArtists.findIndex(
+    (item) => Number(item.id) === snapshot.id,
+  )
+  if (existing >= 0) {
+    // Re-following an artist refreshes the snapshot, which backfills avatars
+    // saved before the cover/avatar fallback existed.
+    data.subscribedArtists[existing] = snapshot
+  } else {
+    data.subscribedArtists.unshift(snapshot)
+  }
+  persist()
+  return data.subscribedArtists
+}
+
+function removeSubscribedArtist(artistId) {
+  const data = load()
+  data.subscribedArtists = data.subscribedArtists.filter(
+    (item) => Number(item.id) !== Number(artistId),
+  )
+  persist()
+  return data.subscribedArtists
+}
+
+/** User snapshot for the guest library: avatar, nickname, signature only. */
+function normalizeUser(user) {
+  if (
+    !user ||
+    typeof user !== 'object' ||
+    !Number.isFinite(Number(user.userId))
+  ) {
+    throw new LocalLibraryError('Invalid user')
+  }
+  return {
+    userId: Number(user.userId),
+    nickname: typeof user.nickname === 'string' ? user.nickname : '',
+    avatarUrl: typeof user.avatarUrl === 'string' ? user.avatarUrl : '',
+    signature: typeof user.signature === 'string' ? user.signature : undefined,
+  }
+}
+
+function addSubscribedUser(user) {
+  const snapshot = normalizeUser(user)
+  const data = load()
+  const existing = data.subscribedUsers.findIndex(
+    (item) => Number(item.userId) === snapshot.userId,
+  )
+  if (existing >= 0) {
+    // Re-following refreshes the snapshot (nickname / avatar may have changed).
+    data.subscribedUsers[existing] = snapshot
+  } else {
+    data.subscribedUsers.unshift(snapshot)
+  }
+  persist()
+  return data.subscribedUsers
+}
+
+function removeSubscribedUser(userId) {
+  const data = load()
+  data.subscribedUsers = data.subscribedUsers.filter(
+    (item) => Number(item.userId) !== Number(userId),
+  )
+  persist()
+  return data.subscribedUsers
+}
+
 function addSubscribedAlbum(album) {
   const snapshot = normalizeAlbum(album)
   const data = load()
@@ -424,6 +525,10 @@ module.exports = {
   removeSubscribedPlaylist,
   addSubscribedAlbum,
   removeSubscribedAlbum,
+  addSubscribedArtist,
+  removeSubscribedArtist,
+  addSubscribedUser,
+  removeSubscribedUser,
   addFavorite,
   removeFavorite,
   recordRecent,

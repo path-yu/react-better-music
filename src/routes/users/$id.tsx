@@ -3,8 +3,8 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { ArrowLeft, CalendarDays, Disc3, UserRound } from 'lucide-react'
-import { Avatar, Skeleton, Tabs, TabsContent, TabsList, TabsTrigger } from '@pikoloo/darwin-ui'
+import { ArrowLeft, CalendarDays, Check, Disc3, UserPlus, UserRound } from 'lucide-react'
+import { Avatar, Button, Skeleton, Tabs, TabsContent, TabsList, TabsTrigger } from '@pikoloo/darwin-ui'
 import { EmptyState } from '../../components/common/EmptyState'
 import { AlbumCard } from '../../components/cards/AlbumCard'
 import { PlaylistCard } from '../../components/cards/PlaylistCard'
@@ -12,10 +12,12 @@ import {
   fetchCollectedAlbums,
   fetchUserDetail,
   fetchUserPlaylists,
+  subscribeUser,
 } from '../../api'
 import { formatDate, formatNumber } from '../../lib/format'
 import { resizedImageUrl } from '../../lib/image'
 import { useDocumentTitle } from '../../lib/title'
+import { useLocalLibraryStore } from '../../store/localLibrary'
 import { useUserStore } from '../../store/user'
 import { toast } from '../../lib/toast'
 import type { Album, Playlist, UserProfile } from '../../types'
@@ -44,6 +46,15 @@ function UserDetailPage() {
   const [albumsFailed, setAlbumsFailed] = useState(false)
   const [albumAttempt, setAlbumAttempt] = useState(0)
   const currentUserId = useUserStore((state) => state.profile?.userId)
+  const isLogin = useUserStore((state) => state.isLogin)
+  const localSubscribedUsers = useLocalLibraryStore(
+    (state) => state.subscribedUsers,
+  )
+  const toggleLocalUser = useLocalLibraryStore(
+    (state) => state.toggleSubscribedUser,
+  )
+  const [followed, setFollowed] = useState(false)
+  const [followBusy, setFollowBusy] = useState(false)
 
   useDocumentTitle(profile?.nickname ?? i18n._(msg`用户`))
 
@@ -122,6 +133,19 @@ function UserDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, isOwnProfile, albumsLoaded, albumAttempt])
 
+  // Guests follow into the local library, the signed-in account into NetEase;
+  // re-derive whenever either side changes (login, id, local edits).
+  useEffect(() => {
+    if (!profile) return
+    setFollowed(
+      isLogin
+        ? Boolean(profile.followed)
+        : localSubscribedUsers.some(
+            (item) => Number(item.userId) === Number(profile.userId),
+          ),
+    )
+  }, [profile, isLogin, localSubscribedUsers])
+
   const createdPlaylists = useMemo(
     () =>
       playlists.filter(
@@ -145,6 +169,34 @@ function UserDetailPage() {
       window.history.back()
     } else {
       void navigate({ to: '/' })
+    }
+  }
+
+  const handleToggleFollow = async () => {
+    if (!profile || followBusy || isOwnProfile) return
+    setFollowBusy(true)
+    const next = !followed
+    try {
+      if (isLogin) {
+        if (!(await subscribeUser(profile.userId, next))) {
+          throw new Error('follow failed')
+        }
+        setProfile((current) =>
+          current ? { ...current, followed: next } : current,
+        )
+        setFollowed(next)
+        // Keep the sidebar's "关注的用户" in step without a reload.
+        void useUserStore.getState().loadFollowedUsers()
+      } else {
+        const result = await toggleLocalUser(profile)
+        if (result === null) return
+        setFollowed(result)
+      }
+      toast.success(next ? i18n._(msg`已关注`) : i18n._(msg`已取消关注`))
+    } catch {
+      toast.error(i18n._(msg`操作失败`))
+    } finally {
+      setFollowBusy(false)
     }
   }
 
@@ -222,7 +274,26 @@ function UserDetailPage() {
                 </span>
               ) : null}
             </div>
-            <h1 className="headline-lg mt-1.5 line-clamp-1">{profile.nickname}</h1>
+            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+              <h1 className="headline-lg line-clamp-1">{profile.nickname}</h1>
+              {isOwnProfile ? null : (
+                <Button
+                  variant={followed ? 'secondary' : 'primary'}
+                  size="sm"
+                  className="rounded-full px-3.5 text-[12px]"
+                  disabled={followBusy}
+                  aria-pressed={followed}
+                  onClick={() => void handleToggleFollow()}
+                >
+                  {followed ? (
+                    <Check className="mr-1.5 h-3.5 w-3.5" />
+                  ) : (
+                    <UserPlus className="mr-1.5 h-3.5 w-3.5" />
+                  )}
+                  {followed ? <Trans>已关注</Trans> : <Trans>关注用户</Trans>}
+                </Button>
+              )}
+            </div>
             <p className="mt-1.5 line-clamp-2 max-w-[680px] text-[12px] leading-relaxed text-ink-3">
               {profile.signature?.trim() || i18n._(msg`暂无简介`)}
             </p>

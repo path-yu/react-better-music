@@ -2,7 +2,7 @@ import { msg } from '@lingui/core/macro'
 import { i18n } from '../i18n'
 import { apiUrl } from '../lib/http'
 import { fetchWithBootRetry } from '../lib/apiFetch'
-import type { Album, Playlist, Song } from '../types'
+import type { Album, ArtistSummary, Playlist, Song } from '../types'
 
 export interface LocalPlaylist {
   id: string
@@ -27,11 +27,24 @@ export interface LocalSubscribedAlbum extends Album {
   company?: string
 }
 
+/** A guest-followed artist; only the fields the sidebar row renders. */
+export interface LocalSubscribedArtist extends ArtistSummary {}
+
+/** A guest-followed account; only the fields the sidebar row renders. */
+export interface LocalSubscribedUser {
+  userId: number
+  nickname: string
+  avatarUrl: string
+  signature?: string
+}
+
 export interface LocalLibrary {
   version: number
   playlists: LocalPlaylist[]
   subscribedPlaylists: LocalSubscribedPlaylist[]
   subscribedAlbums: LocalSubscribedAlbum[]
+  subscribedArtists: LocalSubscribedArtist[]
+  subscribedUsers: LocalSubscribedUser[]
   favorites: Song[]
   recent: LocalRecent[]
 }
@@ -119,6 +132,28 @@ export const removeLocalSubscribedAlbum = (albumId: number) =>
   localRequest<LocalSubscribedAlbum[]>(
     'DELETE',
     `/local/subscribed-albums/${albumId}`,
+  )
+
+export const addLocalSubscribedArtist = (artist: LocalSubscribedArtist) =>
+  localRequest<LocalSubscribedArtist[]>('POST', '/local/subscribed-artists', {
+    artist,
+  })
+
+export const removeLocalSubscribedArtist = (artistId: number) =>
+  localRequest<LocalSubscribedArtist[]>(
+    'DELETE',
+    `/local/subscribed-artists/${artistId}`,
+  )
+
+export const addLocalSubscribedUser = (user: LocalSubscribedUser) =>
+  localRequest<LocalSubscribedUser[]>('POST', '/local/subscribed-users', {
+    user,
+  })
+
+export const removeLocalSubscribedUser = (userId: number) =>
+  localRequest<LocalSubscribedUser[]>(
+    'DELETE',
+    `/local/subscribed-users/${userId}`,
   )
 
 export const addLocalFavorite = (song: Song) =>

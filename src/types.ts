@@ -21,6 +21,8 @@ export interface ArtistProfile extends ArtistSummary {
   avatar?: string
   identities?: string[]
   rank?: { rank: number; type: number }
+  /** Whether the signed-in account already follows this artist. */
+  followed?: boolean
 }
 
 export interface ArtistAlbum {
@@ -233,6 +235,8 @@ export interface UserProfile {
   eventCount?: number
   playlistCount?: number
   createTime?: number
+  /** Whether the signed-in account already follows this user. */
+  followed?: boolean
 }
 
 export interface UserSummary {
