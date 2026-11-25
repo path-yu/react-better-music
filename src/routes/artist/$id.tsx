@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { Disc3, Music2, Video } from 'lucide-react'
+import { ArrowLeft, Disc3, Music2, Video } from 'lucide-react'
 import { Skeleton, Tabs, TabsContent, TabsList, TabsTrigger, Button } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../../components/common/ImageWithFallback'
 import { EmptyState } from '../../components/common/EmptyState'
@@ -139,31 +139,34 @@ function ArtistPage() {
       return
     }
     let cancelled = false
+    /**
+     * Silent backfill: the user did not ask for more pages, so this must never
+     * light up the "load more" spinner (that button spinning forever was the
+     * bug report). Two 50-item requests cover the usual offsets, and each one
+     * gets its own timeout so a slow upstream cannot hang the loop.
+     */
     const restore = async () => {
-      setAlbumsLoadingMore(true)
       let loaded = albums.length
-      while (!cancelled && loaded < target) {
+      let pages = 0
+      while (!cancelled && loaded < target && pages < 2) {
+        let next: Awaited<ReturnType<typeof fetchArtistAlbums>> = []
         try {
-          const next = await fetchArtistAlbums(id, 12, loaded)
-          if (cancelled) return
-          if (!next.length) {
-            setAlbumsDone(true)
-            break
-          }
-          setAlbums((current) => {
-            const seen = new Set(current.map((album) => album.id))
-            return [...current, ...next.filter((album) => !seen.has(album.id))]
-          })
-          loaded += next.length
-          if (next.length < 12) {
-            setAlbumsDone(true)
-            break
-          }
+          next = await fetchArtistAlbums(id, 50, loaded, AbortSignal.timeout(8000))
         } catch {
           break
         }
+        if (cancelled) return
+        if (!next.length) {
+          setAlbumsDone(true)
+          break
+        }
+        setAlbums((current) => {
+          const seen = new Set(current.map((album) => album.id))
+          return [...current, ...next.filter((album) => !seen.has(album.id))]
+        })
+        loaded += next.length
+        pages += 1
       }
-      if (!cancelled) setAlbumsLoadingMore(false)
     }
     void restore()
     return () => {
@@ -207,7 +210,14 @@ function ArtistPage() {
     if (albumsLoadingMore || albumsDone) return
     setAlbumsLoadingMore(true)
     try {
-      const next = await fetchArtistAlbums(id, 12, albums.length)
+      // Bound the wait: a stalled upstream used to leave the button spinning
+      // until the shared 15s HTTP timeout fired.
+      const next = await fetchArtistAlbums(
+        id,
+        12,
+        albums.length,
+        AbortSignal.timeout(8000),
+      )
       if (!next.length) {
         setAlbumsDone(true)
         return
@@ -234,6 +244,20 @@ function ArtistPage() {
 
   return (
     <div className="page">
+      <button
+        type="button"
+        onClick={() => {
+          // Similar-artist links can land here without app history; fall back
+          // to discover instead of leaving the user stuck.
+          if (window.history.length > 1) window.history.back()
+          else void navigate({ to: '/' })
+        }}
+        aria-label={i18n._(msg`返回`)}
+        title={i18n._(msg`返回`)}
+        className="pressable mb-4 flex h-8 w-8 items-center justify-center rounded-full text-ink-3 transition-colors hover:bg-black/5 hover:text-ink-1 dark:hover:bg-white/10"
+      >
+        <ArrowLeft className="h-4 w-4" />
+      </button>
       <div className="rounded-[22px] border border-black/8 bg-white/55 p-6 backdrop-blur-xl">
         {/* Keep the avatar pinned to the top. Centring it against the text
             block made the portrait jump down whenever the biography expanded. */}

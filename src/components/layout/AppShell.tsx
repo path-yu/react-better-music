@@ -271,8 +271,34 @@ export function AppShell({ children }: { children: ReactNode }) {
       if (guard !== undefined) window.clearTimeout(guard)
     }
 
+    // Any real input means the user has taken over: stop pulling them back.
+    const stopOnUserInput = () => stop()
+    const stopOnKey = (event: KeyboardEvent) => {
+      if (
+        [
+          'ArrowUp',
+          'ArrowDown',
+          'PageUp',
+          'PageDown',
+          'Home',
+          'End',
+          ' ',
+        ].includes(event.key)
+      ) {
+        stop()
+      }
+    }
+    element.addEventListener('wheel', stopOnUserInput, { passive: true })
+    element.addEventListener('touchstart', stopOnUserInput, { passive: true })
+    window.addEventListener('keydown', stopOnKey)
+
     const restore = () => {
       if (stopped) return
+      const maxScroll = Math.max(0, element.scrollHeight - element.clientHeight)
+      // Writing an offset the content cannot reach is clamped by the browser;
+      // repeating it every 100ms fought the user's wheel and kept yanking the
+      // page back down while the list was still streaming in.
+      if (maxScroll < saved - 1) return
       setScroll(saved)
       // Pages render skeletons before their data arrives, so the saved offset
       // is often unreachable at first; keep retrying while the content grows.
@@ -280,13 +306,18 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
 
     restore()
-    if (Math.abs(element.scrollTop - saved) > 1) {
+    if (!stopped) {
       retryTimer = window.setInterval(restore, 100)
       // Long lists may re-fetch several pages before the offset is reachable.
       guard = window.setTimeout(stop, 6000)
     }
 
-    return stop
+    return () => {
+      element.removeEventListener('wheel', stopOnUserInput)
+      element.removeEventListener('touchstart', stopOnUserInput)
+      window.removeEventListener('keydown', stopOnKey)
+      stop()
+    }
   }, [pathname, resetScrollOnEnter])
 
   useEffect(() => {

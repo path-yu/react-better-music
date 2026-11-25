@@ -9,7 +9,7 @@ msgstr ""
 
 #. placeholder {0}: album.size
 #: src/components/cards/AlbumCard.tsx:47
-#: src/routes/artist/$id.tsx:383
+#: src/routes/artist/$id.tsx:404
 msgid " · {0} 首"
 msgstr " · {0} tracks"
 
@@ -18,7 +18,7 @@ msgid "（最多 3 个）"
 msgstr "(up to 3)"
 
 #. placeholder {0}: formatNumber(profile.mvSize)
-#: src/routes/artist/$id.tsx:282
+#: src/routes/artist/$id.tsx:303
 msgid "{0} 个 MV"
 msgstr "{0} MVs"
 
@@ -43,7 +43,7 @@ msgid "{0} 发行"
 msgstr "Released {0}"
 
 #. placeholder {0}: formatNumber(profile.albumSize)
-#: src/routes/artist/$id.tsx:278
+#: src/routes/artist/$id.tsx:299
 msgid "{0} 张专辑"
 msgstr "{0} albums"
 
@@ -76,7 +76,7 @@ msgid "{0} 等 {1} 首"
 msgstr "{0} and more · {1} tracks"
 
 #. placeholder {0}: formatNumber(artist.fansCount)
-#: src/routes/artist/$id.tsx:452
+#: src/routes/artist/$id.tsx:473
 msgid "{0} 粉丝"
 msgstr "{0} fans"
 
@@ -98,7 +98,7 @@ msgid "{0} 首 · {1}"
 msgstr "{0} tracks · {1}"
 
 #. placeholder {0}: formatNumber(profile.musicSize)
-#: src/routes/artist/$id.tsx:274
+#: src/routes/artist/$id.tsx:295
 msgid "{0} 首单曲"
 msgstr "{0} tracks"
 
@@ -430,7 +430,7 @@ msgstr "Don't ask again"
 #: src/components/songs/SongTable.tsx:551
 #: src/routes/albums/$id.tsx:44
 #: src/routes/albums/$id.tsx:192
-#: src/routes/artist/$id.tsx:326
+#: src/routes/artist/$id.tsx:347
 #: src/routes/search.tsx:322
 msgid "专辑"
 msgstr "Album"
@@ -440,7 +440,7 @@ msgid "专辑不存在或无法访问"
 msgstr "Album unavailable"
 
 #: src/routes/albums/$id.tsx:97
-#: src/routes/artist/$id.tsx:229
+#: src/routes/artist/$id.tsx:236
 #: src/routes/search.tsx:438
 msgid "专辑加载失败"
 msgstr "Failed to load the album"
@@ -676,7 +676,7 @@ msgid "共 {0} 首歌曲"
 msgstr "{0} tracks"
 
 #. placeholder {0}: songs.length
-#: src/routes/artist/$id.tsx:341
+#: src/routes/artist/$id.tsx:362
 msgid "共 {0} 首热门单曲"
 msgstr "{0} popular tracks"
 
@@ -736,7 +736,7 @@ msgstr "When off, only the whole line is highlighted; no word-by-word animation"
 msgid "关闭定时器"
 msgstr "Turn off timer"
 
-#: src/components/layout/AppShell.tsx:354
+#: src/components/layout/AppShell.tsx:385
 msgid "关闭导航"
 msgstr "Close navigation"
 
@@ -981,7 +981,7 @@ msgstr "Joined {0}"
 msgid "加载更多"
 msgstr "Load more"
 
-#: src/routes/artist/$id.tsx:398
+#: src/routes/artist/$id.tsx:419
 msgid "加载更多专辑"
 msgstr "Load more albums"
 
@@ -1976,7 +1976,7 @@ msgstr "Playback failed"
 msgid "播放本页"
 msgstr "Play this page"
 
-#: src/routes/artist/$id.tsx:334
+#: src/routes/artist/$id.tsx:355
 msgid "播放热门歌曲"
 msgstr "Play popular tracks"
 
@@ -2274,7 +2274,7 @@ msgstr "Pause voice comment"
 msgid "暂无 MV"
 msgstr "No MVs yet"
 
-#: src/routes/artist/$id.tsx:404
+#: src/routes/artist/$id.tsx:425
 msgid "暂无专辑"
 msgstr "No albums yet"
 
@@ -2328,7 +2328,7 @@ msgstr "No songs"
 msgid "暂无歌词，请欣赏"
 msgstr "No lyrics. Enjoy the music."
 
-#: src/routes/artist/$id.tsx:348
+#: src/routes/artist/$id.tsx:369
 msgid "暂无热门单曲"
 msgstr "No popular tracks yet"
 
@@ -2340,7 +2340,7 @@ msgstr "No similar playlists yet"
 msgid "暂无相似歌曲"
 msgstr "No similar songs yet"
 
-#: src/routes/artist/$id.tsx:416
+#: src/routes/artist/$id.tsx:437
 msgid "暂无相关 MV"
 msgstr "No related MVs yet"
 
@@ -2648,12 +2648,12 @@ msgstr "Could not resolve the playlist"
 
 #: src/components/songs/SongTable.tsx:548
 #: src/routes/artist/$id.tsx:59
-#: src/routes/artist/$id.tsx:251
+#: src/routes/artist/$id.tsx:272
 #: src/routes/search.tsx:325
 msgid "歌手"
 msgstr "Artist"
 
-#: src/routes/artist/$id.tsx:196
+#: src/routes/artist/$id.tsx:203
 msgid "歌手不存在或无法访问"
 msgstr "Artist unavailable"
 
@@ -2662,11 +2662,11 @@ msgid "歌手加载失败"
 msgstr "Failed to load the artist"
 
 #. placeholder {0}: profile.rank.rank
-#: src/routes/artist/$id.tsx:286
+#: src/routes/artist/$id.tsx:307
 msgid "歌手榜 No.{0}"
 msgstr "Artist chart No.{0}"
 
-#: src/routes/artist/$id.tsx:294
+#: src/routes/artist/$id.tsx:315
 msgid "歌手简介"
 msgstr "Artist bio"
 
@@ -3142,7 +3142,7 @@ msgstr "Hot"
 msgid "热门"
 msgstr "Hot"
 
-#: src/routes/artist/$id.tsx:323
+#: src/routes/artist/$id.tsx:344
 msgid "热门作品"
 msgstr "Popular"
 
@@ -3247,8 +3247,8 @@ msgstr "Similar"
 msgid "相似歌单"
 msgstr "Similar playlists"
 
-#: src/routes/artist/$id.tsx:424
-#: src/routes/artist/$id.tsx:454
+#: src/routes/artist/$id.tsx:445
+#: src/routes/artist/$id.tsx:475
 msgid "相似歌手"
 msgstr "Similar artists"
 
@@ -3796,6 +3796,8 @@ msgstr "Workout"
 #: src/components/songs/SongContextMenu.tsx:337
 #: src/routes/albums/$id.tsx:175
 #: src/routes/albums/$id.tsx:176
+#: src/routes/artist/$id.tsx:252
+#: src/routes/artist/$id.tsx:253
 #: src/routes/mv/$id.tsx:164
 #: src/routes/users/$id.tsx:203
 #: src/routes/video/$id.tsx:107
