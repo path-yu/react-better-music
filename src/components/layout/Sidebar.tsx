@@ -1,4 +1,11 @@
-import { useRef, useState, type FormEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react'
+import {
+  forwardRef,
+  useRef,
+  useState,
+  type FormEvent,
+  type MouseEvent as ReactMouseEvent,
+  type ReactNode,
+} from 'react'
 import { useNavigate, useRouterState } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
@@ -27,12 +34,15 @@ import {
 } from 'lucide-react'
 import {
   Button,
+  ContextMenu,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  Input,
 } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { SidebarMenu, type SidebarMenuItem } from './SidebarMenu'
@@ -44,6 +54,7 @@ import { useLocalLibraryStore } from '../../store/localLibrary'
 import { useSearchStore } from '../../store/search'
 import {
   createPlaylist,
+  fetchAlbumDetail,
   fetchPlaylistTracks,
   fetchRemainingPlaylistTracks,
   subscribeAlbum,
@@ -114,6 +125,14 @@ export function Sidebar() {
   const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null)
   const [deleting, setDeleting] = useState<LocalPlaylist | null>(null)
   const [loadingKey, setLoadingKey] = useState<string | null>(null)
+  // Guest albums picked with Ctrl/Cmd-click, then merged through the
+  // right-click menu into one local playlist.
+  const [selectedAlbumIds, setSelectedAlbumIds] = useState<number[]>([])
+  const [mergeAlbums, setMergeAlbums] = useState<LocalSubscribedAlbum[] | null>(
+    null,
+  )
+  const [mergeName, setMergeName] = useState('')
+  const [merging, setMerging] = useState(false)
 
   const likedPlaylist = createdPlaylists[0]
   const myPlaylists = createdPlaylists.slice(1)
@@ -241,6 +260,66 @@ export function Sidebar() {
 
   const openAlbum = (albumId: number) =>
     void navigate({ to: '/albums/$id', params: { id: String(albumId) } })
+
+  /** Ctrl/Cmd-click toggles a guest album into the merge selection. */
+  const toggleAlbumSelection = (album: LocalSubscribedAlbum) => {
+    setSelectedAlbumIds((current) =>
+      current.includes(album.id)
+        ? current.filter((id) => id !== album.id)
+        : [...current, album.id],
+    )
+  }
+
+  const openMergeDialog = (albums: LocalSubscribedAlbum[]) => {
+    if (!albums.length) return
+    setMergeAlbums(albums)
+    // Default name is the album titles joined; the local library caps names at
+    // 60 characters, so trim here instead of failing on save.
+    setMergeName(
+      albums
+        .map((album) => album.name.trim())
+        .filter(Boolean)
+        .join(' / ')
+        .slice(0, 60),
+    )
+  }
+
+  const confirmMerge = async () => {
+    if (!mergeAlbums?.length || merging) return
+    const name = mergeName.trim()
+    if (!name) return
+    setMerging(true)
+    try {
+      const details = await Promise.allSettled(
+        mergeAlbums.map((album) => fetchAlbumDetail(album.id)),
+      )
+      const seen = new Set<number>()
+      const songs: Song[] = []
+      for (const result of details) {
+        if (result.status !== 'fulfilled' || !result.value) continue
+        for (const song of result.value.songs) {
+          if (seen.has(song.id)) continue
+          seen.add(song.id)
+          songs.push(song)
+        }
+      }
+      if (!songs.length) {
+        toast.error(i18n._(msg`这些专辑里没有可合并的歌曲`))
+        return
+      }
+      const playlist = await createLocalPlaylist(name, songs)
+      if (!playlist) return
+      setMergeAlbums(null)
+      setSelectedAlbumIds([])
+      toast.success(i18n._(msg`已创建歌单「${name}」`))
+      void navigate({
+        to: '/local/playlists/$id',
+        params: { id: playlist.id },
+      })
+    } finally {
+      setMerging(false)
+    }
+  }
 
   const saveRename = async () => {
     if (!renaming) return
@@ -612,26 +691,61 @@ export function Sidebar() {
                     onToggle={() => toggleGroup('localAlbums')}
                   />
                   {groupOpen('localAlbums')
-                    ? localSubscribedAlbums.map((album) => (
-                        <SidebarRow
-                          key={album.id}
-                          active={pathname === `/albums/${album.id}`}
-                          icon={<RowCover src={album.picUrl} alt={album.name} />}
-                          label={album.name}
-                          count={album.size}
-                          onClick={() => openAlbum(album.id)}
-                          onContextMenu={(event) =>
-                            openMenu(event, album.name, [
-                              {
-                                key: 'unsubscribe',
-                                label: <Trans>取消收藏</Trans>,
-                                icon: icon(StarOff),
-                                onSelect: () => void unsubscribeLocalAlbum(album),
-                              },
-                            ])
-                          }
-                        />
-                      ))
+                    ? localSubscribedAlbums.map((album) => {
+                        const selected = selectedAlbumIds.includes(album.id)
+                        // Right-clicking a row outside the selection acts on
+                        // that row only; right-clicking a selected row merges
+                        // the whole selection.
+                        const mergeTargets = selected
+                          ? localSubscribedAlbums.filter((item) =>
+                              selectedAlbumIds.includes(item.id),
+                            )
+                          : [album]
+                        return (
+                          <ContextMenu key={album.id}>
+                            <ContextMenu.Trigger asChild>
+                              <SidebarRow
+                                active={pathname === `/albums/${album.id}`}
+                                selected={selected}
+                                icon={
+                                  <RowCover
+                                    src={album.picUrl}
+                                    alt={album.name}
+                                  />
+                                }
+                                label={album.name}
+                                count={album.size}
+                                onClick={(event) => {
+                                  if (event.ctrlKey || event.metaKey) {
+                                    toggleAlbumSelection(album)
+                                    return
+                                  }
+                                  setSelectedAlbumIds([])
+                                  openAlbum(album.id)
+                                }}
+                              />
+                            </ContextMenu.Trigger>
+                            <ContextMenu.Content glass>
+                              <ContextMenu.Item
+                                onSelect={() => openMergeDialog(mergeTargets)}
+                              >
+                                {mergeTargets.length > 1
+                                  ? i18n._(
+                                      msg`合并 ${mergeTargets.length} 张专辑为新歌单`,
+                                    )
+                                  : i18n._(msg`用这张专辑新建歌单`)}
+                              </ContextMenu.Item>
+                              <ContextMenu.Separator />
+                              <ContextMenu.Item
+                                destructive
+                                onSelect={() => void unsubscribeLocalAlbum(album)}
+                              >
+                                <Trans>取消收藏</Trans>
+                              </ContextMenu.Item>
+                            </ContextMenu.Content>
+                          </ContextMenu>
+                        )
+                      })
                     : null}
                 </>
               ) : null}
@@ -814,6 +928,56 @@ export function Sidebar() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog
+        open={Boolean(mergeAlbums)}
+        onOpenChange={(open) => {
+          if (!open && !merging) setMergeAlbums(null)
+        }}
+      >
+        <DialogContent size="sm" glass>
+          <DialogHeader>
+            <DialogTitle>
+              <Trans>合并为新歌单</Trans>
+            </DialogTitle>
+            <DialogDescription>
+              <Trans>
+                将 {mergeAlbums?.length ?? 0} 张专辑的歌曲合并到一个新的本地歌单。
+              </Trans>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody>
+            <Input
+              value={mergeName}
+              onChange={(event) => setMergeName(event.target.value)}
+              placeholder={i18n._(msg`歌单名称`)}
+              aria-label={i18n._(msg`歌单名称`)}
+              size="sm"
+              autoFocus
+            />
+          </DialogBody>
+          <DialogFooter>
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={merging}
+              onClick={() => setMergeAlbums(null)}
+            >
+              <Trans>取消</Trans>
+            </Button>
+            <Button
+              size="sm"
+              disabled={!mergeName.trim() || merging}
+              onClick={() => void confirmMerge()}
+            >
+              {merging ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : null}
+              <Trans>创建</Trans>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </aside>
   )
 }
@@ -825,34 +989,37 @@ export function Sidebar() {
  * slot (covers are 20px with negative margins so the text lines up), and the
  * song count only on hover / when selected.
  */
-function SidebarRow({
-  active,
-  icon,
-  label,
-  count,
-  busy,
-  onClick,
-  onContextMenu,
-}: {
-  active: boolean
-  icon: ReactNode
-  label: ReactNode
-  count?: number
-  busy?: boolean
-  onClick: () => void
-  onContextMenu?: (event: ReactMouseEvent<HTMLButtonElement>) => void
-}) {
+const SidebarRow = forwardRef<
+  HTMLButtonElement,
+  {
+    active: boolean
+    selected?: boolean
+    icon: ReactNode
+    label: ReactNode
+    count?: number
+    busy?: boolean
+    onClick: (event: ReactMouseEvent<HTMLButtonElement>) => void
+    onContextMenu?: (event: ReactMouseEvent<HTMLButtonElement>) => void
+  }
+>(function SidebarRow(
+  { active, selected = false, icon, label, count, busy, onClick, onContextMenu },
+  ref,
+) {
   return (
     <button
+      ref={ref}
       type="button"
       onClick={onClick}
       onContextMenu={onContextMenu}
       aria-current={active ? 'page' : undefined}
+      aria-pressed={selected || undefined}
       className={cn(
         'group flex h-[30px] items-center gap-2.5 rounded-[10px] px-2.5 text-left text-[13px] transition-colors max-md:h-10',
-        active
-          ? 'bg-black/8 font-medium text-ink-1'
-          : 'text-ink-2 hover:bg-black/4 hover:text-ink-1',
+        selected
+          ? 'bg-accent/12 font-medium text-accent'
+          : active
+            ? 'bg-black/8 font-medium text-ink-1'
+            : 'text-ink-2 hover:bg-black/4 hover:text-ink-1',
       )}
     >
       {icon}
@@ -863,7 +1030,7 @@ function SidebarRow({
         <span
           className={cn(
             'shrink-0 text-[11px] font-normal tabular-nums text-ink-4 transition-opacity',
-            active
+            active || selected
               ? 'opacity-100'
               : 'opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100',
           )}
@@ -873,7 +1040,7 @@ function SidebarRow({
       ) : null}
     </button>
   )
-}
+})
 
 function RowIcon({
   Icon,
