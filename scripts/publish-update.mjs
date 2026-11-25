@@ -83,10 +83,19 @@ if (!ghExe) {
   process.exit(1)
 }
 
-const gh = (args) =>
-  runGh(ghExe, args, {
-    cwd: root,
-  })
+const gh = (args) => {
+  try {
+    return runGh(ghExe, args, { cwd: root })
+  } catch (error) {
+    // `runGh` inherits stdio, so gh's own message is already on screen; add the
+    // retry path so a failed upload never looks like a silent no-op.
+    console.error('')
+    console.error(`✗ gh ${args.slice(0, 2).join(' ')} 失败（退出码 ${error?.status ?? '?'}）`)
+    console.error('  构建产物仍在 artifacts/，无需重新打包，修好后重试：')
+    console.error(`  pnpm desktop:publish-update --tag ${tag}`)
+    process.exit(error?.status ?? 1)
+  }
+}
 
 let createdDraft = false
 let releaseIsDraft = false

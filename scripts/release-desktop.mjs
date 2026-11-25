@@ -25,6 +25,19 @@ const notesPath = join(root, '.release-notes.md')
 const repo = 'path-yu/react-better-music'
 let rl = createInterface({ input, output })
 
+/**
+ * readline rejects when stdin ends before an answer (pipes, CI, `echo | node`).
+ * Surface that as a normal abort instead of an ERR_USE_AFTER_CLOSE stack.
+ */
+async function ask(prompt) {
+  try {
+    return await rl.question(prompt)
+  } catch {
+    console.error('\n✗ 输入已结束（stdin closed），发布流程中止')
+    process.exit(1)
+  }
+}
+
 const currentConfig = readFileSync(configPath, 'utf8')
 const currentVersion =
   currentConfig.match(/version:\s*['"]([^'"]+)['"]/)?.[1] ?? '0.0.0'
@@ -118,7 +131,7 @@ if (!ghExe) {
     ghReady = true
   } catch {
     console.log('GitHub CLI 尚未登录。')
-    const answer = await rl.question('现在运行 gh auth login 吗？(Y/n) ')
+    const answer = await ask('现在运行 gh auth login 吗？(Y/n) ')
     if (!answer.trim() || /^y(es)?$/i.test(answer.trim())) {
       // gh auth login is interactive and needs the terminal's stdin. The active
       // readline interface would otherwise consume the "Press Enter" keypress,
@@ -155,7 +168,7 @@ console.log(`建议版本：${suggestedVersion(baseVersion)}`)
 console.log('')
 
 const versionInput = (
-  await rl.question(`新版本号 [${suggestedVersion(baseVersion)}]: `)
+  await ask(`新版本号 [${suggestedVersion(baseVersion)}]: `)
 ).trim()
 const version =
   normalizeVersion(versionInput || suggestedVersion(baseVersion)) ?? ''
@@ -181,16 +194,68 @@ try {
   // Expected: a new tag has no release yet.
 }
 
-console.log('')
-console.log('请输入更新内容（每行一条，空行结束）：')
-const notes = []
-while (true) {
-  const line = await rl.question('> ')
-  if (!line.trim()) {
-    if (notes.length) break
-    continue
+const notesArgIndex = process.argv.indexOf('--notes-file')
+const notesArg =
+  notesArgIndex >= 0 && process.argv[notesArgIndex + 1]
+    ? resolve(root, process.argv[notesArgIndex + 1])
+    : null
+
+/**
+ * Chinese Windows consoles default to code page 936: Chinese typed into
+ * readline arrives as GBK bytes that Node decodes as UTF-8, so the notes turn
+ * into mojibake like "鏂板". Publishing that is worse than failing, so bail out
+ * and point at the two ways to fix the input.
+ */
+const looksGarbled = (text) => /[鏂鍒涓锛銆鍜璇鐨鏄]/.test(text)
+
+let notes = []
+if (notesArg) {
+  if (!existsSync(notesArg)) {
+    console.error(`✗ 未找到说明文件：${notesArg}`)
+    rl.close()
+    process.exit(1)
   }
-  notes.push(line.trim())
+  notes = readFileSync(notesArg, 'utf8')
+    .split('\n')
+    .map((line) => line.replace(/^[-*]\s*/, '').trim())
+    .filter(Boolean)
+  if (!notes.length) {
+    console.error('✗ 说明文件是空的')
+    rl.close()
+    process.exit(1)
+  }
+  if (notes.some(looksGarbled)) {
+    console.error(`✗ 说明文件里出现中文乱码：${notesArg}`)
+    console.error('  请用 UTF-8 编码重新保存该文件后再试')
+    rl.close()
+    process.exit(1)
+  }
+  console.log('')
+  console.log(`› 使用说明文件：${notesArg}`)
+} else {
+  console.log('')
+  console.log('请输入更新内容（每行一条，空行结束）：')
+  console.log(
+    '提示：中文请先在终端执行 chcp 65001，或改用 --notes-file 指定说明文件。',
+  )
+  while (true) {
+    const line = await ask('> ')
+    if (!line.trim()) {
+      if (notes.length) break
+      continue
+    }
+    if (looksGarbled(line)) {
+      console.error('')
+      console.error('✗ 更新内容出现中文乱码：当前控制台不是 UTF-8 编码。')
+      console.error('  方式一：执行 chcp 65001 后重新运行')
+      console.error(
+        '  方式二：把说明写成 markdown 文件，再运行 pnpm desktop:release:auto --notes-file 说明.md',
+      )
+      rl.close()
+      process.exit(1)
+    }
+    notes.push(line.trim())
+  }
 }
 
 writeFileSync(
@@ -204,7 +269,7 @@ console.log(`版本：${version}`)
 console.log(`标签：${tag}`)
 console.log('更新内容：')
 console.log(readFileSync(notesPath, 'utf8').trim())
-const answer = await rl.question('确认构建并发布？(Y/n) ')
+const answer = await ask('确认构建并发布？(Y/n) ')
 rl.close()
 const confirmed = !answer.trim() || /^y(es)?$/i.test(answer.trim())
 
