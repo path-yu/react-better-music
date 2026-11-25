@@ -74,9 +74,12 @@ class LocalLibraryError extends Error {
 
 function emptyState() {
   return {
-    version: 2,
+    version: 3,
     playlists: [],
     subscribedPlaylists: [],
+    // Albums saved by a guest. Kept separate from the NetEase account library
+    // so signing out never mixes the two.
+    subscribedAlbums: [],
     favorites: [],
     recent: [],
   }
@@ -149,10 +152,13 @@ function load() {
     state = {
       ...emptyState(),
       ...parsed,
-      version: Math.max(2, Number(parsed.version) || 0),
+      version: Math.max(3, Number(parsed.version) || 0),
       playlists: Array.isArray(parsed.playlists) ? parsed.playlists : [],
       subscribedPlaylists: Array.isArray(parsed.subscribedPlaylists)
         ? parsed.subscribedPlaylists
+        : [],
+      subscribedAlbums: Array.isArray(parsed.subscribedAlbums)
+        ? parsed.subscribedAlbums
         : [],
       favorites: Array.isArray(parsed.favorites) ? parsed.favorites : [],
       recent: Array.isArray(parsed.recent) ? parsed.recent : [],
@@ -273,6 +279,66 @@ function removeSongFromPlaylist(id, songId) {
   return playlist
 }
 
+/**
+ * Album snapshot for the guest library. Only the fields the album card and the
+ * detail header render are kept: no songs, no comment thread, nothing that
+ * expires.
+ */
+function normalizeAlbum(album) {
+  if (!album || typeof album !== 'object' || !Number.isFinite(Number(album.id))) {
+    throw new LocalLibraryError('Invalid album')
+  }
+  const artist =
+    album.artist && typeof album.artist === 'object'
+      ? {
+          id: Number(album.artist.id) || 0,
+          name: typeof album.artist.name === 'string' ? album.artist.name : '',
+        }
+      : undefined
+  const artists = Array.isArray(album.artists)
+    ? album.artists
+        .filter((item) => item && typeof item === 'object')
+        .map((item) => ({
+          id: Number(item.id) || 0,
+          name: typeof item.name === 'string' ? item.name : '',
+        }))
+    : undefined
+  return {
+    id: Number(album.id),
+    name: typeof album.name === 'string' ? album.name : '',
+    picUrl:
+      typeof album.picUrl === 'string'
+        ? album.picUrl
+        : typeof album.blurPicUrl === 'string'
+          ? album.blurPicUrl
+          : '',
+    publishTime: Number(album.publishTime) || 0,
+    size: Number(album.size) || 0,
+    artist,
+    artists,
+    company: typeof album.company === 'string' ? album.company : undefined,
+  }
+}
+
+function addSubscribedAlbum(album) {
+  const snapshot = normalizeAlbum(album)
+  const data = load()
+  if (!data.subscribedAlbums.some((item) => Number(item.id) === snapshot.id)) {
+    data.subscribedAlbums.unshift(snapshot)
+    persist()
+  }
+  return data.subscribedAlbums
+}
+
+function removeSubscribedAlbum(albumId) {
+  const data = load()
+  data.subscribedAlbums = data.subscribedAlbums.filter(
+    (item) => Number(item.id) !== Number(albumId),
+  )
+  persist()
+  return data.subscribedAlbums
+}
+
 function addSubscribedPlaylist(playlist) {
   const snapshot = normalizePlaylist(playlist)
   const data = load()
@@ -356,6 +422,8 @@ module.exports = {
   removeSongFromPlaylist,
   addSubscribedPlaylist,
   removeSubscribedPlaylist,
+  addSubscribedAlbum,
+  removeSubscribedAlbum,
   addFavorite,
   removeFavorite,
   recordRecent,

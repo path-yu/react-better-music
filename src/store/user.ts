@@ -3,6 +3,7 @@ import { msg } from '@lingui/core/macro'
 import { persist } from 'zustand/middleware'
 import {
   fetchAccount,
+  fetchCollectedAlbums,
   fetchLikedIds,
   fetchLoginStatus,
   fetchUserDetail,
@@ -23,7 +24,7 @@ import {
 } from '../lib/session'
 import { usePlayerStore } from './player'
 import { i18n } from '../i18n'
-import type { Playlist, UserProfile } from '../types'
+import type { Album, Playlist, UserProfile } from '../types'
 
 interface UserState {
   isLogin: boolean
@@ -34,10 +35,13 @@ interface UserState {
   likedIds: number[]
   createdPlaylists: Playlist[]
   collectedPlaylists: Playlist[]
+  /** Albums collected by the signed-in account (album/sublist). */
+  collectedAlbums: Album[]
   searchHistory: string[]
   initSession: () => Promise<void>
   refreshProfile: () => Promise<void>
   loadPlaylists: (uid: number) => Promise<void>
+  loadCollectedAlbums: () => Promise<void>
   refreshLiked: (uid: number) => Promise<void>
   setProfile: (profile: UserProfile, level?: number) => void
   signIn: () => Promise<void>
@@ -133,6 +137,7 @@ export const useUserStore = create<UserState>()(
       likedIds: [],
       createdPlaylists: [],
       collectedPlaylists: [],
+      collectedAlbums: [],
       searchHistory: [],
 
       initSession() {
@@ -172,6 +177,8 @@ export const useUserStore = create<UserState>()(
               get().loadPlaylists(uid),
               get().refreshLiked(uid),
             ])
+            // Sidebar-only data; do not hold up the session on it.
+            void get().loadCollectedAlbums()
             // Rotate the cookie after each launch so the persisted session
             // never goes stale as long as the app is opened regularly.
             void refreshLogin()
@@ -248,6 +255,15 @@ export const useUserStore = create<UserState>()(
         } catch {
           if (get().isLogin)
             toast.warning(i18n._(msg`歌单加载失败，请稍后重试`))
+        }
+      },
+
+      async loadCollectedAlbums() {
+        try {
+          const { albums } = await fetchCollectedAlbums(100, 0)
+          set({ collectedAlbums: albums })
+        } catch {
+          // A sidebar nicety: a failed album list must not toast on startup.
         }
       },
 

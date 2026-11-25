@@ -28,6 +28,7 @@ const moduleFiles = fs
  */
 const DESKTOP_MODULE_FILES = new Set([
   'album.js',
+  'album_sub.js',
   'album_sublist.js',
   'artist_album.js',
   'artist_detail.js',
@@ -114,6 +115,12 @@ const routeToFile = new Map(
 )
 const sourceDir = path.join(root, 'src')
 const sourceRoutes = new Map()
+/**
+ * `/api` is the client's base prefix (`src/lib/apiBase.ts`), not an upstream
+ * route: matching `server/module/api.js` would register a dead endpoint.
+ */
+const DISCOVERY_IGNORED_ROUTES = new Set(['/api'])
+
 
 function collectSourceRoutes(dir) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -126,7 +133,13 @@ function collectSourceRoutes(dir) {
     const source = fs.readFileSync(fullPath, 'utf8')
     for (const match of source.matchAll(/(['"`])(\/[^'"`\s]{1,200})\1/g)) {
       const route = match[2].split('?')[0].replace(/\/+$/, '') || '/'
-      if (routeToFile.has(route)) sourceRoutes.set(route, fullPath)
+      // Store the route MODULE FILE, not the source path: `selectedSet` holds
+      // module file names, so pushing `fullPath` here made the auto-discovery
+      // below a no-op and every route silently depended on the allowlist.
+      const moduleFile = routeToFile.get(route)
+      if (moduleFile && !DISCOVERY_IGNORED_ROUTES.has(route)) {
+        sourceRoutes.set(route, moduleFile)
+      }
     }
   }
 }

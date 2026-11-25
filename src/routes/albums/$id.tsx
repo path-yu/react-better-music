@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { Building2, CalendarDays } from 'lucide-react'
+import { ArrowLeft, Building2, CalendarDays, Check, Star } from 'lucide-react'
 import {
   Button,
   Input,
@@ -15,7 +15,9 @@ import { ExpandableDescription } from '../../components/common/ExpandableDescrip
 import { ArtistLinks } from '../../components/common/ArtistLinks'
 import { SongTable } from '../../components/songs/SongTable'
 import { PlayAllButton } from '../../components/songs/PlayAllButton'
-import { fetchAlbumDetail } from '../../api'
+import { fetchAlbumDetail, subscribeAlbum } from '../../api'
+import { useLocalLibraryStore } from '../../store/localLibrary'
+import { useUserStore } from '../../store/user'
 import type { AlbumDetail } from '../../types'
 import { formatDate, matchesKeyword } from '../../lib/format'
 import { useDocumentTitle } from '../../lib/title'
@@ -32,7 +34,53 @@ function AlbumDetailPage() {
   const [album, setAlbum] = useState<AlbumDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [keyword, setKeyword] = useState('')
+  const isLogin = useUserStore((state) => state.isLogin)
+  const localAlbums = useLocalLibraryStore((state) => state.subscribedAlbums)
+  const toggleLocalAlbum = useLocalLibraryStore(
+    (state) => state.toggleSubscribedAlbum,
+  )
+  const [subscribed, setSubscribed] = useState(false)
+  const [subscribeBusy, setSubscribeBusy] = useState(false)
   useDocumentTitle(album?.name ?? i18n._(msg`专辑`))
+
+  // Guests collect into the local library, the signed-in account into NetEase;
+  // re-derive the state whenever either side changes (login, id, local edits).
+  useEffect(() => {
+    if (!album) return
+    setSubscribed(
+      isLogin
+        ? Boolean(album.isSub)
+        : localAlbums.some((item) => Number(item.id) === Number(album.id)),
+    )
+  }, [album, isLogin, localAlbums])
+
+  const handleToggleSubscribe = async () => {
+    if (!album || subscribeBusy) return
+    setSubscribeBusy(true)
+    const next = !subscribed
+    try {
+      if (isLogin) {
+        if (!(await subscribeAlbum(album.id, next))) {
+          throw new Error('album/sub failed')
+        }
+        setAlbum((current) =>
+          current ? { ...current, isSub: next } : current,
+        )
+        setSubscribed(next)
+        // Keep the sidebar's "收藏的专辑" in step without a reload.
+        void useUserStore.getState().loadCollectedAlbums()
+      } else {
+        const result = await toggleLocalAlbum(album)
+        if (result === null) return
+        setSubscribed(result)
+      }
+      toast.success(next ? i18n._(msg`已收藏`) : i18n._(msg`已取消收藏`))
+    } catch {
+      toast.error(i18n._(msg`操作失败`))
+    } finally {
+      setSubscribeBusy(false)
+    }
+  }
 
   useEffect(() => {
     const controller = new AbortController()
@@ -117,6 +165,19 @@ function AlbumDetailPage() {
 
   return (
     <div className="page">
+      <button
+        type="button"
+        onClick={() => {
+          // Direct links have no app history to pop; fall back to discover.
+          if (window.history.length > 1) window.history.back()
+          else void navigate({ to: '/' })
+        }}
+        aria-label={i18n._(msg`返回`)}
+        title={i18n._(msg`返回`)}
+        className="pressable mb-4 flex h-8 w-8 items-center justify-center rounded-full text-ink-3 transition-colors hover:bg-black/5 hover:text-ink-1 dark:hover:bg-white/10"
+      >
+        <ArrowLeft className="h-4 w-4" />
+      </button>
       <div className="flex gap-6 max-sm:flex-col max-sm:gap-4">
         <ImageWithFallback
           src={album.picUrl}
@@ -175,6 +236,20 @@ function AlbumDetailPage() {
               disabled={!artists[0]?.id}
             >
               <Trans>查看歌手</Trans>
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="rounded-full px-3.5 text-[12px]"
+              disabled={subscribeBusy}
+              onClick={() => void handleToggleSubscribe()}
+            >
+              {subscribed ? (
+                <Check className="mr-1.5 h-3.5 w-3.5" />
+              ) : (
+                <Star className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              {subscribed ? <Trans>已收藏</Trans> : <Trans>收藏</Trans>}
             </Button>
           </div>
         </div>

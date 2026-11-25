@@ -50,6 +50,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     pathname.startsWith('/video/') ||
     pathname.startsWith('/users/')
   const contentRef = useRef<HTMLElement>(null)
+  // True while the restore loop drives scrollTop: those programmatic scroll
+  // events must not overwrite the saved offset with a clamped value.
+  const restoringRef = useRef(false)
   const loginOpen = useUiStore((state) => state.loginOpen)
   const importPlaylistOpen = useUiStore((state) => state.importPlaylistOpen)
   const closeImportPlaylist = useUiStore((state) => state.closeImportPlaylist)
@@ -247,9 +250,15 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
 
     if (!saved) {
+      restoringRef.current = false
       setScroll(0)
       return
     }
+
+    // The list may still be rebuilding (routes hold no keep-alive, so a detail
+    // page reloads its parent list on the way back). Until the offset is
+    // reachable, do not let the writer persist the clamped position instead.
+    restoringRef.current = true
 
     let retryTimer: number | undefined
     let guard: number | undefined
@@ -257,6 +266,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
     const stop = () => {
       stopped = true
+      restoringRef.current = false
       if (retryTimer !== undefined) window.clearInterval(retryTimer)
       if (guard !== undefined) window.clearTimeout(guard)
     }
@@ -272,7 +282,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     restore()
     if (Math.abs(element.scrollTop - saved) > 1) {
       retryTimer = window.setInterval(restore, 100)
-      guard = window.setTimeout(stop, 2500)
+      // Long lists may re-fetch several pages before the offset is reachable.
+      guard = window.setTimeout(stop, 6000)
     }
 
     return stop
@@ -300,6 +311,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       latest = null
     }
     const handleScroll = () => {
+      if (restoringRef.current) return
       latest = element.scrollTop
       if (timer === undefined) timer = window.setTimeout(flush, 150)
     }

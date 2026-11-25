@@ -1151,6 +1151,22 @@ export async function fetchCollectedAlbums(
   return { albums, count: res.count ?? albums.length }
 }
 
+/**
+ * Collect / uncollect an album for the signed-in account. NetEase's
+ * `album/sub` takes `t=1` to collect and `t=0` to remove.
+ */
+export async function subscribeAlbum(
+  id: number | string,
+  subscribed: boolean,
+) {
+  const res = await get<{ code?: number }>('/album/sub', {
+    id,
+    t: subscribed ? 1 : 0,
+    timestamp: Date.now(),
+  })
+  return res.code === 200
+}
+
 export async function fetchLikedIds(uid: number | string) {
   const res = await get<{ ids?: number[] }>('/likelist', { uid })
   return res.ids ?? []

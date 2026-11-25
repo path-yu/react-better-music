@@ -2,9 +2,10 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { Heart, ListMusic } from 'lucide-react'
+import { Disc3, Heart, ListMusic } from 'lucide-react'
 import { SongTable } from '../../components/songs/SongTable'
 import { PlayAllButton } from '../../components/songs/PlayAllButton'
+import { AlbumCard } from '../../components/cards/AlbumCard'
 import { EmptyState } from '../../components/common/EmptyState'
 import { Button } from '@pikoloo/darwin-ui'
 import { useLocalLibraryStore } from '../../store/localLibrary'
@@ -20,6 +21,7 @@ function LocalFavoritesPage() {
   useDocumentTitle(i18n._(msg`我喜欢的音乐`))
   const navigate = useNavigate()
   const favorites = useLocalLibraryStore((state) => state.favorites)
+  const subscribedAlbums = useLocalLibraryStore((state) => state.subscribedAlbums)
 
   return (
     <div className="page">
@@ -55,6 +57,23 @@ function LocalFavoritesPage() {
           />
         )}
       </div>
+
+      {subscribedAlbums.length ? (
+        <section className="mt-8">
+          <h2 className="flex items-center gap-2 text-[13px] font-semibold text-ink-1">
+            <Disc3 className="h-4 w-4 text-accent" />
+            <Trans>收藏的专辑</Trans>
+            <span className="text-[11px] font-normal tabular-nums text-ink-4">
+              {subscribedAlbums.length}
+            </span>
+          </h2>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {subscribedAlbums.map((album) => (
+              <AlbumCard key={album.id} album={album} />
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
@@ -23,7 +23,19 @@ import { useDocumentTitle } from '../../lib/title'
 import { toast } from '../../lib/toast'
 import type { ArtistAlbum, ArtistProfile, ArtistSummary, Mv, Song } from '../../types'
 
+/** Tab ids double as the `?tab=` value so a deep link restores the tab. */
+const ARTIST_TABS = ['songs', 'albums', 'mvs'] as const
+type ArtistTab = (typeof ARTIST_TABS)[number]
+
 export const Route = createFileRoute('/artist/$id')({
+  validateSearch: (search: Record<string, unknown>): { tab?: ArtistTab } => {
+    const tab = search.tab
+    return {
+      tab: ARTIST_TABS.includes(tab as ArtistTab)
+        ? (tab as ArtistTab)
+        : undefined,
+    }
+  },
   component: ArtistPage,
 })
 
@@ -37,9 +49,13 @@ function ArtistPage() {
   const [mvs, setMvs] = useState<Mv[]>([])
   const [similar, setSimilar] = useState<ArtistSummary[]>([])
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState('songs')
+  const { tab: tabParam } = Route.useSearch()
+  const tab = tabParam ?? 'songs'
   const [albumsLoadingMore, setAlbumsLoadingMore] = useState(false)
   const [albumsDone, setAlbumsDone] = useState(false)
+  // How many albums were loaded on the previous visit; the route holds no
+  // component state, so the list must be rebuilt before scroll can restore.
+  const albumsRestoreRef = useRef(false)
   useDocumentTitle(profile?.name ?? i18n._(msg`歌手`))
 
   useEffect(() => {
@@ -53,6 +69,7 @@ function ArtistPage() {
     setSimilar([])
     setAlbumsLoadingMore(false)
     setAlbumsDone(false)
+    albumsRestoreRef.current = false
 
     Promise.allSettled([
       fetchArtistProfile(id, controller.signal),
@@ -71,6 +88,24 @@ function ArtistPage() {
         if (albumsResult.status === 'fulfilled') {
           setAlbums(albumsResult.value)
           if (albumsResult.value.length < 12) setAlbumsDone(true)
+          try {
+            // Never shrink the record: a later visit that loaded more pages
+            // must still restore that longer list (the writer below bumps it).
+            const stored = Number(
+              sessionStorage.getItem(`artist-albums:${id}`) ?? 0,
+            )
+            if (
+              !Number.isFinite(stored) ||
+              albumsResult.value.length > stored
+            ) {
+              sessionStorage.setItem(
+                `artist-albums:${id}`,
+                String(albumsResult.value.length),
+              )
+            }
+          } catch {
+            // storage may be unavailable
+          }
         }
         if (mvsResult.status === 'fulfilled') setMvs(mvsResult.value)
         if (similarResult.status === 'fulfilled') setSimilar(similarResult.value)
@@ -87,6 +122,56 @@ function ArtistPage() {
       controller.abort()
     }
   }, [id])
+
+  // Rebuild the album list to the length a previous visit had. Without this the
+  // detail-page round trip would drop back to the first page, and AppShell's
+  // scroll restore would clamp to a much shorter list.
+  useEffect(() => {
+    if (loading || albumsRestoreRef.current) return
+    albumsRestoreRef.current = true
+    let target = 0
+    try {
+      target = Number(sessionStorage.getItem(`artist-albums:${id}`) ?? 0)
+    } catch {
+      return
+    }
+    if (!Number.isFinite(target) || target <= albums.length || albumsDone) {
+      return
+    }
+    let cancelled = false
+    const restore = async () => {
+      setAlbumsLoadingMore(true)
+      let loaded = albums.length
+      while (!cancelled && loaded < target) {
+        try {
+          const next = await fetchArtistAlbums(id, 12, loaded)
+          if (cancelled) return
+          if (!next.length) {
+            setAlbumsDone(true)
+            break
+          }
+          setAlbums((current) => {
+            const seen = new Set(current.map((album) => album.id))
+            return [...current, ...next.filter((album) => !seen.has(album.id))]
+          })
+          loaded += next.length
+          if (next.length < 12) {
+            setAlbumsDone(true)
+            break
+          }
+        } catch {
+          break
+        }
+      }
+      if (!cancelled) setAlbumsLoadingMore(false)
+    }
+    void restore()
+    return () => {
+      cancelled = true
+    }
+    // `albums` / `albumsDone` are read once, when the first page has arrived.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, id])
 
   if (loading) {
     return (
@@ -131,6 +216,14 @@ function ArtistPage() {
         const seen = new Set(current.map((album) => album.id))
         return [...current, ...next.filter((album) => !seen.has(album.id))]
       })
+      try {
+        sessionStorage.setItem(
+          `artist-albums:${id}`,
+          String(albums.length + next.length),
+        )
+      } catch {
+        // storage may be unavailable
+      }
       if (next.length < 12) setAlbumsDone(true)
     } catch {
       toast.error(i18n._(msg`专辑加载失败`))
@@ -210,7 +303,20 @@ function ArtistPage() {
         </div>
       </div>
 
-      <Tabs value={tab} onValueChange={setTab} className="mt-6">
+      <Tabs
+        value={tab}
+        // Kept in the URL (replace, no history spam) so returning from an album
+        // lands back on the same tab.
+        onValueChange={(value) =>
+          void navigate({
+            to: '/artist/$id',
+            params: { id },
+            search: { tab: value as ArtistTab },
+            replace: true,
+          })
+        }
+        className="mt-6"
+      >
         <div className="flex items-center justify-between gap-3 border-b border-black/8 pb-2">
           <TabsList>
             <TabsTrigger value="songs">

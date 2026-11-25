@@ -52,6 +52,8 @@ export interface AlbumDetail extends ArtistAlbum {
   commentThreadId?: string
   tags?: string[]
   artists?: Artist[]
+  /** Whether the signed-in account already collected this album. */
+  isSub?: boolean
   songs: Song[]
 }
 

@@ -2,7 +2,7 @@ import { msg } from '@lingui/core/macro'
 import { i18n } from '../i18n'
 import { apiUrl } from '../lib/http'
 import { fetchWithBootRetry } from '../lib/apiFetch'
-import type { Playlist, Song } from '../types'
+import type { Album, Playlist, Song } from '../types'
 
 export interface LocalPlaylist {
   id: string
@@ -22,10 +22,16 @@ export interface LocalSubscribedPlaylist extends Playlist {
   songs?: Song[]
 }
 
+/** A guest-favorited album; only the fields the album card renders. */
+export interface LocalSubscribedAlbum extends Album {
+  company?: string
+}
+
 export interface LocalLibrary {
   version: number
   playlists: LocalPlaylist[]
   subscribedPlaylists: LocalSubscribedPlaylist[]
+  subscribedAlbums: LocalSubscribedAlbum[]
   favorites: Song[]
   recent: LocalRecent[]
 }
@@ -102,6 +108,17 @@ export const removeLocalSubscribedPlaylist = (playlistId: number) =>
   localRequest<LocalSubscribedPlaylist[]>(
     'DELETE',
     `/local/subscribed-playlists/${playlistId}`,
+  )
+
+export const addLocalSubscribedAlbum = (album: LocalSubscribedAlbum) =>
+  localRequest<LocalSubscribedAlbum[]>('POST', '/local/subscribed-albums', {
+    album,
+  })
+
+export const removeLocalSubscribedAlbum = (albumId: number) =>
+  localRequest<LocalSubscribedAlbum[]>(
+    'DELETE',
+    `/local/subscribed-albums/${albumId}`,
   )
 
 export const addLocalFavorite = (song: Song) =>

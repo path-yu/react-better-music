@@ -46,9 +46,14 @@ import {
   createPlaylist,
   fetchPlaylistTracks,
   fetchRemainingPlaylistTracks,
+  subscribeAlbum,
   updatePlaylistSubscribe,
 } from '../../api'
-import type { LocalPlaylist, LocalSubscribedPlaylist } from '../../api/local'
+import type {
+  LocalPlaylist,
+  LocalSubscribedAlbum,
+  LocalSubscribedPlaylist,
+} from '../../api/local'
 import { invalidateApiCache } from '../../lib/http'
 import { cn } from '../../lib/format'
 import { toast } from '../../lib/toast'
@@ -76,10 +81,18 @@ export function Sidebar() {
   const profile = useUserStore((state) => state.profile)
   const createdPlaylists = useUserStore((state) => state.createdPlaylists)
   const collectedPlaylists = useUserStore((state) => state.collectedPlaylists)
+  const collectedAlbums = useUserStore((state) => state.collectedAlbums)
+  const loadCollectedAlbums = useUserStore((state) => state.loadCollectedAlbums)
   const sidebarCollapsed = useSidebarCollapsed()
   const localPlaylists = useLocalLibraryStore((state) => state.playlists)
   const localSubscribedPlaylists = useLocalLibraryStore(
     (state) => state.subscribedPlaylists,
+  )
+  const localSubscribedAlbums = useLocalLibraryStore(
+    (state) => state.subscribedAlbums,
+  )
+  const toggleLocalSubscribedAlbum = useLocalLibraryStore(
+    (state) => state.toggleSubscribedAlbum,
   )
   const localFavorites = useLocalLibraryStore((state) => state.favorites)
   const localRecent = useLocalLibraryStore((state) => state.recent)
@@ -209,6 +222,25 @@ export function Sidebar() {
     const next = await toggleLocalSubscribed(playlist)
     if (next === false) toast.success(i18n._(msg`已取消收藏`))
   }
+
+  const unsubscribeLocalAlbum = async (album: LocalSubscribedAlbum) => {
+    const next = await toggleLocalSubscribedAlbum(album)
+    if (next === false) toast.success(i18n._(msg`已取消收藏`))
+  }
+
+  const unsubscribeOnlineAlbum = async (album: LocalSubscribedAlbum) => {
+    try {
+      if (await subscribeAlbum(album.id, false)) {
+        await loadCollectedAlbums()
+        toast.success(i18n._(msg`已取消收藏`))
+      }
+    } catch {
+      toast.error(i18n._(msg`取消收藏失败`))
+    }
+  }
+
+  const openAlbum = (albumId: number) =>
+    void navigate({ to: '/albums/$id', params: { id: String(albumId) } })
 
   const saveRename = async () => {
     if (!renaming) return
@@ -571,6 +603,38 @@ export function Sidebar() {
                     : null}
                 </>
               ) : null}
+
+              {localSubscribedAlbums.length ? (
+                <>
+                  <GroupHeading
+                    label={<Trans>收藏的专辑</Trans>}
+                    open={groupOpen('localAlbums')}
+                    onToggle={() => toggleGroup('localAlbums')}
+                  />
+                  {groupOpen('localAlbums')
+                    ? localSubscribedAlbums.map((album) => (
+                        <SidebarRow
+                          key={album.id}
+                          active={pathname === `/albums/${album.id}`}
+                          icon={<RowCover src={album.picUrl} alt={album.name} />}
+                          label={album.name}
+                          count={album.size}
+                          onClick={() => openAlbum(album.id)}
+                          onContextMenu={(event) =>
+                            openMenu(event, album.name, [
+                              {
+                                key: 'unsubscribe',
+                                label: <Trans>取消收藏</Trans>,
+                                icon: icon(StarOff),
+                                onSelect: () => void unsubscribeLocalAlbum(album),
+                              },
+                            ])
+                          }
+                        />
+                      ))
+                    : null}
+                </>
+              ) : null}
             </>
           ) : (
             <>
@@ -652,6 +716,43 @@ export function Sidebar() {
                                 label: <Trans>取消收藏</Trans>,
                                 icon: icon(StarOff),
                                 onSelect: () => void unsubscribeOnline(playlist),
+                              },
+                            ])
+                          }
+                        />
+                      ))
+                    : null}
+                </>
+              ) : null}
+
+              {collectedAlbums.length ? (
+                <>
+                  <GroupHeading
+                    label={<Trans>收藏的专辑</Trans>}
+                    open={groupOpen('collectedAlbums')}
+                    onToggle={() => toggleGroup('collectedAlbums')}
+                  />
+                  {groupOpen('collectedAlbums')
+                    ? collectedAlbums.map((album) => (
+                        <SidebarRow
+                          key={album.id}
+                          active={pathname === `/albums/${album.id}`}
+                          icon={
+                            <RowCover
+                              src={album.picUrl ?? album.blurPicUrl}
+                              alt={album.name}
+                            />
+                          }
+                          label={album.name}
+                          count={album.size}
+                          onClick={() => openAlbum(album.id)}
+                          onContextMenu={(event) =>
+                            openMenu(event, album.name, [
+                              {
+                                key: 'unsubscribe',
+                                label: <Trans>取消收藏</Trans>,
+                                icon: icon(StarOff),
+                                onSelect: () => void unsubscribeOnlineAlbum(album),
                               },
                             ])
                           }

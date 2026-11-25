@@ -3,6 +3,7 @@ import { msg } from '@lingui/core/macro'
 import {
   addLocalFavorite,
   addLocalPlaylistSong,
+  addLocalSubscribedAlbum,
   addLocalSubscribedPlaylist,
   clearLocalRecent,
   createLocalPlaylist,
@@ -12,21 +13,24 @@ import {
   removeLocalFavorite,
   removeLocalPlaylistSong,
   removeLocalRecent,
+  removeLocalSubscribedAlbum,
   removeLocalSubscribedPlaylist,
   renameLocalPlaylist,
   type LocalPlaylist,
   type LocalRecent,
+  type LocalSubscribedAlbum,
   type LocalSubscribedPlaylist,
 } from '../api/local'
 import { toast } from '../lib/toast'
 import { i18n } from '../i18n'
-import type { Song } from '../types'
+import type { Album, Song } from '../types'
 
 interface LocalLibraryState {
   loaded: boolean
   loading: boolean
   playlists: LocalPlaylist[]
   subscribedPlaylists: LocalSubscribedPlaylist[]
+  subscribedAlbums: LocalSubscribedAlbum[]
   favorites: Song[]
   recent: LocalRecent[]
   load: (force?: boolean) => Promise<void>
@@ -41,6 +45,8 @@ interface LocalLibraryState {
   cacheSubscribedPlaylist: (
     playlist: LocalSubscribedPlaylist,
   ) => Promise<void>
+  /** Guest album collection; the signed-in path uses NetEase's album/sub. */
+  toggleSubscribedAlbum: (album: Album) => Promise<boolean | null>
   toggleFavorite: (song: Song) => Promise<boolean>
   recordRecent: (song: Song) => Promise<void>
   removeRecent: (songId: number) => Promise<void>
@@ -55,6 +61,7 @@ export const useLocalLibraryStore = create<LocalLibraryState>()((set, get) => ({
   loading: false,
   playlists: [],
   subscribedPlaylists: [],
+  subscribedAlbums: [],
   favorites: [],
   recent: [],
 
@@ -68,6 +75,7 @@ export const useLocalLibraryStore = create<LocalLibraryState>()((set, get) => ({
         loading: false,
         playlists: library.playlists ?? [],
         subscribedPlaylists: library.subscribedPlaylists ?? [],
+        subscribedAlbums: library.subscribedAlbums ?? [],
         favorites: library.favorites ?? [],
         recent: library.recent ?? [],
       })
@@ -173,6 +181,22 @@ export const useLocalLibraryStore = create<LocalLibraryState>()((set, get) => ({
     } catch {
       // Backfilling a subscribed playlist is best-effort; the normal favorite
       // action still works even if this silent refresh fails.
+    }
+  },
+
+  async toggleSubscribedAlbum(album) {
+    const subscribed = get().subscribedAlbums.some(
+      (item) => Number(item.id) === Number(album.id),
+    )
+    try {
+      const next = subscribed
+        ? await removeLocalSubscribedAlbum(album.id)
+        : await addLocalSubscribedAlbum(album)
+      set({ subscribedAlbums: next })
+      return !subscribed
+    } catch {
+      toast.error(i18n._(msg`收藏失败`))
+      return null
     }
   },
 

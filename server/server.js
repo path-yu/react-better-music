@@ -526,6 +526,16 @@ async function constructServer(moduleDefs) {
     ),
   )
   app.post(
+    '/local/subscribed-albums',
+    localRoute((req) => localLibrary.addSubscribedAlbum(req.body?.album)),
+  )
+  app.delete(
+    '/local/subscribed-albums/:albumId',
+    localRoute((req) =>
+      localLibrary.removeSubscribedAlbum(req.params.albumId),
+    ),
+  )
+  app.post(
     '/local/favorites',
     localRoute((req) => localLibrary.addFavorite(req.body?.song)),
   )
