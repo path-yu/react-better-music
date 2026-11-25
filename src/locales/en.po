@@ -1944,6 +1944,7 @@ msgstr "Log in to NetEase Cloud Music with a QR code to sync your avatar and pro
 msgid "找到 {0} 首"
 msgstr ""
 
+#: src/components/common/ReorderableList.tsx:222
 #: src/components/player/NowPlaying.tsx:1800
 #: src/components/player/NowPlaying.tsx:1801
 msgid "拖动排序"

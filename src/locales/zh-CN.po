@@ -1944,6 +1944,7 @@ msgstr "扫码登录网易云账号即可同步头像与资料"
 msgid "找到 {0} 首"
 msgstr "找到 {0} 首"
 
+#: src/components/common/ReorderableList.tsx:222
 #: src/components/player/NowPlaying.tsx:1800
 #: src/components/player/NowPlaying.tsx:1801
 msgid "拖动排序"
