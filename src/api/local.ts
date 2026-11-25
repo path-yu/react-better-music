@@ -8,6 +8,12 @@ export interface LocalPlaylist {
   id: string
   name: string
   songs: Song[]
+  /**
+   * Playlist artwork: a composed JPEG data URL when the covers could be
+   * stitched on a canvas, otherwise a remote image URL. Old playlists have no
+   * field at all and fall back to their first song's cover.
+   */
+  coverUrl?: string
   createdAt: number
   updatedAt: number
 }
@@ -81,8 +87,16 @@ async function localRequest<T>(
 export const fetchLocalLibrary = () =>
   localRequest<LocalLibrary>('GET', '/local/library')
 
-export const createLocalPlaylist = (name: string, songs?: Song[]) =>
-  localRequest<LocalPlaylist>('POST', '/local/playlists', { name, songs })
+export const createLocalPlaylist = (
+  name: string,
+  songs?: Song[],
+  coverUrl?: string,
+) =>
+  localRequest<LocalPlaylist>('POST', '/local/playlists', {
+    name,
+    songs,
+    coverUrl,
+  })
 
 export const renameLocalPlaylist = (id: string, name: string) =>
   localRequest<LocalPlaylist>('PATCH', `/local/playlists/${encodeURIComponent(id)}`, {

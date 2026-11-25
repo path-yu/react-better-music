@@ -15,11 +15,13 @@ import {
 import { Skeleton, Tabs, TabsContent, TabsList, TabsTrigger, Button } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../../components/common/ImageWithFallback'
 import { EmptyState } from '../../components/common/EmptyState'
+import { SearchInput } from '../../components/common/SearchInput'
 import { ExpandableDescription } from '../../components/common/ExpandableDescription'
 import { MvCard } from '../../components/cards/MvCard'
 import { PlayAllButton } from '../../components/songs/PlayAllButton'
 import { SongTable } from '../../components/songs/SongTable'
 import {
+  fetchAlbumDetail,
   fetchArtistAlbums,
   fetchArtistMvs,
   fetchArtistProfile,
@@ -29,7 +31,8 @@ import {
 } from '../../api'
 import { useLocalLibraryStore } from '../../store/localLibrary'
 import { useUserStore } from '../../store/user'
-import { formatDate, formatNumber } from '../../lib/format'
+import { formatDate, formatNumber, matchesKeyword } from '../../lib/format'
+import { composePlaylistCover } from '../../lib/playlistCover'
 import { useDocumentTitle } from '../../lib/title'
 import { toast } from '../../lib/toast'
 import type { ArtistAlbum, ArtistProfile, ArtistSummary, Mv, Song } from '../../types'
@@ -37,6 +40,73 @@ import type { ArtistAlbum, ArtistProfile, ArtistSummary, Mv, Song } from '../../
 /** Tab ids double as the `?tab=` value so a deep link restores the tab. */
 const ARTIST_TABS = ['songs', 'albums', 'mvs'] as const
 type ArtistTab = (typeof ARTIST_TABS)[number]
+
+/**
+ * `/album` is rate limited by the upstream (`405 操作频繁`). Expansion is
+ * strictly sequential with a one-second gap; measured against a live account,
+ * 20 parallel requests already return 405 while 49 sequential ones at 1s all
+ * succeed. A 405 still pauses every album read for a few seconds so the next
+ * request does not immediately run into the same limiter.
+ */
+const ALBUM_REQUEST_GAP = 1000
+const ALBUM_REQUEST_RETRIES = 3
+const ALBUM_RETRY_BASE_DELAY = 1500
+const ALBUM_LIMIT_COOLDOWN = 6000
+
+/** Epoch ms before which no album request may start (set on 405/429). */
+let albumCooldownUntil = 0
+
+const sleep = (ms: number) =>
+  new Promise<void>((resolve) => window.setTimeout(resolve, ms))
+
+/** Append only songs not already present, preserving order. */
+function appendUniqueSongs(current: Song[], extra: Song[]): Song[] {
+  if (!extra.length) return current
+  const seen = new Set(current.map((song) => song.id))
+  const next = [...current]
+  for (const song of extra) {
+    if (seen.has(song.id)) continue
+    seen.add(song.id)
+    next.push(song)
+  }
+  return next
+}
+
+function isRateLimited(error: unknown) {
+  const status = (error as { status?: number })?.status
+  if (status === 405 || status === 429) return true
+  const message = String((error as { message?: string })?.message ?? '')
+  return message.includes('操作频繁') || message.includes('too frequent')
+}
+
+async function waitForAlbumSlot() {
+  const wait = albumCooldownUntil - Date.now()
+  if (wait > 0) await sleep(wait)
+}
+
+/** Tracks of one album; `null` means every attempt was rate limited. */
+async function fetchAlbumSongsWithRetry(albumId: number): Promise<Song[] | null> {
+  for (let attempt = 0; attempt <= ALBUM_REQUEST_RETRIES; attempt += 1) {
+    await waitForAlbumSlot()
+    try {
+      const detail = await fetchAlbumDetail(albumId)
+      if (detail) return detail.songs ?? []
+    } catch (error) {
+      // 405 「操作频繁」: back off globally, not just for this album.
+      if (isRateLimited(error)) {
+        albumCooldownUntil = Math.max(
+          albumCooldownUntil,
+          Date.now() + ALBUM_LIMIT_COOLDOWN,
+        )
+      }
+    }
+    if (attempt < ALBUM_REQUEST_RETRIES) {
+      await sleep(ALBUM_RETRY_BASE_DELAY * 2 ** attempt)
+    }
+  }
+  console.warn('[artist expand] album still rate limited:', albumId)
+  return null
+}
 
 export const Route = createFileRoute('/artist/$id')({
   validateSearch: (search: Record<string, unknown>): { tab?: ArtistTab } => {
@@ -78,6 +148,18 @@ function ArtistPage() {
   const [followed, setFollowed] = useState(false)
   const [followBusy, setFollowBusy] = useState(false)
   const [collecting, setCollecting] = useState(false)
+  // "Expand every album's songs" view: fetched on demand, kept until the tab
+  // is collapsed so filtering does not re-download 49 albums.
+  const [allSongs, setAllSongs] = useState<Song[] | null>(null)
+  const [allAlbumCount, setAllAlbumCount] = useState(0)
+  const [expandingAll, setExpandingAll] = useState(false)
+  /** Which half of the expansion is running; drives the progress line. */
+  const [expandPhase, setExpandPhase] = useState<'albums' | 'songs' | null>(null)
+  const [expandProgress, setExpandProgress] = useState({ done: 0, total: 0 })
+  const [expandAlbumCount, setExpandAlbumCount] = useState(0)
+  // Albums whose `/album` request was still rate limited after the retries.
+  const [failedAlbums, setFailedAlbums] = useState<ArtistAlbum[]>([])
+  const [songQuery, setSongQuery] = useState('')
   // How many albums were loaded on the previous visit; the route holds no
   // component state, so the list must be rebuilt before scroll can restore.
   const albumsRestoreRef = useRef(false)
@@ -94,6 +176,14 @@ function ArtistPage() {
     setSimilar([])
     setAlbumsLoadingMore(false)
     setAlbumsDone(false)
+    setAllSongs(null)
+    setAllAlbumCount(0)
+    setExpandingAll(false)
+    setExpandPhase(null)
+    setExpandProgress({ done: 0, total: 0 })
+    setExpandAlbumCount(0)
+    setFailedAlbums([])
+    setSongQuery('')
     albumsRestoreRef.current = false
 
     Promise.allSettled([
@@ -294,7 +384,16 @@ function ArtistPage() {
     const name = i18n._(msg`${artistName} 热门歌曲`)
     setCollecting(true)
     try {
-      const playlist = await createPlaylist(name, songs)
+      // The artist portrait becomes the playlist cover; compose it locally so
+      // the card still has artwork offline, and fall back to the remote URL
+      // when the image host refuses CORS.
+      const artistImage =
+        profile?.picUrl || profile?.cover || profile?.avatar || ''
+      const composed = artistImage
+        ? await composePlaylistCover([artistImage])
+        : null
+      const cover = (composed ?? artistImage) || undefined
+      const playlist = await createPlaylist(name, songs, cover)
       if (playlist) {
         toast.success(i18n._(msg`已收藏到本地歌单「${name}」`))
       }
@@ -338,6 +437,163 @@ function ArtistPage() {
       setAlbumsLoadingMore(false)
     }
   }
+
+  /**
+   * Fetch one album at a time with a fixed gap. Batches of three triggered the
+   * upstream limiter (`405 操作频繁`) and most albums silently returned
+   * nothing, which is how 49 albums produced only 17 songs. Failed albums are
+   * collected so they can be retried without refetching the rest.
+   */
+  const loadAlbumSongs = async (
+    list: ArtistAlbum[],
+    /** Called per album, so the table can grow while the rest is loading. */
+    onAlbumSongs?: (songs: Song[]) => void,
+  ) => {
+    const tracks: Song[] = []
+    const seen = new Set<number>()
+    const failed: ArtistAlbum[] = []
+    let done = 0
+    let consecutiveFailures = 0
+    for (let index = 0; index < list.length; index += 1) {
+      const album = list[index]
+      const songs = await fetchAlbumSongsWithRetry(album.id)
+      if (songs) {
+        consecutiveFailures = 0
+        const fresh: Song[] = []
+        for (const song of songs) {
+          if (seen.has(song.id)) continue
+          seen.add(song.id)
+          tracks.push(song)
+          fresh.push(song)
+        }
+        if (fresh.length) onAlbumSongs?.(fresh)
+      } else {
+        consecutiveFailures += 1
+        failed.push(album)
+      }
+      done += 1
+      setExpandProgress({ done, total: list.length })
+      // Five failures in a row means the account is temporarily blocked:
+      // stop hammering and let the user retry the rest later.
+      if (consecutiveFailures >= 5) {
+        failed.push(...list.slice(index + 1))
+        setExpandProgress({ done: list.length, total: list.length })
+        break
+      }
+      if (done < list.length) await sleep(ALBUM_REQUEST_GAP)
+    }
+    return { tracks, failed }
+  }
+
+  /** Retry only the albums that were rate limited last time. */
+  const handleRetryFailedAlbums = async () => {
+    if (expandingAll || !failedAlbums.length) return
+    setExpandingAll(true)
+    setExpandPhase('songs')
+    setExpandProgress({ done: 0, total: failedAlbums.length })
+    try {
+      const { failed } = await loadAlbumSongs(failedAlbums, (fresh) => {
+        setAllSongs((current) => appendUniqueSongs(current ?? [], fresh))
+      })
+      setFailedAlbums(failed)
+      if (!failed.length) {
+        toast.success(i18n._(msg`已补齐全部专辑歌曲`))
+      } else {
+        toast.warning(i18n._(msg`还有 ${failed.length} 张专辑获取失败`))
+      }
+    } finally {
+      setExpandingAll(false)
+    }
+  }
+
+  /**
+   * Load every album of this artist, then every track of those albums, and
+   * show them in one table.
+   */
+  const handleExpandAllSongs = async () => {
+    if (expandingAll) return
+    setExpandingAll(true)
+    setSongQuery('')
+    setExpandPhase('albums')
+    setExpandProgress({ done: 0, total: 0 })
+    setExpandAlbumCount(albums.length)
+    // Enter the list view immediately: rows stream in album by album instead
+    // of waiting for all 49 requests to finish.
+    setAllSongs([])
+    setAllAlbumCount(0)
+    setFailedAlbums([])
+    try {
+      // Phase 1: every album. `/artist/album` caps the page size (often 30
+      // regardless of the requested limit), so the offset advances by what
+      // actually arrived instead of the requested 50.
+      const collected: ArtistAlbum[] = [...albums]
+      const seenAlbums = new Set(collected.map((album) => album.id))
+      // `albumSize` is the artist's total album count; 0 means the profile did
+      // not report it, in which case the loop runs until a page comes back empty.
+      const expected = profile?.albumSize ?? 0
+      let offset = collected.length
+      for (let page = 0; page < 100; page += 1) {
+        if (expected > 0 && offset >= expected) break
+        const before = collected.length
+        const next = await fetchArtistAlbums(id, 50, offset)
+        if (!next.length) break
+        for (const album of next) {
+          if (seenAlbums.has(album.id)) continue
+          seenAlbums.add(album.id)
+          collected.push(album)
+        }
+        offset += next.length
+        setExpandAlbumCount(collected.length)
+        // Upstream ignoring `offset` would otherwise loop on the same page.
+        if (collected.length === before) break
+        // Keep the album list pages spaced out as well.
+        if (expected === 0 || offset < expected) {
+          await sleep(ALBUM_REQUEST_GAP)
+        }
+      }
+      setAlbums(collected)
+      setAllAlbumCount(collected.length)
+
+      // Phase 2: every track of those albums, one request at a time. Each
+      // album's songs are appended as soon as they arrive.
+      setExpandPhase('songs')
+      setExpandProgress({ done: 0, total: collected.length })
+      const { tracks, failed } = await loadAlbumSongs(collected, (fresh) => {
+        setAllSongs((current) => appendUniqueSongs(current ?? [], fresh))
+      })
+
+      setFailedAlbums(failed)
+      if (!tracks.length) {
+        toast.info(i18n._(msg`这些专辑里没有可播放的歌曲`))
+      } else if (failed.length) {
+        toast.warning(i18n._(msg`有 ${failed.length} 张专辑的歌曲获取失败`))
+      }
+    } catch {
+      // Nothing streamed in: fall back to the album grid instead of an empty
+      // table so the user can simply try again.
+      setAllSongs(null)
+      toast.error(i18n._(msg`专辑歌曲加载失败`))
+    } finally {
+      setExpandingAll(false)
+    }
+  }
+
+  /**
+   * Filter the expanded list by title, album or artist. Plain computation, not
+   * a hook: it sits below the loading/profile early returns, and a hook here
+   * would change the hook count between renders.
+   */
+  const expandedQuery = songQuery.trim()
+  const filteredAllSongs = expandedQuery
+    ? (allSongs ?? []).filter((song) =>
+        matchesKeyword(
+          expandedQuery,
+          song.name,
+          song.al?.name,
+          song.ar.map((artist) => artist.name).join(' '),
+        ),
+      )
+    : (allSongs ?? [])
 
   return (
     <div className="page">
@@ -506,58 +762,148 @@ function ArtistPage() {
         </TabsContent>
 
         <TabsContent value="albums" className="mt-3">
-          {albums.length ? (
+          {allSongs ? (
             <>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                {albums.map((album) => (
-                  <button
-                    key={album.id}
-                    type="button"
-                    onClick={() =>
-                      void navigate({
-                        to: '/albums/$id',
-                        params: { id: String(album.id) },
-                      })
-                    }
-                    className="apple-card group p-2.5 text-left"
-                  >
-                    <div className="album-card-cover relative rounded-[10px]">
-                      <ImageWithFallback
-                        src={album.picUrl}
-                        alt={album.name}
-                        rounded="rounded-[10px]"
-                        className="aspect-square w-full"
-                        resize="240y240"
-                      />
-                    </div>
-                    <span className="mt-2 line-clamp-2 block text-[12px] leading-[1.4] text-ink-2 transition-colors group-hover:text-accent">
-                      {album.name}
-                    </span>
-                    <span className="mt-1 block text-[11px] text-ink-4">
-                      {formatDate(album.publishTime).slice(0, 4)}
-                      {album.size ? (
-                        <Trans> · {album.size} 首</Trans>
-                      ) : null}
-                    </span>
-                  </button>
-                ))}
-              </div>
-              {!albumsDone && albums.length < (profile.albumSize ?? Infinity) ? (
-                <div className="mt-4 flex justify-center">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-[11px] text-ink-4">
+                  {expandingAll
+                    ? expandPhase === 'albums'
+                      ? i18n._(
+                          msg`正在获取专辑列表（已获取 ${expandAlbumCount} 张）…`,
+                        )
+                      : i18n._(
+                          msg`正在读取 ${expandProgress.done} / ${expandProgress.total} 张专辑的歌曲…`,
+                        )
+                    : i18n._(
+                        msg`共 ${filteredAllSongs.length} 首，来自 ${allAlbumCount} 张专辑`,
+                      )}
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <SearchInput
+                    value={songQuery}
+                    onChange={setSongQuery}
+                    placeholder={i18n._(msg`搜索全部歌曲`)}
+                    wrapperClassName="w-[200px] shrink-0"
+                    className="rounded-full text-[12px]"
+                  />
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="rounded-full px-4"
-                    loading={albumsLoadingMore}
-                    onClick={() => void handleLoadMoreAlbums()}
+                    className="rounded-full px-3 text-[12px]"
+                    disabled={expandingAll}
+                    onClick={() => {
+                      setAllSongs(null)
+                      setAllAlbumCount(0)
+                      setSongQuery('')
+                    }}
                   >
-                    <Trans>加载更多专辑</Trans>
+                    <Trans>收起列表</Trans>
+                  </Button>
+                </div>
+              </div>
+              {failedAlbums.length ? (
+                <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px] text-warn-ink">
+                  <span>
+                    {i18n._(
+                      msg`有 ${failedAlbums.length} 张专辑的歌曲获取失败（接口限流）`,
+                    )}
+                  </span>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="rounded-full px-3 text-[11px]"
+                    loading={expandingAll}
+                    disabled={expandingAll}
+                    onClick={() => void handleRetryFailedAlbums()}
+                  >
+                    <Trans>重试</Trans>
                   </Button>
                 </div>
               ) : null}
+              <SongTable
+                songs={filteredAllSongs}
+                playlistId={`artist-albums-${id}`}
+                // Every row is this artist: no 歌手 column.
+                pageArtistId={profile.id}
+                loading={expandingAll && !filteredAllSongs.length}
+                emptyText={i18n._(msg`没有匹配的歌曲`)}
+              />
             </>
           ) : (
-            <EmptyState title={i18n._(msg`暂无专辑`)} />
+            <>
+              {albums.length ? (
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[11px] text-ink-4">
+                    {i18n._(msg`已加载 ${albums.length} 张专辑`)}
+                  </span>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="rounded-full px-3 text-[12px]"
+                    loading={expandingAll}
+                    disabled={expandingAll}
+                    onClick={() => void handleExpandAllSongs()}
+                  >
+                    <Trans>展开全部歌曲</Trans>
+                  </Button>
+                </div>
+              ) : null}
+
+              {albums.length ? (
+                <>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                    {albums.map((album) => (
+                      <button
+                        key={album.id}
+                        type="button"
+                        onClick={() =>
+                          void navigate({
+                            to: '/albums/$id',
+                            params: { id: String(album.id) },
+                          })
+                        }
+                        className="apple-card group p-2.5 text-left"
+                      >
+                        <div className="album-card-cover relative rounded-[10px]">
+                          <ImageWithFallback
+                            src={album.picUrl}
+                            alt={album.name}
+                            rounded="rounded-[10px]"
+                            className="aspect-square w-full"
+                            resize="240y240"
+                          />
+                        </div>
+                        <span className="mt-2 line-clamp-2 block text-[12px] leading-[1.4] text-ink-2 transition-colors group-hover:text-accent">
+                          {album.name}
+                        </span>
+                        <span className="mt-1 block text-[11px] text-ink-4">
+                          {formatDate(album.publishTime).slice(0, 4)}
+                          {album.size ? (
+                            <Trans> · {album.size} 首</Trans>
+                          ) : null}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  {!albumsDone &&
+                  albums.length < (profile.albumSize ?? Infinity) ? (
+                    <div className="mt-4 flex justify-center">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="rounded-full px-4"
+                        loading={albumsLoadingMore}
+                        onClick={() => void handleLoadMoreAlbums()}
+                      >
+                        <Trans>加载更多专辑</Trans>
+                      </Button>
+                    </div>
+                  ) : null}
+                </>
+              ) : (
+                <EmptyState title={i18n._(msg`暂无专辑`)} />
+              )}
+            </>
           )}
         </TabsContent>
 

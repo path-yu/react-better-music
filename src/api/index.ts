@@ -294,6 +294,14 @@ export async function addSongToPlaylist(
   playlistId: number | string,
   trackId: number | string,
 ) {
+  return addSongsToPlaylist(playlistId, [trackId])
+}
+
+/** Add several tracks in one `/playlist/tracks` call (comma-separated ids). */
+export async function addSongsToPlaylist(
+  playlistId: number | string,
+  trackIds: Array<number | string>,
+) {
   return get<{
     code?: number
     status?: number
@@ -301,7 +309,7 @@ export async function addSongToPlaylist(
   }>('/playlist/tracks', {
     op: 'add',
     pid: playlistId,
-    tracks: String(trackId),
+    tracks: trackIds.join(','),
     timestamp: Date.now(),
   }).finally(invalidatePlaylistReads)
 }

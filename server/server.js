@@ -488,7 +488,11 @@ async function constructServer(moduleDefs) {
   app.post(
     '/local/playlists',
     localRoute((req) =>
-      localLibrary.createPlaylist(req.body?.name, req.body?.songs),
+      localLibrary.createPlaylist(
+        req.body?.name,
+        req.body?.songs,
+        req.body?.coverUrl,
+      ),
     ),
   )
   app.patch(

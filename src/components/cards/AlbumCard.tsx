@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
@@ -9,9 +10,15 @@ import type { Album } from '../../types'
 interface AlbumCardProps {
   album: Album
   priority?: boolean
+  /** Corner chip over the cover, e.g. a "本地" marker. */
+  badge?: ReactNode
 }
 
-export function AlbumCard({ album, priority = false }: AlbumCardProps) {
+export function AlbumCard({
+  album,
+  priority = false,
+  badge,
+}: AlbumCardProps) {
   const { i18n } = useLingui()
   const navigate = useNavigate()
   const year = album.publishTime
@@ -37,6 +44,11 @@ export function AlbumCard({ album, priority = false }: AlbumCardProps) {
           priority={priority}
           className="aspect-square w-full"
         />
+        {badge ? (
+          <span className="absolute right-1.5 top-1.5 rounded-full bg-black/45 px-1.5 py-0.5 text-[11px] leading-none text-white backdrop-blur-sm">
+            {badge}
+          </span>
+        ) : null}
       </div>
       <span className="mt-2 line-clamp-2 block min-h-[34px] text-[12px] leading-[1.4] text-ink-2 transition-colors group-hover:text-accent">
         {album.name}

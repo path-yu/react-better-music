@@ -214,11 +214,23 @@ function createId() {
   return `pl_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
 }
 
+/**
+ * A composed cover is a data URL, and the whole library is one JSON file: cap
+ * the length so a malformed client cannot bloat the file, and drop anything
+ * that is not a string.
+ */
+function playlistCover(value) {
+  if (typeof value !== 'string') return undefined
+  const cover = value.trim()
+  if (!cover || cover.length > 300_000) return undefined
+  return cover
+}
+
 function getState() {
   return load()
 }
 
-function createPlaylist(name, songs) {
+function createPlaylist(name, songs, coverUrl) {
   const now = Date.now()
   const seen = new Set()
   const snapshots = []
@@ -234,10 +246,12 @@ function createPlaylist(name, songs) {
       }
     }
   }
+  const cover = playlistCover(coverUrl)
   const playlist = {
     id: createId(),
     name: playlistName(name),
     songs: snapshots,
+    ...(cover ? { coverUrl: cover } : {}),
     createdAt: now,
     updatedAt: now,
   }

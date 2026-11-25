@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
+import { ViewToggle } from '../common/ViewToggle'
 import {
   cachePlayerMenuTint,
   menuSurfaceStyle,
@@ -1601,58 +1602,27 @@ export function NowPlaying() {
                         </button>
                       ) : null}
                     </div>
-                    <div
-                      role="group"
-                      aria-label={i18n._(msg`队列视图`)}
-                      // Same 32px height and pill radius as the search field
-                      // next to it; the thumb is a separate layer so it can
-                      // slide and carry its own shadow without touching icons.
-                      className="queue-view-toggle relative flex h-8 shrink-0 items-center rounded-full bg-white/6 p-1 backdrop-blur-md"
-                    >
-                      <span
-                        aria-hidden="true"
-                        className="absolute left-1 top-1 h-6 w-6 rounded-full bg-white/16 shadow-[0_1px_4px_rgba(0,0,0,0.28)] transition-transform duration-150 ease-out motion-reduce:transition-none"
-                        style={{
-                          transform: `translateX(${queueView === 'grid' ? '24px' : '0px'})`,
-                        }}
-                      />
-                      <button
-                        type="button"
-                        aria-label={i18n._(msg`列表视图`)}
-                        title={i18n._(msg`列表视图`)}
-                        aria-pressed={queueView === 'list'}
-                        onClick={() => {
-                          setQueueView('list')
-                          setQueueScrolled(false)
-                        }}
-                        className={cn(
-                          'relative z-10 flex h-6 w-6 items-center justify-center rounded-full transition-colors duration-150',
-                          queueView === 'list'
-                            ? 'text-white'
-                            : 'text-white/65 hover:text-white/90',
-                        )}
-                      >
-                        <List className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        aria-label={i18n._(msg`网格视图`)}
-                        title={i18n._(msg`网格视图`)}
-                        aria-pressed={queueView === 'grid'}
-                        onClick={() => {
-                          setQueueView('grid')
-                          setQueueScrolled(false)
-                        }}
-                        className={cn(
-                          'relative z-10 flex h-6 w-6 items-center justify-center rounded-full transition-colors duration-150',
-                          queueView === 'grid'
-                            ? 'text-white'
-                            : 'text-white/65 hover:text-white/90',
-                        )}
-                      >
-                        <LayoutGrid className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
+                    <ViewToggle
+                      tone="dark"
+                      label={i18n._(msg`队列视图`)}
+                      value={queueView}
+                      onChange={(view) => {
+                        setQueueView(view)
+                        setQueueScrolled(false)
+                      }}
+                      options={[
+                        {
+                          value: 'list',
+                          label: i18n._(msg`列表视图`),
+                          icon: <List className="h-3.5 w-3.5" />,
+                        },
+                        {
+                          value: 'grid',
+                          label: i18n._(msg`网格视图`),
+                          icon: <LayoutGrid className="h-3.5 w-3.5" />,
+                        },
+                      ]}
+                    />
                   </div>
 
                   {queueView === 'list' ? (

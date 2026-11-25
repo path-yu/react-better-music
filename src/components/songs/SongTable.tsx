@@ -17,7 +17,8 @@ import { ImageWithFallback } from '../common/ImageWithFallback'
 import { ArtistLinks } from '../common/ArtistLinks'
 import { EmptyState } from '../common/EmptyState'
 import { SongContextMenu } from './SongContextMenu'
-import { Skeleton } from '@pikoloo/darwin-ui'
+import { AddSelectedToPlaylist } from './AddSelectedToPlaylist'
+import { Button, Skeleton } from '@pikoloo/darwin-ui'
 import { usePlayerStore } from '../../store/player'
 import { useUserStore } from '../../store/user'
 import { useLocalLibraryStore } from '../../store/localLibrary'
@@ -63,6 +64,9 @@ interface SongRowProps {
   priority?: boolean
   /** The final row should not draw a trailing divider. */
   last?: boolean
+  /** Ctrl/Cmd-click multi-select state for this row. */
+  selected: boolean
+  onToggleSelect: (songId: number) => void
   onPlay: (index: number) => void
   onLike: (song: Song, liked: boolean) => void
   onRemove?: () => void
@@ -84,6 +88,8 @@ const SongRow = memo(function SongRow({
   virtual = false,
   priority = false,
   last = false,
+  selected,
+  onToggleSelect,
   onPlay,
   onLike,
   onRemove,
@@ -97,6 +103,12 @@ const SongRow = memo(function SongRow({
       onClick={(event) => {
         // Nested buttons (play / like / artist links) handle their own clicks.
         if ((event.target as HTMLElement).closest('button, a')) return
+        // Ctrl/Cmd toggles multi-select instead of starting playback.
+        if (event.ctrlKey || event.metaKey) {
+          event.preventDefault()
+          onToggleSelect(song.id)
+          return
+        }
         onPlay(index)
       }}
       onContextMenu={(event) => {
@@ -108,7 +120,11 @@ const SongRow = memo(function SongRow({
         SONG_GRID,
         'song-row group relative rounded-[10px] px-3 py-2 transition-colors',
         virtual && 'h-full',
-        active ? 'is-active bg-accent/6' : 'hover:bg-black/4',
+        selected
+          ? 'bg-accent/12 ring-1 ring-accent/30'
+          : active
+            ? 'is-active bg-accent/6'
+            : 'hover:bg-black/4',
       )}
     >
       <div className="relative flex h-6 items-center justify-center">
@@ -447,6 +463,45 @@ export function SongTable({
     }
   }, [innerScroll, loading, scrollParent, songs.length])
 
+  // Ctrl/Cmd-click selection: rows toggle instead of playing. Cleared when the
+  // table switches to another playlist so a stale selection cannot leak.
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(() => new Set())
+  const toggleSelect = useCallback((songId: number) => {
+    setSelectedIds((current) => {
+      const next = new Set(current)
+      if (next.has(songId)) next.delete(songId)
+      else next.add(songId)
+      return next
+    })
+  }, [])
+  const clearSelection = useCallback(() => setSelectedIds(new Set()), [])
+  useEffect(() => {
+    setSelectedIds(new Set())
+  }, [playlistId])
+  const selectedSongs = useMemo(
+    () => songs.filter((song) => selectedIds.has(song.id)),
+    [songs, selectedIds],
+  )
+
+  const selectionBar = selectedIds.size ? (
+    <div className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-[10px] bg-accent/8 px-3 py-2">
+      <span className="text-[12px] text-ink-2">
+        <Trans>已选择 {selectedIds.size} 首</Trans>
+      </span>
+      <div className="flex items-center gap-2">
+        <AddSelectedToPlaylist songs={selectedSongs} onDone={clearSelection} />
+        <Button
+          variant="secondary"
+          size="sm"
+          className="rounded-full px-3 text-[11px]"
+          onClick={clearSelection}
+        >
+          <Trans>取消选择</Trans>
+        </Button>
+      </div>
+    </div>
+  ) : null
+
   const locateCurrent = () => {
     if (currentIndexInList < 0) return
     if (isVirtual) {
@@ -518,6 +573,8 @@ export function SongTable({
           pageArtistId !== undefined &&
           song.ar.some((artist) => Number(artist.id) !== pageArtistId)
         }
+        selected={selectedIds.has(song.id)}
+        onToggleSelect={toggleSelect}
         onPlay={handlePlay}
         onLike={handleLike}
         onRemove={onRemoveSong ? () => onRemoveSong(song) : undefined}
@@ -568,6 +625,7 @@ export function SongTable({
           className,
         )}
       >
+        {selectionBar}
         <div className="song-table">
           {header}
           <div
@@ -622,6 +680,7 @@ export function SongTable({
           className,
         )}
       >
+      {selectionBar}
       {/* The container wraps only the grid: `container` implies layout
           containment, which would pin the fixed locate button to the table. */}
       <div className="song-table">

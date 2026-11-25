@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DailyRouteImport } from './routes/daily'
 import { Route as LatestMusicRouteImport } from './routes/latest-music'
 import { Route as LatestMvRouteImport } from './routes/latest-mv'
+import { Route as LibraryRouteImport } from './routes/library'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as RecentRouteImport } from './routes/recent'
 import { Route as SearchRouteImport } from './routes/search'
@@ -47,6 +48,11 @@ const LatestMusicRoute = LatestMusicRouteImport.update({
 const LatestMvRoute = LatestMvRouteImport.update({
   id: '/latest-mv',
   path: '/latest-mv',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LibraryRoute = LibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -130,6 +136,7 @@ export interface FileRoutesByFullPath {
   '/daily': typeof DailyRoute
   '/latest-music': typeof LatestMusicRoute
   '/latest-mv': typeof LatestMvRoute
+  '/library': typeof LibraryRoute
   '/profile': typeof ProfileRoute
   '/recent': typeof RecentRoute
   '/search': typeof SearchRoute
@@ -151,6 +158,7 @@ export interface FileRoutesByTo {
   '/daily': typeof DailyRoute
   '/latest-music': typeof LatestMusicRoute
   '/latest-mv': typeof LatestMvRoute
+  '/library': typeof LibraryRoute
   '/profile': typeof ProfileRoute
   '/recent': typeof RecentRoute
   '/search': typeof SearchRoute
@@ -173,6 +181,7 @@ export interface FileRoutesById {
   '/daily': typeof DailyRoute
   '/latest-music': typeof LatestMusicRoute
   '/latest-mv': typeof LatestMvRoute
+  '/library': typeof LibraryRoute
   '/profile': typeof ProfileRoute
   '/recent': typeof RecentRoute
   '/search': typeof SearchRoute
@@ -196,6 +205,7 @@ export interface FileRouteTypes {
     | '/daily'
     | '/latest-music'
     | '/latest-mv'
+    | '/library'
     | '/profile'
     | '/recent'
     | '/search'
@@ -217,6 +227,7 @@ export interface FileRouteTypes {
     | '/daily'
     | '/latest-music'
     | '/latest-mv'
+    | '/library'
     | '/profile'
     | '/recent'
     | '/search'
@@ -238,6 +249,7 @@ export interface FileRouteTypes {
     | '/daily'
     | '/latest-music'
     | '/latest-mv'
+    | '/library'
     | '/profile'
     | '/recent'
     | '/search'
@@ -260,6 +272,7 @@ export interface RootRouteChildren {
   DailyRoute: typeof DailyRoute
   LatestMusicRoute: typeof LatestMusicRoute
   LatestMvRoute: typeof LatestMvRoute
+  LibraryRoute: typeof LibraryRoute
   ProfileRoute: typeof ProfileRoute
   RecentRoute: typeof RecentRoute
   SearchRoute: typeof SearchRoute
@@ -304,6 +317,13 @@ declare module '@tanstack/react-router' {
       path: '/latest-mv'
       fullPath: '/latest-mv'
       preLoaderRoute: typeof LatestMvRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/library': {
+      id: '/library'
+      path: '/library'
+      fullPath: '/library'
+      preLoaderRoute: typeof LibraryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -431,6 +451,7 @@ const rootRouteChildren: RootRouteChildren = {
   DailyRoute: DailyRoute,
   LatestMusicRoute: LatestMusicRoute,
   LatestMvRoute: LatestMvRoute,
+  LibraryRoute: LibraryRoute,
   ProfileRoute: ProfileRoute,
   RecentRoute: RecentRoute,
   SearchRoute: SearchRoute,

@@ -178,12 +178,14 @@ export function SongContextMenu({
   }
 
   const openPlaylistPicker = async () => {
+    // Local playlists are always offered: they are the only target that keeps
+    // working for delisted tracks, and "收藏热门歌曲" creates them regardless of
+    // the login state.
+    const local = useLocalLibraryStore.getState()
+    await local.load()
+    setLocalPlaylists(useLocalLibraryStore.getState().playlists)
     const user = useUserStore.getState()
     if (!user.isLogin) {
-      // Desktop guest mode: offer the playlists stored in the local library.
-      const local = useLocalLibraryStore.getState()
-      await local.load()
-      setLocalPlaylists(useLocalLibraryStore.getState().playlists)
       setMode('local-playlists')
       return
     }
@@ -210,6 +212,17 @@ export function SongContextMenu({
 
   const saveToLocalPlaylist = async (playlist: LocalPlaylist) => {
     if (busy) return
+    // `/local/playlists/:id/songs` silently ignores duplicates and still
+    // answers 200, so without this check the menu would report a save that
+    // changed nothing.
+    const current = useLocalLibraryStore
+      .getState()
+      .playlists.find((item) => item.id === playlist.id)
+    if (current?.songs.some((item) => Number(item.id) === Number(song.id))) {
+      toast.info(i18n._(msg`这首歌已在该歌单中`))
+      onClose()
+      return
+    }
     setBusy(true)
     try {
       const saved = await useLocalLibraryStore
@@ -504,28 +517,64 @@ export function SongContextMenu({
                 <div className="menu-empty flex justify-center">
                   <Loader2 className="h-4 w-4 animate-spin" />
                 </div>
-              ) : playlists.length ? (
-                playlists.map((playlist) => (
-                  <button
-                    key={playlist.id}
-                    type="button"
-                    role="menuitem"
-                    disabled={busy}
-                    onClick={() => void saveToPlaylist(playlist)}
-                    className="menu-item"
-                  >
-                    <img
-                      src={resizedImageUrl(playlist.coverImgUrl, '100y100') ?? undefined}
-                      alt=""
-                      className="menu-item__cover"
-                    />
-                    <span className="menu-item__label">{playlist.name}</span>
-                  </button>
-                ))
               ) : (
-                <p className="menu-empty">
-                  <Trans>暂无可用歌单</Trans>
-                </p>
+                <>
+                  {playlists.map((playlist) => (
+                    <button
+                      key={playlist.id}
+                      type="button"
+                      role="menuitem"
+                      disabled={busy}
+                      onClick={() => void saveToPlaylist(playlist)}
+                      className="menu-item"
+                    >
+                      <img
+                        src={
+                          resizedImageUrl(playlist.coverImgUrl, '100y100') ??
+                          undefined
+                        }
+                        alt=""
+                        className="menu-item__cover"
+                      />
+                      <span className="menu-item__label">{playlist.name}</span>
+                    </button>
+                  ))}
+
+                  {/* Account playlists cannot hold a delisted track; local
+                      ones can, and they are also where 收藏热门歌曲 writes. */}
+                  {localPlaylists.length ? (
+                    <>
+                      <div className="menu-separator" role="separator" />
+                      <p className="px-3 py-1 text-[11px] text-ink-4">
+                        <Trans>本地歌单</Trans>
+                      </p>
+                      {localPlaylists.map((playlist) => (
+                        <button
+                          key={playlist.id}
+                          type="button"
+                          role="menuitem"
+                          disabled={busy}
+                          onClick={() => void saveToLocalPlaylist(playlist)}
+                          className="menu-item"
+                        >
+                          {icon(<ListMusic />)}
+                          <span className="menu-item__label">
+                            {playlist.name}
+                          </span>
+                          <span className="menu-item__meta">
+                            {playlist.songs.length}
+                          </span>
+                        </button>
+                      ))}
+                    </>
+                  ) : null}
+
+                  {!playlists.length && !localPlaylists.length ? (
+                    <p className="menu-empty">
+                      <Trans>暂无可用歌单</Trans>
+                    </p>
+                  ) : null}
+                </>
               )}
             </div>
           </>

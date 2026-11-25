@@ -22,6 +22,7 @@ import {
   Film,
   Heart,
   History,
+  Home,
   ListMusic,
   Loader2,
   Music2,
@@ -76,6 +77,7 @@ import type {
   LocalSubscribedUser,
 } from '../../api/local'
 import { invalidateApiCache } from '../../lib/http'
+import { composePlaylistCover } from '../../lib/playlistCover'
 import { cn } from '../../lib/format'
 import { toast } from '../../lib/toast'
 import type { ArtistSummary, Playlist, Song, UserProfile } from '../../types'
@@ -154,8 +156,8 @@ export function Sidebar() {
   const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null)
   const [deleting, setDeleting] = useState<LocalPlaylist | null>(null)
   const [loadingKey, setLoadingKey] = useState<string | null>(null)
-  // Guest albums picked with Ctrl/Cmd-click, then merged through the
-  // right-click menu into one local playlist.
+  // Albums picked with Ctrl/Cmd-click (account or local), then merged through
+  // the right-click menu into one local playlist.
   const [selectedAlbumIds, setSelectedAlbumIds] = useState<number[]>([])
   const [mergeAlbums, setMergeAlbums] = useState<LocalSubscribedAlbum[] | null>(
     null,
@@ -390,7 +392,15 @@ export function Sidebar() {
         toast.error(i18n._(msg`这些专辑里没有可合并的歌曲`))
         return
       }
-      const playlist = await createLocalPlaylist(name, songs)
+      // Stitch the album covers into one square; the first cover is the
+      // fallback when the canvas cannot export (no CORS from the CDN).
+      const coverSources = mergeAlbums.flatMap((album) => [
+        album.picUrl,
+        album.blurPicUrl,
+      ])
+      const composed = await composePlaylistCover(coverSources)
+      const cover = (composed ?? coverSources.find(Boolean)) || undefined
+      const playlist = await createLocalPlaylist(name, songs, cover)
       if (!playlist) return
       setMergeAlbums(null)
       setSelectedAlbumIds([])
@@ -614,6 +624,14 @@ export function Sidebar() {
         </p>
 
         <div className="flex flex-col gap-0.5">
+          {/* Landing page for everything below: the groups further down get
+              long, so this stays at the top with a compact overview. */}
+          <SidebarRow
+            active={isActive('/library')}
+            icon={<RowIcon Icon={Home} active={isActive('/library')} />}
+            label={<Trans>主页</Trans>}
+            onClick={() => void navigate({ to: '/library' })}
+          />
           {/* Same order and row style signed in or not. */}
           {isLogin ? (
             likedPlaylist ? (
@@ -691,7 +709,10 @@ export function Sidebar() {
                           active={pathname === `/local/playlists/${playlist.id}`}
                           icon={
                             <RowCover
-                              src={playlist.songs[0]?.al?.picUrl}
+                              src={
+                                playlist.coverUrl ??
+                                playlist.songs[0]?.al?.picUrl
+                              }
                               alt={playlist.name}
                             />
                           }
@@ -946,52 +967,47 @@ export function Sidebar() {
                   />
                   {groupOpen('collectedAlbums')
                     ? mergedAlbums.map(({ album, local }) => {
-                        // Account copies come first; local-only ones are tagged
-                        // and keep the Ctrl/Cmd merge workflow.
-                        const selected =
-                          local && selectedAlbumIds.includes(album.id)
+                        // Ctrl/Cmd selection works for both sources: merging
+                        // only needs album ids, the songs are fetched per album.
+                        const selected = selectedAlbumIds.includes(album.id)
                         const mergeTargets = selected
-                          ? localSubscribedAlbums.filter((item) =>
-                              selectedAlbumIds.includes(item.id),
-                            )
+                          ? mergedAlbums
+                              .filter((entry) =>
+                                selectedAlbumIds.includes(entry.album.id),
+                              )
+                              .map((entry) => entry.album)
                           : [album]
+                        const mergeItem: SidebarMenuAction = {
+                          key: 'merge',
+                          label:
+                            mergeTargets.length > 1
+                              ? i18n._(
+                                  msg`合并 ${mergeTargets.length} 张专辑为新歌单`,
+                                )
+                              : i18n._(msg`用这张专辑新建歌单`),
+                          onSelect: () => openMergeDialog(mergeTargets),
+                        }
+                        const unsubscribeItem: SidebarMenuAction = local
+                          ? {
+                              key: 'unsubscribe',
+                              label: <Trans>取消收藏</Trans>,
+                              icon: icon(StarOff),
+                              destructive: true,
+                              separatorBefore: true,
+                              onSelect: () => void unsubscribeLocalAlbum(album),
+                            }
+                          : {
+                              key: 'unsubscribe',
+                              label: <Trans>取消收藏</Trans>,
+                              icon: icon(StarOff),
+                              destructive: true,
+                              separatorBefore: true,
+                              onSelect: () => void unsubscribeOnlineAlbum(album),
+                            }
                         return (
                           <RowContextMenu
                             key={`${local ? 'local' : 'account'}-${album.id}`}
-                            items={
-                              local
-                                ? [
-                                    {
-                                      key: 'merge',
-                                      label:
-                                        mergeTargets.length > 1
-                                          ? i18n._(
-                                              msg`合并 ${mergeTargets.length} 张专辑为新歌单`,
-                                            )
-                                          : i18n._(msg`用这张专辑新建歌单`),
-                                      onSelect: () => openMergeDialog(mergeTargets),
-                                    },
-                                    {
-                                      key: 'unsubscribe',
-                                      label: <Trans>取消收藏</Trans>,
-                                      icon: icon(StarOff),
-                                      destructive: true,
-                                      separatorBefore: true,
-                                      onSelect: () =>
-                                        void unsubscribeLocalAlbum(album),
-                                    },
-                                  ]
-                                : [
-                                    {
-                                      key: 'unsubscribe',
-                                      label: <Trans>取消收藏</Trans>,
-                                      icon: icon(StarOff),
-                                      destructive: true,
-                                      onSelect: () =>
-                                        void unsubscribeOnlineAlbum(album),
-                                    },
-                                  ]
-                            }
+                            items={[mergeItem, unsubscribeItem]}
                           >
                             <SidebarRow
                               active={pathname === `/albums/${album.id}`}
@@ -1018,7 +1034,7 @@ export function Sidebar() {
                               }
                               count={album.size}
                               onClick={(event) => {
-                                if (local && (event.ctrlKey || event.metaKey)) {
+                                if (event.ctrlKey || event.metaKey) {
                                   toggleAlbumSelection(album)
                                   return
                                 }
