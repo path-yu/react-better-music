@@ -224,6 +224,11 @@ const READ_CACHE_RULES: ReadCacheRule[] = [
   { prefix: '/artist/album', ttl: 5 * 60_000 },
   { prefix: '/artist/mv', ttl: 5 * 60_000 },
   { prefix: '/simi/artist', ttl: 5 * 60_000 },
+  // `/album/sublist` shares the `/album` prefix but is the account's
+  // collection: it changes as soon as the user collects something. Leaving it
+  // to the 5-minute detail cache kept the sidebar's "收藏的专辑" empty (an early
+  // request, sometimes made before the session was refreshed, was reused).
+  { prefix: '/album/sublist', ttl: 0, swr: false },
   { prefix: '/album', ttl: 5 * 60_000 },
   { prefix: '/lyric/new', ttl: 10 * 60_000 },
   { prefix: '/song/url/v1', ttl: 60_000, swr: false },
@@ -270,6 +275,8 @@ function cacheablePayload(payload: unknown) {
 }
 
 function storeReadCache(key: string, data: unknown, ttl: number) {
+  // `ttl: 0` marks a rule that opts out of caching entirely.
+  if (ttl <= 0) return
   readCache.set(key, { data, expiresAt: Date.now() + ttl })
   if (readCache.size <= READ_CACHE_LIMIT) return
   const now = Date.now()

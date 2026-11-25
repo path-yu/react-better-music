@@ -1,6 +1,8 @@
 import {
   Fragment,
   forwardRef,
+  useEffect,
+  useMemo,
   useRef,
   useState,
   type FormEvent,
@@ -108,6 +110,13 @@ export function Sidebar() {
   )
   const followedUsers = useUserStore((state) => state.followedUsers)
   const loadFollowedUsers = useUserStore((state) => state.loadFollowedUsers)
+  // Refresh the album collection here as well: the startup fetch can run
+  // before the session cookie is rotated, and the album page can change the
+  // list while this sidebar stays mounted.
+  useEffect(() => {
+    if (!isLogin) return
+    void loadCollectedAlbums()
+  }, [isLogin, loadCollectedAlbums])
   const sidebarCollapsed = useSidebarCollapsed()
   const localPlaylists = useLocalLibraryStore((state) => state.playlists)
   const localSubscribedPlaylists = useLocalLibraryStore(
@@ -153,6 +162,22 @@ export function Sidebar() {
   )
   const [mergeName, setMergeName] = useState('')
   const [merging, setMerging] = useState(false)
+
+  // One list for both sources: account albums first, then local ones that the
+  // account does not have. `local` rows keep their Ctrl/Cmd multi-select merge
+  // behaviour and are tagged in the sidebar while signed in.
+  const mergedAlbums = useMemo(() => {
+    const onlineIds = new Set(
+      collectedAlbums.map((album) => Number(album.id)),
+    )
+    const entries: Array<{ album: LocalSubscribedAlbum; local: boolean }> = [
+      ...collectedAlbums.map((album) => ({ album, local: false })),
+      ...localSubscribedAlbums
+        .filter((album) => !onlineIds.has(Number(album.id)))
+        .map((album) => ({ album, local: true })),
+    ]
+    return entries
+  }, [collectedAlbums, localSubscribedAlbums])
 
   const likedPlaylist = createdPlaylists[0]
   const myPlaylists = createdPlaylists.slice(1)
@@ -734,75 +759,6 @@ export function Sidebar() {
                 </>
               ) : null}
 
-              {localSubscribedAlbums.length ? (
-                <>
-                  <GroupHeading
-                    label={<Trans>收藏的专辑</Trans>}
-                    open={groupOpen('localAlbums')}
-                    onToggle={() => toggleGroup('localAlbums')}
-                  />
-                  {groupOpen('localAlbums')
-                    ? localSubscribedAlbums.map((album) => {
-                        const selected = selectedAlbumIds.includes(album.id)
-                        // Right-clicking a row outside the selection acts on
-                        // that row only; right-clicking a selected row merges
-                        // the whole selection.
-                        const mergeTargets = selected
-                          ? localSubscribedAlbums.filter((item) =>
-                              selectedAlbumIds.includes(item.id),
-                            )
-                          : [album]
-                        return (
-                          <RowContextMenu
-                            key={album.id}
-                            items={[
-                              {
-                                key: 'merge',
-                                label:
-                                  mergeTargets.length > 1
-                                    ? i18n._(
-                                        msg`合并 ${mergeTargets.length} 张专辑为新歌单`,
-                                      )
-                                    : i18n._(msg`用这张专辑新建歌单`),
-                                onSelect: () => openMergeDialog(mergeTargets),
-                              },
-                              {
-                                key: 'unsubscribe',
-                                label: <Trans>取消收藏</Trans>,
-                                icon: icon(StarOff),
-                                destructive: true,
-                                separatorBefore: true,
-                                onSelect: () => void unsubscribeLocalAlbum(album),
-                              },
-                            ]}
-                          >
-                            <SidebarRow
-                              active={pathname === `/albums/${album.id}`}
-                              selected={selected}
-                              icon={
-                                <RowCover
-                                  src={album.picUrl}
-                                  alt={album.name}
-                                />
-                              }
-                              label={album.name}
-                              count={album.size}
-                              onClick={(event) => {
-                                if (event.ctrlKey || event.metaKey) {
-                                  toggleAlbumSelection(album)
-                                  return
-                                }
-                                setSelectedAlbumIds([])
-                                openAlbum(album.id)
-                              }}
-                            />
-                          </RowContextMenu>
-                        )
-                      })
-                    : null}
-                </>
-              ) : null}
-
               {localSubscribedArtists.length ? (
                 <>
                   <GroupHeading
@@ -981,7 +937,7 @@ export function Sidebar() {
                 </>
               ) : null}
 
-              {collectedAlbums.length ? (
+              {mergedAlbums.length ? (
                 <>
                   <GroupHeading
                     label={<Trans>收藏的专辑</Trans>}
@@ -989,33 +945,90 @@ export function Sidebar() {
                     onToggle={() => toggleGroup('collectedAlbums')}
                   />
                   {groupOpen('collectedAlbums')
-                    ? collectedAlbums.map((album) => (
-                        <RowContextMenu
-                          key={album.id}
-                          items={[
-                            {
-                              key: 'unsubscribe',
-                              label: <Trans>取消收藏</Trans>,
-                              icon: icon(StarOff),
-                              destructive: true,
-                              onSelect: () => void unsubscribeOnlineAlbum(album),
-                            },
-                          ]}
-                        >
-                          <SidebarRow
-                            active={pathname === `/albums/${album.id}`}
-                            icon={
-                              <RowCover
-                                src={album.picUrl ?? album.blurPicUrl}
-                                alt={album.name}
-                              />
+                    ? mergedAlbums.map(({ album, local }) => {
+                        // Account copies come first; local-only ones are tagged
+                        // and keep the Ctrl/Cmd merge workflow.
+                        const selected =
+                          local && selectedAlbumIds.includes(album.id)
+                        const mergeTargets = selected
+                          ? localSubscribedAlbums.filter((item) =>
+                              selectedAlbumIds.includes(item.id),
+                            )
+                          : [album]
+                        return (
+                          <RowContextMenu
+                            key={`${local ? 'local' : 'account'}-${album.id}`}
+                            items={
+                              local
+                                ? [
+                                    {
+                                      key: 'merge',
+                                      label:
+                                        mergeTargets.length > 1
+                                          ? i18n._(
+                                              msg`合并 ${mergeTargets.length} 张专辑为新歌单`,
+                                            )
+                                          : i18n._(msg`用这张专辑新建歌单`),
+                                      onSelect: () => openMergeDialog(mergeTargets),
+                                    },
+                                    {
+                                      key: 'unsubscribe',
+                                      label: <Trans>取消收藏</Trans>,
+                                      icon: icon(StarOff),
+                                      destructive: true,
+                                      separatorBefore: true,
+                                      onSelect: () =>
+                                        void unsubscribeLocalAlbum(album),
+                                    },
+                                  ]
+                                : [
+                                    {
+                                      key: 'unsubscribe',
+                                      label: <Trans>取消收藏</Trans>,
+                                      icon: icon(StarOff),
+                                      destructive: true,
+                                      onSelect: () =>
+                                        void unsubscribeOnlineAlbum(album),
+                                    },
+                                  ]
                             }
-                            label={album.name}
-                            count={album.size}
-                            onClick={() => openAlbum(album.id)}
-                          />
-                        </RowContextMenu>
-                      ))
+                          >
+                            <SidebarRow
+                              active={pathname === `/albums/${album.id}`}
+                              selected={selected}
+                              icon={
+                                <RowCover
+                                  src={album.picUrl ?? album.blurPicUrl}
+                                  alt={album.name}
+                                />
+                              }
+                              label={
+                                local && isLogin ? (
+                                  <span className="flex min-w-0 items-center gap-1.5">
+                                    <span className="min-w-0 truncate">
+                                      {album.name}
+                                    </span>
+                                    <span className="shrink-0 rounded-full bg-black/6 px-1.5 py-0.5 text-[11px] font-normal text-ink-4 dark:bg-white/10 dark:text-white/50">
+                                      <Trans>本地</Trans>
+                                    </span>
+                                  </span>
+                                ) : (
+                                  album.name
+                                )
+                              }
+                              count={album.size}
+                              onClick={(event) => {
+                                if (local && (event.ctrlKey || event.metaKey)) {
+                                  toggleAlbumSelection(album)
+                                  return
+                                }
+                                setSelectedAlbumIds([])
+                                openAlbum(album.id)
+                              }}
+                            />
+                          </RowContextMenu>
+                        )
+                      })
                     : null}
                 </>
               ) : null}

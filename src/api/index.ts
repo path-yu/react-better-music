@@ -1183,12 +1183,15 @@ export async function fetchCollectedAlbums(
   offset = 0,
   signal?: AbortSignal,
 ) {
-  const res = await get<{ albums?: Album[]; count?: number }>(
+  // The enhanced API answers with `data` (like `artist/sublist`); plain
+  // NeteaseCloudMusicApi used `albums`. Accept both or the sidebar list is
+  // always empty even though the request succeeds.
+  const res = await get<{ albums?: Album[]; data?: Album[]; count?: number }>(
     '/album/sublist',
     { limit, offset, total: true, timestamp: Date.now() },
     signal,
   )
-  const albums = (res.albums ?? []).map((album) => ({
+  const albums = (res.albums ?? res.data ?? []).map((album) => ({
     ...album,
     picUrl: album.picUrl ?? album.blurPicUrl,
     artist: album.artist ?? album.artists?.[0],
@@ -1209,6 +1212,8 @@ export async function subscribeAlbum(
     t: subscribed ? 1 : 0,
     timestamp: Date.now(),
   })
+  // Both the collection list and this album's `isSub` change with this call.
+  if (res.code === 200) invalidateApiCache(['/album'])
   return res.code === 200
 }
 

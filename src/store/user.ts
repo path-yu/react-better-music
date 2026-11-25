@@ -274,8 +274,10 @@ export const useUserStore = create<UserState>()(
         try {
           const { albums } = await fetchCollectedAlbums(100, 0)
           set({ collectedAlbums: albums })
-        } catch {
-          // A sidebar nicety: a failed album list must not toast on startup.
+        } catch (error) {
+          // A sidebar nicety: a failed album list must not toast on startup,
+          // but it stays visible in the console when the group is missing.
+          console.warn('[collected albums] load failed:', error)
         }
       },
 
