@@ -11,7 +11,7 @@ import { usePlayerMenuTint } from '../../lib/menuSurface'
 import { hexToRgb } from '../../lib/color'
 import { formatDuration } from '../../lib/format'
 import { cn } from '../../lib/format'
-import { copyrightHint } from '../../lib/songs'
+import { availabilityTag } from '../../lib/songs'
 import { isDesktopShell } from '../../lib/desktop'
 import { desktopPlatform } from '../../lib/desktopWindow'
 
@@ -250,7 +250,7 @@ export function QueuePanel() {
               const song = queue[virtualRow.index]
               if (!song) return null
               const active = virtualRow.index === currentIndex
-              const note = copyrightHint(song)
+              const note = availabilityTag(song)
               return (
                 <div
                   key={`${song.id}-${virtualRow.index}`}

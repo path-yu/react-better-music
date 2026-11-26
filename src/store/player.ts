@@ -677,6 +677,9 @@ function persistQueue(queue: Song[], currentIndex: number) {
     dt: song.dt,
     fee: song.fee,
     noCopyrightRcmd: song.noCopyrightRcmd,
+    // Kept so the restored queue still knows a gray track's rights without a
+    // round-trip; the list tag and the scrobble skip both read it.
+    privilege: song.privilege,
     mv: song.mv,
     mvid: song.mvid,
     alia: song.alia,

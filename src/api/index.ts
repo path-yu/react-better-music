@@ -12,6 +12,7 @@ import type {
   Playlist,
   SearchResult,
   Song,
+  SongPrivilege,
   Toplist,
   ToplistTrack,
   UserDetail,
@@ -434,10 +435,23 @@ export async function updatePlaylistSubscribe(params: { id: string | number; t: 
 
 /* ---------------------------------- song --------------------------------- */
 
-/** Resolve the full song metadata when only an id survives (cached audio). */
+/**
+ * Resolve the full song metadata when only an id survives (cached audio).
+ * `/song/detail` returns rights in a sibling `privileges` array rather than
+ * inside each song, so fold them back in — list rows and the scrobble skip
+ * both read `song.privilege`.
+ */
 export async function fetchSongDetail(id: number | string) {
-  const res = await get<{ songs?: Song[] }>('/song/detail', { ids: id })
-  return res.songs?.[0] ?? null
+  const res = await get<{ songs?: Song[]; privileges?: SongPrivilege[] }>(
+    '/song/detail',
+    { ids: id },
+  )
+  const song = res.songs?.[0]
+  if (!song) return null
+  const privilege = res.privileges?.find(
+    (item) => Number(item.id) === Number(song.id),
+  )
+  return privilege ? { ...song, privilege } : song
 }
 
 /** NetEase's recommended playable edition for a grey copyright track. */

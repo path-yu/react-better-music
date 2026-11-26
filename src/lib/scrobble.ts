@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { scrobbleSong } from '../api'
+import { copyrightHint, isCopyrightBlocked } from './songs'
 import { getAudio } from './audio'
 import { usePlayerStore } from '../store/player'
 import { useSettingsStore } from '../store/settings'
@@ -73,6 +74,14 @@ export function useScrobble() {
 
       if (state.playToken !== sessionToken || song.id !== sessionSongId) {
         resetSession(state.playToken, song.id)
+        return
+      }
+      // A gray track is not a real listen of that song: the original has no
+      // license, and an "other edition" hint means whatever played came from a
+      // substitute. Reporting either would create a phantom entry in the
+      // private listening log, so mark the session done and skip it entirely.
+      if (isCopyrightBlocked(song) || copyrightHint(song)) {
+        reported = true
         return
       }
       if (

@@ -33,7 +33,7 @@ msgid "{0} 位粉丝"
 msgstr "{0} followers"
 
 #. placeholder {0}: formatDate(detail.createTime)
-#: src/routes/songlists/$id.tsx:442
+#: src/routes/songlists/$id.tsx:458
 msgid "{0} 创建"
 msgstr "Created {0}"
 
@@ -60,7 +60,7 @@ msgstr "{0}"
 
 #. placeholder {0}: formatNumber(detail.playCount)
 #: src/routes/mv/$id.tsx:202
-#: src/routes/songlists/$id.tsx:449
+#: src/routes/songlists/$id.tsx:465
 msgid "{0} 次播放"
 msgstr "{0} plays"
 
@@ -119,7 +119,7 @@ msgstr "{0} not matched"
 #. placeholder {0}: detail.trackCount
 #. placeholder {0}: songs.length
 #: src/routes/albums/$id.tsx:245
-#: src/routes/songlists/$id.tsx:446
+#: src/routes/songlists/$id.tsx:462
 msgid "{0} 首歌曲"
 msgstr "{0} songs"
 
@@ -154,17 +154,17 @@ msgid "{value}年"
 msgstr "{value}"
 
 #. placeholder {0}: effectiveSong.name
-#: src/store/player.ts:1142
+#: src/store/player.ts:1145
 msgid "「{0}」VIP 歌曲已为你匹配其他音源播放"
 msgstr "「{0}」VIP track matched to another source"
 
 #. placeholder {0}: effectiveSong.name
-#: src/store/player.ts:1151
+#: src/store/player.ts:1154
 msgid "「{0}」已为你切换到其他可播放版本"
 msgstr ""
 
 #. placeholder {0}: effectiveSong.name
-#: src/store/player.ts:1141
+#: src/store/player.ts:1144
 msgid "「{0}」暂无官方音源，已为你匹配其他音源播放"
 msgstr "「{0}」has no official source; matched another source"
 
@@ -436,7 +436,7 @@ msgstr "Download selected"
 msgid "下载选中 ({0})"
 msgstr "Download selected ({0})"
 
-#: src/routes/local/playlists/$id.tsx:223
+#: src/routes/local/playlists/$id.tsx:229
 msgid "不再提示"
 msgstr "Don't ask again"
 
@@ -513,7 +513,7 @@ msgid "云音乐官方榜单，实时更新"
 msgstr "Official NetEase Cloud Music charts, updated in real time"
 
 #: src/store/player.ts:412
-#: src/store/player.ts:1128
+#: src/store/player.ts:1131
 msgid "亲爱的，暂无版权，已为你跳过"
 msgstr "Sorry, this track is unavailable due to copyright; skipping"
 
@@ -613,7 +613,7 @@ msgstr "Save"
 msgid "保存修改"
 msgstr "Save changes"
 
-#: src/routes/local/playlists/$id.tsx:148
+#: src/routes/local/playlists/$id.tsx:154
 msgid "保存名称"
 msgstr "Save name"
 
@@ -921,7 +921,7 @@ msgstr ""
 msgid "出错了"
 msgstr "Something went wrong"
 
-#: src/routes/songlists/$id.tsx:535
+#: src/routes/songlists/$id.tsx:551
 msgid "分享"
 msgstr "Share"
 
@@ -946,8 +946,8 @@ msgstr "Switch to video"
 msgid "切换音源"
 msgstr "Switch source"
 
-#: src/store/player.ts:1806
-#: src/store/player.ts:1885
+#: src/store/player.ts:1809
+#: src/store/player.ts:1888
 msgid "切换音源失败，请稍后再试"
 msgstr "Failed to switch sources. Try again later."
 
@@ -987,15 +987,15 @@ msgid "创建的歌单"
 msgstr "Created playlists"
 
 #: src/components/layout/Sidebar.tsx:1225
-#: src/routes/local/playlists/$id.tsx:239
+#: src/routes/local/playlists/$id.tsx:245
 msgid "删除"
 msgstr "Delete"
 
 #: src/components/layout/Sidebar.tsx:470
 #: src/components/layout/Sidebar.tsx:1214
-#: src/routes/local/playlists/$id.tsx:187
-#: src/routes/local/playlists/$id.tsx:188
-#: src/routes/local/playlists/$id.tsx:213
+#: src/routes/local/playlists/$id.tsx:193
+#: src/routes/local/playlists/$id.tsx:194
+#: src/routes/local/playlists/$id.tsx:219
 msgid "删除歌单"
 msgstr "Delete playlist"
 
@@ -1005,8 +1005,8 @@ msgstr "Failed to delete playlist"
 
 #: src/components/layout/LoginModal.tsx:363
 #: src/routes/settings.tsx:1175
-#: src/routes/songlists/$id.tsx:496
-#: src/routes/songlists/$id.tsx:497
+#: src/routes/songlists/$id.tsx:512
+#: src/routes/songlists/$id.tsx:513
 msgid "刷新"
 msgstr "Refresh"
 
@@ -1135,8 +1135,8 @@ msgstr "An unknown error occurred"
 #: src/components/layout/Sidebar.tsx:1265
 #: src/components/playlists/ImportPlaylistDialog.tsx:584
 #: src/components/playlists/ImportPlaylistDialog.tsx:640
-#: src/routes/local/playlists/$id.tsx:159
-#: src/routes/local/playlists/$id.tsx:232
+#: src/routes/local/playlists/$id.tsx:165
+#: src/routes/local/playlists/$id.tsx:238
 #: src/routes/settings.tsx:1143
 #: src/routes/songlists/$id.edit.tsx:307
 msgid "取消"
@@ -1181,7 +1181,7 @@ msgstr "Remove from library"
 #: src/components/layout/Sidebar.tsx:287
 #: src/components/layout/Sidebar.tsx:296
 #: src/components/layout/Sidebar.tsx:317
-#: src/routes/songlists/$id.tsx:307
+#: src/routes/songlists/$id.tsx:308
 msgid "取消收藏失败"
 msgstr "Failed to remove from library"
 
@@ -1231,7 +1231,7 @@ msgstr "Browse categories to the right"
 msgid "向左浏览分类"
 msgstr "Browse categories to the left"
 
-#: src/routes/songlists/$id.tsx:608
+#: src/routes/songlists/$id.tsx:624
 msgid "听友评论"
 msgstr "Listener comments"
 
@@ -1313,7 +1313,7 @@ msgstr "Region"
 msgid "场景与情绪"
 msgstr "Moods & occasions"
 
-#: src/routes/songlists/$id.tsx:346
+#: src/routes/songlists/$id.tsx:347
 msgid "复制链接失败"
 msgstr "Failed to copy the link"
 
@@ -1536,7 +1536,7 @@ msgstr "Following"
 #~ msgid "已关闭"
 #~ msgstr "Off"
 
-#: src/store/player.ts:1579
+#: src/store/player.ts:1582
 msgid "已关闭心动模式"
 msgstr "Heart Mode turned off"
 
@@ -1544,17 +1544,17 @@ msgstr "Heart Mode turned off"
 msgid "已关闭睡眠定时器"
 msgstr "Sleep timer turned off"
 
-#: src/store/player.ts:1804
+#: src/store/player.ts:1807
 msgid "已切换到其他音源"
 msgstr "Switched to another source"
 
-#: src/store/player.ts:1883
+#: src/store/player.ts:1886
 msgid "已切换到推荐版本"
 msgstr "Switched to the recommended edition"
 
-#: src/store/player.ts:1758
-#: src/store/player.ts:1822
-#: src/store/player.ts:1833
+#: src/store/player.ts:1761
+#: src/store/player.ts:1825
+#: src/store/player.ts:1836
 msgid "已切换到缓存的音源"
 msgstr "Switched to the cached source"
 
@@ -1585,12 +1585,12 @@ msgstr "Removed from Liked Songs"
 #: src/components/layout/Sidebar.tsx:307
 #: src/components/layout/Sidebar.tsx:314
 #: src/routes/albums/$id.tsx:117
-#: src/routes/songlists/$id.tsx:293
-#: src/routes/songlists/$id.tsx:318
+#: src/routes/songlists/$id.tsx:294
+#: src/routes/songlists/$id.tsx:319
 msgid "已取消收藏"
 msgstr "Removed from library"
 
-#: src/routes/songlists/$id.tsx:342
+#: src/routes/songlists/$id.tsx:343
 msgid "已复制网易云歌单链接"
 msgstr "NetEase playlist link copied"
 
@@ -1628,7 +1628,7 @@ msgstr "Started downloading 「{0}」"
 
 #: src/routes/albums/$id.tsx:89
 #: src/routes/albums/$id.tsx:292
-#: src/routes/songlists/$id.tsx:523
+#: src/routes/songlists/$id.tsx:539
 msgid "已收藏"
 msgstr "Saved"
 
@@ -1666,7 +1666,7 @@ msgid "已暂停"
 msgstr "Paused"
 
 #. placeholder {0}: additions.length
-#: src/store/player.ts:1491
+#: src/store/player.ts:1494
 msgid "已添加 {0} 首歌曲到播放列表"
 msgstr "Added {0} tracks to the queue"
 
@@ -1703,7 +1703,7 @@ msgstr ""
 #~ msgid "已超过 30 秒没有新进度，可能是无法连接 GitHub。请检查网络或代理设置，下载会在超时后自动报错。"
 #~ msgstr ""
 
-#: src/store/player.ts:1251
+#: src/store/player.ts:1254
 msgid "已跳过 {skipped} 首无法播放的歌曲"
 msgstr "Skipped {skipped} tracks that couldn't be played"
 
@@ -1764,11 +1764,11 @@ msgid "当前：{currentLabel}"
 msgstr "Current: {currentLabel}"
 
 #. placeholder {0}: prefetched.trialEnd
-#: src/store/player.ts:1019
+#: src/store/player.ts:1022
 msgid "当前仅可试听 {0} 秒，登录或开通会员后可播放完整版"
 msgstr "Preview only ({0}s). Sign in or get VIP for the full track."
 
-#: src/store/player.ts:1162
+#: src/store/player.ts:1165
 msgid "当前仅可试听 {trialEnd} 秒，登录或开通会员后可播放完整版"
 msgstr "Preview only ({trialEnd}s). Sign in or get VIP for the full track."
 
@@ -1835,11 +1835,11 @@ msgstr "Visualizer"
 msgid "心动模式"
 msgstr "Heart Mode"
 
-#: src/store/player.ts:1593
+#: src/store/player.ts:1596
 msgid "心动模式已开启，将为你推荐歌曲"
 msgstr "Heart Mode is on; recommendations will be added"
 
-#: src/store/player.ts:1226
+#: src/store/player.ts:1229
 msgid "心动模式暂不可用，请先登录"
 msgstr "Heart Mode is unavailable. Please sign in."
 
@@ -2041,7 +2041,7 @@ msgstr "Search suggestions"
 msgid "搜索待播歌曲"
 msgstr "Search upcoming songs"
 
-#: src/routes/songlists/$id.tsx:568
+#: src/routes/songlists/$id.tsx:584
 msgid "搜索歌单歌曲"
 msgstr "Search playlist tracks"
 
@@ -2118,7 +2118,7 @@ msgstr "Play all"
 msgid "播放列表"
 msgstr "Queue"
 
-#: src/store/player.ts:1662
+#: src/store/player.ts:1665
 msgid "播放列表已清空"
 msgstr "Queue cleared"
 
@@ -2215,7 +2215,7 @@ msgstr "Now Playing Transition"
 #: src/routes/albums/$id.tsx:113
 #: src/routes/albums/$id.tsx:119
 #: src/routes/artist/$id.tsx:370
-#: src/routes/songlists/$id.tsx:321
+#: src/routes/songlists/$id.tsx:322
 #: src/routes/users/$id.tsx:197
 #: src/store/user.ts:391
 msgid "操作失败"
@@ -2223,7 +2223,7 @@ msgstr "Action failed"
 
 #: src/routes/albums/$id.tsx:292
 #: src/routes/library.tsx:537
-#: src/routes/songlists/$id.tsx:523
+#: src/routes/songlists/$id.tsx:539
 msgid "收藏"
 msgstr "Save"
 
@@ -2256,7 +2256,7 @@ msgstr "Add to playlist"
 #: src/components/songs/AddSelectedToPlaylist.tsx:143
 #: src/components/songs/SongContextMenu.tsx:249
 #: src/components/songs/SongContextMenu.tsx:257
-#: src/routes/songlists/$id.tsx:307
+#: src/routes/songlists/$id.tsx:308
 #: src/store/localLibrary.ts:162
 #: src/store/localLibrary.ts:194
 #: src/store/localLibrary.ts:220
@@ -2264,8 +2264,8 @@ msgstr "Add to playlist"
 msgid "收藏失败"
 msgstr "Failed to save"
 
-#: src/routes/songlists/$id.tsx:293
-#: src/routes/songlists/$id.tsx:318
+#: src/routes/songlists/$id.tsx:294
+#: src/routes/songlists/$id.tsx:319
 msgid "收藏成功"
 msgstr "Saved to library"
 
@@ -2377,6 +2377,10 @@ msgstr "Cannot choose a download folder"
 msgid "无法选择缓存目录"
 msgstr "Cannot choose a cache folder"
 
+#: src/lib/songs.ts:133
+msgid "无版权"
+msgstr "Unavailable"
+
 #: src/lib/tagLabels.ts:26
 #: src/routes/latest-music.tsx:23
 #: src/routes/latest-mv.tsx:33
@@ -2441,7 +2445,7 @@ msgstr ""
 msgid "智能伴奏生成失败：{0}"
 msgstr ""
 
-#: src/store/player.ts:1209
+#: src/store/player.ts:1212
 msgid "智能播放暂不可用，请先登录"
 msgstr "Smart play is unavailable. Please log in first."
 
@@ -2528,7 +2532,7 @@ msgstr "No lyrics. Enjoy the music."
 msgid "暂无热门单曲"
 msgstr "No popular tracks yet"
 
-#: src/routes/songlists/$id.tsx:643
+#: src/routes/songlists/$id.tsx:659
 msgid "暂无相似歌单"
 msgstr "No similar playlists yet"
 
@@ -2607,7 +2611,7 @@ msgstr "Songs failed to load for {0} albums"
 msgid "有 {0} 张专辑的歌曲获取失败（接口限流）"
 msgstr "Songs failed to load for {0} albums (rate limited)"
 
-#: src/routes/songlists/$id.tsx:140
+#: src/routes/songlists/$id.tsx:141
 msgid "有 {missing} 首歌曲加载失败，可点击「刷新」重试"
 msgstr "{missing} tracks failed to load. Click Refresh to try again."
 
@@ -2622,7 +2626,7 @@ msgstr "{missing} tracks failed to load. Click Refresh to try again."
 msgid "未安装"
 msgstr ""
 
-#: src/store/player.ts:1766
+#: src/store/player.ts:1769
 msgid "未找到其他可用音源"
 msgstr "No alternative source found"
 
@@ -2642,7 +2646,7 @@ msgstr "No local network address found. Make sure this computer is connected to 
 msgid "未登录时展示本机收藏，登录后自动合并账号数据"
 msgstr "Shows this device's library when signed out, and merges your account data after signing in"
 
-#: src/lib/songs.ts:34
+#: src/lib/songs.ts:35
 msgid "未知专辑"
 msgstr "Unknown album"
 
@@ -2664,8 +2668,8 @@ msgid "本地"
 msgstr "Local"
 
 #: src/routes/local/playlists/$id.tsx:124
-msgid "本地收藏"
-msgstr "Local favorites"
+#~ msgid "本地收藏"
+#~ msgstr "Local favorites"
 
 #. placeholder {0}: response.status
 #: src/api/local.ts:81
@@ -2682,7 +2686,7 @@ msgid "本地歌单"
 msgstr "Local playlists"
 
 #. placeholder {0}: playlist.songs.length
-#: src/routes/local/playlists/$id.tsx:179
+#: src/routes/local/playlists/$id.tsx:185
 msgid "本地歌单 · {0} 首"
 msgstr "Local playlist · {0} tracks"
 
@@ -2739,7 +2743,7 @@ msgid "标准 · 64kbps"
 msgstr "Standard · 64kbps"
 
 #: src/routes/songlists/$id.edit.tsx:249
-#: src/routes/songlists/$id.tsx:456
+#: src/routes/songlists/$id.tsx:472
 msgid "标签"
 msgstr "Tags"
 
@@ -2808,8 +2812,8 @@ msgstr "Western"
 #: src/components/layout/SearchBox.tsx:425
 #: src/components/layout/TitleBar.tsx:20
 #: src/routes/search.tsx:319
-#: src/routes/songlists/$id.tsx:80
-#: src/routes/songlists/$id.tsx:403
+#: src/routes/songlists/$id.tsx:81
+#: src/routes/songlists/$id.tsx:419
 #: src/routes/users/$id.tsx:317
 msgid "歌单"
 msgstr "Playlists"
@@ -2818,7 +2822,7 @@ msgstr "Playlists"
 msgid "歌单、专辑、歌手与关注，一处查看"
 msgstr "Playlists, albums, artists and follows in one place"
 
-#: src/routes/songlists/$id.tsx:242
+#: src/routes/songlists/$id.tsx:243
 msgid "歌单不存在或无法访问"
 msgstr "Playlist unavailable"
 
@@ -2832,7 +2836,7 @@ msgstr "Playlist saved"
 #: src/components/songs/SongContextMenu.tsx:207
 #: src/routes/search.tsx:377
 #: src/routes/songlists/$id.edit.tsx:72
-#: src/routes/songlists/$id.tsx:147
+#: src/routes/songlists/$id.tsx:148
 #: src/routes/songlists/index.tsx:179
 #: src/routes/songlists/index.tsx:440
 #: src/routes/toplist.tsx:66
@@ -2864,7 +2868,7 @@ msgstr "Playlist name"
 msgid "歌单导入失败"
 msgstr "Could not import the playlist"
 
-#: src/routes/songlists/$id.tsx:599
+#: src/routes/songlists/$id.tsx:615
 msgid "歌单暂时没有歌曲"
 msgstr "This playlist has no tracks yet"
 
@@ -2906,12 +2910,12 @@ msgid "歌曲"
 msgstr "Song"
 
 #: src/routes/albums/$id.tsx:301
-#: src/routes/songlists/$id.tsx:546
+#: src/routes/songlists/$id.tsx:562
 msgid "歌曲列表"
 msgstr "Tracks"
 
-#: src/store/player.ts:1178
-#: src/store/player.ts:1246
+#: src/store/player.ts:1181
+#: src/store/player.ts:1249
 msgid "歌曲加载失败"
 msgstr "Failed to load track"
 
@@ -2919,7 +2923,7 @@ msgstr "Failed to load track"
 msgid "歌曲加载超时，请重新播放"
 msgstr "Track loading timed out. Please play again."
 
-#: src/store/player.ts:1486
+#: src/store/player.ts:1489
 msgid "歌曲已在播放列表中"
 msgstr "Track is already in the queue"
 
@@ -2931,7 +2935,7 @@ msgstr "Song actions"
 msgid "歌曲评论"
 msgstr "Song comments"
 
-#: src/store/player.ts:1698
+#: src/store/player.ts:1701
 msgid "歌曲资源已失效"
 msgstr "Track source expired"
 
@@ -3172,7 +3176,7 @@ msgstr "No matching tracks could be imported"
 #: src/routes/artist/$id.tsx:829
 #: src/routes/recent.tsx:151
 #: src/routes/recent.tsx:180
-#: src/routes/songlists/$id.tsx:598
+#: src/routes/songlists/$id.tsx:614
 msgid "没有匹配的歌曲"
 msgstr "No matching tracks"
 
@@ -3192,8 +3196,8 @@ msgstr "No audio to upload: the current track hasn't loaded yet"
 msgid "没有可清除的伴奏缓存"
 msgstr "There are no cached instrumentals"
 
-#: src/store/player.ts:1838
-#: src/store/player.ts:1847
+#: src/store/player.ts:1841
+#: src/store/player.ts:1850
 msgid "没有找到其他可播放版本"
 msgstr "No other playable edition was found"
 
@@ -3277,7 +3281,7 @@ msgstr "Dark mode"
 msgid "添加全部到播放列表"
 msgstr "Add all to queue"
 
-#: src/routes/songlists/$id.tsx:485
+#: src/routes/songlists/$id.tsx:501
 msgid "添加简介"
 msgstr "Add a description"
 
@@ -3384,7 +3388,7 @@ msgstr "Like, {0} likes"
 msgid "热搜榜"
 msgstr "Trending"
 
-#: src/routes/songlists/$id.tsx:552
+#: src/routes/songlists/$id.tsx:568
 msgid "热议"
 msgstr "Hot"
 
@@ -3496,8 +3500,8 @@ msgstr "Your session is no longer valid. Please sign in again."
 msgid "相似"
 msgstr "Similar"
 
-#: src/routes/songlists/$id.tsx:556
-#: src/routes/songlists/$id.tsx:626
+#: src/routes/songlists/$id.tsx:572
+#: src/routes/songlists/$id.tsx:642
 msgid "相似歌单"
 msgstr "Similar playlists"
 
@@ -3549,7 +3553,7 @@ msgstr "Graphite"
 msgid "确定删除「{0}」吗？此操作无法撤销。"
 msgstr "Delete “{0}”? This cannot be undone."
 
-#: src/routes/local/playlists/$id.tsx:216
+#: src/routes/local/playlists/$id.tsx:222
 msgid "确定删除这个本地歌单吗？此操作无法撤销。"
 msgstr "Delete this local playlist? This cannot be undone."
 
@@ -3756,7 +3760,7 @@ msgstr "Edit 「{0}」"
 
 #: src/components/layout/Sidebar.tsx:932
 #: src/routes/songlists/$id.edit.tsx:53
-#: src/routes/songlists/$id.tsx:410
+#: src/routes/songlists/$id.tsx:426
 msgid "编辑歌单"
 msgstr "Edit playlist"
 
@@ -3824,7 +3828,7 @@ msgid "获取二维码失败，请检查本地 API 服务是否启动"
 msgstr "Failed to get the QR code. Check whether the local API is running."
 
 #: src/store/player.ts:411
-#: src/store/player.ts:1127
+#: src/store/player.ts:1130
 msgid "获取歌曲播放地址失败"
 msgstr "Failed to get the playback URL"
 
@@ -3860,7 +3864,7 @@ msgstr "Settings categories"
 #: src/components/comments/CommentSection.tsx:409
 #: src/components/comments/CommentSection.tsx:824
 #: src/components/player/NowPlaying.tsx:1205
-#: src/routes/songlists/$id.tsx:550
+#: src/routes/songlists/$id.tsx:566
 msgid "评论"
 msgstr "Comments"
 
@@ -3894,7 +3898,7 @@ msgstr "Preview ended. Sign in or get VIP to play the full track."
 msgid "该专辑无法在线收藏，已收藏到本地"
 msgstr "This album cannot be saved to the account, so it was saved locally"
 
-#: src/store/player.ts:1385
+#: src/store/player.ts:1388
 msgid "该列表暂无可播放歌曲"
 msgstr "No playable tracks in this list"
 
@@ -3919,7 +3923,7 @@ msgstr "This user hasn't created any playlists"
 msgid "该用户还没有收藏歌单"
 msgstr "This user hasn't saved any playlists"
 
-#: src/store/player.ts:1819
+#: src/store/player.ts:1822
 msgid "该音源还没有缓存"
 msgstr "This source is not cached yet"
 
@@ -3941,7 +3945,7 @@ msgstr "Voice comment progress"
 msgid "说点什么…"
 msgstr "Say something…"
 
-#: src/store/player.ts:1584
+#: src/store/player.ts:1587
 msgid "请先播放歌曲"
 msgstr "Play a track first"
 
@@ -4060,7 +4064,10 @@ msgstr "Workout"
 #: src/routes/albums/$id.tsx:216
 #: src/routes/artist/$id.tsx:608
 #: src/routes/artist/$id.tsx:609
+#: src/routes/local/playlists/$id.tsx:130
 #: src/routes/mv/$id.tsx:164
+#: src/routes/songlists/$id.tsx:402
+#: src/routes/songlists/$id.tsx:403
 #: src/routes/users/$id.tsx:255
 #: src/routes/video/$id.tsx:107
 msgid "返回"
@@ -4070,7 +4077,7 @@ msgstr "Back"
 msgid "返回上一页"
 msgstr "Go back"
 
-#: src/routes/songlists/$id.tsx:250
+#: src/routes/songlists/$id.tsx:251
 msgid "返回推荐歌单"
 msgstr "Back to playlists"
 
@@ -4134,7 +4141,7 @@ msgstr "No comments yet. Be the first!"
 msgid "这个人很懒，什么都没写"
 msgstr "Nothing here yet"
 
-#: src/routes/local/playlists/$id.tsx:200
+#: src/routes/local/playlists/$id.tsx:206
 msgid "这个歌单还没有歌曲"
 msgstr "This playlist has no tracks yet"
 
@@ -4151,7 +4158,7 @@ msgstr "These albums have no playable songs"
 msgid "这些歌曲都已在该歌单中"
 msgstr "These songs are already in that playlist"
 
-#: src/routes/songlists/$id.tsx:651
+#: src/routes/songlists/$id.tsx:667
 msgid "这是你的「我喜欢的音乐」"
 msgstr "This is your Liked Songs"
 
@@ -4178,7 +4185,7 @@ msgstr "This song is already playing"
 msgid "进度条显示剩余时间"
 msgstr "Show time remaining"
 
-#: src/store/player.ts:1252
+#: src/store/player.ts:1255
 msgid "连续 {skipped} 首歌曲无法播放，已停止播放"
 msgstr "{skipped} tracks in a row couldn't be played. Playback stopped."
 
@@ -4250,7 +4257,7 @@ msgstr "The remote port is already in use. Close the program using it, then turn
 msgid "部分歌手信息加载失败"
 msgstr "Some artist details failed to load"
 
-#: src/routes/songlists/$id.tsx:141
+#: src/routes/songlists/$id.tsx:142
 msgid "部分歌曲加载失败，可点击「刷新」重试"
 msgstr "Some tracks failed to load. Click Refresh to try again."
 
@@ -4267,7 +4274,7 @@ msgstr ""
 msgid "重命名"
 msgstr "Rename"
 
-#: src/routes/local/playlists/$id.tsx:171
+#: src/routes/local/playlists/$id.tsx:177
 msgid "重命名歌单"
 msgstr "Rename playlist"
 
@@ -4307,7 +4314,7 @@ msgstr "Retry"
 msgid "链接可能已失效，或内容已被移除。"
 msgstr "The link may have expired, or the content was removed."
 
-#: src/routes/songlists/$id.tsx:343
+#: src/routes/songlists/$id.tsx:344
 msgid "链接已复制"
 msgstr "Link copied"
 

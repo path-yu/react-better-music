@@ -117,11 +117,17 @@ function LocalPlaylistPage() {
     <div className="page">
       <button
         type="button"
-        onClick={() => void navigate({ to: '/local/favorites' })}
+        onClick={() => {
+          // The playlist is reachable from home, search and the sidebar, so go
+          // back where the user came from. Only a direct link (no app history)
+          // falls back to the local library page.
+          if (window.history.length > 1) window.history.back()
+          else void navigate({ to: '/local/favorites' })
+        }}
         className="mb-3 flex items-center gap-1 text-[11px] text-ink-4 hover:text-ink-2"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
-        <Trans>本地收藏</Trans>
+        <Trans>返回</Trans>
       </button>
 
       <div className="page-header">

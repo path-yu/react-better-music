@@ -1,6 +1,6 @@
 import { msg } from '@lingui/core/macro'
 import { i18n } from '../i18n'
-import type { Album, Artist, Mv, NoCopyrightRcmd, Playlist, Song } from '../types'
+import type { Album, Artist, Mv, NoCopyrightRcmd, Playlist, Song, SongPrivilege } from '../types'
 
 export type RawSong = {
   id: number
@@ -9,6 +9,7 @@ export type RawSong = {
   duration?: number
   fee?: number
   noCopyrightRcmd?: NoCopyrightRcmd | null
+  privilege?: SongPrivilege
   mv?: number
   mvid?: number
   alia?: string[]
@@ -44,6 +45,7 @@ export function normalizeSong(raw: RawSong): Song {
     dt: target.dt ?? target.duration ?? 0,
     fee: target.fee,
     noCopyrightRcmd: target.noCopyrightRcmd ?? null,
+    privilege: target.privilege,
     mv: target.mv,
     mvid: target.mvid,
     alia: target.alia,
@@ -109,4 +111,25 @@ export function trialLengthSeconds(
  */
 export function copyrightHint(song: Pick<Song, 'noCopyrightRcmd'>) {
   return song.noCopyrightRcmd?.typeDesc?.trim() ?? ''
+}
+
+/**
+ * NetEase reports play rights per listener: `st < 0` (usually -200) means the
+ * track has no license at all, while `st >= 0 && pl === 0` usually means it
+ * needs a login or VIP subscription.
+ */
+export function isCopyrightBlocked(song: Pick<Song, 'privilege'>) {
+  const st = song.privilege?.st
+  return typeof st === 'number' && st < 0
+}
+
+/**
+ * Tag shown on list / queue rows. An explicit "no copyright" verdict wins over
+ * NetEase's own hint (e.g. "其它版本可播"); songs with neither get no tag.
+ */
+export function availabilityTag(
+  song: Pick<Song, 'privilege' | 'noCopyrightRcmd'>,
+) {
+  if (isCopyrightBlocked(song)) return i18n._(msg`无版权`)
+  return copyrightHint(song)
 }

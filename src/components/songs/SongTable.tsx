@@ -24,7 +24,7 @@ import { useUserStore } from '../../store/user'
 import { useLocalLibraryStore } from '../../store/localLibrary'
 import { formatDuration } from '../../lib/format'
 import { cn } from '../../lib/format'
-import { copyrightHint } from '../../lib/songs'
+import { availabilityTag } from '../../lib/songs'
 import type { Song } from '../../types'
 
 interface SongTableProps {
@@ -97,7 +97,7 @@ const SongRow = memo(function SongRow({
   showFeatured = false,
 }: SongRowProps) {
   const { i18n } = useLingui()
-  const note = copyrightHint(song)
+  const note = availabilityTag(song)
   return (
     <div
       onClick={(event) => {

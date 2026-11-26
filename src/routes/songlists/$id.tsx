@@ -4,6 +4,7 @@ import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import {
+  ArrowLeft,
   CalendarDays,
   Check,
   Heart,
@@ -389,6 +390,21 @@ function PlaylistDetailPage() {
 
   return (
     <div className="page">
+      <button
+        type="button"
+        onClick={() => {
+          // Playlists open from the index, search, home, artist pages and the
+          // sidebar, so return to the referring page; a direct link has no app
+          // history and falls back to the playlist index.
+          if (window.history.length > 1) window.history.back()
+          else void navigate({ to: '/songlists' })
+        }}
+        aria-label={i18n._(msg`返回`)}
+        title={i18n._(msg`返回`)}
+        className="pressable mb-4 flex h-8 w-8 items-center justify-center rounded-full text-ink-3 transition-colors hover:bg-black/5 hover:text-ink-1 dark:hover:bg-white/10"
+      >
+        <ArrowLeft className="h-4 w-4" />
+      </button>
       <div className="flex gap-6 max-sm:flex-col max-sm:gap-4">
         <ImageWithFallback
           src={detail.coverImgUrl}

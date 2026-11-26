@@ -69,6 +69,23 @@ export interface NoCopyrightRcmd {
   typeDesc2?: string
 }
 
+/**
+ * Per-user play rights attached to list payloads. `st < 0` (usually -200) means
+ * the track has no license; `pl` / `dl` are the playable / downloadable bitrates
+ * and are 0 when nothing can be streamed.
+ */
+export interface SongPrivilege {
+  /** Present on `/song/detail`'s standalone `privileges` array. */
+  id?: number
+  st?: number
+  pl?: number
+  dl?: number
+  fl?: number
+  fee?: number
+  toast?: boolean
+  flag?: number
+}
+
 export interface Song {
   id: number
   name: string
@@ -77,6 +94,7 @@ export interface Song {
   dt: number
   fee?: number
   noCopyrightRcmd?: NoCopyrightRcmd | null
+  privilege?: SongPrivilege
   mv?: number
   mvid?: number
   alia?: string[]
