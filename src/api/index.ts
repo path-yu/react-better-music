@@ -1046,8 +1046,9 @@ export interface DeepSearchHit {
  */
 const DEEP_SEARCH_ALBUM_LIMIT = 16
 const DEEP_SEARCH_TTL = 5 * 60_000
-const DEEP_SEARCH_GAP = 200
+const DEEP_SEARCH_GAP = 350
 const DEEP_SEARCH_RETRY_DELAY = 600
+const DEEP_SEARCH_RATE_LIMIT_COOLDOWN = 2_000
 
 const sleep = (ms: number) =>
   new Promise<void>((resolve) => setTimeout(resolve, ms))
@@ -1055,6 +1056,33 @@ const deepSearchCache = new Map<
   string,
   { at: number; hits: DeepSearchHit[] }
 >()
+
+let deepAlbumRequestAt = 0
+let deepAlbumCooldownUntil = 0
+
+/**
+ * `/album` starts answering 405 when requests are fired in bursts. One shared
+ * schedule keeps both workers below that threshold, and a 405 pauses every
+ * worker instead of letting them retry into the same limiter.
+ */
+async function fetchDeepSearchAlbum(id: number, signal?: AbortSignal) {
+  const wait = Math.max(
+    deepAlbumCooldownUntil - Date.now(),
+    deepAlbumRequestAt + DEEP_SEARCH_GAP - Date.now(),
+    0,
+  )
+  if (wait > 0) await sleep(wait)
+  if (signal?.aborted) return null
+  deepAlbumRequestAt = Date.now()
+  try {
+    return await fetchAlbumDetail(id, signal)
+  } catch (error) {
+    if ((error as { status?: number }).status === 405) {
+      deepAlbumCooldownUntil = Date.now() + DEEP_SEARCH_RATE_LIMIT_COOLDOWN
+    }
+    throw error
+  }
+}
 
 function normalizeDeep(value: string) {
   return String(value || '')
@@ -1357,21 +1385,18 @@ export async function deepSearchSongs(
       if (signal?.aborted) return
 
       // `/album` answers 405 when it is hit in a burst, which would silently
-      // turn a valid match into "nothing found"; retry once, then space the
-      // remaining requests out.
+      // turn a valid match into "nothing found"; retry once after the shared
+      // cooldown, then move on without hammering the same limiter.
       let detail = null
       for (let attempt = 0; attempt < 2 && !detail; attempt += 1) {
         if (signal?.aborted) return
         try {
-          detail = await fetchAlbumDetail(album.id)
+          detail = await fetchDeepSearchAlbum(album.id, signal)
         } catch {
           if (attempt === 0) await sleep(DEEP_SEARCH_RETRY_DELAY)
         }
       }
-      if (!detail) {
-        await sleep(DEEP_SEARCH_GAP)
-        continue
-      }
+      if (!detail) continue
 
       const albumName = detail.name || album.name
       for (const song of detail.songs ?? []) {
@@ -1387,7 +1412,6 @@ export async function deepSearchSongs(
           score,
         })
       }
-      await sleep(DEEP_SEARCH_GAP)
     }
   }
   await Promise.all([worker(), worker()])
@@ -1754,10 +1778,17 @@ export function updateUserAvatar(file: File, imgSize: number) {
   })
 }
 
-export async function fetchAlbumDetail(id: number | string): Promise<AlbumDetail | null> {
+export async function fetchAlbumDetail(
+  id: number | string,
+  signal?: AbortSignal,
+): Promise<AlbumDetail | null> {
   // The album object arrives separately from its track list: /album returns
   // `{ album: {...}, songs: [...] }`, and album.songs is usually empty.
-  const res = await get<{ album?: Omit<AlbumDetail, 'songs'>; songs?: Song[] }>('/album', { id })
+  const res = await get<{ album?: Omit<AlbumDetail, 'songs'>; songs?: Song[] }>(
+    '/album',
+    { id },
+    signal,
+  )
   const album = res.album
   if (!album) return null
   const cover = album.picUrl ?? album.blurPicUrl

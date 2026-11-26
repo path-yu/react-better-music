@@ -77,6 +77,12 @@ export function SearchBox({
   const toggleDeepSearch = useSearchStore((state) => state.toggleDeepSearch)
   // The fallback toggle only makes sense on the results screen.
   const pathname = useRouterState({ select: (state) => state.location.pathname })
+  const routeKeyword = useRouterState({
+    select: (state) => {
+      const search = state.location.search as { keyword?: unknown } | undefined
+      return typeof search?.keyword === 'string' ? search.keyword : ''
+    },
+  })
   const showDeepToggle = pathname === '/search'
 
   useEffect(() => {
@@ -151,12 +157,14 @@ export function SearchBox({
       setOpen(false)
       // A new query starts on 单曲; returning to an existing search keeps the
       // tab stored in that page's URL.
+      const isSameKeyword = routeKeyword.trim() === target
       void navigate({ to: '/search', search: { keyword: target, tab: 'songs' } })
-      // Same keyword + same tab means the URL does not change, so the route
-      // effect below would not run; the token forces it.
-      refreshSearch()
+      // Only a resubmitted keyword needs the token. Bumping it for a new
+      // keyword starts a useless request for the old one while the router is
+      // still committing the URL.
+      if (isSameKeyword) refreshSearch()
     },
-    [addSearchHistory, keyword, navigate, refreshSearch],
+    [addSearchHistory, keyword, navigate, refreshSearch, routeKeyword],
   )
 
   const handleSongClick = async (song: Song) => {

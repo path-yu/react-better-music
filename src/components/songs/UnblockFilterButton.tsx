@@ -14,7 +14,8 @@ export function UnblockFilterButton({
   active,
   onToggle,
 }: {
-  count: number
+  /** `null` while the full song list is still loading. */
+  count: number | null
   active: boolean
   onToggle: () => void
 }) {
@@ -25,6 +26,7 @@ export function UnblockFilterButton({
     <button
       type="button"
       aria-pressed={active}
+      aria-busy={count === null}
       disabled={disabled}
       title={i18n._(msg`只显示无版权或其它版本可播的歌曲`)}
       onClick={onToggle}
@@ -40,7 +42,16 @@ export function UnblockFilterButton({
       <span>
         {active ? <Trans>仅看可换源</Trans> : <Trans>可换源</Trans>}
       </span>
-      <span className="tabular-nums">{count}</span>
+      <span className="inline-flex min-w-[2ch] items-center justify-end">
+        {count === null ? (
+          <span
+            aria-hidden="true"
+            className="h-3 w-4 animate-pulse rounded-full bg-current opacity-25"
+          />
+        ) : (
+          <span className="tabular-nums">{count}</span>
+        )}
+      </span>
     </button>
   )
 }

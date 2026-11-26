@@ -68,6 +68,7 @@ function PlaylistDetailPage() {
   const [detail, setDetail] = useState<Playlist | null>(null)
   const [songs, setSongs] = useState<Song[]>([])
   const [loading, setLoading] = useState(true)
+  const [tracksReady, setTracksReady] = useState(false)
   const tabStorageKey = `songlist-tab:${id}`
   const [tab, setTab] = useState(
     () => sessionStorage.getItem(tabStorageKey) ?? 'songs',
@@ -115,6 +116,7 @@ function PlaylistDetailPage() {
     setLoading(true)
     setDetail(null)
     setSongs([])
+    setTracksReady(false)
     setKeyword('')
     setUnblockOnly(false)
 
@@ -152,6 +154,10 @@ function PlaylistDetailPage() {
         if (controller.signal.aborted) return
         toast.error(i18n._(msg`歌单加载失败`))
         setLoading(false)
+      } finally {
+        // The count must only be published after every page has settled,
+        // otherwise the first page briefly shows a smaller number.
+        if (!controller.signal.aborted) setTracksReady(true)
       }
     }
     void load()
@@ -212,8 +218,8 @@ function PlaylistDetailPage() {
   }
 
   const unblockCount = useMemo(
-    () => songs.filter(needsUnblock).length,
-    [songs],
+    () => (tracksReady ? songs.filter(needsUnblock).length : null),
+    [songs, tracksReady],
   )
 
   const filteredSongs = useMemo(() => {

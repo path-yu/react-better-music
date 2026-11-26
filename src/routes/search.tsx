@@ -57,6 +57,12 @@ export const Route = createFileRoute('/search')({
 })
 
 const SONG_PAGE_SIZE = 30
+/**
+ * "歌名 歌手" queries need a wider window: NetEase may bury the exact upload
+ * on page 2, and relevance sorting can only reorder rows that were fetched.
+ * Fetch up to 100 rows so the match is inside the sortable window.
+ */
+const SONG_ARTIST_PAGE_SIZE = 100
 const PLAYLIST_PAGE_SIZE = 20
 const ALBUM_PAGE_SIZE = 20
 const ARTIST_PAGE_SIZE = 20
@@ -75,7 +81,120 @@ const DECORATED_TITLE =
   /(live|remix|dj|伴奏|翻唱|cover|纯音乐|instrumental|bootleg|type\s*beat|\bbeat\b|v\d|加速|降速|慢速|变速|升调|降调|说唱版|片段|剪辑|铃声|女声版|男声版|\d(?:\.\d)?x)/i
 
 /**
- * True when an undecorated hit really is the requested song.
+ * "胭脂妆（Cover 树屋女孩）" has no space before `Cover`, so normalising the
+ * query turns the title token into "胭脂妆cover". The marker describes the
+ * requested recording and must be compared separately from the song title.
+ */
+const COVER_MARKER = /(?:cover|翻唱)$/i
+
+function queryTokens(keyword: string) {
+  return keyword
+    .trim()
+    .split(/\s+/)
+    .map(normalizeQuery)
+    .filter(Boolean)
+}
+
+function songPageSize(keyword: string) {
+  // "（Cover …）封" has no space before the artist, but is still a two-part query.
+  const hasTrailingArtist = /[）)]\s*\S/.test(keyword.trim())
+  return queryTokens(keyword).length > 1 || hasTrailingArtist
+    ? SONG_ARTIST_PAGE_SIZE
+    : SONG_PAGE_SIZE
+}
+
+function wantsCover(tokens: string[]) {
+  return tokens.some((token) => /(?:cover|翻唱)/.test(token))
+}
+
+interface QueryInterpretation {
+  titleTokens: string[]
+  artistTokens: string[]
+}
+
+/**
+ * Split "title（Cover original artist） trailing artist" into title and credit
+ * parts. Plain "song artist" / "artist song" input gets both orders tried.
+ */
+function queryInterpretations(keyword: string): QueryInterpretation[] {
+  const raw = keyword.trim()
+  if (!raw) return []
+  const titleTokensOf = (value: string) =>
+    value
+      .split(/\s+/)
+      .map(normalizeQuery)
+      .map((token) => token.replace(COVER_MARKER, ''))
+      .filter(Boolean)
+  const artistTokensOf = (value: string) =>
+    value.split(/\s+/).map(normalizeQuery).filter(Boolean)
+
+  const parenthetical = raw.match(/^(.*?)[（(]([^）)]*)[）)]\s*(.*)$/)
+  if (parenthetical) {
+    return [
+      {
+        titleTokens: titleTokensOf(`${parenthetical[1]} ${parenthetical[2]}`),
+        artistTokens: artistTokensOf(parenthetical[3] ?? ''),
+      },
+    ]
+  }
+
+  const words = raw.split(/\s+/).filter(Boolean)
+  if (words.length >= 2) {
+    return [
+      {
+        titleTokens: titleTokensOf(words.slice(0, -1).join(' ')),
+        artistTokens: artistTokensOf(words[words.length - 1]),
+      },
+      {
+        titleTokens: titleTokensOf(words.slice(1).join(' ')),
+        artistTokens: artistTokensOf(words[0]),
+      },
+    ]
+  }
+  return [{ titleTokens: titleTokensOf(raw), artistTokens: [] }]
+}
+
+/** Higher scores are pinned above NetEase's default ordering. */
+function scoreInterpretation(
+  song: Song,
+  interpretation: QueryInterpretation,
+) {
+  const { titleTokens, artistTokens } = interpretation
+  if (!titleTokens.length && !artistTokens.length) return 0
+  const name = normalizeQuery(song.name)
+  const artists = normalizeQuery(
+    song.ar.map((artist) => artist.name).join(' '),
+  )
+  const titleHit =
+    titleTokens.length > 0 && titleTokens.every((token) => name.includes(token))
+  const artistHit =
+    artistTokens.length > 0 &&
+    artistTokens.every((token) => artists.includes(token))
+
+  if (!titleTokens.length) return artistHit ? 1 : 0
+  if (!titleHit) return 0
+  if (!artistTokens.length) return 3
+  return artistHit ? 4 : 3
+}
+
+function searchMatchScore(song: Song, keyword: string) {
+  let best = 0
+  for (const interpretation of queryInterpretations(keyword)) {
+    best = Math.max(best, scoreInterpretation(song, interpretation))
+  }
+  return best
+}
+
+function sortSongsByRelevance(songs: Song[], keyword: string) {
+  if (!queryInterpretations(keyword).length) return songs
+  return songs
+    .map((song, index) => ({ song, index, score: searchMatchScore(song, keyword) }))
+    .sort((a, b) => b.score - a.score || a.index - b.index)
+    .map((entry) => entry.song)
+}
+
+/**
+ * True when a hit for the requested recording is already in the results.
  *
  * Matching every word anywhere in "title + artists" was too loose: with
  * "一路向北 周杰伦", a row titled `周杰伦"一路向北" Emo Rap Type beat` by
@@ -83,12 +202,25 @@ const DECORATED_TITLE =
  * an artist, so it must appear in the credits, not just in the title.
  */
 function hasDirectMatch(songs: Song[], keyword: string) {
-  const tokens = keyword
-    .trim()
-    .split(/\s+/)
-    .map(normalizeQuery)
-    .filter(Boolean)
+  const tokens = queryTokens(keyword)
   if (!tokens.length) return true
+  // "Cover" asks for a different recording, so an undecorated original must
+  // not suppress the fallback; only an actual cover counts as a direct hit.
+  if (wantsCover(tokens)) {
+    return songs.some((song) => {
+      if (!/(?:cover|翻唱)/i.test(song.name)) return false
+      return queryInterpretations(keyword).some((interpretation) => {
+        const name = normalizeQuery(song.name)
+        const artists = normalizeQuery(
+          song.ar.map((artist) => artist.name).join(' '),
+        )
+        return (
+          interpretation.titleTokens.every((token) => name.includes(token)) &&
+          interpretation.artistTokens.every((token) => artists.includes(token))
+        )
+      })
+    })
+  }
   if (tokens.length === 1) {
     const token = tokens[0]
     // One word that is an artist name ("周杰伦"): the results are that
@@ -212,7 +344,7 @@ function SearchPage() {
   const applyResult = useCallback(
     (result: SearchResult) => {
       if (tab === 'songs') {
-        setSongs(result.songs ?? [])
+        setSongs(sortSongsByRelevance(result.songs ?? [], keyword))
         setSongTotal(result.songCount ?? 0)
       } else if (tab === 'artists') {
         setArtists(result.artists ?? [])
@@ -234,7 +366,7 @@ function SearchPage() {
         setPlaylistTotal(result.playlistCount ?? 0)
       }
     },
-    [tab],
+    [keyword, tab],
   )
 
   useEffect(() => {
@@ -255,7 +387,7 @@ function SearchPage() {
     setFailed(false)
     const pageSize =
       tab === 'songs'
-        ? SONG_PAGE_SIZE
+        ? songPageSize(keyword)
         : tab === 'artists'
           ? ARTIST_PAGE_SIZE
           : tab === 'users'
@@ -395,7 +527,7 @@ function SearchPage() {
 
   const pageSize =
     tab === 'songs'
-      ? SONG_PAGE_SIZE
+      ? songPageSize(keyword)
       : tab === 'artists'
         ? ARTIST_PAGE_SIZE
         : tab === 'users'
