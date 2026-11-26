@@ -79,7 +79,10 @@
 - 首页轮播、推荐歌单、每日推荐、最新 MV
 - 推荐歌单分类筛选、精品歌单、分页加载
 - 最新音乐 / 最新 MV 的地区、类型、排序筛选与分页
-- 单曲 / 歌单 / 歌手 / MV / 视频搜索，支持键盘上下选择与回车进入
+- 单曲 / 歌单 / 歌手 / MV / 视频搜索，支持键盘上下选择与回车进入；同关键词再回车会重新请求并重跑深度搜索
+- 深度搜索：网易单曲搜索隐藏的灰歌，会先通过 `site:music.163.com` 网页反查，再回退到专辑曲目扫描；结果页可开关
+- 列表支持 Ctrl / ⌘ 点选多首，一次加入账号歌单或本地歌单
+- 歌单 / 专辑 / 歌手列表支持「可换源」筛选，只保留无版权或其它版本可播的歌曲
 - 最近播放支持按歌曲、歌手、专辑关键字检索
 - 歌单详情、歌手详情、专辑详情、MV 详情与视频播放
 
@@ -91,6 +94,11 @@
 - 音量控制与持久化
 - 心动模式（基于网易云智能推荐）
 - VIP 歌曲手动切换其他音源；可在设置中开启「自动替换 VIP 音源」
+- 新增哔哩哔哩 / YouTube 音源：B 站走 WBI 签名搜索 + DASH 音频，YouTube 依赖本机 `yt-dlp`
+- 自动匹配顺序：UNM → GD 音乐台 → ByFuns → 哔哩哔哩
+- 视频站音源只替换音频，歌曲身份（歌词、评论、封面、队列）仍用网易云
+- 播放页新增「播放源」标签：列出该歌曲在所有候选视频（封面、标题、作者、播放量、时长），可逐个切换；同一首歌只保留一个视频缓存
+- 歌名旁「源视频」标签：全屏嵌入播放命中的视频，打开时暂停音乐、关闭后恢复
 - 切源时保留当前播放进度
 - 智能伴奏：原曲 / 人声 / 伴奏三种音轨，切换时保留播放位置
 
@@ -173,6 +181,8 @@
 | 音频缓存 | WebCodecs + mediabunny + IndexedDB |
 | 人声分离 | Spleeter 2.4、TensorFlow 2.9、Python 3.9、FFmpeg |
 | 后端 | NetEaseCloudMusicApiEnhanced（`server/`） |
+| 备选音源 | 哔哩哔哩 WBI 搜索 + DASH 音频、YouTube（yt-dlp）、`unblockmusic-utils` 中转 |
+| 视频嵌入 | 哔哩哔哩 / YouTube 官方播放器 |
 | 桌面端 | Electrobun + Hutch + Bun |
 | 手机遥控 | Node HTTP、PWA Manifest、Service Worker |
 | 测试 | Vitest（79 项单测） |
@@ -222,6 +232,7 @@
   - Windows 10/11 与 **WebView2 Runtime**（系统通常自带）
   - 可选：Inno Setup 6（仅自定义安装目录安装包需要）
   - 可选：在设置中一键安装 Spleeter，用于本地人声 / 伴奏分离
+  - 可选：`yt-dlp`，YouTube 音源需要，可在设置页一键安装
 
 Hutch 不是 npm 依赖，需要单独安装：
 
@@ -559,7 +570,7 @@ pnpm i18n:extract
 
 在 `src/locales/en.po` 中填写英文，再执行 `pnpm i18n:compile`（可选，Vite 插件也会自动处理）。
 
-当前 catalog 共 **271 条，英文 Missing 0**。已覆盖导航、播放器、队列、搜索、首页、歌单 / 专辑 / 歌手详情、登录弹窗、评论、设置、最新音乐 / 最新 MV 等主要界面。
+当前 catalog 共 **900+ 条**。已覆盖导航、播放器、队列、搜索、备选音源、首页、歌单 / 专辑 / 歌手详情、登录弹窗、评论、设置、最新音乐 / 最新 MV 等主要界面。
 
 尚未覆盖：个人主页、歌单编辑页、MV / 视频详情页，以及少量 `aria-label` / `title`。
 
@@ -571,7 +582,7 @@ pnpm i18n:extract
 - 播放音质与缓存品质相互独立
 - 缓存上限：默认 200MB，可在设置中调整，超出后按缓存时间淘汰
 - 缓存列表支持多选下载、清除全部；网页端多选打包 ZIP，桌面端保存 `.opus`
-- 第三方解灰音源不写入缓存（避免经过只允许网易 CDN 的 `/audio/proxy`）
+- 哔哩哔哩 / YouTube 音源也可缓存（键为 `<id>@bilibili` / `<id>@youtube`）；切换视频候选时会删除旧副本，保证一首歌只留一个视频版本
 
 如果出现「音频缓存暂不可用」，Toast 会附带具体原因；桌面端同时写入：
 
@@ -589,6 +600,7 @@ pnpm i18n:extract
 | 缓存品质 | 64 / 96 / 128kbps，只影响后续缓存 |
 | 下载目录 | 桌面端缓存导出目录 |
 | VIP 歌曲自动替换音源 | 开启后 VIP 歌曲优先尝试其他音源 |
+| YouTube 音源（yt-dlp） | 检测 yt-dlp，或一键下载官方版本到应用数据目录 |
 | Spleeter 安装目录 | 运行环境位置，默认 `<应用目录>/spleeter-runtime` |
 | 伴奏保存目录 | 生成音轨位置，默认 `<应用目录>/spleeter-library` |
 | 输出格式 | M4A/AAC（默认）、OGG、MP3、FLAC、WAV |
@@ -625,6 +637,11 @@ src/
 server/          NetEaseCloudMusicApiEnhanced 本地 API
   remoteControl.js  /remote 页面、Manifest、Service Worker、命令中继
   remoteIcons.js    内嵌 PWA 图标
+  module/song_url_sources.js  候选视频列表（`/song/url/sources`）
+  module/song_url_video.js    解析指定视频（`/song/url/video`）
+  util/bilibili.js  WBI 签名搜索、打分、DASH 音频
+  util/youtube.js   yt-dlp 搜索、打分、音频提取
+  util/ytdlp.js     yt-dlp 检测与一键安装
 scripts/         桌面 API 打包、安装器、首屏性能测量
 assets/          图标与 README 截图
 lingui.config.ts Lingui 配置
@@ -637,6 +654,9 @@ electrobun.config.ts / hutch.config.ts  桌面构建配置
 src/lib/remoteBridge.ts       桌面端遥控状态发布与 SSE 命令接收
 src/components/common/MenuSurface.tsx  歌曲详情页浮动菜单表面
 src/components/player/PlayerMenuContent.tsx  播放条弹层适配
+src/components/player/SourceResultsPanel.tsx 播放源标签：候选视频列表
+src/components/player/SourceVideoModal.tsx    全屏哔哩哔哩 / YouTube 嵌入
+src/components/settings/YtDlpCard.tsx         yt-dlp 状态与安装
 src/components/common/ToastBridge.tsx  Toast 渲染桥接
 ```
 
@@ -703,6 +723,7 @@ node scripts/measure-fpp.mjs --desktop
 | `QIMIAO_API_HOST` | 桌面 API 绑定地址；打包版默认 `0.0.0.0`，便于手机访问 |
 | `QIMIAO_REMOTE_ONLY` | `1` 时非本机客户端只能访问 `/remote`，其他 API 返回 403 |
 | `PROXY_URL` / `ENABLE_PROXY` | 解灰音源代理（可选） |
+| `YT_DLP_PATH` | 指定 yt-dlp 二进制路径；未设置时使用应用内安装版本或 `PATH` |
 
 ## 常见问题
 
@@ -739,6 +760,16 @@ Electrobun devkit 固定的 Bun 版本下载较慢（GitHub Release）。可让 
 ```powershell
 Get-Content "$env:LOCALAPPDATA\com.qimiao.music\startup.log" -Tail 20
 ```
+
+### YouTube 音源提示未安装 yt-dlp
+
+打开 **设置 → 桌面 → YouTube 音源 → 安装 yt-dlp**，会把官方版本（约 17 MB）下载到 `%LOCALAPPDATA%\com.qimiao.music\local-data\bin`。GitHub 不可达时，可自行安装后放进 `PATH`（或用 `YT_DLP_PATH` 指定），再点「重新检测」。
+
+YouTube 匹配要跑两次 `yt-dlp`（搜索 + 取流），约 10–12 秒；哔哩哔哩通常 1 秒内完成。
+
+### 哔哩哔哩匹配到翻奏或匹配不到
+
+候选会按标题关键词（伴奏 / 翻唱 / remix / cover / dj / 谱）、歌手线索（标题或 UP 主）、以及搜索阶段与实际音频流两处时长校验来淘汰。冷门歌被误杀时，可调低 `server/util/bilibili.js` 顶部的 `MIN_SCORE`；想更严格则调高。未登录 B 站最高只能取到 192kbps AAC。
 
 ### 桌面端接口全部失败
 
@@ -794,6 +825,7 @@ build\dev-win-x64\声屿-dev\bin\bun.exe
 
 - 网易云音乐 API：[NetEaseCloudMusicApiEnhanced](https://github.com/neteasecloudmusicapienhanced/api)
 - 解灰参考：[UnblockNeteaseMusic](https://github.com/UnblockNeteaseMusic/server)
+- YouTube 解析：[yt-dlp](https://github.com/yt-dlp/yt-dlp)
 - 桌面框架：[Electrobun](https://github.com/blackboardsh/electrobun)
 - UI 组件：[darwin-ui](https://www.npmjs.com/package/@pikoloo/darwin-ui)
 - 音频封装：[mediabunny](https://mediabunny.dev)

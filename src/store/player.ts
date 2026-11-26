@@ -21,6 +21,7 @@ import {
   getCachedAudio,
   getCachedAudioMeta,
   hasCachedAudio,
+  listCachedSources,
   removeCachedAudio,
 } from '../lib/songCache'
 import { cacheCoverImage } from '../lib/coverCache'
@@ -607,6 +608,30 @@ async function shouldBypassAudioCache(song: Song) {
   return Boolean(meta && (meta.trialEnd === undefined || meta.trialEnd > 0))
 }
 
+/**
+ * Cached copies of matched sources, preferred over running the matcher again.
+ * Video-site copies win: re-matching them is expensive (YouTube runs yt-dlp
+ * twice) and may land on a different upload than the one already cached.
+ */
+const CACHED_SOURCE_PRIORITY = ['bilibili', 'youtube']
+
+async function preferredCachedSource(song: Song): Promise<string> {
+  try {
+    const sources = (await listCachedSources(song.id)).filter(
+      (source) => source && source !== 'copyright-rcmd',
+    )
+    if (!sources.length) return ''
+    const preferred = useSettingsStore.getState().preferredSource
+    if (preferred !== 'auto' && sources.includes(preferred)) return preferred
+    for (const source of CACHED_SOURCE_PRIORITY) {
+      if (sources.includes(source)) return source
+    }
+    return sources[0]
+  } catch {
+    return ''
+  }
+}
+
 function hasFreshUrl(song: Song) {
   const settings = useSettingsStore.getState()
   // A cached trial URL must not bypass auto matching after the user enables it;
@@ -1033,9 +1058,20 @@ export const usePlayerStore = create<PlayerState>()(
           if (bypassAudioCache) {
             void removeCachedAudio(song.id, cacheSourceOf(song))
           }
-          const cached = bypassAudioCache
+          // A cached matched copy (Bilibili / YouTube / relay) is a finished
+          // track: play it instead of re-running the matcher and possibly
+          // landing on a different upload than the one already on disk.
+          const matchedCachedSource = song.matchedSource
+            ? ''
+            : await preferredCachedSource(song)
+          let cachedSource = cacheSourceOf(song)
+          let cached = bypassAudioCache
             ? null
-            : await getCachedAudio(song.id, cacheSourceOf(song))
+            : await getCachedAudio(song.id, cachedSource)
+          if (!cached && matchedCachedSource) {
+            cached = await getCachedAudio(song.id, matchedCachedSource)
+            if (cached) cachedSource = matchedCachedSource
+          }
           if (get().loadRequestId !== requestId) return true
 
           if (cached) {
@@ -1044,10 +1080,28 @@ export const usePlayerStore = create<PlayerState>()(
               URL.revokeObjectURL(url)
               return true
             }
+            let hydrated = song
+            if (cachedSource !== cacheSourceOf(song)) {
+              const meta = await getCachedAudioMeta(song.id, cachedSource)
+              if (get().loadRequestId !== requestId) {
+                URL.revokeObjectURL(url)
+                return true
+              }
+              hydrated = {
+                ...song,
+                url: '',
+                urlFetchedAt: 0,
+                unblocked: true,
+                matchedSource: cachedSource,
+                matchedWebUrl: meta?.webUrl,
+                trialEnd: 0,
+              }
+              patchSong(index, hydrated)
+            }
             set({ audioUrl: url, sourceReady: true, audioFromCache: true })
-            void useLocalLibraryStore.getState().recordRecent(song)
+            void useLocalLibraryStore.getState().recordRecent(hydrated)
             prefetchNeighbors(index)
-            await resolveLyrics(index, song, requestId)
+            await resolveLyrics(index, hydrated, requestId)
             return true
           }
 

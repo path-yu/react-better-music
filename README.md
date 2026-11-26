@@ -57,7 +57,9 @@ A macOS-style third-party NetEase Cloud Music client rewritten with React 19 + T
 - Home carousel, recommended playlists, daily mix, new MVs
 - Playlist category filters, featured playlists, pagination
 - New music / new MV filters by region, type and order
-- Search songs, playlists, artists, MVs and videos with keyboard navigation and Enter to open
+- Search songs, playlists, artists, MVs and videos with keyboard navigation and Enter to open; pressing Enter again re-runs the same query
+- Deep search fallback: when the song index hides an unlicensed track, the id is resolved through a `site:music.163.com` web search and, failing that, by scanning the matching albums; toggle on the results page
+- Ctrl/Cmd-click to multi-select rows and add them to an account or local playlist in one request
 - Recent playback search by song, artist or album
 - Playlist, artist, album and MV detail pages, plus video playback
 
@@ -69,6 +71,11 @@ A macOS-style third-party NetEase Cloud Music client rewritten with React 19 + T
 - Volume control with persistence
 - Heartbeat mode powered by NetEase recommendations
 - Manual VIP source switching; optional automatic replacement in Settings
+- Bilibili and YouTube as selectable sources: Bilibili uses WBI-signed search plus DASH audio, YouTube uses a locally installed `yt-dlp`
+- Automatic replacement order: UNM → GD Studio → ByFuns → Bilibili
+- Video-site matches keep the NetEase identity (lyrics, comments, cover, queue) while the audio comes from the video
+- **Source** tab lists every candidate video (cover, title, author, plays, duration) and switches between them; only one video copy is cached per song
+- **Source video** tag next to the title opens the matched video in a full-screen embed and pauses/resumes playback around it
 - Playback position is preserved when switching sources
 - Smart stem mode: original / vocals / accompaniment, with seamless position-preserving switches
 
@@ -152,6 +159,8 @@ A macOS-style third-party NetEase Cloud Music client rewritten with React 19 + T
 | Audio cache | WebCodecs + mediabunny + IndexedDB |
 | Stem separation | Spleeter 2.4, TensorFlow 2.9, Python 3.9, FFmpeg |
 | Backend | NetEaseCloudMusicApiEnhanced (`server/`) |
+| Alternative sources | Bilibili WBI search + DASH audio, YouTube via yt-dlp, `unblockmusic-utils` relays |
+| Video embed | Bilibili / YouTube official iframe players |
 | Desktop | Electrobun + Hutch + Bun |
 | Phone remote | Node HTTP, Web App Manifest, Service Worker |
 | Tests | Vitest (79 unit tests) |
@@ -200,6 +209,7 @@ Phone ──LAN──> http://<PC-IP>:13000/remote/
   - Windows 10/11 with **WebView2 Runtime** (usually preinstalled)
   - Optional: Inno Setup 6, only for the custom install-directory installer
   - Optional: the in-app Spleeter installer for local vocals/accompaniment separation
+  - Optional: `yt-dlp` for the YouTube source, installable from Settings
 
 Hutch is not an npm dependency; install it separately:
 
@@ -507,7 +517,7 @@ pnpm i18n:extract
 
 Fill in the English in `src/locales/en.po`, and optionally run `pnpm i18n:compile` (the Vite plugin also handles catalogs automatically).
 
-The catalog currently has **271 messages with 0 missing English translations**. Covered areas include navigation, player, queue, search, home, playlist/album/artist details, login dialog, comments, settings, new music and new MVs.
+The catalog currently holds **900+ messages**. Covered areas include navigation, player, queue, search, alternative sources, home, playlist/album/artist details, login dialog, comments, settings, new music and new MVs.
 
 Not yet covered: profile, playlist editor, MV/video detail pages, and a few `aria-label` / `title` attributes.
 
@@ -519,7 +529,7 @@ Not yet covered: profile, playlist editor, MV/video detail pages, and a few `ari
 - Playback quality and cache quality are independent
 - Limits: 60 tracks / 80 MB; oldest entries are evicted first
 - The cache list supports multi-select downloads and clearing; ZIP on the web, `.opus` files on desktop
-- Third-party unblocked sources are never cached (the `/audio/proxy` endpoint only allows NetEase CDN hosts)
+- Matched Bilibili / YouTube audio is cached too (key `<id>@bilibili` / `<id>@youtube`); switching video candidates drops the previous copy so a song keeps a single video version
 
 If "音频缓存暂不可用" appears, the toast includes the reason and the desktop app logs it to:
 
@@ -537,6 +547,7 @@ Common causes: WebCodecs unavailable, audio decode failure, IndexedDB quota exha
 | Cache quality | 64 / 96 / 128 kbps, affecting only future cache entries |
 | Download folder | Desktop cache export directory |
 | Auto-replace VIP sources | Prefer matched sources for VIP tracks |
+| YouTube source (yt-dlp) | Detects `yt-dlp`, or downloads the official build into the app data directory |
 | Spleeter install directory | Runtime location; defaults to `<app>/spleeter-runtime` |
 | Spleeter library directory | Generated stem location; defaults to `<app>/spleeter-library` |
 | Stem output format | M4A/AAC (default), OGG, MP3, FLAC or WAV |
@@ -573,6 +584,11 @@ src/
 server/          NetEaseCloudMusicApiEnhanced local API
   remoteControl.js  /remote page, manifest, service worker, command relay
   remoteIcons.js    Embedded PWA icons
+  module/song_url_sources.js  Candidate video list (`/song/url/sources`)
+  module/song_url_video.js    Resolve one chosen video (`/song/url/video`)
+  util/bilibili.js   WBI-signed search, ranking and DASH audio
+  util/youtube.js    yt-dlp search, ranking and audio extraction
+  util/ytdlp.js      yt-dlp detection and one-click install
 scripts/          Desktop API bundling, installers, first-paint measurement
 assets/           Icons and README screenshots
 lingui.config.ts  Lingui configuration
@@ -585,6 +601,9 @@ Other important files:
 src/lib/remoteBridge.ts                 Phone state publishing / SSE command stream
 src/components/common/MenuSurface.tsx   Shared menu surface for the immersive player
 src/components/player/PlayerMenuContent.tsx  Player-bar popover adapter
+src/components/player/SourceResultsPanel.tsx 播放源 tab: candidate videos
+src/components/player/SourceVideoModal.tsx    Full-screen Bilibili / YouTube embed
+src/components/settings/YtDlpCard.tsx         yt-dlp status and installer
 src/components/common/ToastBridge.tsx   Toast rendering bridge
 ```
 
@@ -651,6 +670,7 @@ Including `window-created`, `api-child-spawned`, `api-ready`, `renderer-first-pa
 | `QIMIAO_API_HOST` | Desktop API bind host; packaged builds default to `0.0.0.0` |
 | `QIMIAO_REMOTE_ONLY` | `1` restricts LAN clients to `/remote`; other API paths return 403 |
 | `PROXY_URL` / `ENABLE_PROXY` | Unblock source proxy (optional) |
+| `YT_DLP_PATH` | Explicit path to a `yt-dlp` binary; otherwise the in-app install and `PATH` are used |
 
 ## Troubleshooting
 
@@ -688,6 +708,16 @@ Check the reason in the toast, or run:
 Get-Content "$env:LOCALAPPDATA\com.qimiao.music\startup.log" -Tail 20
 ```
 
+### YouTube source says yt-dlp is missing
+
+Open **Settings → Desktop → YouTube 音源 → 安装 yt-dlp**. It downloads the official build (about 17 MB) into `%LOCALAPPDATA%\com.qimiao.music\local-data\bin`. When GitHub is unreachable, install `yt-dlp` yourself, put it on `PATH` (or point `YT_DLP_PATH` at it) and press **重新检测**.
+
+YouTube matching runs two `yt-dlp` calls (search + stream), so a match takes about 10–12 seconds; Bilibili takes under a second.
+
+### Bilibili match picks a cover or returns nothing
+
+Candidates are rejected by title keywords (`伴奏 / 翻唱 / remix / cover / dj / 谱`), by artist evidence (title or uploader) and by duration at two stages. If a rare song is rejected, lower `MIN_SCORE` in `server/util/bilibili.js`; raise it to be stricter. Covers/matches are limited to 192 kbps AAC on a signed-out Bilibili account.
+
 ### All desktop API calls fail
 
 Make sure `Resources/app/bun/api.cjs` and `Resources/bin/bun.exe` exist, and that port `13000` is free. The child process watches its parent and exits cleanly, so normal quits should not leave orphans.
@@ -722,6 +752,7 @@ Make sure the installed build is current and all old processes were closed. The 
 
 - NetEase Cloud Music API: [NetEaseCloudMusicApiEnhanced](https://github.com/neteasecloudmusicapienhanced/api)
 - Unblocking references: [UnblockNeteaseMusic](https://github.com/UnblockNeteaseMusic/server)
+- YouTube extraction: [yt-dlp](https://github.com/yt-dlp/yt-dlp)
 - Desktop framework: [Electrobun](https://github.com/blackboardsh/electrobun)
 - UI components: [darwin-ui](https://www.npmjs.com/package/@pikoloo/darwin-ui)
 - Audio muxing: [mediabunny](https://mediabunny.dev)

@@ -72,7 +72,7 @@ function normalizeQuery(value: string) {
 
 /** A live/remix/instrumental upload is not the original. */
 const DECORATED_TITLE =
-  /(live|remix|dj|伴奏|翻唱|cover|纯音乐|instrumental|bootleg|type\s*beat|\bbeat\b|v\d|加速|降速|片段|剪辑|铃声|女声版|男声版|\d(?:\.\d)?x)/i
+  /(live|remix|dj|伴奏|翻唱|cover|纯音乐|instrumental|bootleg|type\s*beat|\bbeat\b|v\d|加速|降速|慢速|变速|升调|降调|说唱版|片段|剪辑|铃声|女声版|男声版|\d(?:\.\d)?x)/i
 
 /**
  * True when an undecorated hit really is the requested song.
@@ -90,11 +90,17 @@ function hasDirectMatch(songs: Song[], keyword: string) {
     .filter(Boolean)
   if (!tokens.length) return true
   if (tokens.length === 1) {
-    return songs.some(
-      (song) =>
-        !DECORATED_TITLE.test(song.name) &&
-        normalizeQuery(song.name).includes(tokens[0]),
+    const token = tokens[0]
+    // One word that is an artist name ("周杰伦"): the results are that
+    // artist's songs, nothing to recover.
+    const artistQuery = songs.some((song) =>
+      song.ar.some((artist) => normalizeQuery(artist.name) === token),
     )
+    if (artistQuery) return true
+    // A bare title ("爱的回归线") is usually dominated by covers when the
+    // original is delisted, so let the fallback look for the original even
+    // though an undecorated cover already matched.
+    return false
   }
   const covered = (titleTokens: string[], artistToken: string, song: Song) => {
     if (DECORATED_TITLE.test(song.name)) return false
@@ -163,6 +169,8 @@ function SearchPage() {
   const [deepLoading, setDeepLoading] = useState(false)
   const deepKeywordRef = useRef('')
   const songsRef = useRef<Song[]>([])
+  /** Keyword whose song list has actually been applied to state. */
+  const [appliedKeyword, setAppliedKeyword] = useState('')
 
   useEffect(() => {
     songsRef.current = songs
@@ -198,6 +206,7 @@ function SearchPage() {
     setDeepSongs([])
     setDeepLoading(false)
     deepKeywordRef.current = ''
+    setAppliedKeyword('')
   }, [keyword])
 
   const applyResult = useCallback(
@@ -237,6 +246,7 @@ function SearchPage() {
     if (cached) {
       setFailed(false)
       setLoading(false)
+      setAppliedKeyword(keyword)
       applyResult(cached)
       return
     }
@@ -280,6 +290,7 @@ function SearchPage() {
     )
       .then((result) => {
         if (controller.signal.aborted) return
+        setAppliedKeyword(keyword)
         cacheSearchResult(cacheKey, result)
         applyResult(result)
       })
@@ -319,6 +330,10 @@ function SearchPage() {
     }
     const query = keyword.trim()
     if (!query || loading || failed) return
+    // Never start before the song list for this keyword has been applied: an
+    // early start is aborted by the fetch effect's `loading` flip and used to
+    // leave the fallback permanently blocked.
+    if (appliedKeyword !== query) return
     if (hasDirectMatch(songsRef.current, query)) {
       setDeepSongs([])
       deepKeywordRef.current = ''
@@ -343,8 +358,12 @@ function SearchPage() {
         // keyword will set it again.
         if (deepKeywordRef.current === startedWith) setDeepLoading(false)
       })
-    return () => controller.abort()
-  }, [tab, page, keyword, loading, failed, deepEnabled, refreshToken])
+    return () => {
+      controller.abort()
+      // An aborted run must be restartable once the fetch settles.
+      if (deepKeywordRef.current === startedWith) deepKeywordRef.current = ''
+    }
+  }, [tab, page, keyword, loading, failed, deepEnabled, refreshToken, appliedKeyword])
 
   const retry = () => setAttempt((value) => value + 1)
 
