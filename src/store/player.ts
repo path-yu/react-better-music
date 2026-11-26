@@ -120,6 +120,10 @@ interface PlayerState {
     videoId: string,
     webUrl: string,
   ) => Promise<void>
+  /** Backfill the video page link for a cached / older queue entry. */
+  resolveMatchedWebUrl: (
+    source: 'bilibili' | 'youtube',
+  ) => Promise<void>
   /** Play a cached copy of the current track from the given provider. */
   playCachedSource: (source: string) => Promise<void>
   /** Switch to NetEase's recommended other edition (`/song/copyright/rcmd`). */
@@ -1865,6 +1869,26 @@ export const usePlayerStore = create<PlayerState>()(
             )
           } finally {
             set({ switchingSource: false })
+          }
+        },
+
+        /**
+         * A cached video copy (or a queue entry restored from disk) may not
+         * carry the page link. Resolve it once so the title tag and the
+         * "open video" row appear without waiting for a manual switch.
+         */
+        async resolveMatchedWebUrl(source) {
+          const state = get()
+          const song = state.queue[state.currentIndex]
+          if (!song || song.matchedWebUrl) return
+          try {
+            const matched = await fetchMatchedSongUrl(song.id, source)
+            if (!matched.webUrl) return
+            const active = get()
+            if (active.queue[active.currentIndex]?.id !== song.id) return
+            patchSong(active.currentIndex, { matchedWebUrl: matched.webUrl })
+          } catch {
+            // Offline / rate limited: the tag simply stays hidden.
           }
         },
 

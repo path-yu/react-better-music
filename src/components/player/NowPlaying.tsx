@@ -137,6 +137,9 @@ export function NowPlaying() {
   // Backdrop follows the current cover; the colour wash is sampled from it.
   const artwork = currentSong?.al.picUrl
   const playing = usePlayerStore((state) => state.playing)
+  const resolveMatchedWebUrl = usePlayerStore(
+    (state) => state.resolveMatchedWebUrl,
+  )
   const audioReady = usePlayerStore((state) => state.audioReady)
   const sourceReady = usePlayerStore((state) => state.sourceReady)
   const busyVisible = useDelayedBusy(
@@ -1175,6 +1178,13 @@ export function NowPlaying() {
   useEffect(() => {
     setSourceVideoOpen(false)
   }, [currentSong?.id])
+
+  // Cached video copies may have no page link stored: resolve it as soon as
+  // the song is playing from that provider so 「源视频」 appears immediately.
+  useEffect(() => {
+    if (!videoSource || currentSong?.matchedWebUrl) return
+    void resolveMatchedWebUrl(videoSource)
+  }, [videoSource, currentSong?.id, currentSong?.matchedWebUrl, resolveMatchedWebUrl])
   const renderTabs = (mobile: boolean) => {
     const tabOn = (key: NowPlayingPanel) =>
       panel === key && !(mobile && mobileSongView)
