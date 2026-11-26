@@ -47,7 +47,11 @@ export default defineConfig(({ mode }) => {
   plugins: [
     devtools(),
     tailwindcss(),
-    tanstackRouter({ target: 'react', autoCodeSplitting: true }),
+    // Routes ship in the main bundle on purpose. Splitting saved ~16KB gzip on
+    // first paint but left the content area blank for 150-300ms on the first
+    // visit to each page (the old view unmounts before the chunk lands). On a
+    // desktop app the extra bytes load from disk, so no blank frames wins.
+    tanstackRouter({ target: 'react', autoCodeSplitting: false }),
     viteReact(),
     // Lingui: native macro transform + `.po` imports. Macro transform is
     // opt-in in v6, and without it the macro runtime throws at load time.

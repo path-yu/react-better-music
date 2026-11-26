@@ -20,6 +20,7 @@ import { useDesktopLyricsPublisher } from '../../lib/desktopLyrics'
 import { applyTheme } from '../../lib/theme'
 import { getLastLoginRefreshAt, getLoginCookie, refreshLogin } from '../../lib/session'
 import { installNetworkStatus } from '../../lib/networkStatus'
+import { RoutePending } from './RoutePending'
 
 // The queue panel and login dialog are only needed after a user action; keep
 // them out of the first-paint parse. NowPlaying stays eager because it owns
@@ -136,6 +137,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       void import('../player/QueuePanel')
       void import('./LoginModal')
     }
+
     // Safari (web build) has no requestIdleCallback; calling it would throw
     // and take the whole shell down.
     if (typeof window.requestIdleCallback === 'function') {
@@ -371,10 +373,16 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Sidebar />
           <div className="main-column relative overflow-hidden">
             <main ref={contentRef} className="apple-content relative">
-              {/* Keyed by route so each navigation fades in from scratch. */}
-              <div key={pathname} className="route-fade">
-                {children}
-              </div>
+              {/* Route modules are code-split: while the next page's chunk is
+                  in flight the old view is already gone, so without a fallback
+                  the content area is blank for 150–300ms (the white flash on a
+                  first visit). Suspense keeps the skeleton in place instead. */}
+              <Suspense fallback={<RoutePending />}>
+                {/* Keyed by route so each navigation fades in from scratch. */}
+                <div key={pathname} className="route-fade">
+                  {children}
+                </div>
+              </Suspense>
             </main>
             {hasQueue && <PlayerBar />}
           </div>

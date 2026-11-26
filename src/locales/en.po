@@ -795,7 +795,7 @@ msgstr "When off, only the whole line is highlighted; no word-by-word animation"
 msgid "关闭定时器"
 msgstr "Turn off timer"
 
-#: src/components/layout/AppShell.tsx:385
+#: src/components/layout/AppShell.tsx:393
 msgid "关闭导航"
 msgstr "Close navigation"
 

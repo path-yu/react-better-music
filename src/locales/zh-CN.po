@@ -795,7 +795,7 @@ msgstr "关闭后只高亮整行，不做逐字动画"
 msgid "关闭定时器"
 msgstr "关闭定时器"
 
-#: src/components/layout/AppShell.tsx:385
+#: src/components/layout/AppShell.tsx:393
 msgid "关闭导航"
 msgstr "关闭导航"
 

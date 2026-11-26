@@ -3794,12 +3794,15 @@ a.song-tag--outline:focus-visible {
 /* ---------- route transition ---------- */
 
 /*
- * Page content fades in on navigation. 160ms keeps it below the "feels slow"
- * threshold and it collapses to a single frame under reduce-motion (P0-1).
+ * Page content fades in on navigation. Starting at 45% instead of 0 matters:
+ * every navigation mounts a fresh subtree, and with `from { opacity: 0 }` the
+ * first painted frame was a fully blank content area — on a slow first visit
+ * (chunk + data still loading) that blank frame read as a white flash. Starting
+ * part-way keeps the intent visible while still softening the switch.
  */
 @keyframes route-fade-in {
   from {
-    opacity: 0;
+    opacity: 0.45;
   }
   to {
     opacity: 1;
@@ -3807,7 +3810,7 @@ a.song-tag--outline:focus-visible {
 }
 
 .route-fade {
-  animation: route-fade-in 0.16s ease both;
+  animation: route-fade-in 0.12s ease both;
 }
 
 /* ---------- reduced transparency / higher contrast ---------- */
