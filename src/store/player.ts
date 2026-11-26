@@ -42,6 +42,7 @@ import { i18n } from '../i18n'
 import { useSettingsStore } from './settings'
 import { useLocalLibraryStore } from './localLibrary'
 import { useVideoPlaybackStore } from './videoPlayback'
+import { useUiStore } from './ui'
 import { PLAY_MODE_CYCLE, PLAY_MODE_LABELS } from '../lib/playMode'
 import type { Song } from '../types'
 
@@ -342,10 +343,15 @@ function announceMatch(show: () => void) {
 }
 
 /**
- * `/audio/proxy` only accepts NetEase CDN hosts (enforced in server/server.js),
+ * `/audio/proxy` only accepts NetEase CDN hosts and URLs the matcher produced,
  * so third-party matches are streamed directly by the audio element.
  */
 const NETEASE_MEDIA = /^https?:\/\/[^/]*music\.126\.net\//
+/**
+ * Bilibili's CDN refuses requests without a bilibili referer, which the audio
+ * element cannot send: those URLs must go through the local proxy.
+ */
+const PROXY_ONLY_MEDIA = /^https?:\/\/[^/]*(bilivideo\.(com|cn)|hdslb\.com)\//
 
 /** Deduplicate lyric loads between the current track and neighbour prefetch. */
 const lyricsRequests = new Map<number, Promise<LyricsPatch | null>>()
@@ -377,7 +383,10 @@ async function loadLyricsPatch(songId: number): Promise<LyricsPatch | null> {
 }
 
 function playbackUrl(url: string, unblocked: boolean) {
-  return unblocked && !NETEASE_MEDIA.test(url) ? url : apiUrl('/audio/proxy', { url })
+  if (unblocked && !NETEASE_MEDIA.test(url) && !PROXY_ONLY_MEDIA.test(url)) {
+    return url
+  }
+  return apiUrl('/audio/proxy', { url })
 }
 
 /**
@@ -1805,8 +1814,23 @@ export const usePlayerStore = create<PlayerState>()(
             })
             await resolveLyrics(active.currentIndex, { ...song, ...patch }, requestId)
             toast.success(i18n._(msg`已切换到其他音源`))
-          } catch {
-            toast.warning(i18n._(msg`切换音源失败，请稍后再试`))
+          } catch (error) {
+            // Missing yt-dlp is not a failure to apologise for: offer the
+            // installer instead of a toast.
+            const reason = (
+              error as { payload?: { reason?: string } } | undefined
+            )?.payload?.reason
+            if (reason === 'yt-dlp-missing') {
+              useUiStore.getState().openYtDlpDialog()
+              return
+            }
+            // Other server hints (no match, Bilibili failures) are actionable;
+            // a bare HTTP failure is not.
+            const detail = error instanceof Error ? error.message : ''
+            const actionable = /yt-dlp|未找到|没有|B 站/.test(detail)
+            toast.warning(
+              actionable ? detail : i18n._(msg`切换音源失败，请稍后再试`),
+            )
           } finally {
             set({ switchingSource: false })
           }

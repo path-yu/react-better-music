@@ -24,6 +24,8 @@ const matchedMedia = require('./util/matchedMedia')
 
 /** NetEase's own CDN, the only host the audio proxy always trusts. */
 const NETEASE_MEDIA_URL = /^https?:\/\/[^/]*music\.126\.net\//
+/** Bilibili DASH audio; needs a bilibili referer to be streamed. */
+const BILIBILI_MEDIA_URL = /^https?:\/\/[^/]*(bilivideo\.(com|cn)|hdslb\.com)\//
 
 // Media proxy requests also force IPv4 with Happy Eyeballs disabled, otherwise
 // the first request can wait ~10s for an unreachable IPv6 connection.
@@ -345,6 +347,10 @@ async function constructServer(moduleDefs) {
           ...(NETEASE_MEDIA_URL.test(raw)
             ? { Referer: 'https://music.163.com/' }
             : {}),
+          // Bilibili rejects its own CDN URLs without a bilibili referer.
+          ...(BILIBILI_MEDIA_URL.test(raw)
+            ? { Referer: 'https://www.bilibili.com/', Origin: 'https://www.bilibili.com' }
+            : {}),
           ...(range ? { Range: range } : {}),
         },
         validateStatus: () => true,
@@ -469,6 +475,7 @@ async function constructServer(moduleDefs) {
    * would appear stale for two minutes.
    */
   const localLibrary = require('./util/localLibrary')
+  const ytdlp = require('./util/ytdlp')
   const localRoute = (handler) => async (req, res) => {
     try {
       res.json({ code: 200, data: await handler(req) })
@@ -484,6 +491,16 @@ async function constructServer(moduleDefs) {
   app.get(
     '/local/library',
     localRoute(() => localLibrary.getState()),
+  )
+  // YouTube source support: status of the yt-dlp binary, and a one-click
+  // install of the official release into the app-data bin directory.
+  app.get(
+    '/youtube/ytdlp',
+    localRoute(() => ytdlp.status()),
+  )
+  app.post(
+    '/youtube/ytdlp',
+    localRoute(() => ytdlp.install()),
   )
   app.post(
     '/local/playlists',

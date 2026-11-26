@@ -36,6 +36,9 @@ const ImportPlaylistDialog = lazy(() =>
     default: module.ImportPlaylistDialog,
   })),
 )
+const YtDlpDialog = lazy(() =>
+  import('./YtDlpDialog').then((module) => ({ default: module.YtDlpDialog })),
+)
 
 /** Rotate the login cookie every few hours so the persisted session never dies. */
 const LOGIN_REFRESH_INTERVAL = 6 * 60 * 60 * 1000
@@ -57,6 +60,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const loginOpen = useUiStore((state) => state.loginOpen)
   const importPlaylistOpen = useUiStore((state) => state.importPlaylistOpen)
   const closeImportPlaylist = useUiStore((state) => state.closeImportPlaylist)
+  const ytDlpDialogOpen = useUiStore((state) => state.ytDlpDialogOpen)
+  const closeYtDlpDialog = useUiStore((state) => state.closeYtDlpDialog)
   const closeLogin = useUiStore((state) => state.closeLogin)
   const sidebarOpen = useUiStore((state) => state.sidebarOpen)
   const sidebarCollapsed = useSidebarCollapsed()
@@ -411,6 +416,14 @@ export function AppShell({ children }: { children: ReactNode }) {
             <ImportPlaylistDialog
               open
               onOpenChange={(open) => !open && closeImportPlaylist()}
+            />
+          </Suspense>
+        ) : null}
+        {ytDlpDialogOpen ? (
+          <Suspense fallback={null}>
+            <YtDlpDialog
+              open
+              onOpenChange={(open) => !open && closeYtDlpDialog()}
             />
           </Suspense>
         ) : null}

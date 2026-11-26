@@ -53,6 +53,7 @@ import { SearchInput } from '../components/common/SearchInput'
 import { PlayerStylePicker } from '../components/settings/PlayerStylePicker'
 import { RemoteControlCard } from '../components/settings/RemoteControlCard'
 import { UpdateCard } from '../components/settings/UpdateCard'
+import { YtDlpCard } from '../components/settings/YtDlpCard'
 import {
   clearAudioCache,
   downloadCachedAudio,
@@ -1387,6 +1388,10 @@ function SettingsPage() {
             </p>
           </section>
         ) : null}
+
+        {/* yt-dlp only exists for the Electrobun/Tauri shells: it is a local
+            binary the API server spawns. */}
+        {desktop ? <YtDlpCard /> : null}
 
         {desktop && import.meta.env.MODE !== 'tauri' ? <UpdateCard /> : null}
 

@@ -17,6 +17,8 @@ export type Palette =
 interface UiState {
   loginOpen: boolean
   importPlaylistOpen: boolean
+  /** "YouTube source needs yt-dlp" prompt, opened from the player. */
+  ytDlpDialogOpen: boolean
   sidebarOpen: boolean
   /**
    * The user's own collapse choice (desktop only; the mobile drawer uses
@@ -35,6 +37,8 @@ interface UiState {
   closeLogin: () => void
   openImportPlaylist: () => void
   closeImportPlaylist: () => void
+  openYtDlpDialog: () => void
+  closeYtDlpDialog: () => void
   toggleSidebar: () => void
   closeSidebar: () => void
   setSidebarCollapsed: (collapsed: boolean) => void
@@ -50,6 +54,7 @@ export const useUiStore = create<UiState>()(
     (set) => ({
       loginOpen: false,
       importPlaylistOpen: false,
+      ytDlpDialogOpen: false,
       sidebarOpen: false,
       sidebarCollapsed: false,
       sidebarAutoCollapse: true,
@@ -60,6 +65,8 @@ export const useUiStore = create<UiState>()(
       closeLogin: () => set({ loginOpen: false }),
       openImportPlaylist: () => set({ importPlaylistOpen: true }),
       closeImportPlaylist: () => set({ importPlaylistOpen: false }),
+      openYtDlpDialog: () => set({ ytDlpDialogOpen: true }),
+      closeYtDlpDialog: () => set({ ytDlpDialogOpen: false }),
       toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
       closeSidebar: () => set({ sidebarOpen: false }),
       setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),

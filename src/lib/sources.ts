@@ -34,24 +34,14 @@ export const SOURCE_OPTIONS: SourceOption[] = [
     description: msg`第三方音源`,
   },
   {
-    value: 'ddyr',
-    label: msg`DDYR`,
-    description: msg`第三方音源`,
+    value: 'bilibili',
+    label: msg`哔哩哔哩`,
+    description: msg`按歌名搜索视频音频，适合找回原曲`,
   },
   {
-    value: 'msls',
-    label: msg`MSLS`,
-    description: msg`第三方音源`,
-  },
-  {
-    value: 'oi',
-    label: msg`OI 音乐`,
-    description: msg`第三方音源`,
-  },
-  {
-    value: 'qijieya',
-    label: msg`奇迹音乐`,
-    description: msg`第三方音源`,
+    value: 'youtube',
+    label: msg`YouTube`,
+    description: msg`需要本机安装 yt-dlp`,
   },
 ]
 
