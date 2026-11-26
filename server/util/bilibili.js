@@ -66,9 +66,12 @@ function signQuery(params, mixinKey) {
   return `${query}&w_rid=${md5(query + mixinKey)}`
 }
 
-async function searchVideos(keyword) {
+async function searchVideos(keyword, order) {
   const mixinKey = await getMixinKey()
-  const query = signQuery({ search_type: 'video', keyword, page: 1 }, mixinKey)
+  const query = signQuery(
+    { search_type: 'video', keyword, page: 1, ...(order ? { order } : {}) },
+    mixinKey,
+  )
   const res = await axios.get(
     `https://api.bilibili.com/x/web-interface/wbi/search/type?${query}`,
     { headers: HEADERS, timeout: TIMEOUT },
@@ -183,7 +186,7 @@ function durationToSeconds(value) {
  * case the rule is skipped, otherwise such a song could never be matched.
  */
 const HARD_REJECT =
-  /(伴奏|纯音乐|消音|翻自|翻唱|翻跳|remix|\bcover\b|\bdj\b|instrumental|off\s*vocal|8d|nightcore|slowed|sped\s*up|1\s*hour|一小时|循环|铃声|短信音)/i
+  /(伴奏|纯音乐|消音|翻自|翻唱|翻跳|remix|\bcover\b|\bdj\b|instrumental|off\s*vocal|8d|nightcore|slowed|sped\s*up|1\s*hour|一小时|循环|铃声|短信音|简谱|动态谱|五线谱|乐谱|曲谱|sheet\s*music)/i
 /** Softer hints; a matched duration can still outweigh them. */
 const SOFT_REJECT =
   /(舞蹈|练[习xi]室|直拍|慢速|倍速|教程|教学|reaction|直播|切片|合集|串烧|钢琴|吉他|架子鼓|八音盒|remake|live\s*ver|演唱会)/i
@@ -230,19 +233,25 @@ function scoreCandidate(item, meta) {
 
   // A 2:47 video that merely mentions the word "attention" is another song.
   // Without any artist evidence, only official/audio uploads are trusted.
+  // A `feat. Ami` style credit counts as evidence: collab titles routinely
+  // omit the main artist ("Cry For Me (feat. Ami)" for Michita).
+  const featHint = /\b(?:feat|ft)\.?\s/i.test(title)
   const officialHint =
     GOOD_TITLE.test(title) || OFFICIAL_AUTHOR.test(normalize(item.author))
-  const missingArtist = Boolean(meta.artist) && artist < 0.34
+  const missingArtist = Boolean(meta.artist) && artist < 0.34 && !featHint
   if (missingArtist) score -= 30
 
   // Official channels / label uploads are a good sign but not decisive.
   if (meta.artist && artist >= 0.99 && !SOFT_REJECT.test(title)) score += 8
   if (GOOD_TITLE.test(title)) score += 12
   if (OFFICIAL_AUTHOR.test(normalize(item.author))) score += 6
+  // `feat. Ami` with no main artist in the title is still the official credit
+  // of a collaboration, not an unrelated upload.
+  if (featHint && artist < 0.34) score += 8
   if (SOFT_REJECT.test(title)) score -= 45
 
   const views = Number(item.play) || 0
-  if (views > 0) score += Math.min(8, Math.log10(views) * 2)
+  if (views > 0) score += Math.min(12, Math.log10(views) * 2)
 
   const reject =
     duration.reject ||
@@ -291,6 +300,52 @@ function keywordVariants(meta) {
 
 const MIN_SCORE = 32
 
+/** Dedupe by bvid, drop rejected uploads, keep the best `take`. */
+function rankCandidates(results, meta, take = 4) {
+  const seen = new Set()
+  const scored = []
+  for (const item of results) {
+    if (!item || !item.bvid || seen.has(item.bvid)) continue
+    seen.add(item.bvid)
+    const entry = { item, ...scoreCandidate(item, meta) }
+    if (entry.reject || entry.score < MIN_SCORE) continue
+    scored.push(entry)
+  }
+  return scored.sort((a, b) => b.score - a.score).slice(0, take)
+}
+
+/**
+ * Ranked uploads for the source picker: metadata only, no stream resolution.
+ * Returned covers are already https so the renderer can use them directly.
+ */
+async function listCandidates(meta, limit = 10) {
+  const keyword = [meta.name, meta.artist].filter(Boolean).join(' ').trim()
+  if (!keyword) return []
+
+  let results = await searchVideos(keyword)
+  let ranked = rankCandidates(results, meta, limit)
+  if ((Number(ranked[0]?.item.play) || 0) < 10_000) {
+    try {
+      const popular = await searchVideos(keyword, 'click')
+      results = [...results, ...popular]
+      ranked = rankCandidates(results, meta, limit)
+    } catch {
+      // Keep the relevance ranking.
+    }
+  }
+
+  return ranked.map((entry) => ({
+    id: entry.item.bvid,
+    title: decodeEntities(entry.item.title),
+    author: entry.item.author || '',
+    cover: String(entry.item.pic || '').replace(/^\/\//, 'https://'),
+    duration: entry.seconds || 0,
+    views: Number(entry.item.play) || 0,
+    score: Math.round(entry.score),
+    webUrl: `https://www.bilibili.com/video/${entry.item.bvid}`,
+  }))
+}
+
 /**
  * @param {{ name?: string, artist?: string, durationMs?: number }} meta
  * @returns {Promise<{url: string, title: string, bvid: string, score: number,
@@ -308,12 +363,19 @@ async function matchSong(meta) {
       continue
     }
 
-    const ranked = results
-      .filter((item) => item && item.bvid)
-      .map((item) => ({ item, ...scoreCandidate(item, meta) }))
-      .filter((entry) => !entry.reject && entry.score >= MIN_SCORE)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 4)
+    let ranked = rankCandidates(results, meta)
+
+    // A low-view top hit usually means relevance surfaced a re-upload. Ask
+    // for the most played uploads too and rank both sets together; the
+    // original upload of a popular song has orders of magnitude more views.
+    if ((Number(ranked[0]?.item.play) || 0) < 10_000) {
+      try {
+        const popular = await searchVideos(keyword, 'click')
+        ranked = rankCandidates([...results, ...popular], meta)
+      } catch {
+        // Keep the relevance ranking when the second request fails.
+      }
+    }
 
     for (const entry of ranked) {
       try {
@@ -348,6 +410,8 @@ async function matchSong(meta) {
 
 module.exports = {
   matchSong,
+  listCandidates,
+  resolveAudio,
   // Exposed for the ranking tests; not used by the API.
   __test: { searchVideos, scoreCandidate, resolveAudio, durationToSeconds },
 }

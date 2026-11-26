@@ -10,6 +10,7 @@ import {
   fetchSongCopyrightRecommendation,
   fetchSongDetail,
   fetchSongUrlInfo,
+  fetchVideoSourceUrl,
 } from '../api'
 import { buildLyricLines, isEmptyLyric, type LyricLine } from '../lib/lyric'
 import { copyrightHint } from '../lib/songs'
@@ -113,6 +114,12 @@ interface PlayerState {
   ensureLyrics: () => Promise<void>
   /** Replace the current track with a matched provider source (manual picker). */
   switchToOtherSource: (source?: string, force?: boolean) => Promise<void>
+  /** Play one specific bilibili / YouTube video for the current song. */
+  switchToVideoCandidate: (
+    source: 'bilibili' | 'youtube',
+    videoId: string,
+    webUrl: string,
+  ) => Promise<void>
   /** Play a cached copy of the current track from the given provider. */
   playCachedSource: (source: string) => Promise<void>
   /** Switch to NetEase's recommended other edition (`/song/copyright/rcmd`). */
@@ -140,6 +147,8 @@ type SongSource = {
   available: boolean
   /** Which provider module produced the matched URL. */
   matchedSource?: string
+  /** Public page of the matched video (bilibili / YouTube). */
+  webUrl?: string
   /** Official playable edition recommended by `/song/copyright/rcmd`. */
   alternativeSongId?: number
   alternativeVersion?: boolean
@@ -213,12 +222,20 @@ async function resolveSongSource(song: Song): Promise<SongSource> {
     return alternativePromise
   }
 
-  let matchedPromise: Promise<{ url: string; source: string }> | null = null
+  let matchedPromise: Promise<{
+    url: string
+    source: string
+    webUrl: string
+  }> | null = null
   const getMatched = () => {
     if (!matchedPromise) {
       matchedPromise = fetchMatchedSongUrl(song.id, requestedSource)
-        .then((matched) => ({ url: matched.url, source: matched.source }))
-        .catch(() => ({ url: '', source: '' }))
+        .then((matched) => ({
+          url: matched.url,
+          source: matched.source,
+          webUrl: matched.webUrl,
+        }))
+        .catch(() => ({ url: '', source: '', webUrl: '' }))
     }
     return matchedPromise
   }
@@ -231,6 +248,7 @@ async function resolveSongSource(song: Song): Promise<SongSource> {
           unblocked: true,
           available: true,
           matchedSource: matched.source || requestedSource,
+          webUrl: matched.webUrl || undefined,
         }
       : null
   }
@@ -318,6 +336,7 @@ async function resolveSongSource(song: Song): Promise<SongSource> {
       unblocked: true,
       available: false,
       matchedSource: fallback.source || requestedSource,
+      webUrl: fallback.webUrl || undefined,
     }
   }
   return { url: null, trialEnd: null, unblocked: false, available: false }
@@ -459,6 +478,7 @@ async function enrichSong(song: Song): Promise<Song> {
     url: source.url,
     unblocked: source.unblocked,
     matchedSource: source.matchedSource,
+    matchedWebUrl: source.webUrl,
     alternativeSongId: source.alternativeSongId,
     alternativeVersion: source.alternativeVersion,
     urlFetchedAt: Date.now(),
@@ -698,6 +718,7 @@ function persistQueue(queue: Song[], currentIndex: number) {
     // again from scratch and may quietly pick another edition than the one the
     // user chose (and already has cached).
     matchedSource: song.matchedSource,
+    matchedWebUrl: song.matchedWebUrl,
     alternativeSongId: song.alternativeSongId,
     alternativeVersion: song.alternativeVersion,
   }))
@@ -827,6 +848,7 @@ export const usePlayerStore = create<PlayerState>()(
                 trialEnd,
                 unblocked,
                 matchedSource: info.matchedSource,
+                matchedWebUrl: info.webUrl,
               })
             } catch {
               return null
@@ -917,6 +939,14 @@ export const usePlayerStore = create<PlayerState>()(
               ? { name: meta.name }
               : null
           : await originalSongFields(song.id)
+        // A cached video-source blob keeps its page link: prefer the live
+        // queue value, fall back to the URL stored with the cached copy (the
+        // queue entry may predate the link feature).
+        const keepWebUrl =
+          source === 'bilibili' || source === 'youtube'
+            ? (song.matchedSource === source ? song.matchedWebUrl : undefined) ??
+              meta?.webUrl
+            : undefined
         const patch: Partial<Song> = {
           ...(restored ?? {}),
           // The blob is the media now; there is no signed URL to keep.
@@ -924,6 +954,7 @@ export const usePlayerStore = create<PlayerState>()(
           urlFetchedAt: 0,
           unblocked: !isRcmd,
           matchedSource: source,
+          matchedWebUrl: keepWebUrl,
           trialEnd: null,
           // Only the recommended edition needs a foreign lyric timeline.
           alternativeSongId: isRcmd ? editionId : undefined,
@@ -1790,6 +1821,7 @@ export const usePlayerStore = create<PlayerState>()(
               url: matched.url,
               unblocked: true,
               matchedSource: nextSource || undefined,
+              matchedWebUrl: matched.webUrl || undefined,
               trialEnd: null,
               urlFetchedAt: Date.now(),
               alternativeSongId: undefined,
@@ -1849,6 +1881,79 @@ export const usePlayerStore = create<PlayerState>()(
           toast.success(i18n._(msg`已切换到缓存的音源`))
         },
 
+        /**
+         * Play one concrete video from the source panel. Only one video copy
+         * is kept per song: both provider caches are dropped first so the
+         * newly chosen recording is the one that gets cached afterwards.
+         */
+        async switchToVideoCandidate(source, videoId, webUrl) {
+          const state = get()
+          const index = state.currentIndex
+          const song = state.queue[index]
+          if (!song || state.switchingSource) return
+          set({ switchingSource: true })
+          try {
+            const info = await fetchVideoSourceUrl(source, videoId)
+            if (!info.url) {
+              toast.info(i18n._(msg`该视频没有可用音轨`))
+              return
+            }
+            await Promise.all([
+              removeCachedAudio(song.id, 'bilibili'),
+              removeCachedAudio(song.id, 'youtube'),
+            ]).catch(() => undefined)
+
+            const active = get()
+            if (active.queue[active.currentIndex]?.id !== song.id) return
+            const resumeAt = active.currentTime
+            const requestId = active.loadRequestId + 1
+            const patch: Partial<Song> = {
+              url: info.url,
+              unblocked: true,
+              matchedSource: source,
+              matchedWebUrl: info.webUrl || webUrl,
+              trialEnd: null,
+              urlFetchedAt: Date.now(),
+              alternativeSongId: undefined,
+              alternativeVersion: false,
+              lyric: '',
+              tlyric: '',
+              yrc: '',
+              isNotLyric: false,
+            }
+            patchSong(active.currentIndex, patch)
+            set({
+              loadRequestId: requestId,
+              audioUrl: playbackUrl(info.url, true),
+              sourceReady: true,
+              audioFromCache: false,
+              audioBlob: null,
+              sourceTransition: 'none',
+              playToken: active.playToken + 1,
+              resumeAt,
+              lyricLoading: true,
+              lyricLines: [],
+            })
+            await resolveLyrics(
+              active.currentIndex,
+              { ...song, ...patch },
+              requestId,
+            )
+            toast.success(i18n._(msg`已切换到所选播放源`))
+          } catch (error) {
+            const reason = (
+              error as { payload?: { reason?: string } } | undefined
+            )?.payload?.reason
+            if (reason === 'yt-dlp-missing') {
+              useUiStore.getState().openYtDlpDialog()
+              return
+            }
+            toast.warning(i18n._(msg`切换播放源失败，请稍后再试`))
+          } finally {
+            set({ switchingSource: false })
+          }
+        },
+
         /** NetEase's own "other playable edition" for a grey/VIP track. */
         async switchToRecommendedVersion() {
           const state = get()
@@ -1886,6 +1991,7 @@ export const usePlayerStore = create<PlayerState>()(
               trialEnd: info.trialEnd,
               unblocked: false,
               matchedSource: 'copyright-rcmd',
+              matchedWebUrl: undefined,
               alternativeSongId: detail.id,
               alternativeVersion: true,
               lyric: '',

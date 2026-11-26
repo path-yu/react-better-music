@@ -9,7 +9,7 @@ msgstr ""
 
 #. placeholder {0}: album.size
 #: src/components/cards/AlbumCard.tsx:59
-#: src/routes/artist/$id.tsx:882
+#: src/routes/artist/$id.tsx:898
 msgid " · {0} 首"
 msgstr " · {0} 首"
 
@@ -18,7 +18,7 @@ msgid "（最多 3 个）"
 msgstr "（最多 3 个）"
 
 #. placeholder {0}: formatNumber(profile.mvSize)
-#: src/routes/artist/$id.tsx:676
+#: src/routes/artist/$id.tsx:686
 msgid "{0} 个 MV"
 msgstr "{0} 个 MV"
 
@@ -27,31 +27,41 @@ msgstr "{0} 个 MV"
 msgid "{0} 个歌单"
 msgstr "{0} 个歌单"
 
+#. placeholder {0}: items.length
+#: src/components/player/SourceResultsPanel.tsx:67
+msgid "{0} 个结果"
+msgstr "{0} 个结果"
+
 #. placeholder {0}: formatNumber(user.followeds)
 #: src/components/user/UserCard.tsx:42
 msgid "{0} 位粉丝"
 msgstr "{0} 位粉丝"
 
 #. placeholder {0}: formatDate(detail.createTime)
-#: src/routes/songlists/$id.tsx:458
+#: src/routes/songlists/$id.tsx:470
 msgid "{0} 创建"
 msgstr "{0} 创建"
 
 #. placeholder {0}: formatDate(album.publishTime)
-#: src/routes/albums/$id.tsx:241
+#: src/routes/albums/$id.tsx:253
 msgid "{0} 发行"
 msgstr "{0} 发行"
 
 #. placeholder {0}: formatNumber(profile.albumSize)
-#: src/routes/artist/$id.tsx:672
+#: src/routes/artist/$id.tsx:682
 msgid "{0} 张专辑"
 msgstr "{0} 张专辑"
 
 #. placeholder {0}: artist.albumSize ?? 0
 #. placeholder {1}: artist.mvSize ?? 0
-#: src/routes/search.tsx:517
+#: src/routes/search.tsx:670
 msgid "{0} 张专辑 · {1} 个 MV"
 msgstr "{0} 张专辑 · {1} 个 MV"
+
+#. placeholder {0}: formatNumber(item.views)
+#: src/components/player/SourceResultsPanel.tsx:149
+msgid "{0} 播放"
+msgstr "{0} 播放"
 
 #. placeholder {0}: formatNumber(data.total)
 #: src/components/comments/CommentSection.tsx:795
@@ -60,7 +70,7 @@ msgstr "{0} 条"
 
 #. placeholder {0}: formatNumber(detail.playCount)
 #: src/routes/mv/$id.tsx:202
-#: src/routes/songlists/$id.tsx:465
+#: src/routes/songlists/$id.tsx:477
 msgid "{0} 次播放"
 msgstr "{0} 次播放"
 
@@ -80,14 +90,14 @@ msgid "{0} 等 {1} 首"
 msgstr "{0} 等 {1} 首"
 
 #. placeholder {0}: formatNumber(artist.fansCount)
-#: src/routes/artist/$id.tsx:954
+#: src/routes/artist/$id.tsx:970
 msgid "{0} 粉丝"
 msgstr "{0} 粉丝"
 
 #. placeholder {0}: entry.album.size
 #. placeholder {0}: items.length
 #. placeholder {0}: playlist.songs.length
-#: src/components/layout/SearchBox.tsx:445
+#: src/components/layout/SearchBox.tsx:456
 #: src/components/player/QueuePanel.tsx:203
 #: src/routes/daily.tsx:149
 #: src/routes/library.tsx:151
@@ -95,7 +105,7 @@ msgstr "{0} 粉丝"
 #: src/routes/library.tsx:310
 #: src/routes/library.tsx:351
 #: src/routes/library.tsx:612
-#: src/routes/search.tsx:414
+#: src/routes/search.tsx:567
 #: src/routes/settings.tsx:1232
 msgid "{0} 首"
 msgstr "{0} 首"
@@ -107,7 +117,7 @@ msgid "{0} 首 · {1}"
 msgstr "{0} 首 · {1}"
 
 #. placeholder {0}: formatNumber(profile.musicSize)
-#: src/routes/artist/$id.tsx:668
+#: src/routes/artist/$id.tsx:678
 msgid "{0} 首单曲"
 msgstr "{0} 首单曲"
 
@@ -118,8 +128,8 @@ msgstr "{0} 首未匹配"
 
 #. placeholder {0}: detail.trackCount
 #. placeholder {0}: songs.length
-#: src/routes/albums/$id.tsx:245
-#: src/routes/songlists/$id.tsx:462
+#: src/routes/albums/$id.tsx:257
+#: src/routes/songlists/$id.tsx:474
 msgid "{0} 首歌曲"
 msgstr "{0} 首歌曲"
 
@@ -129,7 +139,7 @@ msgstr "{0} 首歌曲"
 msgid "{0}月{1}日"
 msgstr "{0}月{1}日"
 
-#: src/routes/artist/$id.tsx:384
+#: src/routes/artist/$id.tsx:389
 msgid "{artistName} 热门歌曲"
 msgstr "{artistName} 热门歌曲"
 
@@ -154,17 +164,17 @@ msgid "{value}年"
 msgstr "{value}年"
 
 #. placeholder {0}: effectiveSong.name
-#: src/store/player.ts:1154
+#: src/store/player.ts:1185
 msgid "「{0}」VIP 歌曲已为你匹配其他音源播放"
 msgstr "「{0}」VIP 歌曲已为你匹配其他音源播放"
 
 #. placeholder {0}: effectiveSong.name
-#: src/store/player.ts:1163
+#: src/store/player.ts:1194
 msgid "「{0}」已为你切换到其他可播放版本"
 msgstr "「{0}」已为你切换到其他可播放版本"
 
 #. placeholder {0}: effectiveSong.name
-#: src/store/player.ts:1153
+#: src/store/player.ts:1184
 msgid "「{0}」暂无官方音源，已为你匹配其他音源播放"
 msgstr "「{0}」暂无官方音源，已为你匹配其他音源播放"
 
@@ -172,7 +182,7 @@ msgstr "「{0}」暂无官方音源，已为你匹配其他音源播放"
 msgid "128 kbps（更小）"
 msgstr "128 kbps（更小）"
 
-#: src/components/player/MorePlaybackOptions.tsx:45
+#: src/components/player/MorePlaybackOptions.tsx:51
 msgid "15 分钟"
 msgstr "15 分钟"
 
@@ -184,7 +194,7 @@ msgstr "192 kbps（推荐）"
 msgid "256 kbps"
 msgstr "256 kbps"
 
-#: src/components/player/MorePlaybackOptions.tsx:46
+#: src/components/player/MorePlaybackOptions.tsx:52
 msgid "30 分钟"
 msgstr "30 分钟"
 
@@ -192,11 +202,11 @@ msgstr "30 分钟"
 msgid "320 kbps（最高）"
 msgstr "320 kbps（最高）"
 
-#: src/components/player/MorePlaybackOptions.tsx:47
+#: src/components/player/MorePlaybackOptions.tsx:53
 msgid "60 分钟"
 msgstr "60 分钟"
 
-#: src/components/player/MorePlaybackOptions.tsx:48
+#: src/components/player/MorePlaybackOptions.tsx:54
 msgid "90 分钟"
 msgstr "90 分钟"
 
@@ -258,7 +268,7 @@ msgid "MV 不存在或无法访问"
 msgstr "MV 不存在或无法访问"
 
 #: src/routes/latest-mv.tsx:81
-#: src/routes/search.tsx:569
+#: src/routes/search.tsx:722
 msgid "MV 加载失败"
 msgstr "MV 加载失败"
 
@@ -372,7 +382,7 @@ msgstr "上一页"
 
 #: src/components/player/ImmersivePlayerBar.tsx:252
 #: src/components/player/NowPlayingTransport.tsx:420
-#: src/components/player/PlayerBar.tsx:1649
+#: src/components/player/PlayerBar.tsx:1652
 msgid "上一首"
 msgstr "上一首"
 
@@ -390,7 +400,7 @@ msgstr "下一页"
 
 #: src/components/player/ImmersivePlayerBar.tsx:277
 #: src/components/player/NowPlayingTransport.tsx:457
-#: src/components/player/PlayerBar.tsx:1686
+#: src/components/player/PlayerBar.tsx:1689
 msgid "下一首"
 msgstr "下一首"
 
@@ -457,29 +467,29 @@ msgid "不再提示"
 msgstr "不再提示"
 
 #: src/components/songs/SongTable.tsx:608
-#: src/routes/albums/$id.tsx:41
-#: src/routes/albums/$id.tsx:232
-#: src/routes/artist/$id.tsx:720
+#: src/routes/albums/$id.tsx:45
+#: src/routes/albums/$id.tsx:244
+#: src/routes/artist/$id.tsx:730
 #: src/routes/library.tsx:541
-#: src/routes/search.tsx:322
+#: src/routes/search.tsx:446
 msgid "专辑"
 msgstr "专辑"
 
-#: src/routes/albums/$id.tsx:183
+#: src/routes/albums/$id.tsx:195
 msgid "专辑不存在或无法访问"
 msgstr "专辑不存在或无法访问"
 
-#: src/routes/albums/$id.tsx:137
-#: src/routes/artist/$id.tsx:435
-#: src/routes/search.tsx:438
+#: src/routes/albums/$id.tsx:142
+#: src/routes/artist/$id.tsx:440
+#: src/routes/search.tsx:591
 msgid "专辑加载失败"
 msgstr "专辑加载失败"
 
-#: src/routes/albums/$id.tsx:325
+#: src/routes/albums/$id.tsx:344
 msgid "专辑暂时没有歌曲"
 msgstr "专辑暂时没有歌曲"
 
-#: src/routes/artist/$id.tsx:575
+#: src/routes/artist/$id.tsx:581
 msgid "专辑歌曲加载失败"
 msgstr "专辑歌曲加载失败"
 
@@ -528,8 +538,8 @@ msgstr "云阶"
 msgid "云音乐官方榜单，实时更新"
 msgstr "云音乐官方榜单，实时更新"
 
-#: src/store/player.ts:421
-#: src/store/player.ts:1140
+#: src/store/player.ts:440
+#: src/store/player.ts:1171
 msgid "亲爱的，暂无版权，已为你跳过"
 msgstr "亲爱的，暂无版权，已为你跳过"
 
@@ -544,6 +554,10 @@ msgstr "人声轨已启用：点击关闭"
 #: src/store/settings.ts:98
 msgid "仅原文"
 msgstr "仅原文"
+
+#: src/components/songs/UnblockFilterButton.tsx:41
+msgid "仅看可换源"
+msgstr "仅看可换源"
 
 #: src/store/settings.ts:99
 msgid "仅译文"
@@ -715,7 +729,7 @@ msgstr "共 {0} 张榜单"
 #~ msgstr "共 {0} 首，来自 {1} 张专辑"
 
 #. placeholder {0}: filteredAllSongs.length
-#: src/routes/artist/$id.tsx:778
+#: src/routes/artist/$id.tsx:788
 msgid "共 {0} 首，来自 {allAlbumCount} 张专辑"
 msgstr "共 {0} 首，来自 {allAlbumCount} 张专辑"
 
@@ -725,37 +739,41 @@ msgid "共 {0} 首歌曲"
 msgstr "共 {0} 首歌曲"
 
 #. placeholder {0}: songs.length
-#: src/routes/artist/$id.tsx:753
+#: src/routes/artist/$id.tsx:763
 msgid "共 {0} 首热门单曲"
 msgstr "共 {0} 首热门单曲"
 
-#: src/routes/search.tsx:433
+#: src/routes/search.tsx:586
 msgid "共找到 {albumTotal} 张专辑"
 msgstr "共找到 {albumTotal} 张专辑"
 
-#: src/routes/search.tsx:467
+#: src/routes/search.tsx:620
 msgid "共找到 {artistTotal} 位歌手"
 msgstr "共找到 {artistTotal} 位歌手"
 
-#: src/routes/search.tsx:564
+#: src/routes/search.tsx:717
 msgid "共找到 {mvTotal} 个 MV"
 msgstr "共找到 {mvTotal} 个 MV"
 
-#: src/routes/search.tsx:372
+#: src/routes/search.tsx:525
 msgid "共找到 {playlistTotal} 个歌单"
 msgstr "共找到 {playlistTotal} 个歌单"
 
-#: src/routes/search.tsx:356
+#: src/routes/search.tsx:480
 msgid "共找到 {songTotal} 首单曲"
 msgstr "共找到 {songTotal} 首单曲"
 
-#: src/routes/search.tsx:532
+#: src/routes/search.tsx:685
 msgid "共找到 {userTotal} 位用户"
 msgstr "共找到 {userTotal} 位用户"
 
-#: src/routes/search.tsx:600
+#: src/routes/search.tsx:753
 msgid "共找到 {videoTotal} 个视频"
 msgstr "共找到 {videoTotal} 个视频"
+
+#: src/components/layout/SearchBox.tsx:493
+msgid "关"
+msgstr "关"
 
 #: src/components/layout/UserMenu.tsx:84
 #: src/routes/library.tsx:545
@@ -768,7 +786,7 @@ msgstr "关注"
 msgid "关注失败"
 msgstr "关注失败"
 
-#: src/routes/artist/$id.tsx:645
+#: src/routes/artist/$id.tsx:655
 msgid "关注歌手"
 msgstr "关注歌手"
 
@@ -790,7 +808,7 @@ msgstr "关注的用户"
 
 #: src/components/layout/TitleBar.tsx:184
 #: src/components/layout/WindowControls.tsx:90
-#: src/components/player/MorePlaybackOptions.tsx:465
+#: src/components/player/MorePlaybackOptions.tsx:522
 #: src/components/player/NowPlayingTitleBar.tsx:104
 #: src/components/player/QueuePanel.tsx:230
 msgid "关闭"
@@ -803,11 +821,11 @@ msgid "关闭到托盘"
 msgstr "关闭到托盘"
 
 #: src/components/player/ImmersivePlayerBar.tsx:438
-#: src/components/player/MorePlaybackOptions.tsx:526
+#: src/components/player/MorePlaybackOptions.tsx:583
 msgid "关闭后只高亮整行，不做逐字动画"
 msgstr "关闭后只高亮整行，不做逐字动画"
 
-#: src/components/player/MorePlaybackOptions.tsx:514
+#: src/components/player/MorePlaybackOptions.tsx:571
 msgid "关闭定时器"
 msgstr "关闭定时器"
 
@@ -817,7 +835,7 @@ msgstr "关闭导航"
 
 #: src/components/player/ImmersivePlayerBar.tsx:233
 #: src/components/player/NowPlayingTransport.tsx:305
-#: src/components/player/PlayerBar.tsx:1629
+#: src/components/player/PlayerBar.tsx:1632
 msgid "关闭心动模式"
 msgstr "关闭心动模式"
 
@@ -829,11 +847,11 @@ msgstr "关闭播放列表"
 msgid "关闭播放页、播放列表、侧栏或搜索建议"
 msgstr "关闭播放页、播放列表、侧栏或搜索建议"
 
-#: src/components/player/PlayerBar.tsx:1570
+#: src/components/player/PlayerBar.tsx:1573
 msgid "其他版本"
 msgstr "其他版本"
 
-#: src/components/player/PlayerBar.tsx:1577
+#: src/components/player/PlayerBar.tsx:1580
 #: src/components/player/SourcePicker.tsx:44
 msgid "其他音源"
 msgstr "其他音源"
@@ -937,7 +955,7 @@ msgstr "准备安装…"
 msgid "出错了"
 msgstr "出错了"
 
-#: src/routes/songlists/$id.tsx:551
+#: src/routes/songlists/$id.tsx:563
 msgid "分享"
 msgstr "分享"
 
@@ -949,21 +967,26 @@ msgstr "切换到浅色模式"
 msgid "切换到深色模式"
 msgstr "切换到深色模式"
 
-#: src/components/player/NowPlaying.tsx:1408
-#: src/components/player/NowPlaying.tsx:1409
+#: src/components/player/NowPlaying.tsx:1439
+#: src/components/player/NowPlaying.tsx:1440
 msgid "切换到视频播放"
 msgstr "切换到视频播放"
+
+#: src/components/player/SourceResultsPanel.tsx:115
+#: src/store/player.ts:1951
+msgid "切换播放源失败，请稍后再试"
+msgstr "切换播放源失败，请稍后再试"
 
 #: src/routes/settings.tsx:791
 #~ msgid "切换界面语言，语言资源加载后立即生效。"
 #~ msgstr "切换界面语言，语言资源加载后立即生效。"
 
-#: src/components/player/MorePlaybackOptions.tsx:323
+#: src/components/player/MorePlaybackOptions.tsx:358
 msgid "切换音源"
 msgstr "切换音源"
 
-#: src/store/player.ts:1832
-#: src/store/player.ts:1912
+#: src/store/player.ts:1864
+#: src/store/player.ts:2018
 msgid "切换音源失败，请稍后再试"
 msgstr "切换音源失败，请稍后再试"
 
@@ -971,7 +994,7 @@ msgstr "切换音源失败，请稍后再试"
 msgid "列表循环"
 msgstr "列表循环"
 
-#: src/components/player/NowPlaying.tsx:1616
+#: src/components/player/NowPlaying.tsx:1651
 #: src/routes/library.tsx:558
 msgid "列表视图"
 msgstr "列表视图"
@@ -1020,9 +1043,10 @@ msgid "删除歌单失败"
 msgstr "删除歌单失败"
 
 #: src/components/layout/LoginModal.tsx:363
+#: src/components/player/SourceResultsPanel.tsx:77
 #: src/routes/settings.tsx:1176
-#: src/routes/songlists/$id.tsx:512
-#: src/routes/songlists/$id.tsx:513
+#: src/routes/songlists/$id.tsx:524
+#: src/routes/songlists/$id.tsx:525
 msgid "刷新"
 msgstr "刷新"
 
@@ -1058,7 +1082,7 @@ msgstr "加入于 {0}"
 msgid "加载更多"
 msgstr "加载更多"
 
-#: src/routes/artist/$id.tsx:898
+#: src/routes/artist/$id.tsx:914
 msgid "加载更多专辑"
 msgstr "加载更多专辑"
 
@@ -1079,8 +1103,8 @@ msgstr "动态"
 msgid "华语"
 msgstr "华语"
 
-#: src/components/layout/SearchBox.tsx:389
-#: src/routes/search.tsx:316
+#: src/components/layout/SearchBox.tsx:400
+#: src/routes/search.tsx:440
 msgid "单曲"
 msgstr "单曲"
 
@@ -1185,8 +1209,8 @@ msgstr "取消关注失败"
 #: src/components/player/NowPlayingTransport.tsx:292
 #: src/components/player/PlayerArtwork.tsx:711
 #: src/components/player/PlayerArtwork.tsx:713
-#: src/components/player/PlayerBar.tsx:1599
-#: src/components/player/PlayerBar.tsx:1601
+#: src/components/player/PlayerBar.tsx:1602
+#: src/components/player/PlayerBar.tsx:1604
 #: src/components/songs/SongContextMenu.tsx:421
 #: src/components/songs/SongTable.tsx:262
 msgid "取消喜欢"
@@ -1202,7 +1226,7 @@ msgstr "取消收藏"
 #: src/components/layout/Sidebar.tsx:287
 #: src/components/layout/Sidebar.tsx:296
 #: src/components/layout/Sidebar.tsx:317
-#: src/routes/songlists/$id.tsx:308
+#: src/routes/songlists/$id.tsx:320
 msgid "取消收藏失败"
 msgstr "取消收藏失败"
 
@@ -1210,7 +1234,7 @@ msgstr "取消收藏失败"
 msgid "取消选择"
 msgstr "取消选择"
 
-#: src/components/player/PlayerBar.tsx:1742
+#: src/components/player/PlayerBar.tsx:1745
 msgid "取消静音"
 msgstr "取消静音"
 
@@ -1218,9 +1242,17 @@ msgstr "取消静音"
 msgid "另类/独立"
 msgstr "另类/独立"
 
+#: src/components/songs/UnblockFilterButton.tsx:29
+msgid "只显示无版权或其它版本可播的歌曲"
+msgstr "只显示无版权或其它版本可播的歌曲"
+
 #: src/routes/songlists/$id.edit.tsx:131
 msgid "只能编辑自己创建的歌单"
 msgstr "只能编辑自己创建的歌单"
+
+#: src/components/songs/UnblockFilterButton.tsx:41
+msgid "可换源"
+msgstr "可换源"
 
 #. placeholder {0}: mergeTargets.length
 #: src/components/layout/Sidebar.tsx:1035
@@ -1252,7 +1284,7 @@ msgstr "向右浏览分类"
 msgid "向左浏览分类"
 msgstr "向左浏览分类"
 
-#: src/routes/songlists/$id.tsx:624
+#: src/routes/songlists/$id.tsx:643
 msgid "听友评论"
 msgstr "听友评论"
 
@@ -1275,8 +1307,8 @@ msgstr "哔哩哔哩"
 #: src/components/player/NowPlayingTransport.tsx:292
 #: src/components/player/PlayerArtwork.tsx:711
 #: src/components/player/PlayerArtwork.tsx:713
-#: src/components/player/PlayerBar.tsx:1599
-#: src/components/player/PlayerBar.tsx:1601
+#: src/components/player/PlayerBar.tsx:1602
+#: src/components/player/PlayerBar.tsx:1604
 #: src/components/songs/SongContextMenu.tsx:421
 #: src/components/songs/SongTable.tsx:262
 msgid "喜欢"
@@ -1317,6 +1349,14 @@ msgstr "图片不能超过 5MB"
 msgid "图片解析失败"
 msgstr "图片解析失败"
 
+#: src/components/player/MorePlaybackOptions.tsx:479
+msgid "在 YouTube 查看视频"
+msgstr "在 YouTube 查看视频"
+
+#: src/components/player/MorePlaybackOptions.tsx:477
+msgid "在哔哩哔哩查看视频"
+msgstr "在哔哩哔哩查看视频"
+
 #: src/routes/settings.tsx:121
 msgid "在搜索建议中选择并进入"
 msgstr "在搜索建议中选择并进入"
@@ -1338,7 +1378,7 @@ msgstr "地区"
 msgid "场景与情绪"
 msgstr "场景与情绪"
 
-#: src/routes/songlists/$id.tsx:347
+#: src/routes/songlists/$id.tsx:359
 msgid "复制链接失败"
 msgstr "复制链接失败"
 
@@ -1434,8 +1474,8 @@ msgstr "官方榜单"
 msgid "官方版"
 msgstr "官方版"
 
-#: src/components/player/NowPlaying.tsx:1873
-#: src/components/player/NowPlaying.tsx:1874
+#: src/components/player/NowPlaying.tsx:1908
+#: src/components/player/NowPlaying.tsx:1909
 msgid "定位到当前播放"
 msgstr "定位到当前播放"
 
@@ -1541,7 +1581,7 @@ msgstr "展开侧栏"
 msgid "展开全部"
 msgstr "展开全部"
 
-#: src/routes/artist/$id.tsx:847
+#: src/routes/artist/$id.tsx:863
 msgid "展开全部歌曲"
 msgstr "展开全部歌曲"
 
@@ -1558,8 +1598,8 @@ msgstr "已保存「{0}」到下载目录"
 msgid "已允许开发者工具，重启应用后完全生效"
 msgstr "已允许开发者工具，重启应用后完全生效"
 
-#: src/routes/artist/$id.tsx:368
-#: src/routes/artist/$id.tsx:645
+#: src/routes/artist/$id.tsx:373
+#: src/routes/artist/$id.tsx:655
 #: src/routes/users/$id.tsx:195
 #: src/routes/users/$id.tsx:293
 msgid "已关注"
@@ -1570,7 +1610,7 @@ msgstr "已关注"
 #~ msgid "已关闭"
 #~ msgstr "已关闭"
 
-#: src/store/player.ts:1591
+#: src/store/player.ts:1622
 msgid "已关闭心动模式"
 msgstr "已关闭心动模式"
 
@@ -1578,17 +1618,21 @@ msgstr "已关闭心动模式"
 msgid "已关闭睡眠定时器"
 msgstr "已关闭睡眠定时器"
 
-#: src/store/player.ts:1816
+#: src/store/player.ts:1848
 msgid "已切换到其他音源"
 msgstr "已切换到其他音源"
 
-#: src/store/player.ts:1910
+#: src/store/player.ts:1942
+msgid "已切换到所选播放源"
+msgstr "已切换到所选播放源"
+
+#: src/store/player.ts:2016
 msgid "已切换到推荐版本"
 msgstr "已切换到推荐版本"
 
-#: src/store/player.ts:1770
-#: src/store/player.ts:1849
-#: src/store/player.ts:1860
+#: src/store/player.ts:1801
+#: src/store/player.ts:1881
+#: src/store/player.ts:1965
 msgid "已切换到缓存的音源"
 msgstr "已切换到缓存的音源"
 
@@ -1597,7 +1641,7 @@ msgid "已创建歌单「{name}」"
 msgstr "已创建歌单「{name}」"
 
 #. placeholder {0}: albums.length
-#: src/routes/artist/$id.tsx:837
+#: src/routes/artist/$id.tsx:853
 msgid "已加载 {0} 张专辑"
 msgstr "已加载 {0} 张专辑"
 
@@ -1605,7 +1649,7 @@ msgstr "已加载 {0} 张专辑"
 #: src/components/layout/Sidebar.tsx:336
 #: src/components/layout/Sidebar.tsx:348
 #: src/components/layout/Sidebar.tsx:355
-#: src/routes/artist/$id.tsx:368
+#: src/routes/artist/$id.tsx:373
 #: src/routes/users/$id.tsx:195
 msgid "已取消关注"
 msgstr "已取消关注"
@@ -1618,13 +1662,13 @@ msgstr "已取消喜欢"
 #: src/components/layout/Sidebar.tsx:302
 #: src/components/layout/Sidebar.tsx:307
 #: src/components/layout/Sidebar.tsx:314
-#: src/routes/albums/$id.tsx:117
-#: src/routes/songlists/$id.tsx:294
-#: src/routes/songlists/$id.tsx:319
+#: src/routes/albums/$id.tsx:121
+#: src/routes/songlists/$id.tsx:306
+#: src/routes/songlists/$id.tsx:331
 msgid "已取消收藏"
 msgstr "已取消收藏"
 
-#: src/routes/songlists/$id.tsx:343
+#: src/routes/songlists/$id.tsx:355
 msgid "已复制网易云歌单链接"
 msgstr "已复制网易云歌单链接"
 
@@ -1670,9 +1714,9 @@ msgstr "已导出 {count} 首缓存音乐到下载目录"
 msgid "已开始下载「{0}」"
 msgstr "已开始下载「{0}」"
 
-#: src/routes/albums/$id.tsx:89
-#: src/routes/albums/$id.tsx:292
-#: src/routes/songlists/$id.tsx:539
+#: src/routes/albums/$id.tsx:93
+#: src/routes/albums/$id.tsx:304
+#: src/routes/songlists/$id.tsx:551
 msgid "已收藏"
 msgstr "已收藏"
 
@@ -1699,18 +1743,18 @@ msgstr "已收藏到「{0}」"
 #~ msgid "已收藏到本地歌单「{0}」"
 #~ msgstr "已收藏到本地歌单「{0}」"
 
-#: src/routes/artist/$id.tsx:398
+#: src/routes/artist/$id.tsx:403
 msgid "已收藏到本地歌单「{name}」"
 msgstr "已收藏到本地歌单「{name}」"
 
-#: src/components/player/NowPlaying.tsx:1813
+#: src/components/player/NowPlaying.tsx:1848
 #: src/components/player/QueuePanel.tsx:300
 #: src/components/songs/SongTable.tsx:140
 msgid "已暂停"
 msgstr "已暂停"
 
 #. placeholder {0}: additions.length
-#: src/store/player.ts:1503
+#: src/store/player.ts:1534
 msgid "已添加 {0} 首歌曲到播放列表"
 msgstr "已添加 {0} 首歌曲到播放列表"
 
@@ -1726,12 +1770,12 @@ msgstr "已清除 {count} 首歌曲的伴奏缓存"
 msgid "已禁用开发者工具，重启应用后完全生效"
 msgstr "已禁用开发者工具，重启应用后完全生效"
 
-#: src/components/player/MorePlaybackOptions.tsx:376
-#: src/components/player/MorePlaybackOptions.tsx:419
+#: src/components/player/MorePlaybackOptions.tsx:411
+#: src/components/player/MorePlaybackOptions.tsx:454
 msgid "已缓存"
 msgstr "已缓存"
 
-#: src/routes/artist/$id.tsx:500
+#: src/routes/artist/$id.tsx:505
 msgid "已补齐全部专辑歌曲"
 msgstr "已补齐全部专辑歌曲"
 
@@ -1747,7 +1791,7 @@ msgstr "已超过 30 秒没有新进度，可能是无法连接 GitHub。请检�
 #~ msgid "已超过 30 秒没有新进度，可能是无法连接 GitHub。请检查网络或代理设置，下载会在超时后自动报错。"
 #~ msgstr "已超过 30 秒没有新进度，可能是无法连接 GitHub。请检查网络或代理设置，下载会在超时后自动报错。"
 
-#: src/store/player.ts:1263
+#: src/store/player.ts:1294
 msgid "已跳过 {skipped} 首无法播放的歌曲"
 msgstr "已跳过 {skipped} 首无法播放的歌曲"
 
@@ -1779,9 +1823,17 @@ msgstr "已选择 {0} 首"
 msgid "已重置配对，之前连接的手机需要重新扫码"
 msgstr "已重置配对，之前连接的手机需要重新扫码"
 
+#: src/components/layout/SearchBox.tsx:493
+msgid "开"
+msgstr "开"
+
 #: src/components/settings/UpdateCard.tsx:132
 msgid "开发版"
 msgstr "开发版"
+
+#: src/components/layout/SearchBox.tsx:481
+msgid "开启后，单曲搜索找不到时会通过网页与专辑反查原曲"
+msgstr "开启后，单曲搜索找不到时会通过网页与专辑反查原曲"
 
 #: src/components/settings/RemoteControlCard.tsx:77
 msgid "开启后，同一局域网内的手机扫描下方二维码即可控制播放。只有扫过当前二维码的设备可以连接。"
@@ -1808,15 +1860,15 @@ msgid "当前：{currentLabel}"
 msgstr "当前：{currentLabel}"
 
 #. placeholder {0}: prefetched.trialEnd
-#: src/store/player.ts:1031
+#: src/store/player.ts:1062
 msgid "当前仅可试听 {0} 秒，登录或开通会员后可播放完整版"
 msgstr "当前仅可试听 {0} 秒，登录或开通会员后可播放完整版"
 
-#: src/store/player.ts:1174
+#: src/store/player.ts:1205
 msgid "当前仅可试听 {trialEnd} 秒，登录或开通会员后可播放完整版"
 msgstr "当前仅可试听 {trialEnd} 秒，登录或开通会员后可播放完整版"
 
-#: src/components/player/PlayerBar.tsx:1568
+#: src/components/player/PlayerBar.tsx:1571
 msgid "当前使用网易云推荐的其他可播放版本"
 msgstr "当前使用网易云推荐的其他可播放版本"
 
@@ -1850,7 +1902,7 @@ msgstr "当前版本 {0}"
 #~ msgid "当前版本号相同，但本地安装的构建与已发布构建不一致。"
 #~ msgstr "当前版本号相同，但本地安装的构建与已发布构建不一致。"
 
-#: src/lib/songCache.ts:370
+#: src/lib/songCache.ts:375
 msgid "当前环境不支持 Opus 编码"
 msgstr "当前环境不支持 Opus 编码"
 
@@ -1862,7 +1914,7 @@ msgstr "当前缓存"
 msgid "影视原声"
 msgstr "影视原声"
 
-#: src/components/player/NowPlaying.tsx:1187
+#: src/components/player/NowPlaying.tsx:1207
 msgid "律动"
 msgstr "律动"
 
@@ -1874,16 +1926,16 @@ msgstr "律动效果"
 #: src/components/player/ImmersivePlayerBar.tsx:235
 #: src/components/player/NowPlayingTransport.tsx:305
 #: src/components/player/NowPlayingTransport.tsx:306
-#: src/components/player/PlayerBar.tsx:1630
-#: src/components/player/PlayerBar.tsx:1632
+#: src/components/player/PlayerBar.tsx:1633
+#: src/components/player/PlayerBar.tsx:1635
 msgid "心动模式"
 msgstr "心动模式"
 
-#: src/store/player.ts:1605
+#: src/store/player.ts:1636
 msgid "心动模式已开启，将为你推荐歌曲"
 msgstr "心动模式已开启，将为你推荐歌曲"
 
-#: src/store/player.ts:1238
+#: src/store/player.ts:1269
 msgid "心动模式暂不可用，请先登录"
 msgstr "心动模式暂不可用，请先登录"
 
@@ -1960,9 +2012,9 @@ msgstr "打开专辑 {0}"
 msgid "打开导航"
 msgstr "打开导航"
 
-#: src/components/player/PlayerBar.tsx:1473
-#: src/components/player/PlayerBar.tsx:1515
-#: src/components/player/PlayerBar.tsx:1539
+#: src/components/player/PlayerBar.tsx:1476
+#: src/components/player/PlayerBar.tsx:1518
+#: src/components/player/PlayerBar.tsx:1542
 msgid "打开播放页"
 msgstr "打开播放页"
 
@@ -1989,8 +2041,8 @@ msgid "找到 {0} 首"
 msgstr "找到 {0} 首"
 
 #: src/components/common/ReorderableList.tsx:222
-#: src/components/player/NowPlaying.tsx:1800
-#: src/components/player/NowPlaying.tsx:1801
+#: src/components/player/NowPlaying.tsx:1835
+#: src/components/player/NowPlaying.tsx:1836
 msgid "拖动排序"
 msgstr "拖动排序"
 
@@ -2040,56 +2092,56 @@ msgstr "推荐歌单"
 msgid "推荐歌单加载失败"
 msgstr "推荐歌单加载失败"
 
-#: src/components/player/MorePlaybackOptions.tsx:205
-#: src/components/player/MorePlaybackOptions.tsx:366
+#: src/components/player/MorePlaybackOptions.tsx:220
+#: src/components/player/MorePlaybackOptions.tsx:401
 #: src/routes/settings.tsx:1501
 msgid "推荐版本"
 msgstr "推荐版本"
 
-#: src/components/layout/SearchBox.tsx:239
+#: src/components/layout/SearchBox.tsx:250
 #: src/components/layout/Sidebar.tsx:87
 #: src/components/layout/TitleBar.tsx:25
 #: src/components/settings/SettingsNav.tsx:121
-#: src/routes/search.tsx:73
+#: src/routes/search.tsx:126
 msgid "搜索"
 msgstr "搜索"
 
-#: src/components/layout/SearchBox.tsx:380
+#: src/components/layout/SearchBox.tsx:391
 msgid "搜索 “{keyword}”"
 msgstr "搜索 “{keyword}”"
 
 #. placeholder {0}: keyword.trim()
-#: src/routes/search.tsx:72
+#: src/routes/search.tsx:125
 msgid "搜索「{0}」"
 msgstr "搜索「{0}」"
 
-#: src/routes/albums/$id.tsx:310
+#: src/routes/albums/$id.tsx:328
 msgid "搜索专辑歌曲"
 msgstr "搜索专辑歌曲"
 
-#: src/routes/artist/$id.tsx:785
+#: src/routes/artist/$id.tsx:800
 msgid "搜索全部歌曲"
 msgstr "搜索全部歌曲"
 
-#: src/components/layout/SearchBox.tsx:287
+#: src/components/layout/SearchBox.tsx:298
 msgid "搜索历史"
 msgstr "搜索历史"
 
-#: src/routes/search.tsx:217
-#: src/routes/search.tsx:348
+#: src/routes/search.tsx:289
+#: src/routes/search.tsx:472
 msgid "搜索失败"
 msgstr "搜索失败"
 
-#: src/components/layout/SearchBox.tsx:361
+#: src/components/layout/SearchBox.tsx:372
 msgid "搜索建议"
 msgstr "搜索建议"
 
-#: src/components/player/NowPlaying.tsx:1586
-#: src/components/player/NowPlaying.tsx:1587
+#: src/components/player/NowPlaying.tsx:1621
+#: src/components/player/NowPlaying.tsx:1622
 msgid "搜索待播歌曲"
 msgstr "搜索待播歌曲"
 
-#: src/routes/songlists/$id.tsx:584
+#: src/routes/songlists/$id.tsx:602
 msgid "搜索歌单歌曲"
 msgstr "搜索歌单歌曲"
 
@@ -2097,7 +2149,7 @@ msgstr "搜索歌单歌曲"
 msgid "搜索歌曲、歌手或专辑"
 msgstr "搜索歌曲、歌手或专辑"
 
-#: src/routes/search.tsx:307
+#: src/routes/search.tsx:431
 msgid "搜索结果"
 msgstr "搜索结果"
 
@@ -2110,19 +2162,19 @@ msgstr "搜索缓存歌曲"
 msgid "搜索设置"
 msgstr "搜索设置"
 
-#: src/components/layout/SearchBox.tsx:224
+#: src/components/layout/SearchBox.tsx:235
 msgid "搜索音乐、歌单"
 msgstr "搜索音乐、歌单"
 
-#: src/routes/search.tsx:296
+#: src/routes/search.tsx:420
 msgid "搜索音乐、歌单、专辑、歌手、用户、MV 或视频"
 msgstr "搜索音乐、歌单、专辑、歌手、用户、MV 或视频"
 
 #: src/components/player/ImmersivePlayerBar.tsx:261
 #: src/components/player/NowPlayingTransport.tsx:432
 #: src/components/player/NowPlayingTransport.tsx:439
-#: src/components/player/PlayerBar.tsx:1661
-#: src/components/player/PlayerBar.tsx:1668
+#: src/components/player/PlayerBar.tsx:1664
+#: src/components/player/PlayerBar.tsx:1671
 #: src/components/settings/SettingsNav.tsx:16
 #: src/components/songs/SongTable.tsx:154
 #: src/routes/index.tsx:228
@@ -2159,14 +2211,14 @@ msgstr "播放全部"
 #: src/components/player/ImmersivePlayerBar.tsx:302
 #: src/components/player/NowPlayingTransport.tsx:482
 #: src/components/player/NowPlayingTransport.tsx:483
-#: src/components/player/PlayerBar.tsx:1725
-#: src/components/player/PlayerBar.tsx:1727
+#: src/components/player/PlayerBar.tsx:1728
+#: src/components/player/PlayerBar.tsx:1730
 #: src/components/player/QueuePanel.tsx:159
 #: src/components/player/QueuePanel.tsx:195
 msgid "播放列表"
 msgstr "播放列表"
 
-#: src/store/player.ts:1674
+#: src/store/player.ts:1705
 msgid "播放列表已清空"
 msgstr "播放列表已清空"
 
@@ -2179,15 +2231,24 @@ msgstr "播放列表已清空"
 msgid "播放器样式"
 msgstr "播放器样式"
 
-#: src/components/layout/SearchBox.tsx:161
+#: src/components/layout/SearchBox.tsx:174
 msgid "播放失败"
 msgstr "播放失败"
 
-#: src/routes/search.tsx:339
+#: src/routes/search.tsx:463
 msgid "播放本页"
 msgstr "播放本页"
 
-#: src/routes/artist/$id.tsx:729
+#: src/components/player/NowPlaying.tsx:1226
+#: src/components/player/SourceResultsPanel.tsx:60
+msgid "播放源"
+msgstr "播放源"
+
+#: src/components/player/SourceResultsPanel.tsx:99
+msgid "播放源加载失败"
+msgstr "播放源加载失败"
+
+#: src/routes/artist/$id.tsx:739
 msgid "播放热门歌曲"
 msgstr "播放热门歌曲"
 
@@ -2225,19 +2286,19 @@ msgstr "播放量从低到高"
 msgid "播放量从高到低"
 msgstr "播放量从高到低"
 
-#: src/components/player/NowPlaying.tsx:1196
+#: src/components/player/NowPlaying.tsx:1216
 msgid "播放队列"
 msgstr "播放队列"
 
-#: src/components/player/NowPlaying.tsx:1855
-#: src/components/player/NowPlaying.tsx:1980
+#: src/components/player/NowPlaying.tsx:1890
+#: src/components/player/NowPlaying.tsx:2015
 msgid "播放队列为空"
 msgstr "播放队列为空"
 
 #: src/components/player/ImmersivePlayerBar.tsx:338
 #: src/components/player/ImmersivePlayerBar.tsx:339
 #: src/components/player/ImmersivePlayerBar.tsx:352
-#: src/components/player/MorePlaybackOptions.tsx:306
+#: src/components/player/MorePlaybackOptions.tsx:341
 msgid "播放音质"
 msgstr "播放音质"
 
@@ -2246,7 +2307,7 @@ msgstr "播放音质"
 msgid "播放音质已切换为{0}，正在重新加载"
 msgstr "播放音质已切换为{0}，正在重新加载"
 
-#: src/components/player/MorePlaybackOptions.tsx:271
+#: src/components/player/MorePlaybackOptions.tsx:306
 msgid "播放音质已切换为{label}，正在重新加载"
 msgstr "播放音质已切换为{label}，正在重新加载"
 
@@ -2260,18 +2321,18 @@ msgstr "播放页过渡动画"
 
 #: src/components/comments/CommentSection.tsx:630
 #: src/components/comments/CommentSection.tsx:649
-#: src/routes/albums/$id.tsx:113
-#: src/routes/albums/$id.tsx:119
-#: src/routes/artist/$id.tsx:370
-#: src/routes/songlists/$id.tsx:322
+#: src/routes/albums/$id.tsx:117
+#: src/routes/albums/$id.tsx:123
+#: src/routes/artist/$id.tsx:375
+#: src/routes/songlists/$id.tsx:334
 #: src/routes/users/$id.tsx:197
 #: src/store/user.ts:391
 msgid "操作失败"
 msgstr "操作失败"
 
-#: src/routes/albums/$id.tsx:292
+#: src/routes/albums/$id.tsx:304
 #: src/routes/library.tsx:537
-#: src/routes/songlists/$id.tsx:539
+#: src/routes/songlists/$id.tsx:551
 msgid "收藏"
 msgstr "收藏"
 
@@ -2304,7 +2365,7 @@ msgstr "收藏到歌单"
 #: src/components/songs/AddSelectedToPlaylist.tsx:143
 #: src/components/songs/SongContextMenu.tsx:249
 #: src/components/songs/SongContextMenu.tsx:257
-#: src/routes/songlists/$id.tsx:308
+#: src/routes/songlists/$id.tsx:320
 #: src/store/localLibrary.ts:162
 #: src/store/localLibrary.ts:194
 #: src/store/localLibrary.ts:220
@@ -2312,17 +2373,17 @@ msgstr "收藏到歌单"
 msgid "收藏失败"
 msgstr "收藏失败"
 
-#: src/routes/songlists/$id.tsx:294
-#: src/routes/songlists/$id.tsx:319
+#: src/routes/songlists/$id.tsx:306
+#: src/routes/songlists/$id.tsx:331
 msgid "收藏成功"
 msgstr "收藏成功"
 
-#: src/routes/artist/$id.tsx:744
+#: src/routes/artist/$id.tsx:754
 msgid "收藏热门歌曲"
 msgstr "收藏热门歌曲"
 
-#: src/routes/artist/$id.tsx:738
-#: src/routes/artist/$id.tsx:739
+#: src/routes/artist/$id.tsx:748
+#: src/routes/artist/$id.tsx:749
 msgid "收藏热门歌曲到本地歌单"
 msgstr "收藏热门歌曲到本地歌单"
 
@@ -2348,13 +2409,13 @@ msgstr "收起"
 msgid "收起侧栏"
 msgstr "收起侧栏"
 
-#: src/routes/artist/$id.tsx:800
+#: src/routes/artist/$id.tsx:816
 msgid "收起列表"
 msgstr "收起列表"
 
 #: src/components/player/ImmersivePlayerBar.tsx:194
-#: src/components/player/NowPlaying.tsx:2014
-#: src/components/player/PlayerBar.tsx:1482
+#: src/components/player/NowPlaying.tsx:2049
+#: src/components/player/PlayerBar.tsx:1485
 msgid "收起播放页"
 msgstr "收起播放页"
 
@@ -2413,7 +2474,7 @@ msgstr "无法检测 Spleeter 环境"
 msgid "无法编辑该歌单"
 msgstr "无法编辑该歌单"
 
-#: src/components/player/NowPlaying.tsx:1016
+#: src/components/player/NowPlaying.tsx:1030
 msgid "无法获取专辑信息"
 msgstr "无法获取专辑信息"
 
@@ -2425,7 +2486,7 @@ msgstr "无法选择下载目录"
 msgid "无法选择缓存目录"
 msgstr "无法选择缓存目录"
 
-#: src/lib/songs.ts:133
+#: src/lib/songs.ts:138
 msgid "无版权"
 msgstr "无版权"
 
@@ -2493,7 +2554,7 @@ msgstr "智能伴奏生成中 {0}% · 预计剩余 {etaText}"
 msgid "智能伴奏生成失败：{0}"
 msgstr "智能伴奏生成失败：{0}"
 
-#: src/store/player.ts:1221
+#: src/store/player.ts:1252
 msgid "智能播放暂不可用，请先登录"
 msgstr "智能播放暂不可用，请先登录"
 
@@ -2504,8 +2565,8 @@ msgstr "智能播放暂不可用，请先登录"
 #: src/components/player/ImmersivePlayerBar.tsx:261
 #: src/components/player/NowPlayingTransport.tsx:431
 #: src/components/player/NowPlayingTransport.tsx:438
-#: src/components/player/PlayerBar.tsx:1660
-#: src/components/player/PlayerBar.tsx:1667
+#: src/components/player/PlayerBar.tsx:1663
+#: src/components/player/PlayerBar.tsx:1670
 #: src/components/songs/SongTable.tsx:154
 #: src/routes/toplist.tsx:91
 msgid "暂停"
@@ -2520,7 +2581,7 @@ msgstr "暂停语音"
 msgid "暂无 MV"
 msgstr "暂无 MV"
 
-#: src/routes/artist/$id.tsx:904
+#: src/routes/artist/$id.tsx:920
 msgid "暂无专辑"
 msgstr "暂无专辑"
 
@@ -2576,11 +2637,11 @@ msgstr "暂无歌曲"
 msgid "暂无歌词，请欣赏"
 msgstr "暂无歌词，请欣赏"
 
-#: src/routes/artist/$id.tsx:760
+#: src/routes/artist/$id.tsx:770
 msgid "暂无热门单曲"
 msgstr "暂无热门单曲"
 
-#: src/routes/songlists/$id.tsx:659
+#: src/routes/songlists/$id.tsx:678
 msgid "暂无相似歌单"
 msgstr "暂无相似歌单"
 
@@ -2588,7 +2649,7 @@ msgstr "暂无相似歌单"
 msgid "暂无相似歌曲"
 msgstr "暂无相似歌曲"
 
-#: src/routes/artist/$id.tsx:918
+#: src/routes/artist/$id.tsx:934
 msgid "暂无相关 MV"
 msgstr "暂无相关 MV"
 
@@ -2596,7 +2657,7 @@ msgstr "暂无相关 MV"
 msgid "暂无相关推荐"
 msgstr "暂无相关推荐"
 
-#: src/components/player/NowPlaying.tsx:1116
+#: src/components/player/NowPlaying.tsx:1130
 msgid "暂无相关视频"
 msgstr "暂无相关视频"
 
@@ -2618,8 +2679,8 @@ msgstr "更多"
 #: src/components/player/ImmersivePlayerBar.tsx:418
 #: src/components/player/NowPlayingTransport.tsx:494
 #: src/components/player/NowPlayingTransport.tsx:495
-#: src/components/player/PlayerBar.tsx:1800
-#: src/components/player/PlayerBar.tsx:1801
+#: src/components/player/PlayerBar.tsx:1803
+#: src/components/player/PlayerBar.tsx:1804
 msgid "更多播放选项"
 msgstr "更多播放选项"
 
@@ -2650,16 +2711,16 @@ msgid "更新配置不可用。"
 msgstr "更新配置不可用。"
 
 #. placeholder {0}: failed.length
-#: src/routes/artist/$id.tsx:569
+#: src/routes/artist/$id.tsx:575
 msgid "有 {0} 张专辑的歌曲获取失败"
 msgstr "有 {0} 张专辑的歌曲获取失败"
 
 #. placeholder {0}: failedAlbums.length
-#: src/routes/artist/$id.tsx:808
+#: src/routes/artist/$id.tsx:824
 msgid "有 {0} 张专辑的歌曲获取失败（接口限流）"
 msgstr "有 {0} 张专辑的歌曲获取失败（接口限流）"
 
-#: src/routes/songlists/$id.tsx:141
+#: src/routes/songlists/$id.tsx:146
 msgid "有 {missing} 首歌曲加载失败，可点击「刷新」重试"
 msgstr "有 {missing} 首歌曲加载失败，可点击「刷新」重试"
 
@@ -2674,7 +2735,7 @@ msgstr "有 {missing} 首歌曲加载失败，可点击「刷新」重试"
 msgid "未安装"
 msgstr "未安装"
 
-#: src/store/player.ts:1778
+#: src/store/player.ts:1809
 msgid "未找到其他可用音源"
 msgstr "未找到其他可用音源"
 
@@ -2698,7 +2759,7 @@ msgstr "未检测到局域网地址，请确认电脑已连接 Wi-Fi 或有线�
 msgid "未登录时展示本机收藏，登录后自动合并账号数据"
 msgstr "未登录时展示本机收藏，登录后自动合并账号数据"
 
-#: src/lib/songs.ts:35
+#: src/lib/songs.ts:36
 msgid "未知专辑"
 msgstr "未知专辑"
 
@@ -2746,6 +2807,10 @@ msgstr "本地歌单 · {0} 首"
 msgid "本地歌单不存在"
 msgstr "本地歌单不存在"
 
+#: src/routes/search.tsx:495
+msgid "来自相关专辑"
+msgstr "来自相关专辑"
+
 #: src/store/settings.ts:23
 msgid "极高"
 msgstr "极高"
@@ -2776,7 +2841,7 @@ msgstr "查看全部"
 #~ msgid "查看完整榜单"
 #~ msgstr "查看完整榜单"
 
-#: src/routes/albums/$id.tsx:278
+#: src/routes/albums/$id.tsx:290
 msgid "查看歌手"
 msgstr "查看歌手"
 
@@ -2795,7 +2860,7 @@ msgid "标准 · 64kbps"
 msgstr "标准 · 64kbps"
 
 #: src/routes/songlists/$id.edit.tsx:249
-#: src/routes/songlists/$id.tsx:472
+#: src/routes/songlists/$id.tsx:484
 msgid "标签"
 msgstr "标签"
 
@@ -2824,7 +2889,7 @@ msgstr "桌面服务响应超时"
 msgid "桌面服务请求失败 ({0})"
 msgstr "桌面服务请求失败 ({0})"
 
-#: src/components/player/MorePlaybackOptions.tsx:552
+#: src/components/player/MorePlaybackOptions.tsx:609
 msgid "桌面歌词"
 msgstr "桌面歌词"
 
@@ -2832,7 +2897,7 @@ msgstr "桌面歌词"
 msgid "桌面歌词：Ctrl / ⌘ + Shift + L 显示或隐藏，窗口始终置顶，可拖动到任意位置。"
 msgstr "桌面歌词：Ctrl / ⌘ + Shift + L 显示或隐藏，窗口始终置顶，可拖动到任意位置。"
 
-#: src/components/player/MorePlaybackOptions.tsx:254
+#: src/components/player/MorePlaybackOptions.tsx:289
 msgid "桌面歌词窗口暂不可用"
 msgstr "桌面歌词窗口暂不可用"
 
@@ -2865,11 +2930,11 @@ msgstr "樱花粉"
 msgid "欧美"
 msgstr "欧美"
 
-#: src/components/layout/SearchBox.tsx:425
+#: src/components/layout/SearchBox.tsx:436
 #: src/components/layout/TitleBar.tsx:20
-#: src/routes/search.tsx:319
-#: src/routes/songlists/$id.tsx:81
-#: src/routes/songlists/$id.tsx:419
+#: src/routes/search.tsx:443
+#: src/routes/songlists/$id.tsx:85
+#: src/routes/songlists/$id.tsx:431
 #: src/routes/users/$id.tsx:317
 msgid "歌单"
 msgstr "歌单"
@@ -2878,7 +2943,7 @@ msgstr "歌单"
 msgid "歌单、专辑、歌手与关注，一处查看"
 msgstr "歌单、专辑、歌手与关注，一处查看"
 
-#: src/routes/songlists/$id.tsx:243
+#: src/routes/songlists/$id.tsx:255
 msgid "歌单不存在或无法访问"
 msgstr "歌单不存在或无法访问"
 
@@ -2890,9 +2955,9 @@ msgstr "歌单信息已保存"
 #: src/components/player/PlaylistPicker.tsx:85
 #: src/components/songs/AddSelectedToPlaylist.tsx:83
 #: src/components/songs/SongContextMenu.tsx:207
-#: src/routes/search.tsx:377
+#: src/routes/search.tsx:530
 #: src/routes/songlists/$id.edit.tsx:72
-#: src/routes/songlists/$id.tsx:148
+#: src/routes/songlists/$id.tsx:153
 #: src/routes/songlists/index.tsx:179
 #: src/routes/songlists/index.tsx:440
 #: src/routes/toplist.tsx:66
@@ -2924,7 +2989,7 @@ msgstr "歌单名称"
 msgid "歌单导入失败"
 msgstr "歌单导入失败"
 
-#: src/routes/songlists/$id.tsx:615
+#: src/routes/songlists/$id.tsx:634
 msgid "歌单暂时没有歌曲"
 msgstr "歌单暂时没有歌曲"
 
@@ -2937,41 +3002,41 @@ msgid "歌单解析失败"
 msgstr "歌单解析失败"
 
 #: src/components/songs/SongTable.tsx:605
-#: src/routes/artist/$id.tsx:166
-#: src/routes/artist/$id.tsx:383
-#: src/routes/artist/$id.tsx:628
-#: src/routes/search.tsx:325
+#: src/routes/artist/$id.tsx:170
+#: src/routes/artist/$id.tsx:388
+#: src/routes/artist/$id.tsx:638
+#: src/routes/search.tsx:449
 msgid "歌手"
 msgstr "歌手"
 
-#: src/routes/artist/$id.tsx:333
+#: src/routes/artist/$id.tsx:338
 msgid "歌手不存在或无法访问"
 msgstr "歌手不存在或无法访问"
 
-#: src/routes/search.tsx:472
+#: src/routes/search.tsx:625
 msgid "歌手加载失败"
 msgstr "歌手加载失败"
 
 #. placeholder {0}: profile.rank.rank
-#: src/routes/artist/$id.tsx:680
+#: src/routes/artist/$id.tsx:690
 msgid "歌手榜 No.{0}"
 msgstr "歌手榜 No.{0}"
 
-#: src/routes/artist/$id.tsx:688
+#: src/routes/artist/$id.tsx:698
 msgid "歌手简介"
 msgstr "歌手简介"
 
-#: src/components/player/NowPlaying.tsx:1168
+#: src/components/player/NowPlaying.tsx:1188
 msgid "歌曲"
 msgstr "歌曲"
 
-#: src/routes/albums/$id.tsx:301
-#: src/routes/songlists/$id.tsx:562
+#: src/routes/albums/$id.tsx:313
+#: src/routes/songlists/$id.tsx:574
 msgid "歌曲列表"
 msgstr "歌曲列表"
 
-#: src/store/player.ts:1190
-#: src/store/player.ts:1258
+#: src/store/player.ts:1221
+#: src/store/player.ts:1289
 msgid "歌曲加载失败"
 msgstr "歌曲加载失败"
 
@@ -2979,7 +3044,7 @@ msgstr "歌曲加载失败"
 msgid "歌曲加载超时，请重新播放"
 msgstr "歌曲加载超时，请重新播放"
 
-#: src/store/player.ts:1498
+#: src/store/player.ts:1529
 msgid "歌曲已在播放列表中"
 msgstr "歌曲已在播放列表中"
 
@@ -2987,28 +3052,28 @@ msgstr "歌曲已在播放列表中"
 msgid "歌曲操作"
 msgstr "歌曲操作"
 
-#: src/components/player/NowPlaying.tsx:1998
+#: src/components/player/NowPlaying.tsx:2033
 msgid "歌曲评论"
 msgstr "歌曲评论"
 
-#: src/store/player.ts:1710
+#: src/store/player.ts:1741
 msgid "歌曲资源已失效"
 msgstr "歌曲资源已失效"
 
-#: src/components/player/NowPlaying.tsx:1178
+#: src/components/player/NowPlaying.tsx:1198
 msgid "歌词"
 msgstr "歌词"
 
-#: src/components/player/NowPlaying.tsx:1158
+#: src/components/player/NowPlaying.tsx:1178
 msgid "歌词、律动、播放队列、评论与相似歌曲"
 msgstr "歌词、律动、播放队列、评论与相似歌曲"
 
-#: src/components/player/MorePlaybackOptions.tsx:541
+#: src/components/player/MorePlaybackOptions.tsx:598
 msgid "歌词字号"
 msgstr "歌词字号"
 
 #: src/components/player/ImmersivePlayerBar.tsx:450
-#: src/components/player/MorePlaybackOptions.tsx:533
+#: src/components/player/MorePlaybackOptions.tsx:590
 msgid "歌词显示"
 msgstr "歌词显示"
 
@@ -3044,8 +3109,8 @@ msgstr "正在创建本地歌单…"
 msgid "正在创建网易云歌单…"
 msgstr "正在创建网易云歌单…"
 
-#: src/components/player/NowPlaying.tsx:1545
-#: src/components/player/NowPlaying.tsx:1564
+#: src/components/player/NowPlaying.tsx:1576
+#: src/components/player/NowPlaying.tsx:1595
 msgid "正在加载歌词…"
 msgstr "正在加载歌词…"
 
@@ -3054,12 +3119,12 @@ msgid "正在加载相似歌曲…"
 msgstr "正在加载相似歌曲…"
 
 #: src/components/player/NowPlayingTransport.tsx:436
-#: src/components/player/PlayerBar.tsx:1663
+#: src/components/player/PlayerBar.tsx:1666
 msgid "正在加载音源"
 msgstr "正在加载音源"
 
-#: src/components/player/NowPlaying.tsx:1450
-#: src/components/player/PlayerBar.tsx:1585
+#: src/components/player/NowPlaying.tsx:1481
+#: src/components/player/PlayerBar.tsx:1588
 msgid "正在加载音源…"
 msgstr "正在加载音源…"
 
@@ -3096,11 +3161,19 @@ msgstr "正在安装"
 msgid "正在导入歌曲 {0}/{1}…"
 msgstr "正在导入歌曲 {0}/{1}…"
 
-#: src/components/player/NowPlaying.tsx:1812
+#: src/components/player/NowPlaying.tsx:1847
 #: src/components/player/QueuePanel.tsx:300
 #: src/components/songs/SongTable.tsx:140
 msgid "正在播放"
 msgstr "正在播放"
+
+#: src/components/player/SourceResultsPanel.tsx:66
+msgid "正在查找…"
+msgstr "正在查找…"
+
+#: src/routes/search.tsx:485
+msgid "正在查找原曲…"
+msgstr "正在查找原曲…"
 
 #: src/components/settings/UpdateCard.tsx:258
 msgid "正在校验安装包…"
@@ -3127,15 +3200,15 @@ msgid "正在生成伴奏，预计约 {seconds} 秒"
 msgstr "正在生成伴奏，预计约 {seconds} 秒"
 
 #: src/components/player/NowPlayingTransport.tsx:435
-#: src/components/player/PlayerBar.tsx:1665
+#: src/components/player/PlayerBar.tsx:1668
 msgid "正在缓冲"
 msgstr "正在缓冲"
 
-#: src/components/player/NowPlaying.tsx:1450
+#: src/components/player/NowPlaying.tsx:1481
 msgid "正在缓冲…"
 msgstr "正在缓冲…"
 
-#: src/components/player/NowPlaying.tsx:1346
+#: src/components/player/NowPlaying.tsx:1377
 msgid "正在获取 MV…"
 msgstr "正在获取 MV…"
 
@@ -3143,7 +3216,7 @@ msgstr "正在获取 MV…"
 #~ msgid "正在获取专辑列表…"
 #~ msgstr "正在获取专辑列表…"
 
-#: src/routes/artist/$id.tsx:772
+#: src/routes/artist/$id.tsx:782
 msgid "正在获取专辑列表（已获取 {expandAlbumCount} 张）…"
 msgstr "正在获取专辑列表（已获取 {expandAlbumCount} 张）…"
 
@@ -3161,7 +3234,7 @@ msgstr "正在解析歌单链接…"
 
 #. placeholder {0}: expandProgress.done
 #. placeholder {1}: expandProgress.total
-#: src/routes/artist/$id.tsx:775
+#: src/routes/artist/$id.tsx:785
 msgid "正在读取 {0} / {1} 张专辑的歌曲…"
 msgstr "正在读取 {0} / {1} 张专辑的歌曲…"
 
@@ -3230,13 +3303,13 @@ msgstr "每日歌曲推荐"
 msgid "没有匹配到可导入的歌曲"
 msgstr "没有匹配到可导入的歌曲"
 
-#: src/components/player/NowPlaying.tsx:1850
-#: src/components/player/NowPlaying.tsx:1975
-#: src/routes/albums/$id.tsx:324
-#: src/routes/artist/$id.tsx:829
+#: src/components/player/NowPlaying.tsx:1885
+#: src/components/player/NowPlaying.tsx:2010
+#: src/routes/albums/$id.tsx:343
+#: src/routes/artist/$id.tsx:845
 #: src/routes/recent.tsx:151
 #: src/routes/recent.tsx:180
-#: src/routes/songlists/$id.tsx:614
+#: src/routes/songlists/$id.tsx:633
 msgid "没有匹配的歌曲"
 msgstr "没有匹配的歌曲"
 
@@ -3256,40 +3329,45 @@ msgstr "没有可上传的音频源：当前歌曲尚未加载到播放器"
 msgid "没有可清除的伴奏缓存"
 msgstr "没有可清除的伴奏缓存"
 
-#: src/store/player.ts:1865
-#: src/store/player.ts:1874
+#: src/store/player.ts:1970
+#: src/store/player.ts:1979
 msgid "没有找到其他可播放版本"
 msgstr "没有找到其他可播放版本"
 
-#: src/routes/search.tsx:594
+#: src/components/player/SourceResultsPanel.tsx:162
+msgid "没有找到可用的视频源"
+msgstr "没有找到可用的视频源"
+
+#: src/routes/search.tsx:747
 msgid "没有找到相关 MV"
 msgstr "没有找到相关 MV"
 
-#: src/routes/search.tsx:460
+#: src/routes/search.tsx:613
 msgid "没有找到相关专辑"
 msgstr "没有找到相关专辑"
 
-#: src/routes/search.tsx:363
+#: src/routes/search.tsx:507
+#: src/routes/search.tsx:516
 msgid "没有找到相关单曲"
 msgstr "没有找到相关单曲"
 
-#: src/components/layout/SearchBox.tsx:453
+#: src/components/layout/SearchBox.tsx:464
 msgid "没有找到相关建议"
 msgstr "没有找到相关建议"
 
-#: src/routes/search.tsx:427
+#: src/routes/search.tsx:580
 msgid "没有找到相关歌单"
 msgstr "没有找到相关歌单"
 
-#: src/routes/search.tsx:526
+#: src/routes/search.tsx:679
 msgid "没有找到相关歌手"
 msgstr "没有找到相关歌手"
 
-#: src/routes/search.tsx:556
+#: src/routes/search.tsx:709
 msgid "没有找到相关用户"
 msgstr "没有找到相关用户"
 
-#: src/routes/search.tsx:630
+#: src/routes/search.tsx:783
 msgid "没有找到相关视频"
 msgstr "没有找到相关视频"
 
@@ -3325,6 +3403,10 @@ msgstr "海盐蓝"
 msgid "淡入"
 msgstr "淡入"
 
+#: src/components/layout/SearchBox.tsx:491
+msgid "深度搜索"
+msgstr "深度搜索"
+
 #: src/lib/theme.ts:55
 msgid "深海青"
 msgstr "深海青"
@@ -3341,7 +3423,7 @@ msgstr "深色模式"
 msgid "添加全部到播放列表"
 msgstr "添加全部到播放列表"
 
-#: src/routes/songlists/$id.tsx:501
+#: src/routes/songlists/$id.tsx:513
 msgid "添加简介"
 msgstr "添加简介"
 
@@ -3370,7 +3452,7 @@ msgstr "清空播放记录失败"
 msgid "清透的蓝色，接近系统默认"
 msgstr "清透的蓝色，接近系统默认"
 
-#: src/components/layout/SearchBox.tsx:295
+#: src/components/layout/SearchBox.tsx:306
 msgid "清除"
 msgstr "清除"
 
@@ -3384,7 +3466,7 @@ msgstr "清除伴奏缓存失败"
 
 #: src/components/common/SearchInput.tsx:64
 #: src/components/common/SearchInput.tsx:65
-#: src/components/player/NowPlaying.tsx:1598
+#: src/components/player/NowPlaying.tsx:1633
 #: src/components/settings/SettingsNav.tsx:127
 #: src/components/settings/SettingsNav.tsx:128
 msgid "清除搜索"
@@ -3444,11 +3526,11 @@ msgstr "点击切换为总时长"
 msgid "点赞，{0} 人赞过"
 msgstr "点赞，{0} 人赞过"
 
-#: src/components/layout/SearchBox.tsx:323
+#: src/components/layout/SearchBox.tsx:334
 msgid "热搜榜"
 msgstr "热搜榜"
 
-#: src/routes/songlists/$id.tsx:568
+#: src/routes/songlists/$id.tsx:580
 msgid "热议"
 msgstr "热议"
 
@@ -3456,7 +3538,7 @@ msgstr "热议"
 msgid "热门"
 msgstr "热门"
 
-#: src/routes/artist/$id.tsx:717
+#: src/routes/artist/$id.tsx:727
 msgid "热门作品"
 msgstr "热门作品"
 
@@ -3482,7 +3564,7 @@ msgid "用于 Python、pip 和 FFprobe 下载。留空则直连；例如 Clash �
 msgstr "用于 Python、pip 和 FFprobe 下载。留空则直连；例如 Clash 的 http://127.0.0.1:7890。"
 
 #: src/components/layout/TitleBar.tsx:18
-#: src/routes/search.tsx:328
+#: src/routes/search.tsx:452
 #: src/routes/users/$id.tsx:59
 #: src/routes/users/$id.tsx:269
 msgid "用户"
@@ -3496,7 +3578,7 @@ msgstr "用户不存在或无法访问"
 msgid "用户信息加载失败"
 msgstr "用户信息加载失败"
 
-#: src/routes/search.tsx:537
+#: src/routes/search.tsx:690
 msgid "用户加载失败"
 msgstr "用户加载失败"
 
@@ -3556,21 +3638,21 @@ msgstr "登录成功"
 msgid "登录状态已失效，请重新登录"
 msgstr "登录状态已失效，请重新登录"
 
-#: src/components/player/NowPlaying.tsx:1219
+#: src/components/player/NowPlaying.tsx:1250
 msgid "相似"
 msgstr "相似"
 
-#: src/routes/songlists/$id.tsx:572
-#: src/routes/songlists/$id.tsx:642
+#: src/routes/songlists/$id.tsx:584
+#: src/routes/songlists/$id.tsx:661
 msgid "相似歌单"
 msgstr "相似歌单"
 
-#: src/routes/artist/$id.tsx:926
-#: src/routes/artist/$id.tsx:956
+#: src/routes/artist/$id.tsx:942
+#: src/routes/artist/$id.tsx:972
 msgid "相似歌手"
 msgstr "相似歌手"
 
-#: src/components/player/NowPlaying.tsx:1219
+#: src/components/player/NowPlaying.tsx:1250
 msgid "相似歌曲"
 msgstr "相似歌曲"
 
@@ -3582,17 +3664,17 @@ msgstr "相似歌曲加载失败"
 msgid "相关推荐"
 msgstr "相关推荐"
 
-#: src/components/player/MorePlaybackOptions.tsx:297
+#: src/components/player/MorePlaybackOptions.tsx:332
 #: src/components/songs/SongContextMenu.tsx:464
 msgid "相关视频"
 msgstr "相关视频"
 
-#: src/components/player/NowPlaying.tsx:1137
+#: src/components/player/NowPlaying.tsx:1151
 #: src/components/songs/SongContextMenu.tsx:174
 msgid "相关视频加载失败"
 msgstr "相关视频加载失败"
 
-#: src/components/player/MorePlaybackOptions.tsx:449
+#: src/components/player/MorePlaybackOptions.tsx:506
 msgid "睡眠定时器"
 msgstr "睡眠定时器"
 
@@ -3629,30 +3711,30 @@ msgstr "确认清除？"
 msgid "磁带"
 msgstr "磁带"
 
-#: src/components/player/NowPlaying.tsx:530
+#: src/components/player/NowPlaying.tsx:538
 #: src/components/video/VideoCard.tsx:28
 #: src/components/video/VideoCard.tsx:49
 #: src/lib/video.ts:67
 #: src/lib/video.ts:128
-#: src/routes/search.tsx:332
+#: src/routes/search.tsx:456
 #: src/routes/video/$id.tsx:42
 #: src/routes/video/$id.tsx:160
 #: src/routes/video/$id.tsx:162
 msgid "视频"
 msgstr "视频"
 
-#: src/components/player/NowPlaying.tsx:1348
+#: src/components/player/NowPlaying.tsx:1379
 msgid "视频加载中…"
 msgstr "视频加载中…"
 
-#: src/routes/search.tsx:605
+#: src/routes/search.tsx:758
 #: src/routes/video/$id.tsx:144
 msgid "视频加载失败"
 msgstr "视频加载失败"
 
 #: src/components/mv/MvVideoPlayer.tsx:184
-#: src/components/player/NowPlaying.tsx:1093
-#: src/components/player/NowPlaying.tsx:1310
+#: src/components/player/NowPlaying.tsx:1107
+#: src/components/player/NowPlaying.tsx:1341
 #: src/routes/mv/$id.tsx:186
 #: src/routes/video/$id.tsx:142
 msgid "视频暂时无法播放，可能已下架或存在地区限制"
@@ -3674,7 +3756,7 @@ msgstr "禁用开发者工具"
 msgid "离开此页面后，刚才的修改不会保存。"
 msgstr "离开此页面后，刚才的修改不会保存。"
 
-#: src/components/layout/SearchBox.tsx:309
+#: src/components/layout/SearchBox.tsx:320
 msgid "移除"
 msgstr "移除"
 
@@ -3816,7 +3898,7 @@ msgstr "编辑「{0}」"
 
 #: src/components/layout/Sidebar.tsx:932
 #: src/routes/songlists/$id.edit.tsx:53
-#: src/routes/songlists/$id.tsx:426
+#: src/routes/songlists/$id.tsx:438
 msgid "编辑歌单"
 msgstr "编辑歌单"
 
@@ -3832,7 +3914,7 @@ msgstr "编辑精选的华语、欧美与器乐歌单"
 msgid "缩放淡入"
 msgstr "缩放淡入"
 
-#: src/components/player/MorePlaybackOptions.tsx:207
+#: src/components/player/MorePlaybackOptions.tsx:222
 #: src/components/player/SourcePicker.tsx:45
 msgid "网易云官方"
 msgstr "网易云官方"
@@ -3846,7 +3928,7 @@ msgstr "网易云音乐"
 msgid "网易出品"
 msgstr "网易出品"
 
-#: src/components/player/NowPlaying.tsx:1621
+#: src/components/player/NowPlaying.tsx:1656
 #: src/routes/library.tsx:563
 msgid "网格视图"
 msgstr "网格视图"
@@ -3883,8 +3965,8 @@ msgstr "若二维码无法加载，请确认本地 API 服务已启动"
 msgid "获取二维码失败，请检查本地 API 服务是否启动"
 msgstr "获取二维码失败，请检查本地 API 服务是否启动"
 
-#: src/store/player.ts:420
-#: src/store/player.ts:1139
+#: src/store/player.ts:439
+#: src/store/player.ts:1170
 msgid "获取歌曲播放地址失败"
 msgstr "获取歌曲播放地址失败"
 
@@ -3919,8 +4001,8 @@ msgstr "设置分类"
 
 #: src/components/comments/CommentSection.tsx:409
 #: src/components/comments/CommentSection.tsx:824
-#: src/components/player/NowPlaying.tsx:1205
-#: src/routes/songlists/$id.tsx:566
+#: src/components/player/NowPlaying.tsx:1236
+#: src/routes/songlists/$id.tsx:578
 msgid "评论"
 msgstr "评论"
 
@@ -3941,20 +4023,32 @@ msgstr "评论失败"
 msgid "评论成功"
 msgstr "评论成功"
 
-#: src/components/player/NowPlaying.tsx:1402
-#: src/components/player/PlayerBar.tsx:1562
+#: src/components/player/NowPlaying.tsx:1433
+#: src/components/player/PlayerBar.tsx:1565
 msgid "试听"
 msgstr "试听"
 
-#: src/components/player/PlayerBar.tsx:1159
+#: src/components/player/NowPlaying.tsx:1452
+msgid "播放源视频"
+msgstr "播放源视频"
+
+#: src/components/player/NowPlaying.tsx:1458
+msgid "源视频"
+msgstr "源视频"
+
+#: src/components/player/SourceVideoModal.tsx:104
+msgid "无法解析视频地址"
+msgstr "无法解析视频地址"
+
+#: src/components/player/PlayerBar.tsx:1162
 msgid "试听结束，登录或开通会员可播放完整版"
 msgstr "试听结束，登录或开通会员可播放完整版"
 
-#: src/routes/albums/$id.tsx:90
+#: src/routes/albums/$id.tsx:94
 msgid "该专辑无法在线收藏，已收藏到本地"
 msgstr "该专辑无法在线收藏，已收藏到本地"
 
-#: src/store/player.ts:1397
+#: src/store/player.ts:1428
 msgid "该列表暂无可播放歌曲"
 msgstr "该列表暂无可播放歌曲"
 
@@ -3962,7 +4056,7 @@ msgstr "该列表暂无可播放歌曲"
 msgid "该歌曲暂不可用"
 msgstr "该歌曲暂不可用"
 
-#: src/components/player/PlayerBar.tsx:1575
+#: src/components/player/PlayerBar.tsx:1578
 msgid "该歌曲没有官方音源，当前使用匹配到的其他音源"
 msgstr "该歌曲没有官方音源，当前使用匹配到的其他音源"
 
@@ -3979,7 +4073,11 @@ msgstr "该用户还没有创建歌单"
 msgid "该用户还没有收藏歌单"
 msgstr "该用户还没有收藏歌单"
 
-#: src/store/player.ts:1846
+#: src/store/player.ts:1898
+msgid "该视频没有可用音轨"
+msgstr "该视频没有可用音轨"
+
+#: src/store/player.ts:1878
 msgid "该音源还没有缓存"
 msgstr "该音源还没有缓存"
 
@@ -4001,7 +4099,7 @@ msgstr "语音播放进度"
 msgid "说点什么…"
 msgstr "说点什么…"
 
-#: src/store/player.ts:1596
+#: src/store/player.ts:1627
 msgid "请先播放歌曲"
 msgstr "请先播放歌曲"
 
@@ -4020,13 +4118,13 @@ msgstr "请先登录后再试"
 msgid "请检查网络或本地 API 服务"
 msgstr "请检查网络或本地 API 服务"
 
-#: src/routes/search.tsx:349
-#: src/routes/search.tsx:378
-#: src/routes/search.tsx:439
 #: src/routes/search.tsx:473
-#: src/routes/search.tsx:538
-#: src/routes/search.tsx:570
-#: src/routes/search.tsx:606
+#: src/routes/search.tsx:531
+#: src/routes/search.tsx:592
+#: src/routes/search.tsx:626
+#: src/routes/search.tsx:691
+#: src/routes/search.tsx:723
+#: src/routes/search.tsx:759
 #: src/routes/songlists/index.tsx:441
 #: src/routes/toplist.tsx:344
 #: src/routes/users/$id.tsx:406
@@ -4099,7 +4197,7 @@ msgstr "较高"
 msgid "较高 · 96kbps"
 msgstr "较高 · 96kbps"
 
-#: src/routes/search.tsx:297
+#: src/routes/search.tsx:421
 msgid "输入关键词后按回车开始搜索"
 msgstr "输入关键词后按回车开始搜索"
 
@@ -4116,24 +4214,24 @@ msgid "运动"
 msgstr "运动"
 
 #: src/components/songs/SongContextMenu.tsx:350
-#: src/routes/albums/$id.tsx:215
-#: src/routes/albums/$id.tsx:216
-#: src/routes/artist/$id.tsx:608
-#: src/routes/artist/$id.tsx:609
+#: src/routes/albums/$id.tsx:227
+#: src/routes/albums/$id.tsx:228
+#: src/routes/artist/$id.tsx:618
+#: src/routes/artist/$id.tsx:619
 #: src/routes/local/playlists/$id.tsx:130
 #: src/routes/mv/$id.tsx:164
-#: src/routes/songlists/$id.tsx:402
-#: src/routes/songlists/$id.tsx:403
+#: src/routes/songlists/$id.tsx:414
+#: src/routes/songlists/$id.tsx:415
 #: src/routes/users/$id.tsx:255
 #: src/routes/video/$id.tsx:107
 msgid "返回"
 msgstr "返回"
 
-#: src/routes/albums/$id.tsx:191
+#: src/routes/albums/$id.tsx:203
 msgid "返回上一页"
 msgstr "返回上一页"
 
-#: src/routes/songlists/$id.tsx:251
+#: src/routes/songlists/$id.tsx:263
 msgid "返回推荐歌单"
 msgstr "返回推荐歌单"
 
@@ -4145,9 +4243,9 @@ msgstr "返回本地收藏"
 msgid "返回歌单"
 msgstr "返回歌单"
 
-#: src/components/player/NowPlaying.tsx:1317
-#: src/components/player/NowPlaying.tsx:1359
-#: src/components/player/NowPlaying.tsx:1360
+#: src/components/player/NowPlaying.tsx:1348
+#: src/components/player/NowPlaying.tsx:1390
+#: src/components/player/NowPlaying.tsx:1391
 msgid "返回音乐"
 msgstr "返回音乐"
 
@@ -4157,7 +4255,7 @@ msgid "返回首页"
 msgstr "返回首页"
 
 #. placeholder {0}: failed.length
-#: src/routes/artist/$id.tsx:502
+#: src/routes/artist/$id.tsx:507
 msgid "还有 {0} 张专辑获取失败"
 msgstr "还有 {0} 张专辑获取失败"
 
@@ -4205,16 +4303,20 @@ msgstr "这个歌单还没有歌曲"
 msgid "这些专辑里没有可合并的歌曲"
 msgstr "这些专辑里没有可合并的歌曲"
 
-#: src/routes/artist/$id.tsx:567
+#: src/routes/artist/$id.tsx:573
 msgid "这些专辑里没有可播放的歌曲"
 msgstr "这些专辑里没有可播放的歌曲"
+
+#: src/routes/search.tsx:502
+msgid "这些歌曲没有出现在单曲搜索结果里（可能已下架），仍可通过换源播放"
+msgstr "这些歌曲没有出现在单曲搜索结果里（可能已下架），仍可通过换源播放"
 
 #: src/components/songs/AddSelectedToPlaylist.tsx:116
 #: src/components/songs/AddSelectedToPlaylist.tsx:132
 msgid "这些歌曲都已在该歌单中"
 msgstr "这些歌曲都已在该歌单中"
 
-#: src/routes/songlists/$id.tsx:667
+#: src/routes/songlists/$id.tsx:686
 msgid "这是你的「我喜欢的音乐」"
 msgstr "这是你的「我喜欢的音乐」"
 
@@ -4241,19 +4343,19 @@ msgstr "这首歌正在播放"
 msgid "进度条显示剩余时间"
 msgstr "进度条显示剩余时间"
 
-#: src/store/player.ts:1264
+#: src/store/player.ts:1295
 msgid "连续 {skipped} 首歌曲无法播放，已停止播放"
 msgstr "连续 {skipped} 首歌曲无法播放，已停止播放"
 
-#: src/components/player/PlayerBar.tsx:1411
+#: src/components/player/PlayerBar.tsx:1414
 msgid "连续多首歌曲无法播放，已暂停播放"
 msgstr "连续多首歌曲无法播放，已暂停播放"
 
-#: src/components/player/MorePlaybackOptions.tsx:558
+#: src/components/player/MorePlaybackOptions.tsx:615
 msgid "迷你播放器"
 msgstr "迷你播放器"
 
-#: src/components/player/MorePlaybackOptions.tsx:260
+#: src/components/player/MorePlaybackOptions.tsx:295
 msgid "迷你播放器暂不可用"
 msgstr "迷你播放器暂不可用"
 
@@ -4266,11 +4368,11 @@ msgstr "退出登录"
 msgid "选择 {0}"
 msgstr "选择 {0}"
 
-#: src/components/player/PlayerBar.tsx:1061
+#: src/components/player/PlayerBar.tsx:1064
 msgid "选择一首歌曲开始播放"
 msgstr "选择一首歌曲开始播放"
 
-#: src/components/player/MorePlaybackOptions.tsx:433
+#: src/components/player/MorePlaybackOptions.tsx:490
 #: src/components/player/SourcePicker.tsx:159
 msgid "选择后立即重新获取当前歌曲；自动匹配会按内置顺序尝试。"
 msgstr "选择后立即重新获取当前歌曲；自动匹配会按内置顺序尝试。"
@@ -4297,7 +4399,7 @@ msgstr "选择音源"
 
 #: src/components/player/ImmersivePlayerBar.tsx:435
 #: src/components/player/ImmersivePlayerBar.tsx:444
-#: src/components/player/MorePlaybackOptions.tsx:525
+#: src/components/player/MorePlaybackOptions.tsx:582
 msgid "逐字播放"
 msgstr "逐字播放"
 
@@ -4309,11 +4411,11 @@ msgstr "通用"
 msgid "遥控端口被占用，请关闭占用该端口的程序后重新开启"
 msgstr "遥控端口被占用，请关闭占用该端口的程序后重新开启"
 
-#: src/routes/artist/$id.tsx:228
+#: src/routes/artist/$id.tsx:233
 msgid "部分歌手信息加载失败"
 msgstr "部分歌手信息加载失败"
 
-#: src/routes/songlists/$id.tsx:142
+#: src/routes/songlists/$id.tsx:147
 msgid "部分歌曲加载失败，可点击「刷新」重试"
 msgstr "部分歌曲加载失败，可点击「刷新」重试"
 
@@ -4368,7 +4470,7 @@ msgstr "重置配对"
 
 #: src/components/common/EmptyState.tsx:56
 #: src/routes/__root.tsx:90
-#: src/routes/artist/$id.tsx:819
+#: src/routes/artist/$id.tsx:835
 #: src/routes/index.tsx:98
 #: src/routes/video/$id.tsx:153
 msgid "重试"
@@ -4378,15 +4480,15 @@ msgstr "重试"
 msgid "链接可能已失效，或内容已被移除。"
 msgstr "链接可能已失效，或内容已被移除。"
 
-#: src/routes/songlists/$id.tsx:344
+#: src/routes/songlists/$id.tsx:356
 msgid "链接已复制"
 msgstr "链接已复制"
 
-#: src/components/player/NowPlaying.tsx:1196
+#: src/components/player/NowPlaying.tsx:1216
 msgid "队列"
 msgstr "队列"
 
-#: src/components/player/NowPlaying.tsx:1607
+#: src/components/player/NowPlaying.tsx:1642
 msgid "队列视图"
 msgstr "队列视图"
 
@@ -4417,7 +4519,7 @@ msgstr "需要安装 yt-dlp"
 msgid "需要本机安装 yt-dlp"
 msgstr "需要本机安装 yt-dlp"
 
-#: src/components/player/PlayerBar.tsx:1742
+#: src/components/player/PlayerBar.tsx:1745
 msgid "静音"
 msgstr "静音"
 
@@ -4425,7 +4527,7 @@ msgstr "静音"
 msgid "静音 / 取消静音"
 msgstr "静音 / 取消静音"
 
-#: src/components/player/PlayerBar.tsx:1743
+#: src/components/player/PlayerBar.tsx:1746
 msgid "静音（M）"
 msgstr "静音（M）"
 
@@ -4439,7 +4541,7 @@ msgstr "韩国"
 msgid "韩语"
 msgstr "韩语"
 
-#: src/components/player/NowPlaying.tsx:1366
+#: src/components/player/NowPlaying.tsx:1397
 msgid "音乐"
 msgstr "音乐"
 
@@ -4458,8 +4560,8 @@ msgstr "音轨下载失败 ({0})"
 
 #: src/components/player/ImmersivePlayerBar.tsx:379
 #: src/components/player/NowPlayingTransport.tsx:550
-#: src/components/player/PlayerBar.tsx:1755
-#: src/components/player/PlayerBar.tsx:1771
+#: src/components/player/PlayerBar.tsx:1758
+#: src/components/player/PlayerBar.tsx:1774
 #: src/components/player/VolumeSlider.tsx:81
 msgid "音量"
 msgstr "音量"
@@ -4478,7 +4580,7 @@ msgid "音量 +5 / -5"
 msgstr "音量 +5 / -5"
 
 #: src/components/player/ImmersivePlayerBar.tsx:380
-#: src/components/player/PlayerBar.tsx:1772
+#: src/components/player/PlayerBar.tsx:1775
 msgid "音量（Alt + ↑ / ↓）"
 msgstr "音量（Alt + ↑ / ↓）"
 
@@ -4488,20 +4590,20 @@ msgid "音量均衡"
 msgstr "音量均衡"
 
 #. placeholder {0}: response.status
-#: src/lib/songCache.ts:403
+#: src/lib/songCache.ts:408
 msgid "音频下载失败 ({0})"
 msgstr "音频下载失败 ({0})"
 
 #. placeholder {0}: reason.slice(0, 60)
-#: src/lib/songCache.ts:454
+#: src/lib/songCache.ts:460
 msgid "音频缓存暂不可用：{0}"
 msgstr "音频缓存暂不可用：{0}"
 
-#: src/lib/songCache.ts:390
+#: src/lib/songCache.ts:395
 msgid "音频编码结果为空"
 msgstr "音频编码结果为空"
 
-#: src/lib/songCache.ts:360
+#: src/lib/songCache.ts:365
 msgid "音频解码失败"
 msgstr "音频解码失败"
 

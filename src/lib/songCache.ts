@@ -34,6 +34,8 @@ interface CacheMeta {
   trialEnd?: number
   picUrl?: string
   albumId?: number
+  /** Public video page for bilibili / YouTube matches (menu link). */
+  webUrl?: string
 }
 
 interface AudioRecord {
@@ -56,6 +58,8 @@ export interface CacheableSong {
   picUrl?: string
   /** Album id so cached tracks can open their album without a detail request. */
   albumId?: number
+  /** Video page of the matched stream, kept so the source menu can link to it. */
+  webUrl?: string
 }
 
 /**
@@ -255,6 +259,7 @@ async function putCachedAudio(
     trialEnd?: number
     picUrl?: string
     albumId?: number
+    webUrl?: string
   },
 ) {
   const maxBytes = cacheMaxBytes()
@@ -425,6 +430,7 @@ async function transcodeAndStore(song: CacheableSong, epoch: number, source?: Bl
       trialEnd: song.trialEnd && song.trialEnd > 0 ? song.trialEnd : 0,
       picUrl: song.picUrl,
       albumId: song.albumId,
+      webUrl: song.webUrl,
     })
   } catch (error) {
     console.warn('[song cache] encode failed:', error)

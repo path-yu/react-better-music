@@ -324,6 +324,150 @@ async function constructServer(moduleDefs) {
    * Audio proxy for local IndexedDB caching. The music CDN does not send
    * CORS headers, so the browser cannot fetch audio bytes directly.
    */
+  /**
+   * Resolve NetEase song ids through a web search engine.
+   *
+   * `/cloudsearch?type=1` hides unlicensed tracks, but their song pages are
+   * still indexed by Bing. One `site:music.163.com` query therefore returns
+   * the exact id in ~200 ms, which is much faster than scanning a dozen
+   * albums. The renderer cannot do this itself (CORS), so it goes through the
+   * local API.
+   */
+  const webSongCache = new Map()
+  const WEB_SONG_TTL = 10 * 60_000
+  app.get('/web/song-ids', async (req, res) => {
+    const keyword =
+      typeof req.query.keyword === 'string' ? req.query.keyword.trim() : ''
+    if (!keyword) {
+      res.status(400).json({ code: 400, msg: 'Missing keyword' })
+      return
+    }
+    const cached = webSongCache.get(keyword)
+    if (cached && Date.now() - cached.at < WEB_SONG_TTL) {
+      res.json({ code: 200, data: { ids: cached.ids } })
+      return
+    }
+    try {
+      const response = await axios.get('https://cn.bing.com/search', {
+        params: { q: `site:music.163.com ${keyword}`, setlang: 'zh-CN' },
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'Accept-Language': 'zh-CN,zh;q=0.9',
+        },
+        // Short on purpose: the renderer falls back to album scanning, so a
+        // blocked/slow search engine must not stall the whole lookup.
+        timeout: 4000,
+        validateStatus: (code) => code === 200,
+      })
+      const html = typeof response.data === 'string' ? response.data : ''
+      const ids = [
+        ...new Set(
+          [...html.matchAll(/music\.163\.com\/(?:#\/)?song\?id=(\d+)/g)].map(
+            (match) => match[1],
+          ),
+        ),
+      ].slice(0, 5)
+      // Keep the map bounded; entries only exist for searched keywords.
+      if (webSongCache.size > 500) webSongCache.clear()
+      webSongCache.set(keyword, { at: Date.now(), ids })
+      res.json({ code: 200, data: { ids } })
+    } catch (error) {
+      res.status(502).json({ code: 502, msg: error.message })
+    }
+  })
+
+  /**
+   * Image proxy for third-party covers (bilibili / YouTube). Those hosts reject
+   * hotlinks from the renderer — bilibili requires a referer — so the request
+   * is made here with the right headers.
+   */
+  app.get('/image/proxy', async (req, res) => {
+    const raw = typeof req.query.url === 'string' ? req.query.url : ''
+    let parsed = null
+    try {
+      parsed = new URL(raw)
+    } catch {
+      parsed = null
+    }
+    const host = parsed ? parsed.hostname : ''
+    const allowed =
+      parsed &&
+      parsed.protocol === 'https:' &&
+      (/\.hdslb\.com$/.test(host) ||
+        host === 'i.ytimg.com' ||
+        host === 'img.youtube.com')
+    if (!allowed) {
+      res.status(400).json({ code: 400, msg: 'Invalid image url' })
+      return
+    }
+    try {
+      const response = await axios.get(raw, {
+        responseType: 'stream',
+        timeout: 10000,
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          ...(host.endsWith('hdslb.com')
+            ? { Referer: 'https://www.bilibili.com/' }
+            : {}),
+        },
+      })
+      res.setHeader(
+        'Content-Type',
+        response.headers['content-type'] || 'image/jpeg',
+      )
+      res.setHeader('Cache-Control', 'public, max-age=3600')
+      response.data.pipe(res)
+    } catch {
+      res.status(502).end()
+    }
+  })
+
+  /**
+   * Open a matched video page in the system browser. WebView2 has no shell
+   * bridge, so the renderer asks the local API; the host whitelist keeps this
+   * from becoming a generic launcher.
+   */
+  app.get('/open-url', (req, res) => {
+    const raw = typeof req.query.url === 'string' ? req.query.url : ''
+    let parsed = null
+    try {
+      parsed = new URL(raw)
+    } catch {
+      parsed = null
+    }
+    const host = parsed ? parsed.hostname : ''
+    const allowed =
+      parsed &&
+      parsed.protocol === 'https:' &&
+      ((/(^|\.)bilibili\.com$/.test(host) &&
+        parsed.pathname.startsWith('/video/')) ||
+        ((host === 'www.youtube.com' ||
+          host === 'm.youtube.com' ||
+          host === 'youtube.com') &&
+          parsed.pathname === '/watch') ||
+        (host === 'youtu.be' && parsed.pathname.length > 1))
+    if (!allowed) {
+      res.status(400).json({ code: 400, msg: 'Invalid url' })
+      return
+    }
+    const { spawn } = require('child_process')
+    const command =
+      process.platform === 'win32'
+        ? 'cmd'
+        : process.platform === 'darwin'
+          ? 'open'
+          : 'xdg-open'
+    const args = process.platform === 'win32' ? ['/c', 'start', '', raw] : [raw]
+    try {
+      spawn(command, args, { detached: true, stdio: 'ignore' }).unref()
+      res.json({ code: 200 })
+    } catch (error) {
+      res.status(500).json({ code: 500, msg: error.message })
+    }
+  })
+
   app.get('/audio/proxy', async (req, res) => {
     // Express has already decoded the query string; decoding again would throw
     // on media URLs that contain a literal percent sign.

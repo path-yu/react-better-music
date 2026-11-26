@@ -20,6 +20,7 @@ import { ExpandableDescription } from '../../components/common/ExpandableDescrip
 import { MvCard } from '../../components/cards/MvCard'
 import { PlayAllButton } from '../../components/songs/PlayAllButton'
 import { SongTable } from '../../components/songs/SongTable'
+import { UnblockFilterButton } from '../../components/songs/UnblockFilterButton'
 import {
   fetchAlbumDetail,
   fetchArtistAlbums,
@@ -32,6 +33,7 @@ import {
 import { useLocalLibraryStore } from '../../store/localLibrary'
 import { useUserStore } from '../../store/user'
 import { formatDate, formatNumber, matchesKeyword } from '../../lib/format'
+import { needsUnblock } from '../../lib/songs'
 import { composePlaylistCover } from '../../lib/playlistCover'
 import { useDocumentTitle } from '../../lib/title'
 import { toast } from '../../lib/toast'
@@ -160,6 +162,8 @@ function ArtistPage() {
   // Albums whose `/album` request was still rate limited after the retries.
   const [failedAlbums, setFailedAlbums] = useState<ArtistAlbum[]>([])
   const [songQuery, setSongQuery] = useState('')
+  /** Keep only rows NetEase cannot play directly (无版权 / 其它版本可播). */
+  const [unblockOnly, setUnblockOnly] = useState(false)
   // How many albums were loaded on the previous visit; the route holds no
   // component state, so the list must be rebuilt before scroll can restore.
   const albumsRestoreRef = useRef(false)
@@ -184,6 +188,7 @@ function ArtistPage() {
     setExpandAlbumCount(0)
     setFailedAlbums([])
     setSongQuery('')
+    setUnblockOnly(false)
     albumsRestoreRef.current = false
 
     Promise.allSettled([
@@ -514,6 +519,7 @@ function ArtistPage() {
     if (expandingAll) return
     setExpandingAll(true)
     setSongQuery('')
+    setUnblockOnly(false)
     setExpandPhase('albums')
     setExpandProgress({ done: 0, total: 0 })
     setExpandAlbumCount(albums.length)
@@ -584,7 +590,7 @@ function ArtistPage() {
    * would change the hook count between renders.
    */
   const expandedQuery = songQuery.trim()
-  const filteredAllSongs = expandedQuery
+  const searchedAllSongs = expandedQuery
     ? (allSongs ?? []).filter((song) =>
         matchesKeyword(
           expandedQuery,
@@ -594,6 +600,10 @@ function ArtistPage() {
         ),
       )
     : (allSongs ?? [])
+  const filteredAllSongs = unblockOnly
+    ? searchedAllSongs.filter(needsUnblock)
+    : searchedAllSongs
+  const unblockCount = (allSongs ?? []).filter(needsUnblock).length
 
   return (
     <div className="page">
@@ -779,6 +789,11 @@ function ArtistPage() {
                       )}
                 </p>
                 <div className="flex flex-wrap items-center gap-2">
+                  <UnblockFilterButton
+                    count={unblockCount}
+                    active={unblockOnly}
+                    onToggle={() => setUnblockOnly((value) => !value)}
+                  />
                   <SearchInput
                     value={songQuery}
                     onChange={setSongQuery}
@@ -795,6 +810,7 @@ function ArtistPage() {
                       setAllSongs(null)
                       setAllAlbumCount(0)
                       setSongQuery('')
+                      setUnblockOnly(false)
                     }}
                   >
                     <Trans>收起列表</Trans>

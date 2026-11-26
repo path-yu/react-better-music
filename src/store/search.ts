@@ -30,7 +30,17 @@ interface SearchState {
   /** Last submitted/typed query, used when re-entering /search. */
   keyword: string
   tab: SearchTab
+  /**
+   * Incremented when the user submits the same query again (Enter). Navigating
+   * to an identical URL is a no-op in TanStack Router, so this token is what
+   * actually triggers the refetch.
+   */
+  refreshToken: number
+  /** Whether the fallback lookup (web + albums) runs for missing songs. */
+  deepSearch: boolean
   setSearch: (keyword: string, tab?: string) => void
+  refresh: () => void
+  toggleDeepSearch: () => void
 }
 
 /**
@@ -43,12 +53,27 @@ export const useSearchStore = create<SearchState>()(
     (set) => ({
       keyword: '',
       tab: 'songs',
+      refreshToken: 0,
+      deepSearch: true,
       setSearch: (keyword, tab) =>
         set((state) => ({
           keyword,
           tab: tab === undefined ? state.tab : normalizeTab(tab),
         })),
+      refresh: () =>
+        set((state) => ({ refreshToken: state.refreshToken + 1 })),
+      toggleDeepSearch: () =>
+        set((state) => ({ deepSearch: !state.deepSearch })),
     }),
-    { name: 'react-music-search' },
+    {
+      name: 'react-music-search',
+      // The token is per-session; persisting it would only make the first
+      // effect of the next launch run twice.
+      partialize: (state) => ({
+        keyword: state.keyword,
+        tab: state.tab,
+        deepSearch: state.deepSearch,
+      }),
+    },
   ),
 )

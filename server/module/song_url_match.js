@@ -33,10 +33,29 @@ async function loadSongMeta(query, request) {
   }
 }
 
-const matched = (url, source, title) => ({
+const matched = (url, source, title, webUrl) => ({
   status: 200,
-  body: { code: 200, data: url, source, proxyUrl: '', title: title || '' },
+  body: {
+    code: 200,
+    data: url,
+    source,
+    proxyUrl: '',
+    title: title || '',
+    // Page the audio was taken from, so the menu can link back to it.
+    ...(webUrl ? { webUrl } : {}),
+  },
 })
+
+/** Public video page for a matched bilibili / YouTube stream. */
+function videoPageUrl(source, match) {
+  if (source === 'bilibili' && match?.bvid) {
+    return `https://www.bilibili.com/video/${match.bvid}`
+  }
+  if (source === 'youtube' && match?.id) {
+    return `https://www.youtube.com/watch?v=${match.id}`
+  }
+  return ''
+}
 
 const notFound = (msg) => ({
   status: 404,
@@ -59,7 +78,13 @@ async function matchAuto(query, request) {
       if (source === 'bilibili') {
         const meta = await loadSongMeta(query, request)
         const hit = await bilibili.matchSong(meta)
-        if (hit?.url) return { url: hit.url, source }
+        if (hit?.url) {
+          return {
+            url: hit.url,
+            source,
+            webUrl: videoPageUrl(source, hit),
+          }
+        }
         continue
       }
       const result = await matchID(query.id, source)
@@ -94,7 +119,12 @@ module.exports = async (query, request) => {
         // The proxy only streams URLs the matcher produced, and these hosts
         // require a bilibili/YouTube referer that the proxy adds.
         matchedMedia.remember(match.url)
-        return matched(match.url, query.source, match.title)
+        return matched(
+          match.url,
+          query.source,
+          match.title,
+          videoPageUrl(query.source, match),
+        )
       } catch (error) {
         if (error?.code === 'YT_DLP_MISSING') {
           // `reason` lets the renderer open the install dialog instead of
@@ -118,7 +148,7 @@ module.exports = async (query, request) => {
       const hit = await matchAuto(query, request)
       if (!hit) return notFound('未找到可用音源')
       matchedMedia.remember(hit.url)
-      return matched(hit.url, hit.source)
+      return matched(hit.url, hit.source, hit.title, hit.webUrl)
     }
 
     const {

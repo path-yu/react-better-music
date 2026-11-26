@@ -157,9 +157,12 @@ const API_INDEX = path.join(sourceDir, 'api', 'index.ts')
 const CUSTOM_API_ROUTES = new Set([
   '/apple/playlist',
   '/audio/proxy',
+  '/image/proxy',
   '/link/resolve',
   '/media/probe',
+  '/open-url',
   '/qq/playlist',
+  '/web/song-ids',
   '/youtube/playlist',
 ])
 const apiIndexSource = fs.existsSync(API_INDEX)

@@ -93,6 +93,8 @@ export interface Song {
   al: Album
   dt: number
   fee?: number
+  /** Row-level rights from list endpoints (`/playlist/track/all`); -200 = no license. */
+  st?: number
   noCopyrightRcmd?: NoCopyrightRcmd | null
   privilege?: SongPrivilege
   mv?: number
@@ -110,6 +112,8 @@ export interface Song {
   alternativeVersion?: boolean
   /** Provider module that produced the matched URL (e.g. `unm`, `gdmusic`). */
   matchedSource?: string
+  /** Public page of the matched video (bilibili / YouTube source only). */
+  matchedWebUrl?: string
   /** Trial length in seconds when NetEase only returns a preview clip. */
   trialEnd?: number | null
   lyric?: string

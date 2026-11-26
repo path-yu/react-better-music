@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
@@ -14,7 +14,7 @@ import { SongTable } from '../components/songs/SongTable'
 import { PlayAllButton } from '../components/songs/PlayAllButton'
 import { UserCard } from '../components/user/UserCard'
 import { VideoCard } from '../components/video/VideoCard'
-import { searchAll } from '../api'
+import { deepSearchSongs, searchAll, type DeepSearchHit } from '../api'
 import { formatNumber } from '../lib/format'
 import {
   cacheSearchResult,
@@ -63,6 +63,59 @@ const ARTIST_PAGE_SIZE = 20
 const USER_PAGE_SIZE = 20
 const VIDEO_PAGE_SIZE = 20
 
+function normalizeQuery(value: string) {
+  return String(value || '')
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[\s\-_—·()（）[\]【】「」'"“”,，.。!！?？/]/g, '')
+}
+
+/** A live/remix/instrumental upload is not the original. */
+const DECORATED_TITLE =
+  /(live|remix|dj|伴奏|翻唱|cover|纯音乐|instrumental|bootleg|type\s*beat|\bbeat\b|v\d|加速|降速|片段|剪辑|铃声|女声版|男声版|\d(?:\.\d)?x)/i
+
+/**
+ * True when an undecorated hit really is the requested song.
+ *
+ * Matching every word anywhere in "title + artists" was too loose: with
+ * "一路向北 周杰伦", a row titled `周杰伦"一路向北" Emo Rap Type beat` by
+ * WEICHENG-BEAT satisfied it, so the fallback never ran. One of the words is
+ * an artist, so it must appear in the credits, not just in the title.
+ */
+function hasDirectMatch(songs: Song[], keyword: string) {
+  const tokens = keyword
+    .trim()
+    .split(/\s+/)
+    .map(normalizeQuery)
+    .filter(Boolean)
+  if (!tokens.length) return true
+  if (tokens.length === 1) {
+    return songs.some(
+      (song) =>
+        !DECORATED_TITLE.test(song.name) &&
+        normalizeQuery(song.name).includes(tokens[0]),
+    )
+  }
+  const covered = (titleTokens: string[], artistToken: string, song: Song) => {
+    if (DECORATED_TITLE.test(song.name)) return false
+    const name = normalizeQuery(song.name)
+    const artists = normalizeQuery(
+      song.ar.map((artist) => artist.name).join(' '),
+    )
+    return (
+      titleTokens.every((token) => name.includes(token)) &&
+      artists.includes(artistToken)
+    )
+  }
+  return songs.some((song) => {
+    // "song artist" and "artist song" are both common ways to type a query.
+    return (
+      covered(tokens.slice(0, -1), tokens[tokens.length - 1], song) ||
+      covered(tokens.slice(1), tokens[0], song)
+    )
+  })
+}
+
 function SearchPage() {
   const { i18n } = useLingui()
   const { keyword, tab, page = 1 } = Route.useSearch()
@@ -102,7 +155,21 @@ function SearchPage() {
   // A failed request must not look like an empty result set.
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
+  // Songs recovered from album track lists / the web lookup when the song
+  // index has nothing. The toggle lives next to the search box and controls
+  // whether the fallback runs at all.
+  const deepEnabled = useSearchStore((state) => state.deepSearch)
+  const [deepSongs, setDeepSongs] = useState<DeepSearchHit[]>([])
+  const [deepLoading, setDeepLoading] = useState(false)
+  const deepKeywordRef = useRef('')
+  const songsRef = useRef<Song[]>([])
+
+  useEffect(() => {
+    songsRef.current = songs
+  }, [songs])
   const setLastSearch = useSearchStore((state) => state.setSearch)
+  /** Bumped by the search box when the same query is submitted again. */
+  const refreshToken = useSearchStore((state) => state.refreshToken)
   const handleKeywordChange = useCallback(
     (value: string) => setLastSearch(value, tab),
     [setLastSearch, tab],
@@ -128,6 +195,9 @@ function SearchPage() {
     setMvTotal(0)
     setVideoTotal(0)
     setFailed(false)
+    setDeepSongs([])
+    setDeepLoading(false)
+    deepKeywordRef.current = ''
   }, [keyword])
 
   const applyResult = useCallback(
@@ -160,7 +230,9 @@ function SearchPage() {
 
   useEffect(() => {
     if (!keyword.trim()) return
-    const cacheKey = `${keyword}|${tab}|${page}`
+    // The refresh token is part of the key: pressing Enter again must hit the
+    // API instead of replaying the cached payload.
+    const cacheKey = `${keyword}|${tab}|${page}|${refreshToken}`
     const cached = getCachedSearchResult(cacheKey)
     if (cached) {
       setFailed(false)
@@ -220,7 +292,59 @@ function SearchPage() {
         if (!controller.signal.aborted) setLoading(false)
       })
     return () => controller.abort()
-  }, [keyword, tab, page, attempt, applyResult])
+  }, [keyword, tab, page, attempt, refreshToken, applyResult])
+
+  /**
+   * Song search skips unlicensed tracks entirely. When no hit covers the
+   * query, scan the albums the same query returns: their track lists still
+   * contain the grey originals.
+   */
+  // A resubmitted query must be allowed to run the fallback again, even if it
+  // already ran (and finished) for the same keyword.
+  useEffect(() => {
+    deepKeywordRef.current = ''
+  }, [refreshToken])
+
+  useEffect(() => {
+    if (!deepEnabled) {
+      setDeepSongs([])
+      setDeepLoading(false)
+      deepKeywordRef.current = ''
+      return
+    }
+    if (tab !== 'songs' || page !== 1) {
+      // Leaving the page must not block a later run for the same keyword.
+      deepKeywordRef.current = ''
+      return
+    }
+    const query = keyword.trim()
+    if (!query || loading || failed) return
+    if (hasDirectMatch(songsRef.current, query)) {
+      setDeepSongs([])
+      deepKeywordRef.current = ''
+      return
+    }
+    if (deepKeywordRef.current === query) return
+    deepKeywordRef.current = query
+
+    const controller = new AbortController()
+    const startedWith = query
+    setDeepLoading(true)
+    setDeepSongs([])
+    deepSearchSongs(query, controller.signal)
+      .then((hits) => {
+        if (controller.signal.aborted) return
+        const seen = new Set(songsRef.current.map((song) => song.id))
+        setDeepSongs(hits.filter((hit) => !seen.has(hit.song.id)))
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        // Even after an abort the spinner must stop; a new run for another
+        // keyword will set it again.
+        if (deepKeywordRef.current === startedWith) setDeepLoading(false)
+      })
+    return () => controller.abort()
+  }, [tab, page, keyword, loading, failed, deepEnabled, refreshToken])
 
   const retry = () => setAttempt((value) => value + 1)
 
@@ -351,11 +475,40 @@ function SearchPage() {
             />
           ) : (
             <>
-              <div className="mb-2 flex items-center justify-between text-[11px] text-ink-4">
+              <div className="mb-2 flex items-center justify-between gap-2 text-[11px] text-ink-4">
                 <span>
                   <Trans>共找到 {songTotal} 首单曲</Trans>
                 </span>
               </div>
+              {deepEnabled && page === 1 && deepLoading ? (
+                <p className="mb-3 text-[11px] text-ink-4">
+                  <Trans>正在查找原曲…</Trans>
+                </p>
+              ) : null}
+
+              {/* Above the main table on purpose: with 30 rows per page the
+                  fallback results would otherwise sit far below the fold. */}
+              {deepEnabled && page === 1 && !deepLoading && deepSongs.length ? (
+                <section className="mb-6">
+                  <div className="mb-2 flex items-baseline gap-2">
+                    <h2 className="section-title">
+                      <Trans>来自相关专辑</Trans>
+                    </h2>
+                    <span className="text-[11px] tabular-nums text-ink-4">
+                      {deepSongs.length}
+                    </span>
+                  </div>
+                  <p className="mb-3 text-[11px] leading-relaxed text-ink-4">
+                    <Trans>这些歌曲没有出现在单曲搜索结果里（可能已下架），仍可通过换源播放</Trans>
+                  </p>
+                  <SongTable
+                    songs={deepSongs.map((hit) => hit.song)}
+                    playlistId={`search-deep-${keyword}`}
+                    emptyText={i18n._(msg`没有找到相关单曲`)}
+                  />
+                </section>
+              ) : null}
+
               <SongTable
                 songs={songs}
                 playlistId={`search-${keyword}-${page}`}

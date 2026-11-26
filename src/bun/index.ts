@@ -1575,6 +1575,8 @@ interface AudioCacheMeta {
   lyricSongId?: number
   /** Original artwork URL; sidecar file name is `<id>.cover.<ext>`. */
   picUrl?: string
+  /** Public page of a matched bilibili / YouTube stream. */
+  webUrl?: string
   /** Human-readable filename stored in the cache directory. */
   file?: string
 }
@@ -2577,6 +2579,7 @@ try {
             picUrl: meta.picUrl
               ? String(meta.picUrl).slice(0, 1000)
               : undefined,
+            webUrl: meta.webUrl ? String(meta.webUrl).slice(0, 1000) : undefined,
             file,
           }
           const items = existing.filter((entry) => entry.key !== key)

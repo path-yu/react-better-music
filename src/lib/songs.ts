@@ -8,6 +8,7 @@ export type RawSong = {
   dt?: number
   duration?: number
   fee?: number
+  st?: number
   noCopyrightRcmd?: NoCopyrightRcmd | null
   privilege?: SongPrivilege
   mv?: number
@@ -44,6 +45,7 @@ export function normalizeSong(raw: RawSong): Song {
     },
     dt: target.dt ?? target.duration ?? 0,
     fee: target.fee,
+    st: target.st,
     noCopyrightRcmd: target.noCopyrightRcmd ?? null,
     privilege: target.privilege,
     mv: target.mv,
@@ -118,8 +120,11 @@ export function copyrightHint(song: Pick<Song, 'noCopyrightRcmd'>) {
  * track has no license at all, while `st >= 0 && pl === 0` usually means it
  * needs a login or VIP subscription.
  */
-export function isCopyrightBlocked(song: Pick<Song, 'privilege'>) {
-  const st = song.privilege?.st
+export function isCopyrightBlocked(
+  song: Pick<Song, 'privilege'> & { st?: number },
+) {
+  // Playlist rows carry `st` directly; `/song/detail` puts it in `privilege`.
+  const st = song.privilege?.st ?? song.st
   return typeof st === 'number' && st < 0
 }
 
@@ -128,8 +133,22 @@ export function isCopyrightBlocked(song: Pick<Song, 'privilege'>) {
  * NetEase's own hint (e.g. "其它版本可播"); songs with neither get no tag.
  */
 export function availabilityTag(
-  song: Pick<Song, 'privilege' | 'noCopyrightRcmd'>,
+  song: Pick<Song, 'privilege' | 'noCopyrightRcmd'> & { st?: number },
 ) {
   if (isCopyrightBlocked(song)) return i18n._(msg`无版权`)
   return copyrightHint(song)
+}
+
+/**
+ * Whether the track is unavailable on NetEase but has a plausible replacement:
+ * no license at all (`st < 0`), or only another edition is licensed. These are
+ * the rows the "可换源" filter keeps, and the rows `/song/url/match` can fix.
+ */
+export function needsUnblock(
+  song: Pick<Song, 'privilege' | 'noCopyrightRcmd'> & { st?: number },
+) {
+  // VIP rows are not "grey": a subscription plays them as-is, and counting
+  // them made the filter badge show ~950 of 1349 instead of the few dozen
+  // actually missing from the catalogue.
+  return isCopyrightBlocked(song) || Boolean(copyrightHint(song))
 }

@@ -8,6 +8,7 @@ import {
   CaseSensitive,
   Check,
   ChevronDown,
+  ExternalLink,
   Film,
   Languages,
   Loader2,
@@ -21,6 +22,7 @@ import { PlayerMenuContent } from './PlayerMenuContent'
 import { SwitchTrack } from '../common/ToggleSwitch'
 import { usePlayerMenuTint } from '../../lib/menuSurface'
 import { cn } from '../../lib/format'
+import { openExternal } from '../../lib/external'
 import { toast } from '../../lib/toast'
 import { isDesktopShell } from '../../lib/desktop'
 import {
@@ -30,6 +32,7 @@ import {
   setMiniPlayerVisible,
 } from '../../lib/desktopBridge'
 import { usePlayerStore } from '../../store/player'
+import { fetchMatchedSongUrl } from '../../api'
 import {
   LYRIC_DISPLAY_OPTIONS,
   LYRIC_FONT_SIZE_OPTIONS,
@@ -37,6 +40,9 @@ import {
   useSettingsStore,
 } from '../../store/settings'
 import { SOURCE_OPTIONS } from '../../lib/sources'
+
+/** Song id → video page resolved for a cached copy that stored no link. */
+const resolvedWebUrls = new Map<number, string>()
 import { listCachedSources } from '../../lib/songCache'
 import { useSleepTimerStore } from '../../store/sleepTimer'
 import type { PlayLevel } from '../../types'
@@ -195,6 +201,15 @@ export function MorePlaybackOptions({
   // What is actually playing, so a wrong match is visible before switching.
   // `copyright-rcmd` is tracked here too, unlike the old `unblocked` test.
   const playingSource = currentSong?.matchedSource ?? ''
+  const isVideoSource =
+    playingSource === 'bilibili' || playingSource === 'youtube'
+  // Cached copies made before the link feature have no `matchedWebUrl`, so a
+  // bilibili match is resolved on demand when the menu opens (fast: one HTTP
+  // request). YouTube is skipped: resolving it runs yt-dlp for ~10s.
+  const [lazyWebUrl, setLazyWebUrl] = useState('')
+  const videoPageUrl = isVideoSource
+    ? (currentSong?.matchedWebUrl ?? '') || lazyWebUrl
+    : ''
   const playingOption = SOURCE_OPTIONS.find(
     (option) => option.value === playingSource,
   )
@@ -219,6 +234,26 @@ export function MorePlaybackOptions({
       active = false
     }
   }, [sourceOpen, currentSongId])
+
+  // Older cached bilibili copies have no stored page link; resolve it while
+  // the picker is open so the row can appear. Nothing runs while it is closed.
+  useEffect(() => {
+    const cached = currentSongId ? resolvedWebUrls.get(currentSongId) : ''
+    setLazyWebUrl(cached ?? '')
+    if (!sourceOpen || playingSource !== 'bilibili') return
+    if (!currentSongId || currentSong?.matchedWebUrl || cached) return
+    let cancelled = false
+    fetchMatchedSongUrl(currentSongId, 'bilibili')
+      .then((matched) => {
+        if (!matched.webUrl) return
+        resolvedWebUrls.set(currentSongId, matched.webUrl)
+        if (!cancelled) setLazyWebUrl(matched.webUrl)
+      })
+      .catch(() => undefined)
+    return () => {
+      cancelled = true
+    }
+  }, [sourceOpen, playingSource, currentSongId, currentSong?.matchedWebUrl])
 
   const handleSelectSource = (value: string) => {
     setPreferredSource(value)
@@ -424,6 +459,28 @@ export function MorePlaybackOptions({
               </button>
             )
           })}
+          {videoPageUrl ? (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => void openExternal(videoPageUrl)}
+              className={cn(
+                'flex w-full items-center gap-1.5 rounded-[6px] px-2 py-1.5 text-left text-[12px] transition-colors',
+                immersive
+                  ? 'text-white/65 hover:bg-white/8'
+                  : 'text-ink-2 hover:bg-black/5 dark:text-white/60 dark:hover:bg-white/10',
+              )}
+            >
+              <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+              <span className="min-w-0 truncate">
+                {playingSource === 'bilibili' ? (
+                  <Trans>在哔哩哔哩查看视频</Trans>
+                ) : (
+                  <Trans>在 YouTube 查看视频</Trans>
+                )}
+              </span>
+            </button>
+          ) : null}
           <p
             className={cn(
               'px-1 pb-0.5 pt-1 text-[11px] leading-relaxed',

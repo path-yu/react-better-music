@@ -928,6 +928,9 @@ export function PlayerBar() {
         trialEnd: active.trialEnd ?? 0,
         picUrl: active.al.picUrl,
         albumId: active.al.id,
+        // Kept with the cached copy so the source menu can still link to the
+        // video after the queue no longer holds the freshly matched URL.
+        webUrl: active.matchedWebUrl,
       }
       if (audioBlob) {
         cacheSongFromBlob(meta, audioBlob)

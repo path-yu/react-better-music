@@ -41,6 +41,8 @@ import { PlayerArtwork } from './PlayerArtwork'
 import { ImmersivePlayerBar } from './ImmersivePlayerBar'
 import { NowPlayingTitleBar } from './NowPlayingTitleBar'
 import { NowPlayingTransport } from './NowPlayingTransport'
+import { SourceResultsPanel } from './SourceResultsPanel'
+import { SourceVideoModal } from './SourceVideoModal'
 import { stepTab, useSwipeNavigation } from '../../lib/useSwipeNavigation'
 import { useScrollEdgeHints } from '../../lib/useScrollEdgeHints'
 import { CommentSection, useCommentTotal } from '../comments/CommentSection'
@@ -72,6 +74,7 @@ type NowPlayingPanel =
   | 'lyrics'
   | 'stage'
   | 'queue'
+  | 'sources'
   | 'comments'
   | 'related'
 type QueueView = 'list' | 'grid'
@@ -125,6 +128,12 @@ export function NowPlaying() {
     (state) => state.lastStepDirection,
   )
   const currentSong = queue[currentIndex]
+  // The "播放源" tab only exists while a video-site provider is playing.
+  const videoSource: 'bilibili' | 'youtube' | '' =
+    currentSong?.matchedSource === 'bilibili' ||
+    currentSong?.matchedSource === 'youtube'
+      ? currentSong.matchedSource
+      : ''
   // Backdrop follows the current cover; the colour wash is sampled from it.
   const artwork = currentSong?.al.picUrl
   const playing = usePlayerStore((state) => state.playing)
@@ -176,6 +185,8 @@ export function NowPlaying() {
   )
   const growFromCover = nowPlayingTransition === 'cover'
   const [panel, setPanel] = useState<NowPlayingPanel>('lyrics')
+  // Full-screen embed of the bilibili / YouTube page this track came from.
+  const [sourceVideoOpen, setSourceVideoOpen] = useState(false)
   const [tabsVisible, setTabsVisible] = useState(true)
   /** Mobile only: the cover view ("歌曲" tab) instead of one of the panels. */
   const [mobileSongView, setMobileSongView] = useState(true)
@@ -952,7 +963,13 @@ export function NowPlaying() {
   useSwipeNavigation(swipeArea, {
     enabled: () => window.matchMedia(MOBILE_QUERY).matches,
     onSwipe: (step) => {
-      const current: MobileView = mobileSongView ? 'song' : panel
+      // "播放源" has no swipe position; treat it as the queue tab so the
+      // neighbours stay the same while it is open.
+      const current: MobileView = mobileSongView
+        ? 'song'
+        : panel === 'sources'
+          ? 'queue'
+          : panel
       const next = stepTab(MOBILE_VIEWS, current, step)
       if (next === current) return
       if (next === 'song') {
@@ -1147,6 +1164,17 @@ export function NowPlaying() {
     setPanel(next)
     setMobileSongView(false)
   }
+
+  // Switching away from a video provider hides the tab; do not leave the
+  // panel scrolled to a tab that no longer exists.
+  useEffect(() => {
+    if (panel === 'sources' && !videoSource) setPanel('queue')
+  }, [panel, videoSource])
+
+  // The embed belongs to one track; a track change must close it.
+  useEffect(() => {
+    setSourceVideoOpen(false)
+  }, [currentSong?.id])
   const renderTabs = (mobile: boolean) => {
     const tabOn = (key: NowPlayingPanel) =>
       panel === key && !(mobile && mobileSongView)
@@ -1195,6 +1223,17 @@ export function NowPlaying() {
       >
         {mobile ? <Trans>队列</Trans> : <Trans>播放队列</Trans>}
       </button>
+      {videoSource ? (
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tabOn('sources')}
+          onClick={() => selectPanel('sources')}
+          className={cn('np-tab', tabOn('sources') && 'is-active')}
+        >
+          <Trans>播放源</Trans>
+        </button>
+      ) : null}
       <button
         type="button"
         role="tab"
@@ -1244,6 +1283,16 @@ export function NowPlaying() {
       aria-hidden={!show}
     >
       {show ? <NowPlayingTitleBar /> : null}
+
+      {videoSource && currentSong.matchedWebUrl ? (
+        <SourceVideoModal
+          open={sourceVideoOpen}
+          onClose={() => setSourceVideoOpen(false)}
+          source={videoSource}
+          webUrl={currentSong.matchedWebUrl}
+          title={currentSong.name}
+        />
+      ) : null}
 
       {/*
         Keep the WebGL canvas alive only while the detail page is actually
@@ -1414,6 +1463,17 @@ export function NowPlaying() {
                     {videoBadgeLabel}
                   </button>
                 ) : null}
+                {videoSource && currentSong.matchedWebUrl ? (
+                  <button
+                    type="button"
+                    aria-label={i18n._(msg`播放源视频`)}
+                    title={i18n._(msg`播放源视频`)}
+                    onClick={() => setSourceVideoOpen(true)}
+                    className="np-mv-badge shrink-0 rounded-[6px] border-0 bg-transparent px-1.5 py-0.5 text-[11px] font-semibold tracking-wide text-accent transition-colors hover:bg-white/10"
+                  >
+                    <Trans>源视频</Trans>
+                  </button>
+                ) : null}
               </div>
               {currentSong.alia?.[0] ? (
                 <p className="mt-1 truncate text-[12px] text-ink-4">{currentSong.alia[0]}</p>
@@ -1571,6 +1631,10 @@ export function NowPlaying() {
                     className="h-full"
                   />
                 )
+              ) : panel === 'sources' ? (
+                videoSource ? (
+                  <SourceResultsPanel source={videoSource} />
+                ) : null
               ) : panel === 'queue' ? (
                 <div className="relative flex h-full min-h-0 flex-col">
                   <div className="flex shrink-0 items-center gap-2 px-2 pb-2 pt-2">

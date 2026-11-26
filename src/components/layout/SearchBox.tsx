@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate } from '@tanstack/react-router'
+import { useNavigate, useRouterState } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
@@ -8,6 +8,7 @@ import {
   Loader2,
   Music2,
   Play,
+  ScanSearch,
   Search,
   Trash2,
   X,
@@ -21,6 +22,7 @@ import {
 } from '../../api'
 import { useUserStore } from '../../store/user'
 import { usePlayerStore } from '../../store/player'
+import { useSearchStore } from '../../store/search'
 import { cn } from '../../lib/format'
 import { toast } from '../../lib/toast'
 import type { Playlist, Song } from '../../types'
@@ -68,6 +70,14 @@ export function SearchBox({
   const removeSearchHistory = useUserStore((state) => state.removeSearchHistory)
   const clearSearchHistory = useUserStore((state) => state.clearSearchHistory)
   const playSong = usePlayerStore((state) => state.playSong)
+  // Submitting the same query again is a no-op for the router; this token is
+  // what makes Enter actually re-run the search.
+  const refreshSearch = useSearchStore((state) => state.refresh)
+  const deepSearch = useSearchStore((state) => state.deepSearch)
+  const toggleDeepSearch = useSearchStore((state) => state.toggleDeepSearch)
+  // The fallback toggle only makes sense on the results screen.
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
+  const showDeepToggle = pathname === '/search'
 
   useEffect(() => {
     if (initialKeyword !== undefined) setKeyword(initialKeyword)
@@ -142,8 +152,11 @@ export function SearchBox({
       // A new query starts on 单曲; returning to an existing search keeps the
       // tab stored in that page's URL.
       void navigate({ to: '/search', search: { keyword: target, tab: 'songs' } })
+      // Same keyword + same tab means the URL does not change, so the route
+      // effect below would not run; the token forces it.
+      refreshSearch()
     },
-    [addSearchHistory, keyword, navigate],
+    [addSearchHistory, keyword, navigate, refreshSearch],
   )
 
   const handleSongClick = async (song: Song) => {
@@ -210,11 +223,9 @@ export function SearchBox({
   return (
     <div
       ref={wrapperRef}
-      className={cn(
-        'relative w-full',
-        className ?? 'max-w-[420px]',
-      )}
+      className={cn('flex w-full items-center gap-2', className ?? 'max-w-[520px]')}
     >
+      <div className="relative w-full">
       <SearchInput
         autoFocus={autoFocus}
         value={keyword}
@@ -460,6 +471,29 @@ export function SearchBox({
           </div>
         </div>
       )}
+      </div>
+      {showDeepToggle ? (
+        <button
+          type="button"
+          aria-pressed={deepSearch}
+          onClick={toggleDeepSearch}
+          title={i18n._(
+            msg`开启后，单曲搜索找不到时会通过网页与专辑反查原曲`,
+          )}
+          className={cn(
+            'pressable flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[11px] transition-colors',
+            deepSearch
+              ? 'border-accent/40 bg-accent/10 text-accent'
+              : 'border-[var(--app-border-strong)] bg-transparent text-ink-3 hover:bg-black/4 dark:text-white/60',
+          )}
+        >
+          <ScanSearch className="h-3.5 w-3.5" />
+          <Trans>深度搜索</Trans>
+          <span className="tabular-nums">
+            {deepSearch ? <Trans>开</Trans> : <Trans>关</Trans>}
+          </span>
+        </button>
+      ) : null}
     </div>
   )
 }

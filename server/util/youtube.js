@@ -235,6 +235,8 @@ async function matchSong(meta) {
         if (!url) continue
         return {
           url,
+          // Video id for the "open on YouTube" link in the source menu.
+          id: item.entry.id,
           title: item.entry.title,
           channel: item.entry.channel,
           duration: item.entry.duration,
@@ -248,8 +250,51 @@ async function matchSong(meta) {
   return null
 }
 
+/** Ranked videos for the source picker: metadata only, no stream resolution. */
+async function listCandidates(meta, limit = 10) {
+  const resolved = await ytdlp.resolveBinary()
+  if (!resolved) {
+    const missing = new Error('yt-dlp not found')
+    missing.code = 'YT_DLP_MISSING'
+    throw missing
+  }
+  const keyword = [meta.name, meta.artist].filter(Boolean).join(' ').trim()
+  if (!keyword) return []
+
+  const entries = await search(resolved.path, keyword)
+  return entries
+    .filter((entry) => entry.duration > 0)
+    .map((entry) => ({ entry, ...scoreCandidate(entry, meta) }))
+    .filter((item) => !item.reject && item.score >= MIN_SCORE)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map((item) => ({
+      id: item.entry.id,
+      title: item.entry.title,
+      author: item.entry.channel || '',
+      cover: `https://i.ytimg.com/vi/${item.entry.id}/mqdefault.jpg`,
+      duration: item.entry.duration || 0,
+      views: item.entry.views || 0,
+      score: Math.round(item.score),
+      webUrl: `https://www.youtube.com/watch?v=${item.entry.id}`,
+    }))
+}
+
+/** Resolve a specific video id (the picker already chose the candidate). */
+async function resolveStream(videoId) {
+  const resolved = await ytdlp.resolveBinary()
+  if (!resolved) {
+    const missing = new Error('yt-dlp not found')
+    missing.code = 'YT_DLP_MISSING'
+    throw missing
+  }
+  return streamUrl(resolved.path, videoId)
+}
+
 module.exports = {
   matchSong,
+  listCandidates,
+  resolveStream,
   // Exposed for the ranking tests; not used by the API.
   __test: { search },
 }

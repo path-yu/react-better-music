@@ -30,6 +30,7 @@ import { PlaylistCard } from '../../components/cards/PlaylistCard'
 import { TAG_LABELS } from '../../lib/tagLabels'
 import { SongTable } from '../../components/songs/SongTable'
 import { PlayAllButton } from '../../components/songs/PlayAllButton'
+import { UnblockFilterButton } from '../../components/songs/UnblockFilterButton'
 import { CommentSection } from '../../components/comments/CommentSection'
 import {
   fetchPlaylistDetail,
@@ -46,6 +47,7 @@ import { toast } from '../../lib/toast'
 import { invalidateApiCache } from '../../lib/http'
 import { useDocumentTitle } from '../../lib/title'
 import { formatDate, formatNumber, matchesKeyword } from '../../lib/format'
+import { needsUnblock } from '../../lib/songs'
 import type { Playlist, Song } from '../../types'
 
 export const Route = createFileRoute('/songlists/$id')({
@@ -71,6 +73,8 @@ function PlaylistDetailPage() {
     () => sessionStorage.getItem(tabStorageKey) ?? 'songs',
   )
   const [keyword, setKeyword] = useState('')
+  /** Keep only rows NetEase cannot play directly (无版权 / 其它版本可播). */
+  const [unblockOnly, setUnblockOnly] = useState(false)
   const [subscribing, setSubscribing] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
   const [recommended, setRecommended] = useState<{
@@ -112,6 +116,7 @@ function PlaylistDetailPage() {
     setDetail(null)
     setSongs([])
     setKeyword('')
+    setUnblockOnly(false)
 
     const load = async () => {
       try {
@@ -206,17 +211,24 @@ function PlaylistDetailPage() {
     return [...collected.values()]
   }
 
+  const unblockCount = useMemo(
+    () => songs.filter(needsUnblock).length,
+    [songs],
+  )
+
   const filteredSongs = useMemo(() => {
-    if (!keyword.trim()) return songs
-    return songs.filter((song) =>
-      matchesKeyword(
-        keyword,
-        song.name,
-        song.al.name,
-        song.ar.map((artist) => artist.name).join(' '),
-      ),
-    )
-  }, [keyword, songs])
+    const searched = keyword.trim()
+      ? songs.filter((song) =>
+          matchesKeyword(
+            keyword,
+            song.name,
+            song.al.name,
+            song.ar.map((artist) => artist.name).join(' '),
+          ),
+        )
+      : songs
+    return unblockOnly ? searched.filter(needsUnblock) : searched
+  }, [keyword, songs, unblockOnly])
 
   if (loading) {
     return (
@@ -578,13 +590,20 @@ function PlaylistDetailPage() {
             </TabsTrigger>
           </TabsList>
           {tab === 'songs' ? (
-            <SearchInput
-              value={keyword}
-              onChange={setKeyword}
-              placeholder={i18n._(msg`搜索歌单歌曲`)}
-              wrapperClassName="w-[190px] shrink-0 max-sm:w-full"
-              className="rounded-full text-[12px]"
-            />
+            <div className="flex shrink-0 flex-wrap items-center gap-2 max-sm:w-full">
+              <UnblockFilterButton
+                count={unblockCount}
+                active={unblockOnly}
+                onToggle={() => setUnblockOnly((value) => !value)}
+              />
+              <SearchInput
+                value={keyword}
+                onChange={setKeyword}
+                placeholder={i18n._(msg`搜索歌单歌曲`)}
+                wrapperClassName="w-[190px] shrink-0 max-sm:w-full"
+                className="rounded-full text-[12px]"
+              />
+            </div>
           ) : null}
         </div>
 

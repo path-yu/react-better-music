@@ -12,11 +12,13 @@ import { ExpandableDescription } from '../../components/common/ExpandableDescrip
 import { ArtistLinks } from '../../components/common/ArtistLinks'
 import { SongTable } from '../../components/songs/SongTable'
 import { PlayAllButton } from '../../components/songs/PlayAllButton'
+import { UnblockFilterButton } from '../../components/songs/UnblockFilterButton'
 import { fetchAlbumDetail, subscribeAlbum } from '../../api'
 import { useLocalLibraryStore } from '../../store/localLibrary'
 import { useUserStore } from '../../store/user'
 import type { AlbumDetail } from '../../types'
 import { formatDate, matchesKeyword } from '../../lib/format'
+import { needsUnblock } from '../../lib/songs'
 import { useDocumentTitle } from '../../lib/title'
 import { toast } from '../../lib/toast'
 
@@ -31,6 +33,8 @@ function AlbumDetailPage() {
   const [album, setAlbum] = useState<AlbumDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [keyword, setKeyword] = useState('')
+  /** Keep only rows NetEase cannot play directly (无版权 / 其它版本可播). */
+  const [unblockOnly, setUnblockOnly] = useState(false)
   const isLogin = useUserStore((state) => state.isLogin)
   const localAlbums = useLocalLibraryStore((state) => state.subscribedAlbums)
   const toggleLocalAlbum = useLocalLibraryStore(
@@ -127,6 +131,7 @@ function AlbumDetailPage() {
     setLoading(true)
     setAlbum(null)
     setKeyword('')
+    setUnblockOnly(false)
 
     void fetchAlbumDetail(id)
       .then((detail) => {
@@ -146,17 +151,24 @@ function AlbumDetailPage() {
 
   const songs = album?.songs ?? []
 
+  const unblockCount = useMemo(
+    () => songs.filter(needsUnblock).length,
+    [songs],
+  )
+
   const filteredSongs = useMemo(() => {
-    if (!keyword.trim()) return songs
-    return songs.filter((song) =>
-      matchesKeyword(
-        keyword,
-        song.name,
-        song.al?.name,
-        song.ar.map((artist) => artist.name).join(' '),
-      ),
-    )
-  }, [keyword, songs])
+    const searched = keyword.trim()
+      ? songs.filter((song) =>
+          matchesKeyword(
+            keyword,
+            song.name,
+            song.al?.name,
+            song.ar.map((artist) => artist.name).join(' '),
+          ),
+        )
+      : songs
+    return unblockOnly ? searched.filter(needsUnblock) : searched
+  }, [keyword, songs, unblockOnly])
 
   if (loading) {
     return (
@@ -304,13 +316,20 @@ function AlbumDetailPage() {
             {songs.length}
           </span>
         </div>
-        <SearchInput
-          value={keyword}
-          onChange={setKeyword}
-          placeholder={i18n._(msg`搜索专辑歌曲`)}
-          wrapperClassName="w-[190px] shrink-0 max-sm:w-full"
-          className="rounded-full text-[12px]"
-        />
+        <div className="flex shrink-0 flex-wrap items-center gap-2 max-sm:w-full">
+          <UnblockFilterButton
+            count={unblockCount}
+            active={unblockOnly}
+            onToggle={() => setUnblockOnly((value) => !value)}
+          />
+          <SearchInput
+            value={keyword}
+            onChange={setKeyword}
+            placeholder={i18n._(msg`搜索专辑歌曲`)}
+            wrapperClassName="w-[190px] shrink-0 max-sm:w-full"
+            className="rounded-full text-[12px]"
+          />
+        </div>
       </div>
 
       <div className="mt-3">

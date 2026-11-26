@@ -511,10 +511,53 @@ export async function fetchMatchedSongUrl(id: number | string, source?: string) 
     source?: string
     proxyUrl?: string
     msg?: string
+    webUrl?: string
   }>('/song/url/match', source ? { id, source } : { id })
   return {
     url: matchedUrl(res.data) || res.proxyUrl || '',
     source: res.source || '',
+    // Only video-site sources have a page to link back to.
+    webUrl: res.webUrl || '',
+  }
+}
+
+export interface SourceCandidate {
+  id: string
+  title: string
+  author: string
+  cover: string
+  duration: number
+  views: number
+  score: number
+  webUrl: string
+}
+
+export type VideoSource = 'bilibili' | 'youtube'
+
+/** Candidate videos for the source picker (metadata only, no stream URLs). */
+export async function fetchSourceCandidates(
+  id: number | string,
+  source: VideoSource,
+  signal?: AbortSignal,
+) {
+  const res = await get<{
+    data?: { source?: string; items?: SourceCandidate[] }
+  }>('/song/url/sources', { id, source }, signal)
+  return res.data?.items ?? []
+}
+
+/** Resolve the audio stream of one chosen candidate. */
+export async function fetchVideoSourceUrl(
+  source: VideoSource,
+  videoId: string,
+) {
+  const res = await get<{
+    data?: { url?: string; duration?: number; webUrl?: string }
+  }>('/song/url/video', { source, vid: videoId })
+  return {
+    url: res.data?.url ?? '',
+    duration: res.data?.duration ?? 0,
+    webUrl: res.data?.webUrl ?? '',
   }
 }
 
@@ -961,6 +1004,224 @@ export async function searchAll(params: {
     users: result.userprofiles ?? [],
     userCount: result.userprofileCount ?? 0,
   } as SearchResult
+}
+
+/* ------------------------------ deep search ------------------------------ */
+
+export interface DeepSearchHit {
+  song: Song
+  albumId: number
+  albumName: string
+}
+
+/**
+ * NetEase's song index only contains licensed tracks, so a grey original is
+ * missing from `/cloudsearch?type=1` even though its album still lists it.
+ * Search albums instead, then scan their track lists — the same route a user
+ * takes by browsing 歌手 / 专辑.
+ */
+const DEEP_SEARCH_ALBUM_LIMIT = 16
+const DEEP_SEARCH_TTL = 5 * 60_000
+const DEEP_SEARCH_GAP = 200
+const DEEP_SEARCH_RETRY_DELAY = 600
+
+const sleep = (ms: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, ms))
+const deepSearchCache = new Map<
+  string,
+  { at: number; hits: DeepSearchHit[] }
+>()
+
+function normalizeDeep(value: string) {
+  return String(value || '')
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[\s\-_—·()（）[\]【】「」'"“”,，.。!！?？/]/g, '')
+}
+
+/** Uploads that are a different recording of the same title. */
+const DEEP_DECORATED =
+  /(live|remix|dj|bootleg|cover|翻唱|翻跳|伴奏|纯音乐|instrumental|8d|nightcore|slowed|sped\s*up|08x|v\d|加速|降速|片段|剪辑|铃声|女声版|男声版|\d(?:\.\d)?x)/i
+
+function deepMatchScore(song: Song, albumName: string, tokens: string[]) {
+  const name = normalizeDeep(song.name)
+  const artistParts = song.ar.map((artist) => normalizeDeep(artist.name))
+  const artists = artistParts.join(' ')
+  const album = normalizeDeep(albumName)
+  const haystack = `${name} ${artists} ${album}`
+
+  // Every word must appear somewhere, and the title itself must cover at
+  // least one of them — otherwise a compilation album drags in random tracks.
+  if (!tokens.every((token) => haystack.includes(token))) return 0
+  if (!tokens.some((token) => name.includes(token) || album.includes(token))) {
+    return 0
+  }
+
+  let score = 0
+  for (const token of tokens) {
+    if (name.includes(token)) score += 4
+    if (artists.includes(token)) score += 3
+    if (album.includes(token)) score += 2
+  }
+
+  // The credits matching the query is the strongest signal that this is the
+  // original rather than a re-upload that merely mentions the artist.
+  if (tokens.some((token) => artistParts.includes(token))) score += 8
+  if (DEEP_DECORATED.test(song.name)) score -= 6
+  return score
+}
+
+/**
+ * Ask the local API for NetEase song ids found by a `site:music.163.com`
+ * search. Unlicensed tracks are missing from the song index but their pages
+ * are still indexed, so this usually resolves the id in one round-trip.
+ */
+export async function lookupSongIdsByWeb(
+  keyword: string,
+  signal?: AbortSignal,
+): Promise<number[]> {
+  const res = await get<{ data?: { ids?: string[] } }>(
+    '/web/song-ids',
+    { keyword },
+    signal,
+  )
+  return (res.data?.ids ?? [])
+    .map((id) => Number(id))
+    .filter((id) => Number.isFinite(id) && id > 0)
+}
+
+export async function deepSearchSongs(
+  keyword: string,
+  signal?: AbortSignal,
+): Promise<DeepSearchHit[]> {
+  const tokens = keyword
+    .trim()
+    .split(/\s+/)
+    .map(normalizeDeep)
+    .filter(Boolean)
+  if (!tokens.length) return []
+
+  const cacheKey = tokens.join(' ')
+  const cached = deepSearchCache.get(cacheKey)
+  if (cached && Date.now() - cached.at < DEEP_SEARCH_TTL) {
+    return cached.hits
+  }
+
+  // Fast path: a web search for the song's NetEase page usually returns the
+  // exact id in ~200 ms, which avoids scanning a dozen albums. Verified
+  // against the track's own title and artists, so a noisy search result is
+  // dropped instead of shown.
+  const webIds = await lookupSongIdsByWeb(keyword, signal).catch(() => [])
+  if (webIds.length) {
+    const verified: DeepSearchHit[] = []
+    await Promise.all(
+      webIds.slice(0, 4).map(async (id) => {
+        const song = await fetchSongDetail(id).catch(() => null)
+        if (!song) return
+        const name = normalizeDeep(song.name)
+        const artists = song.ar
+          .map((artist) => normalizeDeep(artist.name))
+          .join(' ')
+        const matches =
+          tokens.length === 1
+            ? name === tokens[0]
+            : tokens.every((token) => `${name} ${artists}`.includes(token))
+        if (!matches) return
+        verified.push({
+          song,
+          albumId: song.al?.id ?? 0,
+          albumName: song.al?.name ?? '',
+        })
+      }),
+    )
+    if (verified.length) {
+      const sorted = verified.sort(
+        (a, b) => a.song.name.length - b.song.name.length,
+      )
+      deepSearchCache.set(cacheKey, { at: Date.now(), hits: sorted })
+      return sorted
+    }
+  }
+
+  // `/search` (v1) ranks albums differently from `/cloudsearch`: the original
+  // album of a grey track is typically only in the v1 list, while cloudsearch
+  // returns the same user-uploaded compilations that dominate the song tab.
+  const loadAlbums = () =>
+    get<{
+      result?: { albums?: Array<{ id: number; name: string }> }
+    }>(
+      '/search',
+      {
+        keywords: keyword,
+        type: 10,
+        limit: 30,
+        offset: 0,
+        timestamp: Date.now(),
+      },
+      signal,
+    )
+  let result = await loadAlbums().catch(() => null)
+  if (!result) {
+    // The album endpoint is rate limited too; one short pause usually clears
+    // it, and a failed lookup otherwise looks like "nothing found".
+    await sleep(DEEP_SEARCH_RETRY_DELAY)
+    result = await loadAlbums().catch(() => null)
+  }
+  const albums = (result?.result?.albums ?? [])
+    .filter((album) => album && album.id)
+    .slice(0, DEEP_SEARCH_ALBUM_LIMIT)
+  if (!albums.length) return []
+
+  const hits = new Map<number, DeepSearchHit & { score: number }>()
+  let cursor = 0
+  const worker = async () => {
+    while (cursor < albums.length) {
+      const album = albums[cursor]
+      cursor += 1
+      if (signal?.aborted) return
+
+      // `/album` answers 405 when it is hit in a burst, which would silently
+      // turn a valid match into "nothing found"; retry once, then space the
+      // remaining requests out.
+      let detail = null
+      for (let attempt = 0; attempt < 2 && !detail; attempt += 1) {
+        if (signal?.aborted) return
+        try {
+          detail = await fetchAlbumDetail(album.id)
+        } catch {
+          if (attempt === 0) await sleep(DEEP_SEARCH_RETRY_DELAY)
+        }
+      }
+      if (!detail) {
+        await sleep(DEEP_SEARCH_GAP)
+        continue
+      }
+
+      const albumName = detail.name || album.name
+      for (const song of detail.songs ?? []) {
+        const score = deepMatchScore(song, albumName, tokens)
+        if (score <= 0) continue
+        const existing = hits.get(song.id)
+        if (existing && existing.score >= score) continue
+        hits.set(song.id, {
+          song,
+          albumId: detail.id ?? album.id,
+          albumName,
+          score,
+        })
+      }
+      await sleep(DEEP_SEARCH_GAP)
+    }
+  }
+  await Promise.all([worker(), worker()])
+
+  const sorted = [...hits.values()]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 20)
+    .map(({ song, albumId, albumName }) => ({ song, albumId, albumName }))
+
+  deepSearchCache.set(cacheKey, { at: Date.now(), hits: sorted })
+  return sorted
 }
 
 /* --------------------------------- artist -------------------------------- */
