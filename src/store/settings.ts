@@ -131,8 +131,17 @@ interface SettingsState {
   lyricDisplayMode: LyricDisplayMode
   /** Reading size of desktop lyric lines. */
   lyricFontSize: LyricFontSize
-  /** Karaoke word-by-word animation; off falls back to whole-line highlighting. */
+  /**
+   * Karaoke word-by-word animation; off falls back to whole-line
+   * highlighting. In the Apple Music style view only lyrics with real
+   * syllable timings (YRC) are wiped; line-synced LRC lights whole lines.
+   */
   wordByWordLyrics: boolean
+  /**
+   * Apple Music style lyric view (soft syllable wipe, float, glow, spring
+   * scrolling, interlude dots). Off uses the classic word-by-word fill.
+   */
+  appleLyricsEffect: boolean
   /** Backdrop of the immersive player. */
   backdropStyle: BackdropStyle
   /** Visualizer used by the song detail "律动" tab. */
@@ -185,6 +194,7 @@ interface SettingsState {
   setLyricDisplayMode: (value: LyricDisplayMode) => void
   setLyricFontSize: (value: LyricFontSize) => void
   setWordByWordLyrics: (value: boolean) => void
+  setAppleLyricsEffect: (value: boolean) => void
   setBackdropStyle: (value: BackdropStyle) => void
   setLyricStageStyle: (value: LyricStageStyle) => void
   setPreferredSource: (value: string) => void
@@ -223,6 +233,8 @@ export const useSettingsStore = create<SettingsState>()(
       lyricDisplayMode: 'both',
       lyricFontSize: 'medium',
       wordByWordLyrics: true,
+      // Existing installs get this too: persisted state merges over defaults.
+      appleLyricsEffect: true,
       // CSS ambient gradients are cheaper and do not keep a WebGL context alive.
       // Users can opt into the WebGL fog or the Apple Music scene in Settings.
       backdropStyle: 'ambient',
@@ -262,6 +274,7 @@ export const useSettingsStore = create<SettingsState>()(
       setLyricDisplayMode: (lyricDisplayMode) => set({ lyricDisplayMode }),
       setLyricFontSize: (lyricFontSize) => set({ lyricFontSize }),
       setWordByWordLyrics: (wordByWordLyrics) => set({ wordByWordLyrics }),
+      setAppleLyricsEffect: (appleLyricsEffect) => set({ appleLyricsEffect }),
       setBackdropStyle: (backdropStyle) => set({ backdropStyle }),
       setLyricStageStyle: (lyricStageStyle) => set({ lyricStageStyle }),
       setPreferredSource: (preferredSource) => set({ preferredSource }),

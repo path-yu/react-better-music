@@ -250,6 +250,10 @@ function SettingsPage() {
     (state) => state.setCrossfadeSeconds,
   )
   const showRemainingTime = useSettingsStore((state) => state.showRemainingTime)
+  const appleLyricsEffect = useSettingsStore((state) => state.appleLyricsEffect)
+  const setAppleLyricsEffect = useSettingsStore(
+    (state) => state.setAppleLyricsEffect,
+  )
   const setShowRemainingTime = useSettingsStore(
     (state) => state.setShowRemainingTime,
   )
@@ -927,6 +931,24 @@ function SettingsPage() {
               checked={showRemainingTime}
               onChange={setShowRemainingTime}
               aria-label={i18n._(msg`进度条显示剩余时间`)}
+            />
+          </div>
+
+          <div className="mt-5 flex items-center justify-between gap-4 border-t settings-divider pt-4">
+            <div>
+              <p className="text-[13px] font-medium text-ink-2">
+                <Trans>Apple Music 歌词动效</Trans>
+              </p>
+              <p className="mt-1 text-[11px] leading-relaxed text-ink-3">
+                <Trans>
+                  开启后歌词逐字柔和擦亮、长音发光、弹簧滚动，间奏显示省略点；只有整行时间的歌词按整行高亮。关闭则使用经典逐字填充效果。
+                </Trans>
+              </p>
+            </div>
+            <ToggleSwitch
+              checked={appleLyricsEffect}
+              onChange={setAppleLyricsEffect}
+              aria-label={i18n._(msg`Apple Music 歌词动效`)}
             />
           </div>
         </section>

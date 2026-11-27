@@ -1,0 +1,298 @@
+import { memo, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { Trans } from '@lingui/react/macro'
+import type { LyricLine, LyricWord } from '../../lib/lyric'
+import {
+  LYRIC_FONT_SIZE_OPTIONS,
+  useSettingsStore,
+} from '../../store/settings'
+import { getAudio } from '../../lib/audio'
+import { cn } from '../../lib/format'
+
+/*
+ * The classic lyric list, used when "Apple Music 歌词动效" is off: a
+ * gradient fill per word on the current line, native smooth scrolling, and
+ * word timings synthesised from plain LRC are animated too.
+ */
+
+interface ClassicLyricsPanelProps {
+  lines: LyricLine[]
+  activeIndex: number
+  onSeek: (timeMs: number) => void
+  className?: string
+  compact?: boolean
+}
+
+function wordStyle(
+  word: LyricWord,
+  timeMs: number,
+  active: boolean,
+): CSSProperties {
+  if (!active) return {}
+  const duration = Math.max(1, word.duration)
+  const progress = Math.min(100, Math.max(0, ((timeMs - word.startTime) / duration) * 100))
+  if (progress >= 100) {
+    return { color: 'var(--lyric-active)' }
+  }
+  if (progress <= 0) {
+    return { color: 'var(--lyric-dim)' }
+  }
+  return {
+    backgroundImage: `linear-gradient(90deg, var(--lyric-active) ${progress}%, var(--lyric-dim) ${progress}%)`,
+    backgroundClip: 'text',
+    WebkitBackgroundClip: 'text',
+    color: 'transparent',
+    WebkitTextFillColor: 'transparent',
+  }
+}
+
+/**
+ * Word-by-word highlighting is the only lyric content that needs a high refresh
+ * rate; isolating it keeps the rest of the list from re-rendering at 30fps.
+ */
+function ActiveWords({
+  words,
+  interactive,
+  onSeek,
+}: {
+  words: LyricWord[]
+  interactive: boolean
+  onSeek: (timeMs: number) => void
+}) {
+  const [clockMs, setClockMs] = useState(() => (getAudio()?.currentTime ?? 0) * 1000)
+
+  useEffect(() => {
+    let frame = 0
+    let last = 0
+    const tick = (timestamp: number) => {
+      frame = requestAnimationFrame(tick)
+      if (timestamp - last < 32) return
+      last = timestamp
+      const audio = getAudio()
+      if (!audio || audio.paused) return
+      setClockMs(audio.currentTime * 1000)
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [])
+
+  // The panel no longer re-renders with playback progress; while paused, a
+  // seek still has to repaint the karaoke word colours.
+  useEffect(() => {
+    const audio = getAudio()
+    if (!audio) return
+    const sync = () => setClockMs(audio.currentTime * 1000)
+    audio.addEventListener('timeupdate', sync)
+    audio.addEventListener('seeked', sync)
+    audio.addEventListener('pause', sync)
+    return () => {
+      audio.removeEventListener('timeupdate', sync)
+      audio.removeEventListener('seeked', sync)
+      audio.removeEventListener('pause', sync)
+    }
+  }, [])
+
+  return (
+    <>
+      {words.map((word, index) => (
+        <span
+          key={`${index}-${word.startTime}`}
+          className={cn('lyric-word', interactive && 'lyric-word--interactive')}
+          style={wordStyle(word, clockMs, true)}
+          onClick={
+            interactive
+              ? (event) => {
+                  event.stopPropagation()
+                  onSeek(word.startTime)
+                }
+              : undefined
+          }
+        >
+          {word.content}
+        </span>
+      ))}
+    </>
+  )
+}
+
+/** Non-active lines render their words without the karaoke animation. */
+function StaticWords({
+  words,
+  interactive,
+  onSeek,
+}: {
+  words: LyricWord[]
+  interactive: boolean
+  onSeek: (timeMs: number) => void
+}) {
+  return (
+    <>
+      {words.map((word, index) => (
+        <span
+          key={`${index}-${word.startTime}`}
+          className={cn('lyric-word', interactive && 'lyric-word--interactive')}
+          onClick={
+            interactive
+              ? (event) => {
+                  event.stopPropagation()
+                  onSeek(word.startTime)
+                }
+              : undefined
+          }
+        >
+          {word.content}
+        </span>
+      ))}
+    </>
+  )
+}
+
+export const ClassicLyricsPanel = memo(function ClassicLyricsPanel({
+  lines,
+  activeIndex,
+  onSeek,
+  className,
+  compact,
+}: ClassicLyricsPanelProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const lineRefs = useRef<Record<number, HTMLElement | null>>({})
+  const lastActiveRef = useRef(-1)
+  const linesRef = useRef(lines)
+  const displayMode = useSettingsStore((state) => state.lyricDisplayMode)
+  const lyricFontSize = useSettingsStore((state) => state.lyricFontSize)
+  const wordByWordLyrics = useSettingsStore((state) => state.wordByWordLyrics)
+  const fontScale =
+    LYRIC_FONT_SIZE_OPTIONS.find((option) => option.value === lyricFontSize)
+      ?.scale ?? 1
+
+  useEffect(() => {
+    const container = containerRef.current
+    const active = lineRefs.current[activeIndex]
+    if (!container || !active) return
+    // A new song means every node below is new; jump immediately instead of
+    // animating from the previous song's scroll offset.
+    const linesChanged = linesRef.current !== lines
+    linesRef.current = lines
+    if (linesChanged) lastActiveRef.current = -1
+    // A seek can jump many lines; scrolling smoothly across a long distance
+    // fights the next update and makes the whole panel look shaky.
+    const jump = Math.abs(activeIndex - lastActiveRef.current)
+    lastActiveRef.current = activeIndex
+    const behavior: ScrollBehavior =
+      linesChanged || jump > 2 ? 'auto' : 'smooth'
+    // On mobile the viewport is not scrollable on purpose (the whole page is).
+    // Do not scroll the active line into view there: it yanks the whole detail
+    // page upward and hides the artwork/transport above the tabs.
+    if (container.scrollHeight <= container.clientHeight + 1) return
+    const top = active.offsetTop - container.clientHeight / 2 + active.offsetHeight / 2
+    container.scrollTo({ top: Math.max(0, top), behavior })
+    // `lines` is intentionally a dependency: auto-advancing to the next song
+    // can keep the same activeIndex (usually 0) while replacing every lyric
+    // node. Without this the panel kept the previous song's scrollTop and
+    // opened somewhere in the middle of the new lyrics.
+  }, [activeIndex, lines])
+
+  if (!lines.length) {
+    return (
+      <div className={cn('flex h-full items-center justify-center text-[12px] text-ink-4', className)}>
+        <Trans>暂无歌词，请欣赏</Trans>
+      </div>
+    )
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      style={{ '--lyric-font-scale': fontScale } as CSSProperties}
+      className={cn(
+        'lyrics-viewport lyrics-viewport--classic relative h-full overflow-y-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+        // Mobile used to render the whole lyric list into the page scroll
+        // (`h-auto overflow-visible`): auto-scroll had nothing to scroll, so
+        // the sung line was usually off screen and every visible line blurred.
+        // On mobile the lyrics are now their own full-height tab view.
+        compact && 'lyrics-viewport--compact',
+        className,
+      )}
+    >
+      {/* Mobile: the first line starts a little below the tabs instead of in
+          the middle; the bottom padding still lets the last line scroll up
+          to the middle. */}
+      <div className={compact ? 'py-16' : 'pb-[35vh] pt-[8vh] md:py-[38%]'}>
+        {lines.map((line, index) => {
+          const active = index === activeIndex
+          const away = activeIndex < 0 ? 0 : Math.abs(index - activeIndex)
+          // Apple's context lines sit at a dim tertiary white and are defocused;
+          // only the line being sung stays sharp.
+          const opacity = active ? 1 : Math.max(0.3, 0.55 - away * 0.06)
+          const blur = active || activeIndex < 0 ? 0 : Math.min(2.8, 0.9 + away * 0.42)
+          const hasWords = wordByWordLyrics && Boolean(line.words?.length)
+          const translationOnly = displayMode === 'translation' && Boolean(line.translate)
+          const text = translationOnly ? line.translate! : line.content
+          // Converted LRC has synthetic word timings but still has a real line
+          // timestamp. Keep the line clickable/hoverable; only disable per-word
+          // seeking, which would use fabricated timings.
+          const wordInteractive = !line.synthetic
+          const className = cn(
+            'lyric-line block w-full text-left',
+            active && 'is-active',
+            blur > 0 && 'is-blurred',
+          )
+          const style = {
+            '--lyric-opacity': opacity,
+            '--lyric-blur': `${blur.toFixed(2)}px`,
+          } as CSSProperties
+          const setLineRef = (node: HTMLElement | null) => {
+            lineRefs.current[index] = node
+          }
+          const content = (
+            <>
+              <span className="lyric-line__text">
+                {!translationOnly && hasWords ? (
+                  active ? (
+                    <ActiveWords
+                      words={line.words!}
+                      interactive={wordInteractive}
+                      onSeek={onSeek}
+                    />
+                  ) : (
+                    <StaticWords
+                      words={line.words!}
+                      interactive={wordInteractive}
+                      onSeek={onSeek}
+                    />
+                  )
+                ) : (
+                  text
+                )}
+              </span>
+              {displayMode === 'both' && line.translate ? (
+                <span className="mt-1 block">
+                  <span className="lyric-line__translate inline-block max-w-full">
+                    {line.translate}
+                  </span>
+                </span>
+              ) : null}
+            </>
+          )
+
+          return (
+            <button
+              key={`${line.time}-${index}`}
+              ref={setLineRef}
+              type="button"
+              onClick={() => {
+                // The reference renderer makes the whole padded lyric row a
+                // button. Hover paints the full row, so clicking anywhere in
+                // that pill must seek, not only directly on a glyph.
+                onSeek(line.time)
+              }}
+              style={style}
+              className={className}
+            >
+              {content}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+})

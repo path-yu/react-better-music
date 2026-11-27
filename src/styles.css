@@ -3184,8 +3184,169 @@ a.song-tag--outline:focus-visible {
   );
 }
 
+/* ---------- Apple Music style word-by-word lyrics ----------
+   Motion is written by components/player/lyricEngine.ts; CSS only describes
+   the static look and the transitions back to rest. */
+
+.lyrics-viewport {
+  /* Unsung part of the current line (Apple: dim white), wipe edge width. */
+  --lyric-unsung: 0.4;
+  --lyric-feather: 0.5em;
+  overscroll-behavior: contain;
+  touch-action: pan-x;
+}
+
+.lyrics-track {
+  position: relative;
+}
+
+/* A Latin word split into syllables must never wrap mid-word. */
+.lyric-chunk {
+  white-space: nowrap;
+}
+
 .lyric-word {
+  /* Padding gives the mask room for the glow and the float; the negative
+     margin keeps text layout identical to plain inline text. */
+  --wp: 0.15em;
+  --wpy: 0.25em;
+  display: inline-block;
+  white-space: pre;
+  padding: var(--wpy) var(--wp);
+  margin: calc(var(--wpy) * -1) calc(var(--wp) * -1);
+  /* Words of a line that stops being sung float back down. */
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lyric-word.is-emphasis {
+  --wp: 0.35em;
+  --wpy: 0.5em;
+}
+
+.lyric-char {
+  display: inline-block;
+  white-space: pre;
+  transform-origin: 50% 80%;
+  transition:
+    transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    text-shadow 0.5s ease-out;
+}
+
+/* The current line: one white, unsung syllables masked down to
+   --lyric-unsung, a soft-edged wipe moving left to right through each
+   syllable as --p goes 0 → 1. */
+.lyric-line.is-active .lyric-word {
+  transition: none;
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    #000 calc(var(--wp) + var(--p, 0) * (100% - 2 * var(--wp) + var(--lyric-feather)) - var(--lyric-feather)),
+    rgba(0, 0, 0, var(--lyric-unsung)) calc(var(--wp) + var(--p, 0) * (100% - 2 * var(--wp) + var(--lyric-feather)))
+  );
+  mask-image: linear-gradient(
+    90deg,
+    #000 calc(var(--wp) + var(--p, 0) * (100% - 2 * var(--wp) + var(--lyric-feather)) - var(--lyric-feather)),
+    rgba(0, 0, 0, var(--lyric-unsung)) calc(var(--wp) + var(--p, 0) * (100% - 2 * var(--wp) + var(--lyric-feather)))
+  );
+}
+
+.lyric-line.is-active .lyric-char {
+  transition: none;
+}
+
+/* The readability shadow would be clipped by each word's mask box; draw it
+   once around the whole masked line instead. */
+.lyric-line.is-active .lyric-line__text {
+  text-shadow: none;
+  filter: drop-shadow(0 1px 10px rgba(0, 0, 0, 0.22));
+}
+
+/* "…" during instrumental breaks. Opens in the list, pushing the next line
+   down, and collapses as the next line starts. */
+.lyric-interlude {
+  display: flex;
+  align-items: center;
+  height: 0;
+  padding-inline: 12px;
+  opacity: 0;
+  pointer-events: none;
+  font-size: calc(clamp(24px, 3.4cqi, 40px) * var(--lyric-font-scale, 1));
+  transform-origin: left center;
+  transition:
+    height 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.4s ease-out;
+}
+
+.lyric-interlude.is-active {
+  height: 1.8em;
+  opacity: 1;
+}
+
+.lyric-interlude__dots {
+  display: inline-flex;
+  gap: 0.3em;
+  transform-origin: left center;
+}
+
+.lyric-interlude__dot {
+  width: 0.32em;
+  height: 0.32em;
+  border-radius: 9999px;
+  background: var(--lyric-active);
+  opacity: 0.22;
+}
+
+.lyrics-viewport--compact .lyric-interlude {
+  font-size: 12.5px;
+}
+
+/* Browsing with the wheel / finger: every line in focus, like Apple Music. */
+.lyrics-viewport.is-user-scrolling .lyric-line.is-blurred {
+  filter: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lyric-word,
+  .lyric-char,
+  .lyric-interlude {
+    transition: none;
+  }
+}
+
+/* ---------- classic lyric view (Apple Music 歌词动效 off) ----------
+   Restores the previous look: native scrolling, inline words filled by an
+   inline background-clip gradient, a CSS-scaled current line. */
+.lyrics-viewport--classic {
+  touch-action: auto;
+}
+
+.lyrics-viewport--classic .lyric-line {
+  transition:
+    filter 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.18s ease-out;
+}
+
+/* Apple nudges the current line up a touch; more than this fights the scroll. */
+.lyrics-viewport--classic .lyric-line.is-active {
+  transform: scale(1.03);
+}
+
+.lyrics-viewport--classic .lyric-word {
+  display: inline;
   white-space: pre-wrap;
+  padding: 0;
+  margin: 0;
+  transition: none;
+}
+
+.lyrics-viewport--classic .lyric-line.is-active .lyric-word {
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.lyrics-viewport--classic .lyric-line.is-active .lyric-line__text {
+  text-shadow: inherit;
+  filter: none;
 }
 
 /* Apple Music style: every line shares one colour, depth comes from opacity and
@@ -3198,9 +3359,10 @@ a.song-tag--outline:focus-visible {
   padding: 10px 12px;
   border-radius: 12px;
   transform-origin: left center;
+  /* transform (position + 0.97/1 scale) is driven by spring physics in
+     lyricEngine.ts; a CSS transition here would fight it. */
   transition:
     filter 0.34s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.34s cubic-bezier(0.16, 1, 0.3, 1),
     background-color 0.18s ease-out;
 }
 
@@ -3220,11 +3382,6 @@ a.song-tag--outline:focus-visible {
 .lyric-line:focus-visible {
   outline: none;
   text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
-}
-
-/* Apple nudges the current line up a touch; more than this fights the scroll. */
-.lyric-line.is-active {
-  transform: scale(1.03);
 }
 
 /* Apple Music defocuses every context line so the sung one reads as in focus. */
@@ -3300,6 +3457,14 @@ a.song-tag--outline:focus-visible {
 @media (max-width: 767px) {
   .lyric-line {
     text-align: center;
+    transform-origin: center center;
+  }
+
+  .lyric-interlude {
+    justify-content: center;
+  }
+
+  .lyric-interlude__dots {
     transform-origin: center center;
   }
 }

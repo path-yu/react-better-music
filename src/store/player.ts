@@ -15,7 +15,7 @@ import {
 import { buildLyricLines, isEmptyLyric, type LyricLine } from '../lib/lyric'
 import { copyrightHint } from '../lib/songs'
 import { apiUrl } from '../lib/http'
-import { getAudio } from '../lib/audio'
+import { getAudio, seekElement } from '../lib/audio'
 import {
   cacheSourceOf,
   getCachedAudio,
@@ -2119,7 +2119,7 @@ export const usePlayerStore = create<PlayerState>()(
           )
           if (ready && audio) {
             const clamped = Math.min(target, Math.max(0, audio.duration - 0.25))
-            audio.currentTime = clamped
+            seekElement(audio, clamped)
             set({ currentTime: clamped, resumeAt: null })
             return
           }
