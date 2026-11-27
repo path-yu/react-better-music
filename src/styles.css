@@ -3469,6 +3469,383 @@ a.song-tag--outline:focus-visible {
   }
 }
 
+/* ---------- 吃吃乐 (Eat This Queue) ----------
+   Full-screen game over the song page. The backdrop colour follows the cover
+   being chased; everything else is white on that tint, like Spotify's game. */
+.eatq {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: max(16px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom));
+  color: #fff;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background-color 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: eatq-in 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.eatq__glow {
+  position: absolute;
+  inset: -20%;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 22% 12%, rgba(255, 255, 255, 0.16), transparent 42%),
+    radial-gradient(circle at 82% 88%, rgba(0, 0, 0, 0.45), transparent 55%);
+}
+
+.eatq > :not(.eatq__glow) {
+  position: relative;
+}
+
+.eatq__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.eatq__icon-button {
+  display: inline-flex;
+  height: 36px;
+  width: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  transition:
+    background-color 0.18s ease-out,
+    transform 0.18s ease-out;
+}
+
+.eatq__icon-button:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.eatq__icon-button:active {
+  transform: scale(0.94);
+}
+
+.eatq__icon-button.is-on {
+  background: #fff;
+  color: #111;
+}
+
+.eatq__icon-button:disabled {
+  opacity: 0.4;
+}
+
+.eatq__icon-button:focus-visible,
+.eatq__primary:focus-visible,
+.eatq__secondary:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.85);
+  outline-offset: 2px;
+}
+
+.eatq__score {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.eatq__score-value {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.eatq__score-label {
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+.eatq__lives {
+  display: inline-flex;
+  gap: 5px;
+  margin-left: 8px;
+  align-self: center;
+}
+
+.eatq__life {
+  height: 7px;
+  width: 7px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.25);
+  transition:
+    background-color 0.3s ease-out,
+    transform 0.3s ease-out;
+}
+
+.eatq__life.is-on {
+  background: #fff;
+}
+
+.eatq__now {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.eatq__now-cover {
+  height: 40px;
+  width: 40px;
+  flex: none;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+
+.eatq__now-title {
+  max-width: min(60vw, 420px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.eatq__now-artist {
+  max-width: min(60vw, 420px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.eatq__notice {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  z-index: 2;
+  margin-top: 6px;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  background: #fff;
+  color: #111;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -4px);
+  transition:
+    opacity 0.2s ease-out,
+    transform 0.2s ease-out;
+}
+
+.eatq__notice.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.eatq__board {
+  position: relative;
+  min-height: 0;
+  flex: 1;
+  touch-action: none;
+}
+
+.eatq__canvas {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.eatq__card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: flex;
+  width: min(360px, calc(100% - 32px));
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 22px 20px;
+  border-radius: 24px;
+  background: rgba(16, 16, 20, 0.62);
+  text-align: center;
+  backdrop-filter: blur(22px) saturate(1.4);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  transform: translate(-50%, -50%);
+  animation: eatq-card 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.eatq__card--compact {
+  width: min(240px, calc(100% - 32px));
+}
+
+.eatq__badge {
+  display: inline-flex;
+  height: 44px;
+  width: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: #fff;
+  color: #111;
+}
+
+.eatq__title {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.eatq__text {
+  font-size: 12.5px;
+  line-height: 1.6;
+  opacity: 0.78;
+}
+
+.eatq__hint {
+  font-size: 11px;
+  opacity: 0.55;
+}
+
+.eatq__best {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.eatq__primary,
+.eatq__secondary {
+  display: inline-flex;
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 18px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 700;
+  transition:
+    transform 0.18s ease-out,
+    background-color 0.18s ease-out;
+}
+
+.eatq__primary {
+  background: #fff;
+  color: #111;
+}
+
+.eatq__secondary {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.eatq__secondary:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.eatq__primary:active,
+.eatq__secondary:active {
+  transform: scale(0.96);
+}
+
+.eatq__toast {
+  position: absolute;
+  left: 50%;
+  top: 16px;
+  padding: 7px 14px;
+  border-radius: 9999px;
+  background: rgba(16, 16, 20, 0.62);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.eatq__summary {
+  display: flex;
+  max-width: 100%;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.eatq__summary-cover {
+  height: 34px;
+  width: 34px;
+  border-radius: 7px;
+  object-fit: cover;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes eatq-in {
+  from {
+    opacity: 0;
+    transform: scale(1.02);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes eatq-card {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -46%) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eatq,
+  .eatq__card {
+    animation: none;
+  }
+}
+
+/* Entry button in the song page's queue toolbar. */
+.np-eat-button {
+  display: inline-flex;
+  height: 32px;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 12px;
+  font-weight: 600;
+  transition:
+    background-color 0.18s ease-out,
+    color 0.18s ease-out;
+}
+
+.np-eat-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.np-eat-button:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
 @keyframes nowplaying-fade {
   from {
     opacity: 0;

@@ -661,6 +661,29 @@ export async function fetchLyric(id: number | string) {
   }
 }
 
+/**
+ * Start of the chorus in milliseconds (`/song/chorus`), or null when NetEase
+ * has no chorus marker for the track or the endpoint is unavailable. The
+ * payload shape is not documented, so look for the first `startTime`.
+ */
+export async function fetchSongChorusStart(id: number) {
+  try {
+    const res = await get<Record<string, unknown>>('/song/chorus', { id })
+    const candidates = [res.chorus, (res.data as Record<string, unknown> | undefined)?.chorus, res.data]
+    for (const candidate of candidates) {
+      const list = Array.isArray(candidate) ? candidate : candidate ? [candidate] : []
+      for (const item of list) {
+        if (!item || typeof item !== 'object') continue
+        const start = Number((item as { startTime?: unknown }).startTime)
+        if (Number.isFinite(start) && start > 0) return start
+      }
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
 export async function likeMusic(id: number, like: boolean) {
   return get<ApiResponse>('/like', { id, like })
 }

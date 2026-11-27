@@ -15,6 +15,7 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import {
   ChevronDown,
   Disc3,
+  Gamepad2,
   GripVertical,
   LayoutGrid,
   List,
@@ -31,6 +32,7 @@ import {
   menuSurfaceStyle,
 } from '../../lib/menuSurface'
 import { LyricsPanel } from './LyricsPanel'
+import { EAT_QUEUE_MIN_SONGS, EatThisQueue } from './EatThisQueue'
 import { LyricStage } from './LyricStage'
 import { SimilarSongsPanel } from './SimilarSongsPanel'
 import AmbientBackground from './AmbientBackground'
@@ -190,6 +192,13 @@ export function NowPlaying() {
   const [panel, setPanel] = useState<NowPlayingPanel>('lyrics')
   // Full-screen embed of the bilibili / YouTube page this track came from.
   const [sourceVideoOpen, setSourceVideoOpen] = useState(false)
+  // 吃吃乐: the snake game that eats the play queue.
+  const [eatOpen, setEatOpen] = useState(false)
+  const canEatQueue = queue.length >= EAT_QUEUE_MIN_SONGS
+  // The game lives on the song page; closing the page ends it.
+  useEffect(() => {
+    if (!show) setEatOpen(false)
+  }, [show])
   const [tabsVisible, setTabsVisible] = useState(true)
   /** Mobile only: the cover view ("歌曲" tab) instead of one of the panels. */
   const [mobileSongView, setMobileSongView] = useState(true)
@@ -1294,6 +1303,8 @@ export function NowPlaying() {
     >
       {show ? <NowPlayingTitleBar /> : null}
 
+      {show && eatOpen ? <EatThisQueue onClose={() => setEatOpen(false)} /> : null}
+
       {videoSource && currentSong.matchedWebUrl ? (
         <SourceVideoModal
           open={sourceVideoOpen}
@@ -1676,6 +1687,23 @@ export function NowPlaying() {
                         </button>
                       ) : null}
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => setEatOpen(true)}
+                      disabled={!canEatQueue}
+                      title={
+                        canEatQueue
+                          ? i18n._(msg`吃吃乐：用贪吃蛇吃掉播放队列`)
+                          : i18n._(msg`队列里至少要有 ${EAT_QUEUE_MIN_SONGS} 首歌`)
+                      }
+                      aria-label={i18n._(msg`吃吃乐`)}
+                      className="np-eat-button pressable"
+                    >
+                      <Gamepad2 className="h-3.5 w-3.5" />
+                      <span className="max-sm:hidden">
+                        <Trans>吃吃乐</Trans>
+                      </span>
+                    </button>
                     <ViewToggle
                       tone="dark"
                       label={i18n._(msg`队列视图`)}
