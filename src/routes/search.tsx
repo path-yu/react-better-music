@@ -221,14 +221,19 @@ function hasDirectMatch(songs: Song[], keyword: string) {
       })
     })
   }
+  // "New Jeans" (with a space) is still one artist name. An artist query must
+  // not count remixes/covers as a complete result set: the fallback walks the
+  // artist's albums to surface the delisted originals.
+  const compactQuery = normalizeQuery(tokens.join(''))
+  const artistQuery = songs.some((song) =>
+    song.ar.some((artist) => {
+      const name = normalizeQuery(artist.name)
+      return name === compactQuery || name.replace(/\s+/g, '') === compactQuery
+    }),
+  )
+  if (artistQuery) return false
+
   if (tokens.length === 1) {
-    const token = tokens[0]
-    // One word that is an artist name ("周杰伦"): the results are that
-    // artist's songs, nothing to recover.
-    const artistQuery = songs.some((song) =>
-      song.ar.some((artist) => normalizeQuery(artist.name) === token),
-    )
-    if (artistQuery) return true
     // A bare title ("爱的回归线") is usually dominated by covers when the
     // original is delisted, so let the fallback look for the original even
     // though an undecorated cover already matched.

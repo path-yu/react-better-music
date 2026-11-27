@@ -551,6 +551,12 @@ export interface QqSongMatch {
   singers: string
   album: string
   duration: number
+  /** Recording id on QQ Music; stable across name variations. */
+  songmid?: string
+  /** Release id on QQ Music, used to dedupe the same album. */
+  albummid?: string
+  /** QQ pay flag: 1 marks the paid original rather than a free re-upload. */
+  pay?: number
 }
 
 /**
@@ -1205,7 +1211,12 @@ async function resolveQqAlbums(
   }
   if (!matches.length) return [] as Array<{ id: number; name: string }>
 
-  const scored: Array<{ album: string; singers: string; score: number }> = []
+  const scored: Array<{
+    album: string
+    albummid?: string
+    singers: string
+    score: number
+  }> = []
   for (const match of matches) {
     if (!match.album) continue
     const name = normalizeDeep(match.name)
@@ -1218,11 +1229,28 @@ async function resolveQqAlbums(
     const score =
       (tokens.some((token) => singers.includes(token)) ? 0 : 2) +
       (tokens.some((token) => album.includes(token)) ? 0 : 1)
-    scored.push({ album: match.album, singers: match.singers, score })
+    scored.push({
+      album: match.album,
+      albummid: match.albummid,
+      singers: match.singers,
+      score,
+    })
   }
-  const candidates: Array<{ album: string; singers: string }> = []
+  const candidates: Array<{
+    album: string
+    albummid?: string
+    singers: string
+  }> = []
   for (const item of scored.sort((a, b) => a.score - b.score)) {
-    if (candidates.some((entry) => entry.album === item.album)) continue
+    // One release can appear as several rows (deluxe/edition titles differ by a
+    // suffix); `albummid` collapses those, the name is only the fallback for
+    // older rows that omit it.
+    const duplicate = candidates.some((entry) =>
+      item.albummid
+        ? entry.albummid === item.albummid
+        : entry.album === item.album,
+    )
+    if (duplicate) continue
     candidates.push(item)
     if (candidates.length >= 3) break
   }
@@ -1280,6 +1308,55 @@ async function resolveQqAlbums(
   return albums
 }
 
+/**
+ * Songs of the albums belonging to the artist whose name the query spells.
+ * `compact` is the normalized query ("newjeans"); only an exact name match
+ * qualifies, so a song title never triggers an artist walk.
+ */
+async function collectArtistAlbumSongs(
+  keyword: string,
+  compact: string,
+  signal?: AbortSignal,
+): Promise<DeepSearchHit[]> {
+  if (!compact || signal?.aborted) return []
+  const artists = await searchArtists(keyword).catch(() => [])
+  const artist = artists.find((item) => {
+    const name = normalizeDeep(item.name)
+    return name === compact || name.replace(/\s+/g, '') === compact
+  })
+  if (!artist?.id) return []
+
+  const albums = await fetchArtistAlbums(artist.id, 24, 0, signal).catch(
+    () => [],
+  )
+  const hits: DeepSearchHit[] = []
+  const seen = new Set<number>()
+  // Twelve newest albums reach back far enough for the records people normally
+  // search for (a 2023 EP sat behind four 2024 remix records). Requests run in
+  // batches of four so the fallback still finishes in well under a second.
+  const chosen = albums.slice(0, 12)
+  for (let index = 0; index < chosen.length; index += 4) {
+    if (signal?.aborted) break
+    const batch = chosen.slice(index, index + 4)
+    const details = await Promise.all(
+      batch.map((album) => fetchAlbumDetail(album.id).catch(() => null)),
+    )
+    details.forEach((detail, offset) => {
+      if (!detail) return
+      const album = batch[offset]
+      for (const song of detail.songs) {
+        if (seen.has(song.id)) continue
+        // The section is titled "原曲", so instrumental cuts and remixes of
+        // the same record would only bury the actual album tracks.
+        if (DEEP_DECORATED.test(song.name)) continue
+        seen.add(song.id)
+        hits.push({ song, albumId: album.id, albumName: album.name })
+      }
+    })
+  }
+  return hits
+}
+
 export async function deepSearchSongs(
   keyword: string,
   signal?: AbortSignal,
@@ -1295,6 +1372,16 @@ export async function deepSearchSongs(
   const cached = deepSearchCache.get(cacheKey)
   if (cached && Date.now() - cached.at < DEEP_SEARCH_TTL) {
     return cached.hits
+  }
+
+  // Artist query first: for a delisted act the song index only surfaces remixes
+  // and covers ("New Jeans" returns Jersey Club edits), while the artist's own
+  // albums still list every original. Walking albums is exactly what a user
+  // does by hand (歌手 → 专辑), so do it here.
+  const artistHits = await collectArtistAlbumSongs(keyword, tokens.join(''), signal)
+  if (artistHits.length) {
+    deepSearchCache.set(cacheKey, { hits: artistHits, at: Date.now() })
+    return artistHits
   }
 
   // Fast path: a web search for the song's NetEase page usually returns the
