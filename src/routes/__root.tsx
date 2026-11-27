@@ -11,6 +11,7 @@ import { Button, OverlayProvider, ToastProvider } from '@pikoloo/darwin-ui'
 import { AppShell } from '../components/layout/AppShell'
 import { ToastBridge } from '../components/common/ToastBridge'
 import { useDocumentTitle } from '../lib/title'
+import { installStickyBars } from '../lib/stickyBars'
 import { apiErrorMessage } from '../lib/apiErrors'
 import '../styles.css'
 
@@ -19,6 +20,9 @@ export const Route = createRootRoute({
   notFoundComponent: RootNotFound,
   errorComponent: RootError,
 })
+
+// Toggles the hairline under pinned toolbars (see lib/stickyBars.ts).
+installStickyBars()
 
 function RootComponent() {
   return (

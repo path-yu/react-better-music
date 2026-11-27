@@ -124,12 +124,14 @@ function MenuSwitch({
   icon,
   label,
   title,
+  description,
   checked,
   onToggle,
 }: {
   icon: ReactNode
   label: ReactNode
   title?: string
+  description?: ReactNode
   checked: boolean
   onToggle: () => void
 }) {
@@ -143,7 +145,14 @@ function MenuSwitch({
       className="menu-item"
     >
       <span className="menu-item__icon">{icon}</span>
-      <span className="menu-item__label">{label}</span>
+      {description ? (
+        <span className="menu-item__label menu-item__label--stacked">
+          <span>{label}</span>
+          <span className="menu-item__description">{description}</span>
+        </span>
+      ) : (
+        <span className="menu-item__label">{label}</span>
+      )}
       <SwitchTrack checked={checked} />
     </button>
   )
@@ -181,6 +190,7 @@ export function MorePlaybackOptions({
   const setWordByWordLyrics = useSettingsStore(
     (state) => state.setWordByWordLyrics,
   )
+  const appleLyricsEffect = useSettingsStore((state) => state.appleLyricsEffect)
   const setPreferredSource = useSettingsStore((state) => state.setPreferredSource)
   const switchingSource = usePlayerStore((state) => state.switchingSource)
   const switchToOtherSource = usePlayerStore((state) => state.switchToOtherSource)
@@ -581,6 +591,15 @@ export function MorePlaybackOptions({
         icon={<WholeWord />}
         label={<Trans>逐字播放</Trans>}
         title={i18n._(msg`关闭后只高亮整行，不做逐字动画`)}
+        description={
+          // Apple Music 动效 only wipes lyrics that carry real syllable
+          // timings; the classic view also animates estimated LRC timings.
+          appleLyricsEffect ? (
+            <Trans>Apple Music 动效下，仅逐字歌词逐字擦亮，普通歌词整行高亮</Trans>
+          ) : (
+            <Trans>普通歌词按估算时间逐字填充</Trans>
+          )
+        }
         checked={wordByWordLyrics}
         onToggle={() => setWordByWordLyrics(!wordByWordLyrics)}
       />

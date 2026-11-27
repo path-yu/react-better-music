@@ -565,6 +565,21 @@ function SearchPage() {
                 ? videoTotal
                 : playlistTotal
   const pageCount = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [pageSize, total])
+  // Shown on the right of the pinned tab bar instead of a line under it.
+  const resultCountLabel =
+    tab === 'songs'
+      ? i18n._(msg`共找到 ${songTotal} 首单曲`)
+      : tab === 'artists'
+        ? i18n._(msg`共找到 ${artistTotal} 位歌手`)
+        : tab === 'users'
+          ? i18n._(msg`共找到 ${userTotal} 位用户`)
+          : tab === 'albums'
+            ? i18n._(msg`共找到 ${albumTotal} 张专辑`)
+            : tab === 'mvs'
+              ? i18n._(msg`共找到 ${mvTotal} 个 MV`)
+              : tab === 'videos'
+                ? i18n._(msg`共找到 ${videoTotal} 个视频`)
+                : i18n._(msg`共找到 ${playlistTotal} 个歌单`)
 
   const hasKeyword = Boolean(keyword.trim())
 
@@ -594,7 +609,10 @@ function SearchPage() {
         <p className="eyebrow">
           <Trans>搜索结果</Trans>
         </p>
-        <h1 className="headline-lg mt-1.5 line-clamp-1">“{keyword}”</h1>
+        {/* The keyword is already in the search box; a quieter heading. */}
+        <h1 className="mt-1 line-clamp-1 text-[22px] font-semibold leading-tight tracking-[-0.015em]">
+          “{keyword}”
+        </h1>
       </div>
 
       <Tabs value={tab} onValueChange={changeTab} className="mt-5">
@@ -620,13 +638,21 @@ function SearchPage() {
               <Trans>视频</Trans>
             </TabsTrigger>
           </TabsList>
-          {tab === 'songs' && songs.length ? (
-            <PlayAllButton
-              songs={songs}
-              playlistId={`search-${keyword}-${page}`}
-              label={i18n._(msg`播放本页`)}
-            />
-          ) : null}
+          <div className="flex shrink-0 items-center gap-3">
+            {!failed ? (
+              <span className="text-[11px] tabular-nums text-ink-4 max-sm:hidden">
+                {resultCountLabel}
+              </span>
+            ) : null}
+            {tab === 'songs' && songs.length ? (
+              <PlayAllButton
+                songs={songs}
+                playlistId={`search-${keyword}-${page}`}
+                label={i18n._(msg`播放本页`)}
+                tone="tinted"
+              />
+            ) : null}
+          </div>
         </div>
 
         <TabsContent value="songs" className="mt-3">
@@ -639,11 +665,6 @@ function SearchPage() {
             />
           ) : (
             <>
-              <div className="mb-2 flex items-center justify-between gap-2 text-[11px] text-ink-4">
-                <span>
-                  <Trans>共找到 {songTotal} 首单曲</Trans>
-                </span>
-              </div>
               {deepEnabled && page === 1 && deepLoading ? (
                 <p className="mb-3 text-[11px] text-ink-4">
                   <Trans>正在查找原曲…</Trans>
@@ -666,6 +687,7 @@ function SearchPage() {
                     <Trans>这些歌曲来自相关专辑（部分已下架），仍可通过换源播放</Trans>
                   </p>
                   <SongTable
+                    stickyTop={57}
                     songs={deepSongs.map((hit) => hit.song)}
                     playlistId={`search-deep-${keyword}`}
                     emptyText={i18n._(msg`没有找到相关单曲`)}
@@ -674,6 +696,7 @@ function SearchPage() {
               ) : null}
 
               <SongTable
+                stickyTop={57}
                 songs={songs}
                 playlistId={`search-${keyword}-${page}`}
                 loading={loading}
@@ -685,9 +708,6 @@ function SearchPage() {
         </TabsContent>
 
         <TabsContent value="playlists" className="mt-3">
-          <div className="mb-2 text-[11px] text-ink-4">
-            <Trans>共找到 {playlistTotal} 个歌单</Trans>
-          </div>
           {failed ? (
             <EmptyState
               variant="error"
@@ -746,9 +766,6 @@ function SearchPage() {
           <Pager page={page} pageCount={pageCount} onChange={setPage} className="mt-6" />
         </TabsContent>
         <TabsContent value="albums" className="mt-3">
-          <div className="mb-2 text-[11px] text-ink-4">
-            <Trans>共找到 {albumTotal} 张专辑</Trans>
-          </div>
           {failed ? (
             <EmptyState
               variant="error"
@@ -780,9 +797,6 @@ function SearchPage() {
           <Pager page={page} pageCount={pageCount} onChange={setPage} className="mt-6" />
         </TabsContent>
         <TabsContent value="artists" className="mt-3">
-          <div className="mb-2 text-[11px] text-ink-4">
-            <Trans>共找到 {artistTotal} 位歌手</Trans>
-          </div>
           {failed ? (
             <EmptyState
               variant="error"
@@ -845,9 +859,6 @@ function SearchPage() {
           <Pager page={page} pageCount={pageCount} onChange={setPage} className="mt-6" />
         </TabsContent>
         <TabsContent value="users" className="mt-3">
-          <div className="mb-2 text-[11px] text-ink-4">
-            <Trans>共找到 {userTotal} 位用户</Trans>
-          </div>
           {failed ? (
             <EmptyState
               variant="error"
@@ -877,9 +888,6 @@ function SearchPage() {
         </TabsContent>
 
         <TabsContent value="mvs" className="mt-3">
-          <div className="mb-2 text-[11px] text-ink-4">
-            <Trans>共找到 {mvTotal} 个 MV</Trans>
-          </div>
           {failed ? (
             <EmptyState
               variant="error"
@@ -913,9 +921,6 @@ function SearchPage() {
           <Pager page={page} pageCount={pageCount} onChange={setPage} className="mt-6" />
         </TabsContent>
         <TabsContent value="videos" className="mt-3">
-          <div className="mb-2 text-[11px] text-ink-4">
-            <Trans>共找到 {videoTotal} 个视频</Trans>
-          </div>
           {failed ? (
             <EmptyState
               variant="error"

@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { createFileRoute } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { ArrowLeft, CalendarDays, Check, Disc3, UserPlus, UserRound } from 'lucide-react'
-import { Avatar, Button, Skeleton, Tabs, TabsContent, TabsList, TabsTrigger } from '@pikoloo/darwin-ui'
+import { CalendarDays, Check, Disc3, UserPlus, UserRound } from 'lucide-react'
+import { Avatar, Skeleton, Tabs, TabsContent, TabsList, TabsTrigger } from '@pikoloo/darwin-ui'
 import { EmptyState } from '../../components/common/EmptyState'
 import { AlbumCard } from '../../components/cards/AlbumCard'
 import { PlaylistCard } from '../../components/cards/PlaylistCard'
@@ -14,7 +14,8 @@ import {
   fetchUserPlaylists,
   subscribeUser,
 } from '../../api'
-import { formatDate, formatNumber } from '../../lib/format'
+import { extractPalette, withAlpha } from '../../lib/color'
+import { cn, formatDate, formatNumber } from '../../lib/format'
 import { resizedImageUrl } from '../../lib/image'
 import { useDocumentTitle } from '../../lib/title'
 import { useLocalLibraryStore } from '../../store/localLibrary'
@@ -28,10 +29,19 @@ export const Route = createFileRoute('/users/$id')({
 
 type ProfileTab = 'created' | 'collected' | 'albums'
 
+/** NetEase Cloud Music launched in 2013; older or empty stamps are bogus (1970-01-01). */
+const EARLIEST_JOIN = Date.UTC(2013, 0, 1)
+
+function validJoinTime(createTime?: number) {
+  const time = Number(createTime)
+  return Number.isFinite(time) && time >= EARLIEST_JOIN && time <= Date.now()
+    ? time
+    : null
+}
+
 function UserDetailPage() {
   const { i18n } = useLingui()
   const { id } = Route.useParams()
-  const navigate = useNavigate()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [level, setLevel] = useState(0)
   const [playlists, setPlaylists] = useState<Playlist[]>([])
@@ -55,6 +65,9 @@ function UserDetailPage() {
   )
   const [followed, setFollowed] = useState(false)
   const [followBusy, setFollowBusy] = useState(false)
+  // Soft avatar colour in the header instead of the blurred background image,
+  // which turned into a muddy brown wash on most profiles.
+  const [tint, setTint] = useState<string | null>(null)
 
   useDocumentTitle(profile?.nickname ?? i18n._(msg`用户`))
 
@@ -97,7 +110,26 @@ function UserDetailPage() {
     setAlbumsLoaded(false)
     setAlbumsFailed(false)
     setTab('created')
+    setTint(null)
   }, [id])
+
+  const avatarUrl = profile
+    ? (resizedImageUrl(profile.avatarUrl, '200y200') ?? profile.avatarUrl)
+    : ''
+
+  useEffect(() => {
+    if (!avatarUrl) return
+    let active = true
+    void extractPalette(avatarUrl)
+      .then((palette) => {
+        if (!active || palette.source === 'fallback') return
+        setTint(palette.colors[0] ?? null)
+      })
+      .catch(() => undefined)
+    return () => {
+      active = false
+    }
+  }, [avatarUrl])
 
   // album/sublist is tied to the signed-in cookie, not a uid parameter. Only
   // query it on the owner's own profile so another user's page can never
@@ -164,14 +196,6 @@ function UserDetailPage() {
     [id, playlists],
   )
 
-  const goBack = () => {
-    if (window.history.length > 1) {
-      window.history.back()
-    } else {
-      void navigate({ to: '/' })
-    }
-  }
-
   const handleToggleFollow = async () => {
     if (!profile || followBusy || isOwnProfile) return
     setFollowBusy(true)
@@ -216,8 +240,8 @@ function UserDetailPage() {
   if (loading || !profile) {
     return (
       <div className="page">
-        <Skeleton className="h-[240px] w-full rounded-[22px]" />
-        <Skeleton className="mt-5 h-4 w-24 rounded-full" />
+        <Skeleton className="h-[184px] w-full rounded-[22px]" />
+        <Skeleton className="mt-6 h-8 w-72 rounded-full" />
         <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
           {Array.from({ length: 5 }).map((_, index) => (
             <Skeleton key={index} className="aspect-square w-full rounded-[18px]" />
@@ -227,41 +251,36 @@ function UserDetailPage() {
     )
   }
 
-  const background = resizedImageUrl(profile.backgroundUrl, '1280y400')
-  const bio =
-    profile.detailDescription?.trim() ||
-    profile.description?.trim() ||
-    profile.signature?.trim() ||
-    i18n._(msg`暂无简介`)
+  const signature = profile.signature?.trim() ?? ''
+  // The 简介 card only appears when it says more than the signature already
+  // shown in the header (it used to repeat the signature as a whole card).
+  const about =
+    profile.detailDescription?.trim() || profile.description?.trim() || ''
+  const showAbout = Boolean(about) && about !== signature
+  const joinTime = validJoinTime(profile.createTime)
+  const heroStyle = tint
+    ? ({ '--profile-tint': withAlpha(tint, 0.55) } as CSSProperties)
+    : undefined
 
   return (
     <div className="page">
-      <div className="relative overflow-hidden rounded-[22px] border border-black/[0.06] bg-white/55">
-        {background ? (
-          <img
-            src={background}
-            alt=""
-            aria-hidden="true"
-            className="absolute inset-0 h-full w-full scale-110 object-cover opacity-25 blur-2xl"
-          />
-        ) : null}
-        <div className="user-profile-hero__scrim absolute inset-0" />
-        <button
-          type="button"
-          onClick={goBack}
-          className="pressable absolute left-4 top-4 z-10 flex items-center gap-1.5 rounded-full bg-white/55 px-2.5 py-1 text-[12px] text-ink-3 backdrop-blur-md transition-colors hover:bg-white/80 hover:text-ink-2"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          <Trans>返回</Trans>
-        </button>
+      <div
+        className="relative overflow-hidden rounded-[22px] border border-black/[0.06] bg-white/55"
+        style={heroStyle}
+      >
+        <div
+          className={cn('user-profile-hero__tint absolute inset-0', tint && 'is-ready')}
+          aria-hidden="true"
+        />
+        <div className="user-profile-hero__scrim absolute inset-0" aria-hidden="true" />
 
-        <div className="relative flex flex-col gap-5 px-6 pb-6 pt-16 sm:flex-row sm:items-end">
+        <div className="relative flex flex-col gap-5 p-6 sm:flex-row sm:items-center">
           <Avatar
-            src={resizedImageUrl(profile.avatarUrl, '200y200') ?? profile.avatarUrl}
+            src={avatarUrl}
             alt={profile.nickname}
             fallback={profile.nickname?.slice(0, 1)}
             size="xl"
-            className="h-24 w-24 shrink-0 border border-white/60 shadow-[0_10px_30px_rgba(0,0,0,0.16)]"
+            className="h-28 w-28 shrink-0 border border-white/60 shadow-[0_10px_30px_rgba(0,0,0,0.16)]"
           />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
@@ -269,34 +288,42 @@ function UserDetailPage() {
                 <Trans>用户</Trans>
               </p>
               {level > 0 ? (
-                <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent">
+                <span className="rounded-full bg-black/[0.06] px-2 py-0.5 text-[11px] font-medium text-ink-3 dark:bg-white/10">
                   Lv.{level}
                 </span>
               ) : null}
             </div>
-            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-2">
               <h1 className="headline-lg line-clamp-1">{profile.nickname}</h1>
               {isOwnProfile ? null : (
-                <Button
-                  variant={followed ? 'secondary' : 'primary'}
-                  size="sm"
-                  className="rounded-full px-3.5 text-[12px]"
+                <button
+                  type="button"
                   disabled={followBusy}
                   aria-pressed={followed}
                   onClick={() => void handleToggleFollow()}
+                  className={cn(
+                    'pressable inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-[12px] font-medium transition-colors disabled:opacity-50',
+                    // A tinted pill instead of a solid blue button, so the
+                    // nickname stays the strongest element in the header.
+                    followed
+                      ? 'bg-black/[0.06] text-ink-2 hover:bg-black/[0.1] dark:bg-white/10 dark:hover:bg-white/15'
+                      : 'bg-accent/12 text-accent hover:bg-accent/20',
+                  )}
                 >
                   {followed ? (
-                    <Check className="mr-1.5 h-3.5 w-3.5" />
+                    <Check className="h-3.5 w-3.5" />
                   ) : (
-                    <UserPlus className="mr-1.5 h-3.5 w-3.5" />
+                    <UserPlus className="h-3.5 w-3.5" />
                   )}
-                  {followed ? <Trans>已关注</Trans> : <Trans>关注用户</Trans>}
-                </Button>
+                  {followed ? <Trans>已关注</Trans> : <Trans>关注</Trans>}
+                </button>
               )}
             </div>
-            <p className="mt-1.5 line-clamp-2 max-w-[680px] text-[12px] leading-relaxed text-ink-3">
-              {profile.signature?.trim() || i18n._(msg`暂无简介`)}
-            </p>
+            {signature ? (
+              <p className="mt-1.5 line-clamp-2 max-w-[680px] text-[12px] leading-relaxed text-ink-3">
+                {signature}
+              </p>
+            ) : null}
             <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] text-ink-3">
               <span>
                 <strong className="font-semibold text-ink-2">
@@ -316,10 +343,10 @@ function UserDetailPage() {
                 </strong>{' '}
                 <Trans>歌单</Trans>
               </span>
-              {profile.createTime ? (
+              {joinTime ? (
                 <span className="flex items-center gap-1">
                   <CalendarDays className="h-3.5 w-3.5" />
-                  <Trans>加入于 {formatDate(profile.createTime)}</Trans>
+                  <Trans>加入于 {formatDate(joinTime)}</Trans>
                 </span>
               ) : null}
             </div>
@@ -327,34 +354,35 @@ function UserDetailPage() {
         </div>
       </div>
 
-      <section className="apple-card mt-4 p-5">
-        <p className="eyebrow text-left">
-          <Trans>简介</Trans>
-        </p>
-        <p className="mt-1.5 whitespace-pre-wrap break-words text-[13px] leading-relaxed text-ink-2">
-          {bio}
-        </p>
-      </section>
+      {showAbout ? (
+        <section className="apple-card mt-4 p-5">
+          <p className="eyebrow text-left">
+            <Trans>简介</Trans>
+          </p>
+          <p className="mt-1.5 whitespace-pre-wrap break-words text-[13px] leading-relaxed text-ink-2">
+            {about}
+          </p>
+        </section>
+      ) : null}
 
       <Tabs
         value={tab}
         onValueChange={(value) => setTab(value as ProfileTab)}
         className="mt-6"
       >
-        <div className="border-b border-black/8 pb-2">
-          <TabsList>
-            <TabsTrigger value="created">
-              <Trans>创建的歌单</Trans> ({createdPlaylists.length})
-            </TabsTrigger>
-            <TabsTrigger value="collected">
-              <Trans>收藏的歌单</Trans> ({collectedPlaylists.length})
-            </TabsTrigger>
-            <TabsTrigger value="albums">
-              <Trans>收藏的专辑</Trans>
-              {isOwnProfile && albumsLoaded ? ` (${albumTotal})` : ''}
-            </TabsTrigger>
-          </TabsList>
-        </div>
+        {/* The tab group is its own frame; no extra divider under it. */}
+        <TabsList>
+          <TabsTrigger value="created">
+            <Trans>创建的歌单</Trans> ({createdPlaylists.length})
+          </TabsTrigger>
+          <TabsTrigger value="collected">
+            <Trans>收藏的歌单</Trans> ({collectedPlaylists.length})
+          </TabsTrigger>
+          <TabsTrigger value="albums">
+            <Trans>收藏的专辑</Trans>
+            {isOwnProfile && albumsLoaded ? ` (${albumTotal})` : ''}
+          </TabsTrigger>
+        </TabsList>
 
         {(['created', 'collected'] as const).map((value) => {
           const list = value === 'created' ? createdPlaylists : collectedPlaylists
@@ -422,11 +450,7 @@ function UserDetailPage() {
           ) : (
             <EmptyState
               icon={<Disc3 className="h-6 w-6" />}
-              title={
-                isOwnProfile
-                  ? i18n._(msg`还没有收藏专辑`)
-                  : i18n._(msg`该用户的收藏专辑不可见`)
-              }
+              title={i18n._(msg`还没有收藏专辑`)}
             />
           )}
         </TabsContent>

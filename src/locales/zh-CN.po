@@ -860,7 +860,7 @@ msgstr "关注的用户"
 
 #: src/components/layout/TitleBar.tsx:184
 #: src/components/layout/WindowControls.tsx:90
-#: src/components/player/MorePlaybackOptions.tsx:522
+#: src/components/player/MorePlaybackOptions.tsx:531
 #: src/components/player/NowPlayingTitleBar.tsx:104
 #: src/components/player/QueuePanel.tsx:230
 msgid "关闭"
@@ -873,11 +873,11 @@ msgid "关闭到托盘"
 msgstr "关闭到托盘"
 
 #: src/components/player/ImmersivePlayerBar.tsx:438
-#: src/components/player/MorePlaybackOptions.tsx:583
+#: src/components/player/MorePlaybackOptions.tsx:592
 msgid "关闭后只高亮整行，不做逐字动画"
 msgstr "关闭后只高亮整行，不做逐字动画"
 
-#: src/components/player/MorePlaybackOptions.tsx:571
+#: src/components/player/MorePlaybackOptions.tsx:580
 msgid "关闭定时器"
 msgstr "关闭定时器"
 
@@ -1042,7 +1042,7 @@ msgstr "切换播放源失败，请稍后再试"
 #~ msgid "切换界面语言，语言资源加载后立即生效。"
 #~ msgstr "切换界面语言，语言资源加载后立即生效。"
 
-#: src/components/player/MorePlaybackOptions.tsx:358
+#: src/components/player/MorePlaybackOptions.tsx:367
 msgid "切换音源"
 msgstr "切换音源"
 
@@ -1429,11 +1429,11 @@ msgstr "图片不能超过 5MB"
 msgid "图片解析失败"
 msgstr "图片解析失败"
 
-#: src/components/player/MorePlaybackOptions.tsx:479
+#: src/components/player/MorePlaybackOptions.tsx:488
 msgid "在 YouTube 查看视频"
 msgstr "在 YouTube 查看视频"
 
-#: src/components/player/MorePlaybackOptions.tsx:477
+#: src/components/player/MorePlaybackOptions.tsx:486
 msgid "在哔哩哔哩查看视频"
 msgstr "在哔哩哔哩查看视频"
 
@@ -1860,8 +1860,8 @@ msgstr "已清除 {count} 首歌曲的伴奏缓存"
 msgid "已禁用开发者工具，重启应用后完全生效"
 msgstr "已禁用开发者工具，重启应用后完全生效"
 
-#: src/components/player/MorePlaybackOptions.tsx:411
-#: src/components/player/MorePlaybackOptions.tsx:454
+#: src/components/player/MorePlaybackOptions.tsx:420
+#: src/components/player/MorePlaybackOptions.tsx:463
 msgid "已缓存"
 msgstr "已缓存"
 
@@ -2206,8 +2206,8 @@ msgstr "推荐歌单"
 msgid "推荐歌单加载失败"
 msgstr "推荐歌单加载失败"
 
-#: src/components/player/MorePlaybackOptions.tsx:220
-#: src/components/player/MorePlaybackOptions.tsx:401
+#: src/components/player/MorePlaybackOptions.tsx:229
+#: src/components/player/MorePlaybackOptions.tsx:410
 #: src/routes/settings.tsx:1573
 msgid "推荐版本"
 msgstr "推荐版本"
@@ -2417,7 +2417,7 @@ msgstr "播放队列为空"
 #: src/components/player/ImmersivePlayerBar.tsx:338
 #: src/components/player/ImmersivePlayerBar.tsx:339
 #: src/components/player/ImmersivePlayerBar.tsx:352
-#: src/components/player/MorePlaybackOptions.tsx:341
+#: src/components/player/MorePlaybackOptions.tsx:350
 msgid "播放音质"
 msgstr "播放音质"
 
@@ -2426,7 +2426,7 @@ msgstr "播放音质"
 msgid "播放音质已切换为{0}，正在重新加载"
 msgstr "播放音质已切换为{0}，正在重新加载"
 
-#: src/components/player/MorePlaybackOptions.tsx:306
+#: src/components/player/MorePlaybackOptions.tsx:315
 msgid "播放音质已切换为{label}，正在重新加载"
 msgstr "播放音质已切换为{label}，正在重新加载"
 
@@ -2658,6 +2658,10 @@ msgstr "显示方式"
 #: src/routes/index.tsx:118
 msgid "晚上好"
 msgstr "晚上好"
+
+#: src/components/player/MorePlaybackOptions.tsx:593
+msgid "普通歌词无逐字时间，仅整行高亮"
+msgstr "普通歌词无逐字时间，仅整行高亮"
 
 #: src/routes/settings.tsx:963
 msgid "智能伴奏 · Spleeter"
@@ -3030,7 +3034,7 @@ msgstr "桌面服务响应超时"
 msgid "桌面服务请求失败 ({0})"
 msgstr "桌面服务请求失败 ({0})"
 
-#: src/components/player/MorePlaybackOptions.tsx:609
+#: src/components/player/MorePlaybackOptions.tsx:619
 msgid "桌面歌词"
 msgstr "桌面歌词"
 
@@ -3038,7 +3042,7 @@ msgstr "桌面歌词"
 msgid "桌面歌词：Ctrl / ⌘ + Shift + L 显示或隐藏，窗口始终置顶，可拖动到任意位置。"
 msgstr "桌面歌词：Ctrl / ⌘ + Shift + L 显示或隐藏，窗口始终置顶，可拖动到任意位置。"
 
-#: src/components/player/MorePlaybackOptions.tsx:289
+#: src/components/player/MorePlaybackOptions.tsx:298
 msgid "桌面歌词窗口暂不可用"
 msgstr "桌面歌词窗口暂不可用"
 
@@ -3221,12 +3225,12 @@ msgstr "歌词"
 msgid "歌词、律动、播放队列、评论与相似歌曲"
 msgstr "歌词、律动、播放队列、评论与相似歌曲"
 
-#: src/components/player/MorePlaybackOptions.tsx:598
+#: src/components/player/MorePlaybackOptions.tsx:608
 msgid "歌词字号"
 msgstr "歌词字号"
 
 #: src/components/player/ImmersivePlayerBar.tsx:450
-#: src/components/player/MorePlaybackOptions.tsx:590
+#: src/components/player/MorePlaybackOptions.tsx:600
 msgid "歌词显示"
 msgstr "歌词显示"
 
@@ -3825,7 +3829,7 @@ msgstr "相似歌曲加载失败"
 msgid "相关推荐"
 msgstr "相关推荐"
 
-#: src/components/player/MorePlaybackOptions.tsx:332
+#: src/components/player/MorePlaybackOptions.tsx:341
 #: src/components/songs/SongContextMenu.tsx:464
 msgid "相关视频"
 msgstr "相关视频"
@@ -3835,7 +3839,7 @@ msgstr "相关视频"
 msgid "相关视频加载失败"
 msgstr "相关视频加载失败"
 
-#: src/components/player/MorePlaybackOptions.tsx:506
+#: src/components/player/MorePlaybackOptions.tsx:515
 msgid "睡眠定时器"
 msgstr "睡眠定时器"
 
@@ -4080,7 +4084,7 @@ msgstr "编辑精选的华语、欧美与器乐歌单"
 msgid "缩放淡入"
 msgstr "缩放淡入"
 
-#: src/components/player/MorePlaybackOptions.tsx:222
+#: src/components/player/MorePlaybackOptions.tsx:231
 #: src/components/player/SourcePicker.tsx:45
 msgid "网易云官方"
 msgstr "网易云官方"
@@ -4521,11 +4525,11 @@ msgstr "连续 {skipped} 首歌曲无法播放，已停止播放"
 msgid "连续多首歌曲无法播放，已暂停播放"
 msgstr "连续多首歌曲无法播放，已暂停播放"
 
-#: src/components/player/MorePlaybackOptions.tsx:615
+#: src/components/player/MorePlaybackOptions.tsx:625
 msgid "迷你播放器"
 msgstr "迷你播放器"
 
-#: src/components/player/MorePlaybackOptions.tsx:295
+#: src/components/player/MorePlaybackOptions.tsx:304
 msgid "迷你播放器暂不可用"
 msgstr "迷你播放器暂不可用"
 
@@ -4550,7 +4554,7 @@ msgstr "选择 {0}"
 msgid "选择一首歌曲开始播放"
 msgstr "选择一首歌曲开始播放"
 
-#: src/components/player/MorePlaybackOptions.tsx:490
+#: src/components/player/MorePlaybackOptions.tsx:499
 #: src/components/player/SourcePicker.tsx:159
 msgid "选择后立即重新获取当前歌曲；自动匹配会按内置顺序尝试。"
 msgstr "选择后立即重新获取当前歌曲；自动匹配会按内置顺序尝试。"
@@ -4577,7 +4581,7 @@ msgstr "选择音源"
 
 #: src/components/player/ImmersivePlayerBar.tsx:435
 #: src/components/player/ImmersivePlayerBar.tsx:444
-#: src/components/player/MorePlaybackOptions.tsx:582
+#: src/components/player/MorePlaybackOptions.tsx:591
 msgid "逐字播放"
 msgstr "逐字播放"
 

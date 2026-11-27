@@ -2127,7 +2127,7 @@ export function PlayerBar() {
               glass
               className="w-[52px] px-0 py-3"
             >
-              <div className="flex flex-col items-center gap-2">
+              <div className="player-volume-neutral flex flex-col items-center gap-2">
                 <VolumeSlider
                   value={videoActive ? videoVolume : volume}
                   onChange={videoActive ? setVideoVolume : setVolume}

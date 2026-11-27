@@ -94,6 +94,7 @@ export function ImmersivePlayerBar({
   const setWordByWordLyrics = useSettingsStore(
     (state) => state.setWordByWordLyrics,
   )
+  const appleLyricsEffect = useSettingsStore((state) => state.appleLyricsEffect)
 
   const isLogin = useUserStore((state) => state.isLogin)
   const likedIds = useUserStore((state) => state.likedIds)
@@ -435,7 +436,13 @@ export function ImmersivePlayerBar({
                     <Trans>逐字播放</Trans>
                   </p>
                   <p className="mt-0.5 text-[11px] leading-relaxed text-white/40">
-                    <Trans>关闭后只高亮整行，不做逐字动画</Trans>
+                    {appleLyricsEffect ? (
+                      <Trans>
+                        关闭后只高亮整行。Apple Music 动效下，普通歌词没有逐字时间，始终整行高亮
+                      </Trans>
+                    ) : (
+                      <Trans>关闭后只高亮整行，不做逐字动画</Trans>
+                    )}
                   </p>
                 </div>
                 <ToggleSwitch

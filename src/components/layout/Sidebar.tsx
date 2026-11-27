@@ -82,6 +82,7 @@ import { composePlaylistCover } from '../../lib/playlistCover'
 import { cn } from '../../lib/format'
 import { toast } from '../../lib/toast'
 import type { ArtistSummary, Playlist, Song, UserProfile } from '../../types'
+import { LOCAL_ORDER_KEYS, applyLocalOrder, useLocalOrder } from '../../lib/localOrder'
 
 const primaryNav = [
   { to: '/search', label: msg`搜索`, icon: Search },
@@ -171,6 +172,13 @@ export function Sidebar() {
   const [mergeName, setMergeName] = useState('')
   const [merging, setMerging] = useState(false)
 
+  // The library page's manual order (drag to reorder) applies here too, so
+  // both views always list the same sequence. Ids match ReorderableList's
+  // getId in routes/library.tsx.
+  const createdOrder = useLocalOrder(LOCAL_ORDER_KEYS.created)
+  const savedOrder = useLocalOrder(LOCAL_ORDER_KEYS.saved)
+  const albumOrder = useLocalOrder(LOCAL_ORDER_KEYS.albums)
+
   // One list for both sources: account albums first, then local ones that the
   // account does not have. `local` rows keep their Ctrl/Cmd multi-select merge
   // behaviour and are tagged in the sidebar while signed in.
@@ -184,11 +192,29 @@ export function Sidebar() {
         .filter((album) => !onlineIds.has(Number(album.id)))
         .map((album) => ({ album, local: true })),
     ]
-    return entries
-  }, [collectedAlbums, localSubscribedAlbums])
+    return applyLocalOrder(entries, albumOrder, (entry) => String(entry.album.id))
+  }, [collectedAlbums, localSubscribedAlbums, albumOrder])
+
 
   const likedPlaylist = createdPlaylists[0]
-  const myPlaylists = createdPlaylists.slice(1)
+  const myPlaylists = useMemo(
+    () =>
+      applyLocalOrder(createdPlaylists.slice(1), createdOrder, (playlist) => `online-${playlist.id}`),
+    [createdPlaylists, createdOrder],
+  )
+  const orderedLocalPlaylists = useMemo(
+    () => applyLocalOrder(localPlaylists, createdOrder, (playlist) => `local-${playlist.id}`),
+    [localPlaylists, createdOrder],
+  )
+  const orderedCollectedPlaylists = useMemo(
+    () => applyLocalOrder(collectedPlaylists, savedOrder, (playlist) => String(playlist.id)),
+    [collectedPlaylists, savedOrder],
+  )
+  const orderedLocalSubscribedPlaylists = useMemo(
+    () =>
+      applyLocalOrder(localSubscribedPlaylists, savedOrder, (playlist) => String(playlist.id)),
+    [localSubscribedPlaylists, savedOrder],
+  )
 
   const goPlaylist = (id: number) => {
     void navigate({ to: '/songlists/$id', params: { id: String(id) } })
@@ -590,7 +616,7 @@ export function Sidebar() {
   /** Local playlist rows, shared by the guest group and the signed-in list. */
   const localPlaylistRows = (
     <>
-      {localPlaylists.map((playlist) =>
+      {orderedLocalPlaylists.map((playlist) =>
         renaming?.id === playlist.id ? (
           <RenameField
             key={playlist.id}
@@ -785,7 +811,7 @@ export function Sidebar() {
                     onToggle={() => toggleGroup('localSubscribed')}
                   />
                   {groupOpen('localSubscribed')
-                    ? localSubscribedPlaylists.map((playlist) => (
+                    ? orderedLocalSubscribedPlaylists.map((playlist) => (
                         <RowContextMenu
                           key={playlist.id}
                           items={[
@@ -975,7 +1001,7 @@ export function Sidebar() {
                     onToggle={() => toggleGroup('collected')}
                   />
                   {groupOpen('collected')
-                    ? collectedPlaylists.map((playlist) => (
+                    ? orderedCollectedPlaylists.map((playlist) => (
                         <RowContextMenu
                           key={playlist.id}
                           items={[

@@ -2042,6 +2042,27 @@ html.desktop .app-window {
   white-space: nowrap;
 }
 
+/* Label with a second, smaller line under it (e.g. 逐字播放's note). */
+.menu-item__label--stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  white-space: normal;
+}
+
+.menu-item__label--stacked > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-item__description {
+  color: var(--menu-faint);
+  font-size: 11px;
+  line-height: 1.4;
+  white-space: normal;
+}
+
 .menu-item__meta {
   display: inline-flex;
   flex: none;
@@ -2328,48 +2349,19 @@ a.song-tag--outline:focus-visible {
   cursor: pointer;
 }
 
-.np-queue-row.is-dragging {
-  opacity: 0.42;
-}
-
-.np-queue-drop-line {
-  position: absolute;
-  z-index: 2;
-  top: -1px;
-  right: 8px;
-  left: 8px;
-  height: 2px;
-  border-radius: 999px;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
-  pointer-events: none;
-  animation: np-queue-drop-in 0.14s ease-out;
-}
-
-.np-queue-drop-line.is-after {
-  top: auto;
-  bottom: -1px;
-}
-
-@keyframes np-queue-drop-in {
-  from {
-    opacity: 0;
-    transform: scaleX(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scaleX(1);
-  }
-}
-
 .np-queue-drag {
   display: inline-flex;
+  height: 28px;
   width: 18px;
   flex: none;
   align-items: center;
   justify-content: center;
+  border-radius: 6px;
   color: rgba(255, 255, 255, 0.32);
   cursor: grab;
   opacity: 0;
+  /* Long-press scrolling / text selection would fight the drag. */
+  touch-action: none;
   transition:
     color 0.15s ease,
     opacity 0.15s ease;
@@ -2377,21 +2369,75 @@ a.song-tag--outline:focus-visible {
 
 .np-queue-row:hover .np-queue-drag,
 .np-queue-row:focus-within .np-queue-drag,
-.np-queue-row.is-dragging .np-queue-drag {
+.np-queue-row[data-lifted] .np-queue-drag {
   opacity: 1;
 }
 
-.np-queue-row:hover .np-queue-drag {
-  color: rgba(255, 255, 255, 0.68);
+.np-queue-row:hover .np-queue-drag,
+.np-queue-row[data-lifted] .np-queue-drag {
+  color: rgba(255, 255, 255, 0.72);
 }
 
-.np-queue-drag:active {
+.np-queue-drag:active,
+.np-queue-row[data-lifted] .np-queue-drag {
   cursor: grabbing;
+}
+
+.np-queue-drag:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 1px;
+}
+
+/* Filtered queue: the grip is shown faintly but cannot be used. */
+.np-queue-drag.is-disabled {
+  cursor: default;
+  color: rgba(255, 255, 255, 0.14);
 }
 
 @media (hover: none) {
   .np-queue-drag {
     opacity: 1;
+  }
+}
+
+/* Reordering (components/player/useQueueReorder.ts): while a drag or a
+   keyboard move runs, rows slide on their transform; the carried row follows
+   the pointer 1:1, lifted on a frosted pill, then glides into its slot. */
+.np-queue-list[data-reordering] .np-queue-row {
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.np-queue-list[data-reordering] .np-queue-row:not([data-lifted]) {
+  /* No hover flicker on rows passing under the carried one. */
+  pointer-events: none;
+}
+
+.np-queue-list[data-reordering] .np-queue-row:not([data-lifted]):not(:focus-within) .np-queue-drag {
+  opacity: 0;
+}
+
+.np-queue-row[data-lifted],
+.np-queue-row[data-settling] {
+  z-index: 3;
+}
+
+.np-queue-list[data-reordering] .np-queue-row[data-lifted] {
+  transition: none;
+}
+
+.np-queue-row[data-lifted]::before,
+.np-queue-row[data-settling]::before {
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow:
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.16),
+    0 16px 36px -12px rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  backdrop-filter: blur(18px) saturate(1.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .np-queue-list[data-reordering] .np-queue-row {
+    transition: none;
   }
 }
 
@@ -4152,23 +4198,7 @@ a.song-tag--outline:focus-visible {
 
 /* User profile hero: keep the portrait readable without washing the dark
    surface out with a white-to-transparent scrim. */
-.user-profile-hero__scrim {
-  background: linear-gradient(
-    to top,
-    rgba(255, 255, 255, 0.85),
-    rgba(255, 255, 255, 0.45),
-    transparent
-  );
-}
 
-.dark .user-profile-hero__scrim {
-  background: linear-gradient(
-    to top,
-    rgba(17, 17, 19, 0.9),
-    rgba(28, 28, 30, 0.5),
-    transparent
-  );
-}
 
 .dark [class~="bg-white/88"] {
   background-color: rgba(28, 28, 30, 0.88);
@@ -4467,7 +4497,8 @@ a.song-tag--outline:focus-visible {
   width: min(420px, calc(100vw - 32px));
   max-height: min(62vh, 540px);
   padding: 0;
-  background: color-mix(in srgb, var(--app-content) 82%, transparent);
+  /* Nearly opaque: covers behind the menu must not tint its small labels. */
+  background: color-mix(in srgb, var(--app-content) 92%, transparent);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.06),
     0 0 0 0.5px rgb(0 0 0 / 0.06),
@@ -4477,7 +4508,7 @@ a.song-tag--outline:focus-visible {
 }
 
 .dark .category-popover {
-  background: color-mix(in srgb, var(--app-content) 78%, transparent);
+  background: color-mix(in srgb, var(--app-content) 92%, transparent);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.08),
     0 0 0 0.5px rgb(255 255 255 / 0.1),
@@ -4539,10 +4570,9 @@ a.song-tag--outline:focus-visible {
   padding-top: 10px;
 }
 
+/* Group titles separate the sections; space instead of extra hairlines. */
 .category-popover__group + .category-popover__group {
-  margin-top: 2px;
-  border-top: 0.5px solid
-    color-mix(in srgb, var(--app-border) 45%, transparent);
+  margin-top: 8px;
 }
 
 .category-popover__group-title {
@@ -4565,8 +4595,8 @@ a.song-tag--outline:focus-visible {
   justify-content: center;
   height: 28px;
   padding: 0 6px;
-  border: 1px solid transparent;
-  border-radius: 7px;
+  border: 0;
+  border-radius: 9999px;
   color: var(--ink-2);
   font-size: 12px;
   line-height: 1;
@@ -4574,8 +4604,7 @@ a.song-tag--outline:focus-visible {
   overflow: hidden;
   transition:
     background-color 0.15s ease,
-    color 0.15s ease,
-    border-color 0.15s ease;
+    color 0.15s ease;
 }
 
 .category-item:hover {
@@ -4583,10 +4612,60 @@ a.song-tag--outline:focus-visible {
   color: var(--ink-1);
 }
 
-.category-item.is-active {
-  border-color: color-mix(in srgb, var(--apple-blue) 40%, transparent);
-  background: color-mix(in srgb, var(--apple-blue) 18%, transparent);
-  color: var(--apple-blue);
+.category-item:focus-visible {
+  outline: 2px solid var(--ink-2);
+  outline-offset: 1px;
+}
+
+/* Same selected state as the filter chips on the page (.chip--selected). */
+.category-item.is-active,
+.category-item.is-active:hover {
+  background: #1d1d1f;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.dark .category-item.is-active,
+.dark .category-item.is-active:hover {
+  background: #f5f5f7;
+  color: #1d1d1f;
+}
+
+/* Sort menu rows: neutral fill + check mark for the current order. */
+.tag-sort-option {
+  color: var(--ink-3);
+}
+
+.tag-sort-option:hover {
+  background: var(--app-chip-hover);
+  color: var(--ink-1);
+}
+
+.tag-sort-option.is-active {
+  background: var(--app-chip);
+  color: var(--ink-1);
+  font-weight: 500;
+}
+
+/* Quiet toolbar buttons beside filter chips: icon/text only, a soft fill on
+   hover or while their menu is open. No border, no accent. */
+.neutral-ghost-button {
+  color: var(--ink-3);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.neutral-ghost-button:hover,
+.neutral-ghost-button.is-open {
+  background: var(--app-chip-hover);
+  color: var(--ink-1);
+}
+
+.neutral-ghost-button:focus-visible {
+  outline: 2px solid var(--ink-2);
+  outline-offset: 2px;
 }
 
 /* ---------- macOS-style sliders (seek bar / volume) ---------- */
@@ -5043,6 +5122,261 @@ a.song-tag--outline:focus-visible {
 .volume-slider__thumb {
   left: 50%;
   margin-left: -6.5px;
+}
+
+/* ---------- User profile header ----------
+   A soft wash of the avatar colour from the top-left corner (instead of the
+   blurred background image), and a scrim that keeps the text readable. */
+.user-profile-hero__tint {
+  background: radial-gradient(
+    120% 160% at 0% 0%,
+    var(--profile-tint, transparent) 0%,
+    transparent 62%
+  );
+  opacity: 0;
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.user-profile-hero__tint.is-ready {
+  opacity: 0.45;
+}
+
+.dark .user-profile-hero__tint.is-ready {
+  opacity: 0.55;
+}
+
+.user-profile-hero__scrim {
+  background: linear-gradient(
+    to top,
+    rgba(255, 255, 255, 0.85),
+    rgba(255, 255, 255, 0.45),
+    transparent
+  );
+}
+
+.dark .user-profile-hero__scrim {
+  background: linear-gradient(
+    to top,
+    rgba(17, 17, 19, 0.9),
+    rgba(28, 28, 30, 0.5),
+    transparent
+  );
+}
+
+/* ---------- Pinned toolbars and tab groups ----------
+   Unlayered on purpose: these win over the `.sticky-bar` rule in
+   @layer components and over the utility classes on each page / darwin-ui.
+
+   The bar is the page colour, slightly see-through with a frosted blur, so
+   at rest it is invisible on the page in every theme and palette; rows that
+   scroll underneath read as frosted. Its hairline only shows once it is
+   pinned over content (`is-stuck`, set by lib/stickyBars.ts). */
+.sticky-bar {
+  background: color-mix(in srgb, var(--app-content) 84%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  backdrop-filter: blur(20px) saturate(1.6);
+  transition: border-color 0.2s ease-out;
+}
+
+.sticky-bar:not(.is-stuck) {
+  border-bottom-color: transparent;
+}
+
+/* darwin-ui's TabsList is a grey framed segmented control. Keep the
+   segmented behaviour, drop the frame: no fill, no border, only the selected
+   tab gets a soft pill. The 40px height is unchanged so pinned table headers
+   (stickyTop={57}) still line up. */
+[role='tablist'].inline-flex.rounded-xl.p-1 {
+  gap: 2px;
+  border-color: transparent;
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+[role='tablist'].inline-flex.rounded-xl.p-1 > [role='tab'] {
+  font-size: 13px;
+  transition: background-color 0.18s ease-out;
+}
+
+[role='tablist'].inline-flex.rounded-xl.p-1 > [role='tab'][aria-selected='false']:hover {
+  background: rgba(0, 0, 0, 0.035);
+}
+
+.dark [role='tablist'].inline-flex.rounded-xl.p-1 > [role='tab'][aria-selected='false']:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* The sliding selection pill. */
+[role='tablist'].inline-flex.rounded-xl.p-1 > [role='tab'] > .absolute.inset-0 {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.dark [role='tablist'].inline-flex.rounded-xl.p-1 > [role='tab'] > .absolute.inset-0 {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Contrast comes from colour, not weight, so tab widths never shift. */
+[role='tablist'].inline-flex.rounded-xl.p-1 > [role='tab'] > .relative {
+  color: var(--ink-3);
+}
+
+[role='tablist'].inline-flex.rounded-xl.p-1 > [role='tab']:hover > .relative {
+  color: var(--ink-2);
+}
+
+[role='tablist'].inline-flex.rounded-xl.p-1 > [role='tab'][aria-selected='true'] > .relative {
+  color: var(--ink-1);
+}
+
+/* ---------- Reorderable lists (library) ----------
+   Driven by components/common/ReorderableList.tsx. The carried row lifts
+   (`data-lifted`) and follows the pointer without a transition; the other
+   rows slide out of its way on the transition below; on release it glides
+   into the gap (`data-settling`). No accent colours: lift = shadow. */
+.reorder-row {
+  position: relative;
+  border-radius: 12px;
+  transition:
+    transform 0.2s cubic-bezier(0.2, 0, 0, 1),
+    box-shadow 0.2s ease-out,
+    background-color 0.2s ease-out;
+}
+
+.reorder-row[data-lifted] {
+  z-index: 2;
+  background: var(--app-content);
+  box-shadow:
+    0 14px 34px -10px rgba(0, 0, 0, 0.3),
+    0 0 0 0.5px var(--app-border);
+  /* Follows the pointer 1:1. */
+  transition:
+    box-shadow 0.2s ease-out,
+    background-color 0.2s ease-out;
+}
+
+.reorder-row[data-settling] {
+  z-index: 2;
+  background: var(--app-content);
+}
+
+.dark .reorder-row[data-lifted] {
+  box-shadow:
+    0 16px 38px -10px rgba(0, 0, 0, 0.65),
+    0 0 0 0.5px rgba(255, 255, 255, 0.12);
+}
+
+/* Rows under the carried one must not light up their hover states. */
+.reorder-list[data-reordering] .reorder-row:not([data-lifted]) {
+  pointer-events: none;
+}
+
+.reorder-handle {
+  display: flex;
+  height: 28px;
+  width: 20px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: var(--ink-4);
+  cursor: grab;
+  /* Long-press text selection / scrolling would fight the drag. */
+  touch-action: none;
+  transition:
+    opacity 0.15s ease-out,
+    color 0.15s ease-out;
+}
+
+.reorder-handle:hover,
+.reorder-row[data-lifted] .reorder-handle {
+  color: var(--ink-2);
+}
+
+.reorder-row[data-lifted] .reorder-handle {
+  cursor: grabbing;
+}
+
+.reorder-handle:focus-visible {
+  outline: 2px solid var(--ink-2);
+  outline-offset: 1px;
+}
+
+/* Mouse: the grip only shows on the row under the pointer (it keeps its
+   space so rows do not shift). Touch keeps it visible. */
+@media (hover: hover) and (pointer: fine) {
+  .reorder-handle {
+    opacity: 0;
+  }
+
+  .reorder-row:hover .reorder-handle,
+  .reorder-row[data-lifted] .reorder-handle,
+  .reorder-handle:focus-visible {
+    opacity: 1;
+  }
+
+  .reorder-list[data-reordering] .reorder-row:not([data-lifted]) .reorder-handle {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reorder-row,
+  .reorder-row[data-lifted] {
+    transition: none;
+  }
+}
+
+/* ---------- Player bar: neutral (Apple Music) sliders ----------
+   The seek and volume lines of the bottom bar are plain ink: no accent, no
+   cover tint, no gradient or glow, so they never compete with the artwork.
+   Placed after every slider rule so it wins at equal specificity. */
+.player-glass:not(.player-glass--immersive) .seek-slider,
+.player-volume-neutral .volume-slider {
+  --slider-fill: rgba(0, 0, 0, 0.72);
+  --slider-fill-end: var(--slider-fill);
+  --slider-fill-hover: rgba(0, 0, 0, 0.86);
+  --slider-buffer: rgba(0, 0, 0, 0.16);
+  --slider-track: rgba(0, 0, 0, 0.1);
+  --player-track: rgba(0, 0, 0, 0.1);
+  --player-track-hover: rgba(0, 0, 0, 0.14);
+  --slider-focus-ring: 0 0 0 3px rgba(0, 0, 0, 0.18);
+}
+
+.dark .player-glass:not(.player-glass--immersive) .seek-slider,
+.dark .player-volume-neutral .volume-slider {
+  --slider-fill: rgba(255, 255, 255, 0.82);
+  --slider-fill-end: var(--slider-fill);
+  --slider-fill-hover: rgba(255, 255, 255, 0.95);
+  --slider-buffer: rgba(255, 255, 255, 0.26);
+  --slider-track: rgba(255, 255, 255, 0.16);
+  --player-track: rgba(255, 255, 255, 0.16);
+  --player-track-hover: rgba(255, 255, 255, 0.22);
+  --slider-focus-ring: 0 0 0 3px rgba(255, 255, 255, 0.3);
+}
+
+.player-glass:not(.player-glass--immersive) .seek-slider__track {
+  background: var(--player-track);
+}
+
+.player-glass:not(.player-glass--immersive) .seek-slider:hover .seek-slider__track {
+  background: var(--player-track-hover);
+}
+
+.player-glass:not(.player-glass--immersive) .seek-slider__fill {
+  background: var(--slider-fill);
+  box-shadow: none;
+}
+
+/* Scrubbing only thickens the line and darkens it a touch; still no colour. */
+.player-glass:not(.player-glass--immersive) .seek-slider:hover .seek-slider__fill,
+.player-glass:not(.player-glass--immersive)
+  .seek-slider:has(.seek-slider__thumb.is-dragging)
+  .seek-slider__fill {
+  background: var(--slider-fill-hover);
+}
+
+.player-volume-neutral .volume-slider__fill {
+  background: var(--slider-fill);
 }
 
 /* ---------- Video.js 10 player skin ---------- */
@@ -7458,18 +7792,22 @@ input[type='search']::-webkit-search-decoration {
     color: var(--ink-3);
   }
 
-  /* Filter chips: categories, areas, types. View switches use segmented tabs. */
+  /* Filter chips: categories, areas, types. View switches use segmented tabs.
+     Apple Music style: unselected options are plain text (a soft fill on
+     hover), the selected one is a solid neutral pill, so several filter
+     rows stay readable without an accent colour competing with the covers. */
   .chip {
     display: inline-flex;
     flex-shrink: 0;
     align-items: center;
     height: 28px;
     padding: 0 12px;
-    border: 1px solid var(--app-border);
+    border: 0;
     border-radius: 9999px;
-    background: var(--app-chip);
-    color: var(--ink-2);
+    background: transparent;
+    color: var(--ink-3);
     font-size: 12px;
+    font-weight: 500;
     white-space: nowrap;
     transition:
       background-color 0.15s ease,
@@ -7481,11 +7819,21 @@ input[type='search']::-webkit-search-decoration {
     color: var(--ink-1);
   }
 
+  .chip:focus-visible {
+    outline: 2px solid var(--ink-2);
+    outline-offset: 2px;
+  }
+
   .chip--selected,
   .chip--selected:hover {
-    border-color: transparent;
-    background: var(--apple-blue);
+    background: #1d1d1f;
     color: #ffffff;
+  }
+
+  .dark .chip--selected,
+  .dark .chip--selected:hover {
+    background: #f5f5f7;
+    color: #1d1d1f;
   }
 
   /* Grouped rows inside a card: a fill, never a second border. */

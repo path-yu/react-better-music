@@ -33,6 +33,7 @@ import {
 } from '../../lib/menuSurface'
 import { LyricsPanel } from './LyricsPanel'
 import { EAT_QUEUE_MIN_SONGS, EatThisQueue } from './EatThisQueue'
+import { useQueueReorder } from './useQueueReorder'
 import { LyricStage } from './LyricStage'
 import { SimilarSongsPanel } from './SimilarSongsPanel'
 import AmbientBackground from './AmbientBackground'
@@ -64,7 +65,6 @@ import {
   FALLBACK_PALETTE,
   extractPalette,
   hexToRgb,
-  withAlpha,
   type Palette,
 } from '../../lib/color'
 import { resizedImageUrl } from '../../lib/image'
@@ -105,6 +105,8 @@ function formatCommentCount(value: number, locale: string) {
 
 const SONG_TILE_MIN = 112
 const SONG_TILE_GAP = 14
+/** Fixed height of one row in the queue list view (virtualized). */
+const QUEUE_ROW_SIZE = 58
 
 /** The player-bar cover and Now Playing share the same window coordinate space. */
 function coverInset(source: Element, overlay: HTMLElement, radius: number) {
@@ -228,16 +230,6 @@ export function NowPlaying() {
   // first row stays crisp while the covers no longer get sliced by the search
   // row above.
   const [queueScrolled, setQueueScrolled] = useState(false)
-  const [draggedQueueIndex, setDraggedQueueIndex] = useState<number | null>(
-    null,
-  )
-  const [dragOverQueueIndex, setDragOverQueueIndex] = useState<number | null>(
-    null,
-  )
-  const [queueDropPosition, setQueueDropPosition] = useState<'before' | 'after'>(
-    'before',
-  )
-  const justDraggedRef = useRef(false)
   const [palette, setPalette] = useState<Palette>(FALLBACK_PALETTE)
   const [videoLoading, setVideoLoading] = useState(false)
   const [mvMode, setMvMode] = useState(false)
@@ -631,12 +623,25 @@ export function NowPlaying() {
     estimateSize: () => queueRowHeight,
     overscan: 4,
   })
+  // Drag / keyboard reordering of the list view (see useQueueReorder.ts).
+  // A filtered queue shows a subset, so positions are not queue indices then.
+  const queueReorder = useQueueReorder({
+    scrollRef: queueListRef,
+    rowSize: QUEUE_ROW_SIZE,
+    count: queue.length,
+    enabled:
+      panel === 'queue' && queueView === 'list' && !queueSearch.trim(),
+    onMove: moveQueueItem,
+    describeMove: (position, total) =>
+      i18n._(msg`已移到第 ${position} 位，共 ${total} 首`),
+  })
   const queueListVirtualizer = useVirtualizer({
     count:
       panel === 'queue' && queueView === 'list' ? queueEntries.length : 0,
     getScrollElement: () => queueListRef.current,
-    estimateSize: () => 58,
+    estimateSize: () => QUEUE_ROW_SIZE,
     overscan: 8,
+    rangeExtractor: queueReorder.rangeExtractor,
   })
 
   useEffect(() => {
@@ -1729,13 +1734,16 @@ export function NowPlaying() {
 
                   {queueView === 'list' ? (
                     <>
+                  <span className="sr-only" aria-live="polite">
+                    {queueReorder.announcement}
+                  </span>
                   <div
                     ref={queueListRef}
                     onScroll={(event) =>
                       setQueueScrolled(event.currentTarget.scrollTop > 2)
                     }
                     className={cn(
-                      'np-queue-scroll min-h-0 flex-1 overflow-y-auto px-2 pb-16 pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+                      'np-queue-list np-queue-scroll min-h-0 flex-1 overflow-y-auto px-2 pb-16 pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
                       queueScrolled && 'is-scrolled',
                     )}
                   >
@@ -1758,7 +1766,6 @@ export function NowPlaying() {
                                 tabIndex={0}
                                 aria-current={active ? 'true' : undefined}
                                 onClick={(event) => {
-                                  if (justDraggedRef.current) return
                                   // Selection controls live inside the row; a
                                   // click there must never fall through to play.
                                   if (
@@ -1777,61 +1784,6 @@ export function NowPlaying() {
                                   }
                                   event.preventDefault()
                                   if (!active) void playAt(originalIndex)
-                                }}
-                                onDragStart={(event) => {
-                                  if (queueSearch.trim()) return
-                                  justDraggedRef.current = true
-                                  setDraggedQueueIndex(originalIndex)
-                                  event.dataTransfer.effectAllowed = 'move'
-                                  event.dataTransfer.setData(
-                                    'text/plain',
-                                    String(originalIndex),
-                                  )
-                                }}
-                                onDragEnd={() => {
-                                  setDraggedQueueIndex(null)
-                                  setDragOverQueueIndex(null)
-                                  window.setTimeout(() => {
-                                    justDraggedRef.current = false
-                                  }, 0)
-                                }}
-                                onDragOver={(event) => {
-                                  if (
-                                    draggedQueueIndex === null ||
-                                    queueSearch.trim()
-                                  ) {
-                                    return
-                                  }
-                                  event.preventDefault()
-                                  event.dataTransfer.dropEffect = 'move'
-                                  const rect =
-                                    event.currentTarget.getBoundingClientRect()
-                                  setQueueDropPosition(
-                                    event.clientY >= rect.top + rect.height / 2
-                                      ? 'after'
-                                      : 'before',
-                                  )
-                                  setDragOverQueueIndex(originalIndex)
-                                }}
-                                onDrop={(event) => {
-                                  event.preventDefault()
-                                  const from =
-                                    draggedQueueIndex ??
-                                    Number(event.dataTransfer.getData('text/plain'))
-                                  setDraggedQueueIndex(null)
-                                  setDragOverQueueIndex(null)
-                                  window.setTimeout(() => {
-                                    justDraggedRef.current = false
-                                  }, 0)
-                                  if (!Number.isInteger(from) || from < 0) {
-                                    return
-                                  }
-                                  let targetIndex =
-                                    originalIndex +
-                                    (queueDropPosition === 'after' ? 1 : 0)
-                                  if (from < targetIndex) targetIndex -= 1
-                                  if (targetIndex === from) return
-                                  moveQueueItem(from, targetIndex)
                                 }}
                                 onPointerDown={(event) => {
                                   if (event.button !== 2) return
@@ -1852,13 +1804,10 @@ export function NowPlaying() {
                                     y: event.clientY,
                                   })
                                 }}
+                                data-queue-pos={row.index}
                                 className={cn(
                                   'np-queue-row group',
                                   active && 'is-current',
-                                  draggedQueueIndex === originalIndex &&
-                                    'is-dragging',
-                                  dragOverQueueIndex === originalIndex &&
-                                    'is-drop-target',
                                 )}
                                 style={{
                                   position: 'absolute',
@@ -1866,45 +1815,31 @@ export function NowPlaying() {
                                   right: 0,
                                   left: 0,
                                   height: `${row.size}px`,
-                                  transform: `translateY(${row.start}px)`,
+                                  // --queue-shift / --queue-scale are written by
+                                  // the reorder hook; React never sets them.
+                                  transform: `translateY(calc(${row.start}px + var(--queue-shift, 0px))) scale(var(--queue-scale, 1))`,
                                   // The current row is a neutral glass pill (CSS):
                                   // tinting it with the cover colour turned it
                                   // into a muddy band on a backdrop already
                                   // painted in that colour.
-                                  backgroundColor:
-                                    !active && dragOverQueueIndex === originalIndex
-                                      ? withAlpha(
-                                          palette.colors[0] ?? '#8e8e93',
-                                          0.06,
-                                        )
-                                      : undefined,
                                 }}
                               >
-                                {dragOverQueueIndex === originalIndex ? (
-                                  <span
-                                    aria-hidden="true"
-                                    className={cn(
-                                      'np-queue-drop-line',
-                                      queueDropPosition === 'after' && 'is-after',
-                                    )}
-                                    style={{
-                                      backgroundColor: withAlpha(
-                                        palette.colors[0] ?? '#8e8e93',
-                                        0.55,
-                                      ),
-                                    }}
-                                  />
-                                ) : null}
-                                <span
-                                  className="np-queue-drag"
-                                  draggable={!queueSearch.trim()}
-                                  onClick={(event) => event.stopPropagation()}
-                                  title={i18n._(msg`拖动排序`)}
-                                  aria-label={i18n._(msg`拖动排序`)}
-                                  role="img"
-                                >
-                                  <GripVertical className="h-4 w-4" />
-                                </span>
+                                {queueSearch.trim() ? (
+                                  // Filtered: reordering a subset is ambiguous.
+                                  <span className="np-queue-drag is-disabled" aria-hidden="true">
+                                    <GripVertical className="h-4 w-4" />
+                                  </span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    {...queueReorder.gripProps(row.index)}
+                                    title={i18n._(msg`拖动排序`)}
+                                    aria-label={i18n._(msg`拖动排序，或按 ↑ ↓ 键移动`)}
+                                    className="np-queue-drag"
+                                  >
+                                    <GripVertical className="h-4 w-4" />
+                                  </button>
+                                )}
                                 <span className="np-queue-row__index">
                                   {active ? (
                                     <span

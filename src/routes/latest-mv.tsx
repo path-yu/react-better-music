@@ -164,11 +164,12 @@ function FilterRow({
 }) {
   const { i18n } = useLingui()
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-4">
       <span className="w-8 shrink-0 text-[11px] font-medium text-ink-4 dark:text-white/35">
         {i18n._(label)}
       </span>
-      <div className="flex flex-wrap gap-1.5">
+      {/* Borderless chips sit closer; the selected pill still reads clearly. */}
+      <div className="flex flex-wrap gap-1">
         {options.map((option) => (
           <button
             key={option}

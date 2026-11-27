@@ -268,7 +268,10 @@ function SonglistsPage() {
                 type="button"
                 aria-label={i18n._(msg`排序歌单`)}
                 title={i18n._(msg`排序歌单`)}
-                className="pressable flex h-8 items-center gap-1.5 rounded-full border border-black/8 px-3 text-[12px] text-ink-3 hover:border-accent/30 hover:text-accent"
+                className={cn(
+                  'neutral-ghost-button pressable flex h-8 items-center gap-1.5 rounded-full px-3 text-[12px]',
+                  sortMenuOpen && 'is-open',
+                )}
               >
                 {sortOrder === 'desc' ? (
                   <ArrowDownWideNarrow className="h-3.5 w-3.5" />
@@ -301,10 +304,8 @@ function SonglistsPage() {
                     setSortMenuOpen(false)
                   }}
                   className={cn(
-                    'flex w-full items-center justify-between rounded-[6px] px-2.5 py-1.5 text-left text-[12px] transition-colors',
-                    sortOrder === value
-                      ? 'bg-accent/10 text-accent'
-                      : 'text-[var(--ink-3)] hover:bg-accent/10 hover:text-[var(--ink-1)]',
+                    'tag-sort-option flex w-full items-center justify-between rounded-[6px] px-2.5 py-1.5 text-left text-[12px] transition-colors',
+                    sortOrder === value && 'is-active',
                   )}
                 >
                   {i18n._(label)}
@@ -318,7 +319,7 @@ function SonglistsPage() {
             onClick={retry}
             aria-label={i18n._(msg`刷新歌单`)}
             title={i18n._(msg`刷新歌单`)}
-            className="pressable flex h-8 w-8 items-center justify-center rounded-full border border-black/8 text-ink-4 hover:border-accent/30 hover:text-accent"
+            className="neutral-ghost-button pressable flex h-8 w-8 items-center justify-center rounded-full"
           >
             <RefreshCw className="h-3.5 w-3.5" />
           </button>
@@ -335,7 +336,7 @@ function SonglistsPage() {
               tagScrollerRef.current?.scrollBy({ left: -260, behavior: 'smooth' })
             }
             className={cn(
-              'pressable flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--app-border-strong)] bg-accent/10 text-[var(--ink-4)] hover:bg-accent/20 hover:text-[var(--ink-1)] max-md:h-9 max-md:w-9',
+              'neutral-ghost-button pressable flex h-7 w-7 shrink-0 items-center justify-center rounded-full max-md:h-9 max-md:w-9',
               !canScrollTagsLeft && 'pointer-events-none opacity-25',
             )}
           >
@@ -368,7 +369,7 @@ function SonglistsPage() {
               tagScrollerRef.current?.scrollBy({ left: 260, behavior: 'smooth' })
             }
             className={cn(
-              'pressable flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--app-border-strong)] bg-accent/10 text-[var(--ink-4)] hover:bg-accent/20 hover:text-[var(--ink-1)] max-md:h-9 max-md:w-9',
+              'neutral-ghost-button pressable flex h-7 w-7 shrink-0 items-center justify-center rounded-full max-md:h-9 max-md:w-9',
               !canScrollTagsRight && 'pointer-events-none opacity-25',
             )}
           >
@@ -379,10 +380,15 @@ function SonglistsPage() {
             <PopoverTrigger asChild>
               <button
                 type="button"
-                className="pressable flex h-7 shrink-0 items-center gap-1 rounded-full border border-[var(--app-border-strong)] bg-accent/10 px-2.5 text-[11px] text-[var(--ink-3)] hover:bg-accent/20 hover:text-[var(--ink-1)]"
+                className={cn(
+                  'neutral-ghost-button pressable flex h-7 shrink-0 items-center gap-1 rounded-full px-2.5 text-[12px]',
+                  tagMenuOpen && 'is-open',
+                )}
               >
                 <Trans>更多</Trans>
-                <ChevronDown className="h-3 w-3" />
+                <ChevronDown
+                  className={cn('h-3 w-3 transition-transform duration-200', tagMenuOpen && 'rotate-180')}
+                />
               </button>
             </PopoverTrigger>
             <PopoverContent

@@ -578,7 +578,7 @@ function PlaylistDetailPage() {
 
       <Tabs value={tab} onValueChange={setTab} className="mt-7">
         <div className="sticky top-0 z-20 flex items-center justify-between gap-4 max-sm:flex-wrap max-sm:gap-2 border-b border-[var(--app-border)] sticky-bar py-2 page-bleed">
-          <TabsList className="border-[var(--app-border)] bg-[var(--app-glass)]">
+          <TabsList>
             <TabsTrigger value="songs">
               <Trans>歌曲列表</Trans>
               <span className="ml-1 text-[11px] text-ink-4">{songs.length}</span>

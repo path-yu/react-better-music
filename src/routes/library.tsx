@@ -16,6 +16,7 @@ import { EmptyState } from '../components/common/EmptyState'
 import { ImageWithFallback } from '../components/common/ImageWithFallback'
 import { ViewToggle } from '../components/common/ViewToggle'
 import { ReorderableList } from '../components/common/ReorderableList'
+import { LOCAL_ORDER_KEYS } from '../lib/localOrder'
 import { PlaylistCard } from '../components/cards/PlaylistCard'
 import { AlbumCard } from '../components/cards/AlbumCard'
 import { useUserStore } from '../store/user'
@@ -575,7 +576,7 @@ function LibraryPage() {
               <PlaylistGrid entries={myPlaylists} />
             ) : (
               <ReorderableList
-                storageKey="library:order:created"
+                storageKey={LOCAL_ORDER_KEYS.created}
                 items={myPlaylists}
                 getId={(entry) => `${entry.kind}-${entry.playlist.id}`}
                 renderItem={(entry) => <PlaylistListRow entry={entry} />}
@@ -594,7 +595,7 @@ function LibraryPage() {
               </div>
             ) : (
               <ReorderableList
-                storageKey="library:order:saved"
+                storageKey={LOCAL_ORDER_KEYS.saved}
                 items={savedPlaylists}
                 getId={(playlist) => String(playlist.id)}
                 renderItem={(playlist) => (
@@ -638,7 +639,7 @@ function LibraryPage() {
               </div>
             ) : (
               <ReorderableList
-                storageKey="library:order:albums"
+                storageKey={LOCAL_ORDER_KEYS.albums}
                 items={albums}
                 getId={(entry) => String(entry.album.id)}
                 renderItem={(entry) => (
