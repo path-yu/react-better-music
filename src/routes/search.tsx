@@ -360,6 +360,12 @@ function SearchPage() {
   const [deepProgress, setDeepProgress] = useState<DeepSearchProgress | null>(null)
   /** The last run went all the way to the end (not stopped, not superseded). */
   const [deepFinished, setDeepFinished] = useState(false)
+  /** NetEase answered 405「操作频繁」 even after retries: results may be partial. */
+  const [deepThrottled, setDeepThrottled] = useState(false)
+  /** Bumped by 重试 to run the fallback again for the same query. */
+  const [deepAttempt, setDeepAttempt] = useState(0)
+  /** Hits found so far by a running fallback (shown as a count, not a list). */
+  const [deepFoundCount, setDeepFoundCount] = useState(0)
   const deepControllerRef = useRef<AbortController | null>(null)
   const deepKeywordRef = useRef('')
   const songsRef = useRef<Song[]>([])
@@ -401,6 +407,7 @@ function SearchPage() {
     setDeepLoading(false)
     setDeepProgress(null)
     setDeepFinished(false)
+    setDeepThrottled(false)
     deepKeywordRef.current = ''
     setAppliedKeyword('')
   }, [keyword])
@@ -540,7 +547,7 @@ function SearchPage() {
     }
     // The run key carries the mode: switching between 歌手 / 专辑 must re-run the
     // fallback for the same query instead of reusing the previous result.
-    const runKey = `${searchMode}:${query}`
+    const runKey = `${searchMode}:${query}:${deepAttempt}`
     if (deepKeywordRef.current === runKey) return
     deepKeywordRef.current = runKey
 
@@ -551,10 +558,16 @@ function SearchPage() {
     setDeepSongs([])
     setDeepProgress(null)
     setDeepFinished(false)
+    setDeepThrottled(false)
+    setDeepFoundCount(0)
     deepSearchSongs(query, controller.signal, searchMode, {
       onProgress: setDeepProgress,
-      // The slow album walks show what they found so far.
-      onPartial: setDeepSongs,
+      // Rendering partial lists re-sorted the rows on every album and made
+      // the page jump; only the count updates while the walk runs.
+      onPartial: (hits) => setDeepFoundCount(hits.length),
+      // The original is often already in this list, under the covers.
+      knownSongs: songsRef.current,
+      onThrottled: () => setDeepThrottled(true),
     })
       .then((hits) => {
         if (controller.signal.aborted) return
@@ -589,16 +602,25 @@ function SearchPage() {
     searchMode,
     refreshToken,
     appliedKeyword,
+    deepAttempt,
   ])
 
   const retry = () => setAttempt((value) => value + 1)
 
-  /** Stop the fallback; whatever it found so far stays on screen. */
+  /** Run the fallback again (after NetEase rate limited the last run). */
+  const retryDeepSearch = () => {
+    deepKeywordRef.current = ''
+    setDeepThrottled(false)
+    setDeepAttempt((value) => value + 1)
+  }
+
+  /** Stop the fallback. */
   const stopDeepSearch = () => {
     deepControllerRef.current?.abort()
     deepControllerRef.current = null
     setDeepLoading(false)
     setDeepProgress(null)
+    setDeepFoundCount(0)
   }
 
   // The fallback's rows are shown in their own section; do not list them a
@@ -608,12 +630,14 @@ function SearchPage() {
     [deepSongs],
   )
   const showDeep = deepEnabled && page === 1
+  // Only once the fallback settled: filtering while it runs made rows of
+  // the main table vanish and reappear.
   const tableSongs = useMemo(
     () =>
-      showDeep && deepIds.size
+      showDeep && !deepLoading && deepIds.size
         ? songs.filter((song) => !deepIds.has(song.id))
         : songs,
-    [showDeep, deepIds, songs],
+    [showDeep, deepLoading, deepIds, songs],
   )
   const deepSources = useMemo(
     () => [...new Set(deepSongs.map((hit) => hit.source))],
@@ -774,34 +798,56 @@ function SearchPage() {
             />
           ) : (
             <>
-              {showDeep && deepLoading ? (
+              {/* One fixed-height status line for the whole run (progress, then
+                  a notice), so the table below never shifts while it works. */}
+              {showDeep && (deepLoading || (deepFinished && (deepThrottled || !deepSongs.length))) ? (
                 <div
                   aria-live="polite"
-                  className="mb-3 flex items-center gap-2 text-[11px] text-ink-4"
+                  className="mb-3 flex h-[22px] items-center gap-2 text-[11px] text-ink-4"
                 >
-                  <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
-                  <span className="min-w-0 truncate">
-                    {deepProgressLabel(deepProgress, i18n)}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={stopDeepSearch}
-                    className="neutral-ghost-button pressable shrink-0 rounded-full px-2 py-0.5 text-[11px]"
-                  >
-                    <Trans>停止</Trans>
-                  </button>
+                  {deepLoading ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+                      <span className="min-w-0 truncate">
+                        {deepProgressLabel(deepProgress, i18n)}
+                        {deepFoundCount ? i18n._(msg`，已找到 ${deepFoundCount} 首`) : ''}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={stopDeepSearch}
+                        className="neutral-ghost-button pressable shrink-0 rounded-full px-2 py-0.5 text-[11px]"
+                      >
+                        <Trans>停止</Trans>
+                      </button>
+                    </>
+                  ) : deepThrottled ? (
+                    <>
+                      <span className="min-w-0 truncate">
+                        {deepSongs.length ? (
+                          <Trans>网易云接口繁忙（操作频繁），部分来源没有查完，结果可能不完整</Trans>
+                        ) : (
+                          <Trans>网易云接口繁忙（操作频繁），深度搜索没有完成</Trans>
+                        )}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={retryDeepSearch}
+                        className="neutral-ghost-button pressable shrink-0 rounded-full px-2 py-0.5 text-[11px]"
+                      >
+                        <Trans>重试</Trans>
+                      </button>
+                    </>
+                  ) : (
+                    <span>
+                      <Trans>深度搜索没有找到其他版本</Trans>
+                    </span>
+                  )}
                 </div>
-              ) : null}
-
-              {showDeep && deepFinished && !deepLoading && !deepSongs.length ? (
-                <p className="mb-3 text-[11px] text-ink-4">
-                  <Trans>深度搜索没有找到其他版本</Trans>
-                </p>
               ) : null}
 
               {/* Above the main table on purpose: with 30 rows per page the
                   fallback results would otherwise sit far below the fold. */}
-              {showDeep && deepSongs.length ? (
+              {showDeep && !deepLoading && deepSongs.length ? (
                 <section className="mb-6">
                   <div className="mb-2 flex items-baseline gap-2">
                     <h2 className="section-title">{deepSectionTitle(deepSources, i18n)}</h2>

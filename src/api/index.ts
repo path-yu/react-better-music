@@ -1110,6 +1110,13 @@ export interface DeepSearchOptions {
   onProgress?: (progress: DeepSearchProgress) => void
   /** Best hits so far, while a slow album walk is still running. */
   onPartial?: (hits: DeepSearchHit[]) => void
+  /**
+   * Songs the normal search already returned. The original is often among
+   * them, buried under covers; checking them first costs no request at all.
+   */
+  knownSongs?: Song[]
+  /** Some NetEase lookups stayed rate limited (405); results may be incomplete. */
+  onThrottled?: () => void
 }
 
 interface DeepReport {
@@ -1132,11 +1139,6 @@ interface DeepReport {
 const DEEP_SEARCH_ALBUM_LIMIT = 16
 const DEEP_SEARCH_TTL = 5 * 60_000
 const DEEP_SEARCH_RETRY_DELAY = 600
-const DEEP_SEARCH_RATE_LIMIT_COOLDOWN = 2_000
-/** Spacing between real `/album` requests; wider for a minute after a 405. */
-const DEEP_ALBUM_GAP = 200
-const DEEP_ALBUM_GAP_THROTTLED = 450
-const DEEP_ALBUM_THROTTLE_WINDOW = 60_000
 const DEEP_ALBUM_WORKERS = 3
 const DEEP_MEMO_LIMIT = 300
 const DEEP_RESULT_LIMIT = 20
@@ -1194,47 +1196,120 @@ function within<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
   ])
 }
 
+/* --------------------------- NetEase rate limit -------------------------- */
+
+/*
+ * NetEase answers bursts with 405「操作频繁，请稍候再试」. Every NetEase call
+ * the fallback makes (album / artist / song search, album and song details)
+ * goes through one schedule: requests are spaced out, a 405 pauses all of
+ * them and widens the spacing for a minute, and the call is retried with
+ * backoff instead of silently turning into "nothing found".
+ */
+const NETEASE_GAP = 300
+const NETEASE_GAP_THROTTLED = 1_000
+const NETEASE_THROTTLE_WINDOW = 60_000
+const NETEASE_COOLDOWN = 4_000
+/** The normal search request just went out; give NetEase a breath first. */
+const NETEASE_START_DELAY = 400
+const NETEASE_RETRY_DELAYS = [1_500, 3_500]
+
+let neteaseNextSlot = 0
+let neteaseThrottledUntil = 0
+/** Calls still throttled after every retry, so a run can say it is incomplete. */
+let neteaseThrottleFailures = 0
+
+function isThrottled(error: unknown) {
+  const value = error as { status?: number; payload?: { code?: number } } | null
+  return value?.status === 405 || value?.payload?.code === 405
+}
+
+/** Some endpoints answer HTTP 200 with `{ code: 405 }` in the body. */
+function isThrottledPayload(value: unknown) {
+  return Boolean(
+    value && typeof value === 'object' && (value as { code?: unknown }).code === 405,
+  )
+}
+
+function abortReason() {
+  return new DOMException('Aborted', 'AbortError')
+}
+
+/** Reserve the next slot synchronously, so parallel callers stay spaced out. */
+async function neteaseSlot(signal?: AbortSignal) {
+  const now = Date.now()
+  const gap = now < neteaseThrottledUntil ? NETEASE_GAP_THROTTLED : NETEASE_GAP
+  const at = Math.max(now, neteaseNextSlot)
+  neteaseNextSlot = at + gap
+  if (at > now) await sleep(at - now)
+  return !signal?.aborted
+}
+
+function markThrottled() {
+  const now = Date.now()
+  neteaseThrottledUntil = now + NETEASE_THROTTLE_WINDOW
+  neteaseNextSlot = Math.max(neteaseNextSlot, now + NETEASE_COOLDOWN)
+}
+
+async function neteaseCall<T>(request: () => Promise<T>, signal?: AbortSignal): Promise<T> {
+  for (let attempt = 0; ; attempt += 1) {
+    if (!(await neteaseSlot(signal))) throw abortReason()
+    try {
+      const value = await request()
+      if (isThrottledPayload(value)) {
+        throw Object.assign(new Error('操作频繁，请稍候再试'), { status: 405 })
+      }
+      return value
+    } catch (error) {
+      if (signal?.aborted || !isThrottled(error)) throw error
+      markThrottled()
+      if (attempt >= NETEASE_RETRY_DELAYS.length) {
+        neteaseThrottleFailures += 1
+        throw error
+      }
+      await sleep(NETEASE_RETRY_DELAYS[attempt])
+      if (signal?.aborted) throw abortReason()
+    }
+  }
+}
+
+/** NetEase lookups used by the fallback, all through the limiter. */
+function deepSearchArtists(keywords: string, signal?: AbortSignal) {
+  return neteaseCall(() => searchArtists(keywords, signal), signal).catch(
+    () => [] as Awaited<ReturnType<typeof searchArtists>>,
+  )
+}
+
+function deepArtistAlbums(id: number, limit: number, signal?: AbortSignal) {
+  return neteaseCall(() => fetchArtistAlbums(id, limit, 0, signal), signal).catch(
+    () => [] as Awaited<ReturnType<typeof fetchArtistAlbums>>,
+  )
+}
+
+/** Song search for "歌名 歌手": licensed editions credited to that singer. */
+function deepCloudSongs(keywords: string, signal?: AbortSignal) {
+  return neteaseCall(
+    () => searchAll({ keywords, type: '1', limit: 30 }, signal),
+    signal,
+  )
+    .then((result) => result.songs ?? [])
+    .catch(() => [] as Song[])
+}
+
 /* ------------------------- shared `/album` access ------------------------ */
 
-let deepAlbumNextSlot = 0
-let deepAlbumThrottledUntil = 0
 const deepAlbumMemo = new Map<
   number,
   { at: number; promise: Promise<AlbumDetail | null> }
 >()
 
-/**
- * Reserve the next request slot synchronously. Parallel callers each get
- * their own slot, so several workers still reach `/album` evenly spaced (the
- * old shared timestamp let concurrent callers fire together, which `/album`
- * answers with 405).
- */
-async function deepAlbumSlot() {
-  const now = Date.now()
-  const gap =
-    now < deepAlbumThrottledUntil ? DEEP_ALBUM_GAP_THROTTLED : DEEP_ALBUM_GAP
-  const at = Math.max(now, deepAlbumNextSlot)
-  deepAlbumNextSlot = at + gap
-  if (at > now) await sleep(at - now)
-}
-
 async function requestDeepAlbum(id: number) {
   for (let attempt = 0; attempt < 2; attempt += 1) {
-    await deepAlbumSlot()
     try {
-      return await fetchAlbumDetail(id)
+      return await neteaseCall(() => fetchAlbumDetail(id))
     } catch (error) {
-      if ((error as { status?: number }).status === 405) {
-        // Pause every worker, and keep the wider spacing for a while.
-        const now = Date.now()
-        deepAlbumThrottledUntil = now + DEEP_ALBUM_THROTTLE_WINDOW
-        deepAlbumNextSlot = Math.max(
-          deepAlbumNextSlot,
-          now + DEEP_SEARCH_RATE_LIMIT_COOLDOWN,
-        )
-      } else if (attempt === 0) {
-        await sleep(DEEP_SEARCH_RETRY_DELAY)
-      }
+      // Still throttled after the limiter's own retries: give up on this one.
+      if (isThrottled(error)) return null
+      if (attempt === 0) await sleep(DEEP_SEARCH_RETRY_DELAY)
     }
   }
   return null
@@ -1273,8 +1348,12 @@ async function scanDeepAlbums<A extends { id: number }>(
   let cursor = 0
   let done = 0
   let stop = false
+  const failuresAtStart = neteaseThrottleFailures
   const worker = async () => {
     while (!stop && cursor < albums.length && !signal?.aborted) {
+      // NetEase is still rate limiting after the retries: reading the rest
+      // would only queue more 405s. Stop and report what was found.
+      if (neteaseThrottleFailures > failuresAtStart) return
       const album = albums[cursor]
       cursor += 1
       const detail = await orAbort(loadDeepAlbum(album.id), signal, null)
@@ -1529,9 +1608,13 @@ export async function lookupSongIdsByWeb(
 /** Several songs in one `/song/detail` call, rights folded in. */
 async function fetchSongsDetail(ids: number[], signal?: AbortSignal) {
   if (!ids.length) return [] as Song[]
-  const res = await get<{ songs?: Song[]; privileges?: SongPrivilege[] }>(
-    '/song/detail',
-    { ids: ids.join(',') },
+  const res = await neteaseCall(
+    () =>
+      get<{ songs?: Song[]; privileges?: SongPrivilege[] }>(
+        '/song/detail',
+        { ids: ids.join(',') },
+        signal,
+      ),
     signal,
   )
   const privileges = new Map(
@@ -1592,28 +1675,68 @@ function rankWebHits(
     }))
 }
 
-/** `/search` (v1) album lookup: ranks original releases better than cloudsearch. */
+type DeepAlbumRow = { id: number; name: string; size?: number; artist?: { name?: string } }
+
+/**
+ * `/search` (the legacy weapi search) answers 405「操作频繁」 for anonymous
+ * sessions almost every time, even as the first request after a quiet minute,
+ * while `/cloudsearch` keeps working. That 405 is the endpoint refusing, not a
+ * burst: retrying it only paused every other lookup. After one 405 it is
+ * skipped for a while, and it never counts as NetEase-wide throttling.
+ */
+const LEGACY_SEARCH_BLOCK = 10 * 60_000
+let legacySearchBlockedUntil = 0
+
+async function legacyAlbumSearch(keywords: string, limit: number, signal?: AbortSignal) {
+  if (Date.now() < legacySearchBlockedUntil) return [] as DeepAlbumRow[]
+  if (!(await neteaseSlot(signal))) return [] as DeepAlbumRow[]
+  try {
+    const result = await get<{ code?: number; result?: { albums?: DeepAlbumRow[] } }>(
+      '/search',
+      { keywords, type: 10, limit, offset: 0, timestamp: Date.now() },
+      signal,
+    )
+    if (isThrottledPayload(result)) {
+      legacySearchBlockedUntil = Date.now() + LEGACY_SEARCH_BLOCK
+      return [] as DeepAlbumRow[]
+    }
+    return (result?.result?.albums ?? []).filter((album) => album && album.id)
+  } catch (error) {
+    if (isThrottled(error)) legacySearchBlockedUntil = Date.now() + LEGACY_SEARCH_BLOCK
+    return [] as DeepAlbumRow[]
+  }
+}
+
+/**
+ * Album search for the fallback: `/cloudsearch?type=10` (the same endpoint
+ * the page itself uses successfully), and the legacy `/search` only when
+ * cloudsearch returned nothing and the legacy endpoint is not refusing.
+ */
 async function searchAlbumsV1(
   keywords: string,
   signal?: AbortSignal,
   limit = 10,
-): Promise<Array<{ id: number; name: string; size?: number; artist?: { name?: string } }>> {
-  const result = await get<{
-    result?: {
-      albums?: Array<{ id: number; name: string; size?: number; artist?: { name?: string } }>
-    }
-  }>(
-    '/search',
-    { keywords, type: 10, limit, offset: 0, timestamp: Date.now() },
+): Promise<DeepAlbumRow[]> {
+  const cloud = await neteaseCall(
+    () => searchAll({ keywords, type: '10', limit }, signal),
     signal,
-  ).catch(() => null)
-  return (result?.result?.albums ?? []).filter((album) => album && album.id)
+  )
+    .then((result) =>
+      (result.albums ?? [])
+        .filter((album) => album && album.id)
+        .map((album) => ({
+          id: album.id,
+          name: album.name,
+          size: album.size,
+          artist: album.artist ? { name: album.artist.name } : undefined,
+        })),
+    )
+    .catch(() => [] as DeepAlbumRow[])
+  if (cloud.length || signal?.aborted) return cloud
+  return legacyAlbumSearch(keywords, limit, signal)
 }
 
-/**
- * The album endpoint is rate limited too (and sometimes answers 200 with an
- * empty list while throttled); one short pause usually clears it.
- */
+/** An empty album list is sometimes a busy endpoint; one short pause usually clears it. */
 async function searchAlbumsWithRetry(keywords: string, signal?: AbortSignal, limit = 30) {
   const first = await searchAlbumsV1(keywords, signal, limit)
   if (first.length || signal?.aborted) return first
@@ -1651,9 +1774,7 @@ async function detectQueryArtist(
 
   if (tokens.length > 1) {
     const queries = [...new Set([words.join(' '), words[words.length - 1], words[0]])]
-    const lists = await Promise.all(
-      queries.map((query) => searchArtists(query, signal).catch(() => [])),
-    )
+    const lists = await Promise.all(queries.map((query) => deepSearchArtists(query, signal)))
     const artists = new Map<number, { id: number; name: string }>()
     for (const artist of lists.flat()) {
       if (artist?.id && !artists.has(artist.id)) artists.set(artist.id, artist)
@@ -1679,7 +1800,7 @@ async function detectQueryArtist(
   // One word: an artist name glued to the title ("周杰伦一路向北").
   const token = tokens[0]
   if (token.length < 4) return null
-  const artists = (await searchArtists(keyword, signal).catch(() => [])).slice(0, 5)
+  const artists = (await deepSearchArtists(keyword, signal)).slice(0, 5)
   for (const artist of artists) {
     const key = normalizeDeep(artist.name)
     if (key.length < 2 || key === token || token.length - key.length < 2) continue
@@ -1700,9 +1821,10 @@ async function artistCatalogue(
   signal: AbortSignal | undefined,
   report: DeepReport,
 ): Promise<DeepSearchHit[]> {
-  const albums = (
-    await fetchArtistAlbums(artist.id, 24, 0, signal).catch(() => [])
-  ).slice(0, ARTIST_CATALOGUE_ALBUMS)
+  const albums = (await deepArtistAlbums(artist.id, 24, signal)).slice(
+    0,
+    ARTIST_CATALOGUE_ALBUMS,
+  )
   const byAlbum = new Map<number, DeepSearchHit[]>()
   // Album order (newest first), whichever worker finished first.
   const collect = () => {
@@ -1756,9 +1878,7 @@ async function findTitleInArtist(
   const titleTokens = artist.titleTokens
   const titlePhrase = titleTokens.join('')
   if (!titlePhrase) return []
-  const albums = await fetchArtistAlbums(artist.id, ARTIST_TITLE_ALBUMS, 0, signal).catch(
-    () => [],
-  )
+  const albums = await deepArtistAlbums(artist.id, ARTIST_TITLE_ALBUMS, signal)
   const scored = new Map<number, { hit: DeepSearchHit; score: number; exact: boolean }>()
   const rank = () =>
     [...scored.values()]
@@ -1874,20 +1994,8 @@ async function resolveQqAlbums(
   return perCandidate.flat()
 }
 
-/**
- * A bare song title ("彩色的黑") cannot be told apart from its covers by
- * NetEase alone — every upload is titled the same. QQ Music keeps the original
- * release high in its ranking, so read the singer off its exact-title rows
- * (paid originals first) and search NetEase for "歌名 歌手": that surfaces the
- * single or album holding the gray original.
- */
-async function resolveOriginalViaQq(
-  keyword: string,
-  target: string,
-  matches: QqSongMatch[],
-  signal: AbortSignal | undefined,
-): Promise<DeepSearchHit[]> {
-  if (!target || !matches.length) return []
+/** Singers of QQ's exact-title rows, paid (licensed) releases first. */
+function qqSingers(matches: QqSongMatch[], target: string) {
   const rows = matches
     .filter((match) => normalizeDeep(match.name) === target)
     .sort((a, b) => Number(Boolean(b.pay)) - Number(Boolean(a.pay)))
@@ -1899,44 +2007,148 @@ async function resolveOriginalViaQq(
     }
     if (singers.length >= 3) break
   }
-  if (!singers.length) return []
+  return singers
+}
 
-  // Every singer's album search at once; the albums are then read in order.
-  const albumLists = await Promise.all(
-    singers.slice(0, 3).map((singer) => searchAlbumsV1(`${keyword} ${singer}`, signal)),
-  )
-  for (let index = 0; index < albumLists.length; index += 1) {
-    if (signal?.aborted) return []
-    const singer = singers[index]
-    const singerNorm = normalizeDeep(singer)
-    const refs = durationRefs(matches, [target], singer)
-    const found = new Map<number, { hit: DeepSearchHit; score: number }>()
-    await scanDeepAlbums(albumLists[index].slice(0, 3), signal, (detail, album) => {
+/** Levenshtein distance, capped: only "0, 1 or more" matters here. */
+function nameDistance(a: string, b: string, cap = 2) {
+  const x = Array.from(a)
+  const y = Array.from(b)
+  if (Math.abs(x.length - y.length) >= cap) return cap
+  let previous = Array.from({ length: y.length + 1 }, (_, index) => index)
+  for (let i = 1; i <= x.length; i += 1) {
+    const current = [i]
+    let best = i
+    for (let j = 1; j <= y.length; j += 1) {
+      const cost = x[i - 1] === y[j - 1] ? 0 : 1
+      current[j] = Math.min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + cost)
+      best = Math.min(best, current[j])
+    }
+    if (best >= cap) return cap
+    previous = current
+  }
+  return Math.min(cap, previous[y.length])
+}
+
+/**
+ * How well a credit names the singer QQ gave. Platforms spell the same
+ * person differently now and then (QQ「温奕心」, NetEase「温奕芯」), so a
+ * one-character difference in a name of three or more characters counts as
+ * `close` — accepted only when the length also agrees.
+ */
+function creditMatch(song: Song, singerKey: string): 'exact' | 'close' | null {
+  let close = false
+  for (const artist of song.ar) {
+    const key = normalizeDeep(artist.name)
+    if (!key) continue
+    if (key === singerKey || (singerKey.length >= 2 && key.includes(singerKey))) return 'exact'
+    if (
+      Math.min(Array.from(key).length, Array.from(singerKey).length) >= 3 &&
+      nameDistance(key, singerKey) <= 1
+    ) {
+      close = true
+    }
+  }
+  return close ? 'close' : null
+}
+
+/**
+ * The original among `songs`: the title, credited to `singerKey`, not a
+ * live / remix / cover edit, ranked by how close its length is to QQ's.
+ */
+function pickOriginal(
+  songs: Song[],
+  target: string,
+  singerKey: string,
+  refs: number[],
+  tokens: string[],
+): DeepSearchHit[] {
+  const found = new Map<number, { hit: DeepSearchHit; score: number }>()
+  for (const song of songs) {
+    const name = normalizeDeep(song.name)
+    if (!looseTokenMatch(name, target)) continue
+    // The credits must be the singer QQ named; otherwise this is just
+    // another upload with the same title (「一路生花【原唱】」 by someone else).
+    const credit = creditMatch(song, singerKey)
+    if (!credit) continue
+    if (unwantedVersion(song, tokens)) continue
+    const bonus = durationBonus(song, refs)
+    // A near-miss spelling is rejected only when the length clearly disagrees
+    // (30 s or more); the title already has to match.
+    if (credit === 'close' && bonus < 0) continue
+    const score = (name === target ? 10 : 0) + (credit === 'exact' ? 2 : 0) + bonus
+    const existing = found.get(song.id)
+    if (existing && existing.score >= score) continue
+    found.set(song.id, {
+      hit: {
+        song,
+        albumId: song.al?.id ?? 0,
+        albumName: song.al?.name ?? '',
+        source: 'qq',
+      },
+      score,
+    })
+  }
+  return [...found.values()]
+    .sort((a, b) => b.score - a.score || a.hit.song.name.length - b.hit.song.name.length)
+    .map((entry) => entry.hit)
+}
+
+/**
+ * A bare song title ("一路生花") cannot be told apart from its covers by
+ * NetEase alone — every upload is titled the same. QQ Music keeps the original
+ * release high in its ranking, so read the singer off its exact-title rows,
+ * then look for that singer's recording, cheapest first:
+ *   1. the rows the normal search already returned (no request at all),
+ *   2. a song search for "歌名 歌手" (licensed editions),
+ *   3. the albums of "歌名 歌手" (a delisted, gray original).
+ */
+async function resolveOriginalViaQq(
+  keyword: string,
+  target: string,
+  matches: QqSongMatch[],
+  known: Song[],
+  signal: AbortSignal | undefined,
+): Promise<DeepSearchHit[]> {
+  if (!target || !matches.length) return []
+  const singers = qqSingers(matches, target)
+  const tokens = [target]
+  const failuresAtStart = neteaseThrottleFailures
+  for (const singer of singers) {
+    if (signal?.aborted || neteaseThrottleFailures > failuresAtStart) return []
+    const singerKey = normalizeDeep(singer)
+    if (!singerKey) continue
+    const refs = durationRefs(matches, tokens, singer)
+
+    const inList = pickOriginal(known, target, singerKey, refs, tokens)
+    if (inList.length) return inList
+
+    const searched = pickOriginal(
+      await deepCloudSongs(`${keyword} ${singer}`, signal),
+      target,
+      singerKey,
+      refs,
+      tokens,
+    )
+    if (searched.length) return searched
+    if (signal?.aborted || neteaseThrottleFailures > failuresAtStart) return []
+
+    const albums = (await searchAlbumsV1(`${keyword} ${singer}`, signal)).slice(0, 3)
+    const albumSongs: Song[] = []
+    const albumOf = new Map<number, { id: number; name: string }>()
+    await scanDeepAlbums(albums, signal, (detail, album) => {
       for (const song of detail.songs ?? []) {
-        const name = normalizeDeep(song.name)
-        if (!looseTokenMatch(name, target)) continue
-        // The credits must be the singer QQ named; otherwise this is just
-        // another upload with the same title.
-        if (!song.ar.some((artist) => normalizeDeep(artist.name).includes(singerNorm))) continue
-        const score =
-          (name === target ? 10 : 0) +
-          durationBonus(song, refs) -
-          (unwantedVersion(song, [target]) ? 6 : 0)
-        const existing = found.get(song.id)
-        if (existing && existing.score >= score) continue
-        found.set(song.id, {
-          hit: { song, albumId: album.id, albumName: detail.name || album.name, source: 'qq' },
-          score,
-        })
+        albumSongs.push(song)
+        albumOf.set(song.id, { id: album.id, name: detail.name || album.name })
       }
+    })
+    const fromAlbums = pickOriginal(albumSongs, target, singerKey, refs, tokens).map((hit) => {
+      const album = albumOf.get(hit.song.id)
+      return album ? { ...hit, albumId: album.id, albumName: album.name } : hit
     })
     // One singer with a real hit is enough; later QQ rows are usually live or
     // cover versions of the same title.
-    if (found.size) {
-      return [...found.values()]
-        .sort((a, b) => b.score - a.score || a.hit.song.name.length - b.hit.song.name.length)
-        .map((entry) => entry.hit)
-    }
+    if (fromAlbums.length) return fromAlbums
   }
   return []
 }
@@ -1963,7 +2175,7 @@ async function deepSearchByAlbum(
   const [lists, artists] = await Promise.all([
     Promise.all([...new Set([words.join(' '), ...words])].map((query) => searchAlbumsV1(query, signal))),
     albumToken
-      ? searchArtists(words[words.length - 1] ?? albumToken, signal).catch(() => [])
+      ? deepSearchArtists(words[words.length - 1] ?? albumToken, signal)
       : Promise.resolve([] as Awaited<ReturnType<typeof searchArtists>>),
   ])
   const albums = new Map<number, { id: number; name: string; size?: number }>()
@@ -1986,7 +2198,7 @@ async function deepSearchByAlbum(
   // it hides gray songs, but the artist page still lists them.
   const artist = artists.find((item) => normalizeDeep(item.name) === albumToken)
   const artistAlbums = artist
-    ? (await fetchArtistAlbums(artist.id, 24, 0, signal).catch(() => [])).slice(0, 24)
+    ? (await deepArtistAlbums(artist.id, 24, signal)).slice(0, 24)
     : []
 
   const queue: Array<{ id: number; name: string; fromArtist: boolean }> = []
@@ -2101,35 +2313,53 @@ export async function deepSearchSongs(
       if (!signal?.aborted && hits.length) options.onPartial?.(hits)
     },
   }
+  const known = options.knownSongs ?? []
+  const throttleFailuresAtStart = neteaseThrottleFailures
   const finish = (hits: DeepSearchHit[]) => {
     if (signal?.aborted) return []
-    // Only real answers are cached: an empty list is often a throttled
-    // provider, and caching it hid the song for five minutes.
-    if (hits.length) remember(deepSearchCache, cacheKey, { at: Date.now(), hits })
+    const throttled = neteaseThrottleFailures > throttleFailuresAtStart
+    if (throttled) options.onThrottled?.()
+    // Only complete answers are cached: an empty or throttled run is often a
+    // busy provider, and caching it hid the song for five minutes.
+    if (hits.length && !throttled) {
+      remember(deepSearchCache, cacheKey, { at: Date.now(), hits })
+    }
     return hits
   }
 
-  // Independent lookups start together; the stages below await them in the
-  // same priority order as before, so a fast answer is never held up by a
-  // slow provider it does not need.
+  // The page's own song search has just hit NetEase: start the fallback's
+  // NetEase calls a moment later instead of in the same burst.
+  neteaseNextSlot = Math.max(neteaseNextSlot, Date.now() + NETEASE_START_DELAY)
+
+  // QQ and the web lookup do not touch NetEase, so they start right away and
+  // run alongside everything else. NetEase lookups are issued only by the
+  // stage that needs them, through the limiter.
   const qq = qqMatches(keyword)
   const web = webCandidates(keyword, signal).catch(() => [] as Song[])
-  const artistGuess = detectQueryArtist(keyword, tokens, signal).catch(() => null)
-  let albumSearch: Promise<Awaited<ReturnType<typeof searchAlbumsV1>>> | null = null
-  const albumList = () => (albumSearch ??= searchAlbumsWithRetry(keyword, signal, 30))
-  if (mode === 'artist') void albumList()
+  // A single word only needs the artist search when the title path fails
+  // ("周杰伦一路向北"); multi-word queries need it straight away.
+  let artistGuessPromise: Promise<QueryArtist | null> | null = null
+  const artistGuess = () =>
+    (artistGuessPromise ??= detectQueryArtist(keyword, tokens, signal).catch(() => null))
+  if (tokens.length > 1) void artistGuess()
+  const albumList = () => searchAlbumsWithRetry(keyword, signal, 30)
 
   // 1. A bare title: QQ's ranking still knows which singer released it.
   if (tokens.length === 1) {
     report.progress({ stage: 'qq' })
     const matches = await orAbort(within(qq, QQ_FIRST_WAIT, []), signal, [])
-    const hits = await resolveOriginalViaQq(keyword, tokens[0], matches, signal)
+    const hits = await resolveOriginalViaQq(keyword, tokens[0], matches, known, signal)
     if (signal?.aborted) return []
     if (hits.length) return finish(hits)
   }
 
+  // Every later stage costs NetEase requests. Once NetEase gave up on one
+  // even after retries, more requests only queue more 405s: return what we
+  // have (the page offers 重试) instead of spinning for half a minute.
+  const throttledNow = () => neteaseThrottleFailures > throttleFailuresAtStart
+
   // 2. Album mode: the trailing words name the release, so read track lists.
-  if (mode === 'album') {
+  if (mode === 'album' && !throttledNow()) {
     report.progress({ stage: 'albums' })
     const refs = durationRefs(
       await orAbort(within(qq, QQ_HINT_WAIT, []), signal, []),
@@ -2140,8 +2370,10 @@ export async function deepSearchSongs(
     if (hits.length) return finish(hits)
   }
 
+  if (throttledNow()) return finish([])
+
   // 3. The query names an artist.
-  const guess = await orAbort(artistGuess, signal, null)
+  const guess = await orAbort(artistGuess(), signal, null)
   // "周杰伦一路向北" is matched below as "一路向北 周杰伦".
   const effective = guess && !guess.whole ? [...guess.titleTokens, guess.key] : tokens
   const titleTokens = guess && !guess.whole ? guess.titleTokens : tokens
@@ -2153,10 +2385,26 @@ export async function deepSearchSongs(
   } else if (guess) {
     // The web lookup (already running) often names the original with the
     // right credits in one request; only walk the discography when it did not.
-    report.progress({ stage: 'web' })
     const refs = durationRefs(await orAbort(within(qq, QQ_HINT_WAIT, []), signal, []), titleTokens)
-    const webHits = rankWebHits(await orAbort(web, signal, []), effective, refs, guess.key)
     const titlePhrase = guess.titleTokens.join('')
+    // The normal search often already holds the credited original.
+    const inList = known
+      .filter(
+        (song) =>
+          normalizeDeep(song.name) === titlePhrase &&
+          song.ar.some((item) => normalizeDeep(item.name) === guess.key) &&
+          !unwantedVersion(song, effective),
+      )
+      .sort((a, b) => durationBonus(b, refs) - durationBonus(a, refs))
+      .map((song) => ({
+        song,
+        albumId: song.al?.id ?? 0,
+        albumName: song.al?.name ?? '',
+        source: 'artist' as const,
+      }))
+    if (inList.length) return finish(inList)
+    report.progress({ stage: 'web' })
+    const webHits = rankWebHits(await orAbort(web, signal, []), effective, refs, guess.key)
     const credited = webHits.some(
       (hit) =>
         normalizeDeep(hit.song.name) === titlePhrase &&
@@ -2176,6 +2424,8 @@ export async function deepSearchSongs(
   const webHits = rankWebHits(await orAbort(web, signal, []), effective, refs)
   if (signal?.aborted) return []
   if (webHits.length) return finish(webHits)
+
+  if (throttledNow()) return finish([])
 
   // 5. Scan albums: QQ's release albums first, then NetEase's v1 album search
   // (which ranks the original album of a gray track higher than cloudsearch).
