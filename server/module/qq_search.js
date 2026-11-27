@@ -43,6 +43,20 @@ async function requestOnce(keyword, limit, page, referer) {
   return Array.isArray(list) ? list : null
 }
 
+/**
+ * QQ's `pay` is an object on this endpoint ({ payplay, paydownload, payinfo,
+ * payalbum, … }), so `Number(song.pay)` was always 0 and the "paid original"
+ * signal never reached the renderer. Any non-zero pay flag marks the paid
+ * (licensed) release rather than a free re-upload.
+ */
+function paidFlag(pay) {
+  if (pay && typeof pay === 'object') {
+    const flags = ['payplay', 'paydownload', 'payinfo', 'payalbum', 'payalbumprice', 'paytrackprice']
+    return flags.some((key) => Number(pay[key]) > 0) ? 1 : 0
+  }
+  return Number(pay) > 0 ? 1 : 0
+}
+
 module.exports = async (query) => {
   const keyword =
     typeof query.keyword === 'string' ? query.keyword.trim() : ''
@@ -88,7 +102,7 @@ module.exports = async (query) => {
     // row is the paid original rather than a free re-upload.
     songmid: song.songmid || '',
     albummid: song.albummid || '',
-    pay: Number(song.pay) || 0,
+    pay: paidFlag(song.pay),
   }))
 
   return { status: 200, body: { code: 200, data: { songs } } }

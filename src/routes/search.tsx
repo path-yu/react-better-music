@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
+import type { I18n, MessageDescriptor } from '@lingui/core'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { Disc3, ListMusic, Search, Users } from 'lucide-react'
+import { Disc3, ListMusic, Loader2, Search, Users } from 'lucide-react'
 import { Skeleton, Tabs, TabsContent, TabsList, TabsTrigger } from '@pikoloo/darwin-ui'
 import { ImageWithFallback } from '../components/common/ImageWithFallback'
 import { SearchBox } from '../components/layout/SearchBox'
@@ -14,7 +15,13 @@ import { SongTable } from '../components/songs/SongTable'
 import { PlayAllButton } from '../components/songs/PlayAllButton'
 import { UserCard } from '../components/user/UserCard'
 import { VideoCard } from '../components/video/VideoCard'
-import { deepSearchSongs, searchAll, type DeepSearchHit } from '../api'
+import {
+  deepSearchSongs,
+  searchAll,
+  type DeepSearchHit,
+  type DeepSearchProgress,
+  type DeepSearchSource,
+} from '../api'
 import { formatNumber } from '../lib/format'
 import {
   cacheSearchResult,
@@ -89,6 +96,59 @@ function queryTokens(keyword: string) {
     .split(/\s+/)
     .map(normalizeQuery)
     .filter(Boolean)
+}
+
+type I18nLike = Pick<I18n, '_' | 'locale'>
+
+const DEEP_SOURCE_LABELS: Record<DeepSearchSource, MessageDescriptor> = {
+  qq: msg`QQ 音乐的原唱信息`,
+  artist: msg`歌手的专辑`,
+  web: msg`网页检索`,
+  album: msg`相关专辑`,
+}
+
+function deepProgressLabel(progress: DeepSearchProgress | null, i18n: I18nLike) {
+  if (!progress) return i18n._(msg`正在查找原曲…`)
+  const count =
+    progress.total && progress.total > 0 ? `（${progress.done ?? 0}/${progress.total}）` : ''
+  switch (progress.stage) {
+    case 'qq':
+      return i18n._(msg`正在查询 QQ 音乐的原唱信息…`)
+    case 'web':
+      return i18n._(msg`正在检索网页上的歌曲页面…`)
+    case 'artist': {
+      const artist = progress.artist ?? ''
+      return `${i18n._(msg`正在查看 ${artist} 的专辑…`)}${count}`
+    }
+    default:
+      return `${i18n._(msg`正在扫描相关专辑…`)}${count}`
+  }
+}
+
+/** Section title named after where the rows came from. */
+function deepSectionTitle(sources: DeepSearchSource[], i18n: I18nLike) {
+  if (sources.length !== 1) return i18n._(msg`可能的原曲`)
+  switch (sources[0]) {
+    case 'artist':
+      return i18n._(msg`来自歌手的专辑`)
+    case 'web':
+      return i18n._(msg`网页检索到的原曲`)
+    case 'qq':
+      return i18n._(msg`按原唱信息找到`)
+    default:
+      return i18n._(msg`来自相关专辑`)
+  }
+}
+
+function deepSectionNote(sources: DeepSearchSource[], i18n: I18nLike) {
+  const labels = sources.map((source) => i18n._(DEEP_SOURCE_LABELS[source]))
+  let list = labels.join('、')
+  try {
+    list = new Intl.ListFormat(i18n.locale || undefined, { type: 'conjunction' }).format(labels)
+  } catch {
+    // Older runtimes: the plain join above.
+  }
+  return i18n._(msg`通过${list}找到，部分歌曲已下架，仍可通过换源播放`)
 }
 
 function songPageSize(keyword: string) {
@@ -296,6 +356,11 @@ function SearchPage() {
   const searchMode = useSearchStore((state) => state.searchMode)
   const [deepSongs, setDeepSongs] = useState<DeepSearchHit[]>([])
   const [deepLoading, setDeepLoading] = useState(false)
+  // What the fallback is doing (stage / albums read), for the progress line.
+  const [deepProgress, setDeepProgress] = useState<DeepSearchProgress | null>(null)
+  /** The last run went all the way to the end (not stopped, not superseded). */
+  const [deepFinished, setDeepFinished] = useState(false)
+  const deepControllerRef = useRef<AbortController | null>(null)
   const deepKeywordRef = useRef('')
   const songsRef = useRef<Song[]>([])
   /** Keyword whose song list has actually been applied to state. */
@@ -334,6 +399,8 @@ function SearchPage() {
     setFailed(false)
     setDeepSongs([])
     setDeepLoading(false)
+    setDeepProgress(null)
+    setDeepFinished(false)
     deepKeywordRef.current = ''
     setAppliedKeyword('')
   }, [keyword])
@@ -449,6 +516,8 @@ function SearchPage() {
     if (!deepEnabled) {
       setDeepSongs([])
       setDeepLoading(false)
+      setDeepProgress(null)
+      setDeepFinished(false)
       deepKeywordRef.current = ''
       return
     }
@@ -465,6 +534,7 @@ function SearchPage() {
     if (appliedKeyword !== query) return
     if (hasDirectMatch(songsRef.current, query, searchMode)) {
       setDeepSongs([])
+      setDeepFinished(false)
       deepKeywordRef.current = ''
       return
     }
@@ -475,23 +545,34 @@ function SearchPage() {
     deepKeywordRef.current = runKey
 
     const controller = new AbortController()
+    deepControllerRef.current = controller
     const startedWith = runKey
     setDeepLoading(true)
     setDeepSongs([])
-    deepSearchSongs(query, controller.signal, searchMode)
+    setDeepProgress(null)
+    setDeepFinished(false)
+    deepSearchSongs(query, controller.signal, searchMode, {
+      onProgress: setDeepProgress,
+      // The slow album walks show what they found so far.
+      onPartial: setDeepSongs,
+    })
       .then((hits) => {
         if (controller.signal.aborted) return
-        // Keep every hit, including rows the song index already returned: the
-        // merged list below moves them to the top (that is the whole point —
-        // the original is usually on page 10 of the cover results, not on page
-        // one). Duplicates are removed once, when merging.
+        // Keep every hit, including rows the song index already returned: they
+        // are shown here, at the top, and left out of the main table below
+        // (the original is usually on page 10 of the cover results).
         setDeepSongs(hits)
+        setDeepFinished(true)
       })
       .catch(() => undefined)
       .finally(() => {
         // Even after an abort the spinner must stop; a new run for another
         // keyword will set it again.
-        if (deepKeywordRef.current === startedWith) setDeepLoading(false)
+        if (deepKeywordRef.current === startedWith) {
+          setDeepLoading(false)
+          setDeepProgress(null)
+        }
+        if (deepControllerRef.current === controller) deepControllerRef.current = null
       })
     return () => {
       controller.abort()
@@ -511,6 +592,34 @@ function SearchPage() {
   ])
 
   const retry = () => setAttempt((value) => value + 1)
+
+  /** Stop the fallback; whatever it found so far stays on screen. */
+  const stopDeepSearch = () => {
+    deepControllerRef.current?.abort()
+    deepControllerRef.current = null
+    setDeepLoading(false)
+    setDeepProgress(null)
+  }
+
+  // The fallback's rows are shown in their own section; do not list them a
+  // second time in the main table.
+  const deepIds = useMemo(
+    () => new Set(deepSongs.map((hit) => hit.song.id)),
+    [deepSongs],
+  )
+  const showDeep = deepEnabled && page === 1
+  const tableSongs = useMemo(
+    () =>
+      showDeep && deepIds.size
+        ? songs.filter((song) => !deepIds.has(song.id))
+        : songs,
+    [showDeep, deepIds, songs],
+  )
+  const deepSources = useMemo(
+    () => [...new Set(deepSongs.map((hit) => hit.source))],
+    [deepSongs],
+  )
+  const deepSongList = useMemo(() => deepSongs.map((hit) => hit.song), [deepSongs])
 
   const changeTab = (value: string) => {
     void navigate({
@@ -665,30 +774,47 @@ function SearchPage() {
             />
           ) : (
             <>
-              {deepEnabled && page === 1 && deepLoading ? (
+              {showDeep && deepLoading ? (
+                <div
+                  aria-live="polite"
+                  className="mb-3 flex items-center gap-2 text-[11px] text-ink-4"
+                >
+                  <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+                  <span className="min-w-0 truncate">
+                    {deepProgressLabel(deepProgress, i18n)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={stopDeepSearch}
+                    className="neutral-ghost-button pressable shrink-0 rounded-full px-2 py-0.5 text-[11px]"
+                  >
+                    <Trans>停止</Trans>
+                  </button>
+                </div>
+              ) : null}
+
+              {showDeep && deepFinished && !deepLoading && !deepSongs.length ? (
                 <p className="mb-3 text-[11px] text-ink-4">
-                  <Trans>正在查找原曲…</Trans>
+                  <Trans>深度搜索没有找到其他版本</Trans>
                 </p>
               ) : null}
 
               {/* Above the main table on purpose: with 30 rows per page the
                   fallback results would otherwise sit far below the fold. */}
-              {deepEnabled && page === 1 && !deepLoading && deepSongs.length ? (
+              {showDeep && deepSongs.length ? (
                 <section className="mb-6">
                   <div className="mb-2 flex items-baseline gap-2">
-                    <h2 className="section-title">
-                      <Trans>来自相关专辑</Trans>
-                    </h2>
+                    <h2 className="section-title">{deepSectionTitle(deepSources, i18n)}</h2>
                     <span className="text-[11px] tabular-nums text-ink-4">
                       {deepSongs.length}
                     </span>
                   </div>
                   <p className="mb-3 text-[11px] leading-relaxed text-ink-4">
-                    <Trans>这些歌曲来自相关专辑（部分已下架），仍可通过换源播放</Trans>
+                    {deepSectionNote(deepSources, i18n)}
                   </p>
                   <SongTable
                     stickyTop={57}
-                    songs={deepSongs.map((hit) => hit.song)}
+                    songs={deepSongList}
                     playlistId={`search-deep-${keyword}`}
                     emptyText={i18n._(msg`没有找到相关单曲`)}
                   />
@@ -697,7 +823,7 @@ function SearchPage() {
 
               <SongTable
                 stickyTop={57}
-                songs={songs}
+                songs={tableSongs}
                 playlistId={`search-${keyword}-${page}`}
                 loading={loading}
                 emptyText={i18n._(msg`没有找到相关单曲`)}
