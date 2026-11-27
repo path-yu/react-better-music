@@ -71,12 +71,24 @@ import {
 import { useScrobble } from '../../lib/scrobble'
 import { toast } from '../../lib/toast'
 
-/** Crossfade length for track changes; inside the 200–400ms sweet spot. */
-const CROSSFADE_MS = 320
 /** Never leave the previous track playing indefinitely while a source loads. */
 const CROSSFADE_HANDOFF_MS = 600
+/** De-click envelope for manual switches; not the user-configured crossfade. */
+const DECLICK_MS = 24
+/** Short transport envelope for pause/resume so play/pause never hard-cuts. */
+const PAUSE_FADE_MS = 60
+const RESUME_FADE_MS = 80
 /** Stop after this many consecutive tracks fail even after a URL refresh. */
 const MAX_ERROR_SKIPS = 5
+
+/**
+ * A 12s overlap on a 5s track would otherwise trigger the next song at once.
+ * Cap the window at half the outgoing track and never fade past its end.
+ */
+function crossfadeWindowMs(configuredMs: number, duration: number) {
+  if (!Number.isFinite(duration) || duration <= 0) return configuredMs
+  return Math.min(configuredMs, duration * 500)
+}
 
 /** NetEase's audio CDN sends CORS headers, so captureStream can read it. */
 function canAnalyseAudio(url: string) {
@@ -152,6 +164,20 @@ export function PlayerBar() {
   const crossfadeTimerRef = useRef<number | null>(null)
   const fadeEndTimerRef = useRef<number | null>(null)
   const fadeFrameRef = useRef(0)
+  // Kept in a ref so the audio event handlers always see the latest setting
+  // without re-subscribing every media callback.
+  const crossfadeRef = useRef({ enabled: true, ms: 4000 })
+  // Manual transitions use this short override instead of the configured
+  // crossfade window; null means "use the setting".
+  const fadeOverrideRef = useRef<number | null>(null)
+  // Transport gain is multiplied on top of each deck's crossfade gain. Pause
+  // and resume animate this value instead of slamming the media element.
+  const transportGainRef = useRef(1)
+  const transportFadeFrameRef = useRef(0)
+  const transportFadeTimerRef = useRef<number | null>(null)
+  const transportFadeTokenRef = useRef(0)
+  const deckGainRef = useRef(new WeakMap<HTMLAudioElement, number>())
+  const lastPlayingRef = useRef(false)
   const masterVolumeRef = useRef(0.8)
   const normalizationGainRef = useRef(1)
   const normalizationEnabledRef = useRef(false)
@@ -162,6 +188,7 @@ export function PlayerBar() {
   const lastSongIdRef = useRef<number | null>(null)
   const lastSourceReloadTokenRef = useRef(0)
   const autoNextTriggeredRef = useRef(false)
+  const naturalEndAtRef = useRef(0)
   const switchingRef = useRef(false)
   const stemSwitchRef = useRef(false)
   const stemSwitchTimerRef = useRef<number | null>(null)
@@ -218,6 +245,10 @@ export function PlayerBar() {
   const volumeNormalization = useSettingsStore(
     (state) => state.volumeNormalization,
   )
+  const crossfadeEnabled = useSettingsStore(
+    (state) => state.crossfadeEnabled,
+  )
+  const crossfadeSeconds = useSettingsStore((state) => state.crossfadeSeconds)
   const songStemEnabled = useSettingsStore((state) =>
     currentSong
       ? Boolean(state.stemSongs?.[String(currentSong.id)]?.enabled)
@@ -325,16 +356,32 @@ export function PlayerBar() {
       : localFavorites.some((song) => song.id === currentSong.id)
     : false
 
-  /** Apply master volume, fade and loudness leveling to one element. */
-  const applyGain = (element: HTMLAudioElement | null, gain: number) => {
+  /** Apply master, transport, fade and loudness leveling to one element. */
+  const applyElementVolume = (element: HTMLAudioElement | null) => {
     if (!element) return
+    const gain = deckGainRef.current.get(element) ?? 1
     const leveling = normalizationEnabledRef.current
       ? normalizationGainRef.current
       : 1
     element.volume = Math.min(
       1,
-      Math.max(0, masterVolumeRef.current * gain * leveling),
+      Math.max(
+        0,
+        masterVolumeRef.current * transportGainRef.current * gain * leveling,
+      ),
     )
+  }
+
+  const applyTransportVolume = () => {
+    applyElementVolume(audioARef.current)
+    applyElementVolume(audioBRef.current)
+  }
+
+  /** Store one deck's crossfade gain, then apply the full gain stack. */
+  const applyGain = (element: HTMLAudioElement | null, gain: number) => {
+    if (!element) return
+    deckGainRef.current.set(element, gain)
+    applyElementVolume(element)
   }
 
   const clearFade = () => {
@@ -355,6 +402,70 @@ export function PlayerBar() {
     fadeEndTimerRef.current = null
   }
 
+  const clearTransportFade = () => {
+    transportFadeTokenRef.current += 1
+    if (transportFadeFrameRef.current) {
+      cancelAnimationFrame(transportFadeFrameRef.current)
+      transportFadeFrameRef.current = 0
+    }
+    if (transportFadeTimerRef.current !== null) {
+      window.clearTimeout(transportFadeTimerRef.current)
+      transportFadeTimerRef.current = null
+    }
+  }
+
+  /** Animate the transport gain without touching either deck's fade gain. */
+  const fadeTransport = (
+    target: number,
+    duration: number,
+    onDone?: () => void,
+  ) => {
+    clearTransportFade()
+    const token = ++transportFadeTokenRef.current
+    const from = transportGainRef.current
+    const finish = () => {
+      if (token !== transportFadeTokenRef.current) return
+      if (transportFadeTimerRef.current !== null) {
+        window.clearTimeout(transportFadeTimerRef.current)
+        transportFadeTimerRef.current = null
+      }
+      transportGainRef.current = target
+      applyTransportVolume()
+      onDone?.()
+    }
+
+    if (duration <= 0 || Math.abs(target - from) < 0.001) {
+      finish()
+      return
+    }
+
+    const started = performance.now()
+    const step = (now: number) => {
+      if (token !== transportFadeTokenRef.current) {
+        transportFadeFrameRef.current = 0
+        return
+      }
+      const progress = Math.min(1, (now - started) / duration)
+      transportGainRef.current = from + (target - from) * progress
+      applyTransportVolume()
+      if (progress < 1) {
+        transportFadeFrameRef.current = requestAnimationFrame(step)
+        return
+      }
+      transportFadeFrameRef.current = 0
+      finish()
+    }
+    transportFadeFrameRef.current = requestAnimationFrame(step)
+    transportFadeTimerRef.current = window.setTimeout(() => {
+      if (token !== transportFadeTokenRef.current) return
+      if (transportFadeFrameRef.current) {
+        cancelAnimationFrame(transportFadeFrameRef.current)
+        transportFadeFrameRef.current = 0
+      }
+      finish()
+    }, duration + 150)
+  }
+
   /** Detach a finished element and release the blob URL it owned. */
   const settleElement = (element: HTMLAudioElement | null) => {
     if (!element) return
@@ -370,6 +481,20 @@ export function PlayerBar() {
   const startCrossfade = (incoming: HTMLAudioElement) => {
     if (!crossfadePendingRef.current || incoming !== incomingRef.current) return
     const outgoing = outgoingRef.current
+    const overrideMs = fadeOverrideRef.current
+    fadeOverrideRef.current = null
+    const { enabled, ms: configuredMs } = crossfadeRef.current
+    const fadeEnabled = overrideMs !== null || enabled
+    const fadeMs = overrideMs ?? configuredMs
+    const remainingMs = outgoing
+      ? (outgoing.duration - outgoing.currentTime) * 1000
+      : fadeMs
+    const crossfadeMs = outgoing
+      ? Math.min(
+          crossfadeWindowMs(fadeMs, outgoing.duration),
+          Number.isFinite(remainingMs) ? Math.max(1, remainingMs) : fadeMs,
+        )
+      : fadeMs
     crossfadePendingRef.current = false
     incomingRef.current = null
     clearCrossfadeTimer()
@@ -381,7 +506,13 @@ export function PlayerBar() {
     // element, so kick off the *next* track's prefetch now.
     prefetchNext()
 
-    if (!outgoing || outgoing === incoming || outgoing.paused) {
+    if (
+      !fadeEnabled ||
+      crossfadeMs <= 0 ||
+      !outgoing ||
+      outgoing === incoming ||
+      outgoing.paused
+    ) {
       applyGain(incoming, 1)
       if (outgoing && outgoing !== incoming) settleElement(outgoing)
       outgoingRef.current = null
@@ -405,7 +536,7 @@ export function PlayerBar() {
         fadeFrameRef.current = 0
         return
       }
-      const progress = Math.min(1, (now - started) / CROSSFADE_MS)
+      const progress = Math.min(1, (now - started) / crossfadeMs)
       applyGain(incoming, progress)
       applyGain(outgoing, 1 - progress)
       if (progress < 1) {
@@ -417,13 +548,46 @@ export function PlayerBar() {
     fadeFrameRef.current = requestAnimationFrame(step)
     // rAF stops while the window is hidden; make sure the hand-off still
     // completes so two tracks never keep playing at once.
-    fadeEndTimerRef.current = window.setTimeout(finish, CROSSFADE_MS + 150)
+    fadeEndTimerRef.current = window.setTimeout(finish, crossfadeMs + 150)
   }
 
   const maybeStartCrossfade = (audio: HTMLAudioElement) => {
     if (!crossfadePendingRef.current || audio !== incomingRef.current) return
     if (audio.paused) return
     startCrossfade(audio)
+  }
+
+  const pausePlayback = () => {
+    clearTransportFade()
+    clearCrossfadeTimer()
+    crossfadePendingRef.current = false
+    fadeOverrideRef.current = null
+    clearFade()
+    clearFadeEndTimer()
+
+    const outgoing = outgoingRef.current
+    outgoingRef.current = null
+    if (outgoing) settleElement(outgoing)
+
+    const incoming = incomingRef.current
+    if (incoming && incoming !== audioRef.current) {
+      incomingRef.current = null
+      audioRef.current = incoming
+      registerAudio(incoming)
+      applyGain(incoming, 1)
+      incoming.pause()
+    } else {
+      incomingRef.current = null
+      const current = audioRef.current
+      if (current) {
+        applyGain(current, 1)
+        current.pause()
+      }
+    }
+
+    // Keep the transport at zero while paused; resume fades it back in.
+    transportGainRef.current = 0
+    applyTransportVolume()
   }
 
   useEffect(
@@ -446,6 +610,7 @@ export function PlayerBar() {
       clearFade()
       clearCrossfadeTimer()
       clearFadeEndTimer()
+      clearTransportFade()
     }
     // The elements mount and unmount with the bar itself.
   }, [])
@@ -466,8 +631,8 @@ export function PlayerBar() {
   useEffect(() => {
     const gain = Math.min(1, Math.max(0, volume / 100))
     masterVolumeRef.current = gain
-    // A running fade owns both element gains.
-    if (fadeFrameRef.current) return
+    // A running deck crossfade or transport fade owns the element gains.
+    if (fadeFrameRef.current || transportFadeFrameRef.current) return
     const current = audioRef.current
     applyGain(current, 1)
     const other = current === audioARef.current ? audioBRef.current : audioARef.current
@@ -490,9 +655,9 @@ export function PlayerBar() {
     const timer = window.setInterval(() => {
       const audio = audioRef.current
       if (!audio || audio.paused) return
-      // A running crossfade owns both element gains; apply the new level after
-      // the hand-off instead of stepping on its fade curve.
-      if (fadeFrameRef.current) return
+      // A running crossfade/transport fade owns the element gains; apply the
+      // new level after the hand-off instead of stepping on its curve.
+      if (fadeFrameRef.current || transportFadeFrameRef.current) return
       attachAudioAnalyser(audio)
       const rms = getAudioRmsLevel()
       if (rms == null || !Number.isFinite(rms) || rms < 0.008) return
@@ -537,13 +702,27 @@ export function PlayerBar() {
 
 
 
+  useEffect(() => {
+    crossfadeRef.current = {
+      enabled: crossfadeEnabled && crossfadeSeconds > 0,
+      ms: Math.max(0, crossfadeSeconds * 1000),
+    }
+  }, [crossfadeEnabled, crossfadeSeconds])
+
   // Every play request (previous / next / pick a song / replay) bumps
   // playToken. Stop the old track synchronously on that commit; the source
   // effect starts the new track once its URL/blob is ready.
   useEffect(() => {
     if (lastPlayTokenRef.current === playToken) return
     lastPlayTokenRef.current = playToken
+    // Only an automatic hand-off at the end of the previous track may
+    // crossfade. Manual next/previous/pick-a-song switches immediately.
+    const naturalTransition =
+      autoNextTriggeredRef.current &&
+      performance.now() - naturalEndAtRef.current < 2_000
     autoNextTriggeredRef.current = false
+    naturalEndAtRef.current = 0
+    fadeOverrideRef.current = null
     trialNotifiedRef.current = false
     const restartingSameSong = lastSongIdRef.current === currentSong?.id
     lastSongIdRef.current = currentSong?.id ?? null
@@ -581,12 +760,20 @@ export function PlayerBar() {
 
     // Keep the outgoing element running until the incoming source is actually
     // ready. This is the hand-off that removes the silence at track changes.
-    const canCrossfade =
+    const hasActiveAudio =
       !restartingSameSong &&
       !audio.paused &&
       !audio.ended &&
       usePlayerStore.getState().playing
+    // Natural ends use the configured crossfade. Manual switches still need a
+    // very short overlap so pausing the old deck does not produce a click.
+    const canCrossfade =
+      hasActiveAudio &&
+      (naturalTransition
+        ? crossfadeRef.current.enabled && crossfadeRef.current.ms > 0
+        : true)
     if (canCrossfade) {
+      fadeOverrideRef.current = naturalTransition ? null : DECLICK_MS
       const previousIncoming = incomingRef.current
       if (previousIncoming && previousIncoming !== audio) {
         settleElement(previousIncoming)
@@ -603,7 +790,15 @@ export function PlayerBar() {
       outgoingRef.current = audio
       switchingRef.current = true
       // If the next source is slow, cut the old track instead of overlapping
-      // indefinitely while the UI says "loading source".
+      // indefinitely while the UI says "loading source". A longer crossfade
+      // may wait a little longer so a 1–2s source load does not create a gap;
+      // the 24ms manual fade keeps the normal short hand-off instead.
+      const handoffFadeMs =
+        fadeOverrideRef.current ?? crossfadeRef.current.ms
+      const handoffMs = Math.min(
+        3000,
+        Math.max(CROSSFADE_HANDOFF_MS, handoffFadeMs),
+      )
       crossfadeTimerRef.current = window.setTimeout(() => {
         crossfadeTimerRef.current = null
         if (!crossfadePendingRef.current) return
@@ -617,7 +812,7 @@ export function PlayerBar() {
         settleElement(audio)
         switchingRef.current = true
         setAudioReady(false)
-      }, CROSSFADE_HANDOFF_MS)
+      }, handoffMs)
       return
     }
 
@@ -739,34 +934,55 @@ export function PlayerBar() {
   ])
 
   useEffect(() => {
+    const wasPlaying = lastPlayingRef.current
+    lastPlayingRef.current = playing
+
     if (playing) {
       resumeAudioAnalyser()
       if (!sourceReady || !audioUrl) return
       const incoming = incomingRef.current
       const target =
         incoming && incoming.getAttribute('src') === audioUrl ? incoming : audioRef.current
-      if (target && target.getAttribute('src') === audioUrl) {
-        attachAudioAnalyser(target)
-        if (target.paused) void target.play().catch(() => undefined)
+      if (!target || target.getAttribute('src') !== audioUrl) return
+      attachAudioAnalyser(target)
+
+      // Resuming, or a deferred source becoming ready after resume, must come
+      // up from silence instead of jumping straight to full volume.
+      const needsFadeIn = transportGainRef.current < 0.999
+      if (needsFadeIn) {
+        deckGainRef.current.set(target, 1)
+        // A completed pause starts at zero. A quick resume that interrupts a
+        // pause fade keeps its current level and ramps back up from there.
+        if (target.paused) {
+          transportGainRef.current = 0
+          applyTransportVolume()
+        }
+      }
+      if (target.paused) void target.play().catch(() => undefined)
+      if (needsFadeIn) fadeTransport(1, RESUME_FADE_MS)
+      return
+    }
+
+    if (!wasPlaying) {
+      // Keep a paused deck silent without cutting a fade that is still
+      // finishing; a later resume will fade in from zero.
+      if (audioRef.current?.paused) {
+        transportGainRef.current = 0
+        applyTransportVolume()
       }
       return
     }
 
-    // Pausing must stop both elements, including a running crossfade.
-    clearCrossfadeTimer()
-    crossfadePendingRef.current = false
-    clearFade()
-    clearFadeEndTimer()
-    const outgoing = outgoingRef.current
-    outgoingRef.current = null
-    if (outgoing) settleElement(outgoing)
+    // Pause transition: fade the audible decks first, then stop them.
     const current = audioRef.current
-    if (current) {
-      // A fade interrupted mid-way left the gain below the master volume.
-      applyGain(current, 1)
-      current.pause()
+    if (!current || current.paused) {
+      pausePlayback()
+      return
     }
-    incomingRef.current?.pause()
+    fadeTransport(0, PAUSE_FADE_MS, () => {
+      if (usePlayerStore.getState().playing) return
+      pausePlayback()
+    })
   }, [playing, sourceReady, audioUrl])
 
   useEffect(() => {
@@ -1345,6 +1561,8 @@ export function PlayerBar() {
       // A trial clip ends at the trial limit instead of rolling into the next
       // track (the clip file is about as long as the trial itself).
       if (
+        crossfadeRef.current.enabled &&
+        crossfadeRef.current.ms > 0 &&
         !isTrial &&
         mode !== 'singleLoop' &&
         usePlayerStore.getState().playing &&
@@ -1354,8 +1572,13 @@ export function PlayerBar() {
         audio.duration > 0
       ) {
         const remainingMs = (audio.duration - audio.currentTime) * 1000
-        if (remainingMs > 0 && remainingMs <= CROSSFADE_MS + 80) {
+        const fadeWindow = crossfadeWindowMs(
+          crossfadeRef.current.ms,
+          audio.duration,
+        )
+        if (remainingMs > 0 && remainingMs <= fadeWindow + 80) {
           autoNextTriggeredRef.current = true
+          naturalEndAtRef.current = performance.now()
           void next({ auto: true })
         }
       }
@@ -1398,6 +1621,7 @@ export function PlayerBar() {
         // path replace the active element's source instead. The old track is
         // still the active one and never enters the fade.
         crossfadePendingRef.current = false
+        fadeOverrideRef.current = null
         incomingRef.current = null
         outgoingRef.current = null
         clearCrossfadeTimer()

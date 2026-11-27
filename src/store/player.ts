@@ -1362,8 +1362,8 @@ export const usePlayerStore = create<PlayerState>()(
         // wrap. Heart mode keeps refilling the queue, so it never "ends".
         const stopAtEnd = auto && mode === 'order' && !get().heartMode
         if (stopAtEnd && direction === 1 && currentIndex >= queue.length - 1) {
-          // PlayerBar also asks for the next track ~0.4s before the end to
-          // overlap the crossfade; let the last track finish in that case.
+          // PlayerBar also asks for the next track ahead of the end to overlap
+          // the crossfade; let the last track finish in that case.
           const audio = getAudio()
           if (!audio || audio.ended || audio.error) set({ playing: false })
           return

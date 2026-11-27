@@ -36,6 +36,7 @@ import {
 import {
   CACHE_MAX_MB_OPTIONS,
   CACHE_QUALITY_OPTIONS,
+  CROSSFADE_DURATION_OPTIONS,
   NOW_PLAYING_TRANSITION_OPTIONS,
   BACKDROP_STYLE_OPTIONS,
   type BackdropStyle,
@@ -235,6 +236,18 @@ function SettingsPage() {
   )
   const setVolumeNormalization = useSettingsStore(
     (state) => state.setVolumeNormalization,
+  )
+  const crossfadeEnabled = useSettingsStore(
+    (state) => state.crossfadeEnabled,
+  )
+  const setCrossfadeEnabled = useSettingsStore(
+    (state) => state.setCrossfadeEnabled,
+  )
+  const crossfadeSeconds = useSettingsStore(
+    (state) => state.crossfadeSeconds,
+  )
+  const setCrossfadeSeconds = useSettingsStore(
+    (state) => state.setCrossfadeSeconds,
   )
   const showRemainingTime = useSettingsStore((state) => state.showRemainingTime)
   const setShowRemainingTime = useSettingsStore(
@@ -847,6 +860,43 @@ function SettingsPage() {
             </p>
             <PlayerStylePicker />
           </div>
+
+          <div className="mt-5 flex items-center justify-between gap-4 border-t settings-divider pt-4">
+            <div>
+              <p className="text-[13px] font-medium text-ink-2">
+                <Trans>交叉渐入渐出</Trans>
+              </p>
+              <p className="mt-1 text-[11px] leading-relaxed text-ink-3">
+                <Trans>
+                  自然播放结束时上一首逐渐淡出、下一首逐渐淡入。手动切歌会立即切换。
+                </Trans>
+              </p>
+            </div>
+            <ToggleSwitch
+              checked={crossfadeEnabled}
+              onChange={setCrossfadeEnabled}
+              aria-label={i18n._(msg`交叉渐入渐出`)}
+            />
+          </div>
+
+          {crossfadeEnabled ? (
+            <div className="mt-4 flex items-center justify-between gap-4">
+              <p className="text-[13px] font-medium text-ink-2">
+                <Trans>交叉时长</Trans>
+              </p>
+              <Select
+                value={String(crossfadeSeconds)}
+                onChange={(event) =>
+                  setCrossfadeSeconds(Number(event.target.value))
+                }
+                options={CROSSFADE_DURATION_OPTIONS.map((option) => ({
+                  value: String(option.value),
+                  label: i18n._(option.label),
+                }))}
+                className="settings-select w-[160px] shrink-0"
+              />
+            </div>
+          ) : null}
 
           <div className="mt-5 flex items-center justify-between gap-4 border-t settings-divider pt-4">
             <div>

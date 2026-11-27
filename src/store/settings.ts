@@ -109,6 +109,19 @@ export const LYRIC_FONT_SIZE_OPTIONS: Array<{
   { value: 'large', label: msg`大`, scale: 1.15 },
 ]
 
+/** Overlap window used when one track fades into the next. */
+export const CROSSFADE_DURATION_OPTIONS: Array<{
+  value: number
+  label: MessageDescriptor
+}> = [
+  { value: 1, label: msg`1 秒` },
+  { value: 2, label: msg`2 秒` },
+  { value: 4, label: msg`4 秒` },
+  { value: 6, label: msg`6 秒` },
+  { value: 8, label: msg`8 秒` },
+  { value: 12, label: msg`12 秒` },
+]
+
 interface SettingsState {
   cacheBitrate: number
   /** Maximum size of the local audio cache, in megabytes. */
@@ -134,6 +147,10 @@ interface SettingsState {
   playerStyle: PlayerStyle
   /** Dynamically even out per-track loudness during playback. */
   volumeNormalization: boolean
+  /** Fade the previous track out while the next one starts. */
+  crossfadeEnabled: boolean
+  /** Overlap window in seconds when crossfade is enabled. */
+  crossfadeSeconds: number
   /** Right-hand label of every progress bar: time left (true) or total length. */
   showRemainingTime: boolean
   /** Instant approximation vs. cached Spleeter accompaniment. */
@@ -175,6 +192,8 @@ interface SettingsState {
   setNowPlayingTransition: (value: NowPlayingTransition) => void
   setPlayerStyle: (value: PlayerStyle) => void
   setVolumeNormalization: (value: boolean) => void
+  setCrossfadeEnabled: (value: boolean) => void
+  setCrossfadeSeconds: (value: number) => void
   setShowRemainingTime: (value: boolean) => void
   setStemMode: (value: StemMode) => void
   setStemKind: (value: StemKind) => void
@@ -215,6 +234,10 @@ export const useSettingsStore = create<SettingsState>()(
       // Matches the reference player's default: analyse and even out loudness
       // without requiring ReplayGain tags in every file.
       volumeNormalization: true,
+      // Radio-style overlap is enabled by default; 4s is long enough to hear
+      // the blend without starting the next track too early.
+      crossfadeEnabled: true,
+      crossfadeSeconds: 4,
       // Matches the original song page and Apple Music; click the label to flip.
       showRemainingTime: true,
       stemMode: 'off',
@@ -248,6 +271,11 @@ export const useSettingsStore = create<SettingsState>()(
       setPlayerStyle: (playerStyle) => set({ playerStyle }),
       setVolumeNormalization: (volumeNormalization) =>
         set({ volumeNormalization }),
+      setCrossfadeEnabled: (crossfadeEnabled) => set({ crossfadeEnabled }),
+      setCrossfadeSeconds: (crossfadeSeconds) =>
+        set({
+          crossfadeSeconds: Math.min(12, Math.max(1, crossfadeSeconds)),
+        }),
       setShowRemainingTime: (showRemainingTime) => set({ showRemainingTime }),
       setStemMode: (stemMode) => set({ stemMode }),
       setStemKind: (stemKind) => set({ stemKind }),
@@ -305,7 +333,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'react-music-settings',
-      version: 10,
+      version: 11,
       // v1 stored a boolean translation switch; keep "off" users in original mode.
       migrate: (persisted, version) => {
         const previous = persisted as Partial<SettingsState> & {
@@ -379,17 +407,26 @@ export const useSettingsStore = create<SettingsState>()(
                   : 'ambient') as BackdropStyle,
               }
             : withKaraoke
+        // v11 exposes the dual-player crossfade, enabled by default.
+        const withCrossfade =
+          version < 11
+            ? {
+                ...withBackdrop,
+                crossfadeEnabled: true,
+                crossfadeSeconds: 4,
+              }
+            : withBackdrop
         // v5 removes Lossless/Hi-Res. Keep existing installs on a valid level
         // instead of leaving a stale value that the quality picker cannot show.
         if (
           version < 5 &&
           !PLAY_QUALITY_OPTIONS.some(
-            (option) => option.value === withBackdrop.playLevel,
+            (option) => option.value === withCrossfade.playLevel,
           )
         ) {
-          return { ...withBackdrop, playLevel: 'exhigh' as PlayLevel }
+          return { ...withCrossfade, playLevel: 'exhigh' as PlayLevel }
         }
-        return withBackdrop
+        return withCrossfade
       },
     },
   ),
