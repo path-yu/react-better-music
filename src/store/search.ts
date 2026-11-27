@@ -26,6 +26,12 @@ function normalizeTab(value: unknown): SearchTab {
     : 'songs'
 }
 
+/**
+ * How the words after the song title are read: an artist ("歌名 歌手") or an
+ * album ("歌名 专辑"). The deep search walks a different index for each.
+ */
+export type SearchMode = 'artist' | 'album'
+
 interface SearchState {
   /** Last submitted/typed query, used when re-entering /search. */
   keyword: string
@@ -38,9 +44,12 @@ interface SearchState {
   refreshToken: number
   /** Whether the fallback lookup (web + albums) runs for missing songs. */
   deepSearch: boolean
+  searchMode: SearchMode
   setSearch: (keyword: string, tab?: string) => void
   refresh: () => void
   toggleDeepSearch: () => void
+  toggleSearchMode: () => void
+  setSearchMode: (mode: SearchMode) => void
 }
 
 /**
@@ -55,6 +64,7 @@ export const useSearchStore = create<SearchState>()(
       tab: 'songs',
       refreshToken: 0,
       deepSearch: true,
+      searchMode: 'artist',
       setSearch: (keyword, tab) =>
         set((state) => ({
           keyword,
@@ -64,6 +74,11 @@ export const useSearchStore = create<SearchState>()(
         set((state) => ({ refreshToken: state.refreshToken + 1 })),
       toggleDeepSearch: () =>
         set((state) => ({ deepSearch: !state.deepSearch })),
+      toggleSearchMode: () =>
+        set((state) => ({
+          searchMode: state.searchMode === 'artist' ? 'album' : 'artist',
+        })),
+      setSearchMode: (mode) => set({ searchMode: mode }),
     }),
     {
       name: 'react-music-search',
@@ -73,6 +88,7 @@ export const useSearchStore = create<SearchState>()(
         keyword: state.keyword,
         tab: state.tab,
         deepSearch: state.deepSearch,
+        searchMode: state.searchMode,
       }),
     },
   ),

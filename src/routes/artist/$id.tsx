@@ -37,6 +37,7 @@ import { needsUnblock } from '../../lib/songs'
 import { composePlaylistCover } from '../../lib/playlistCover'
 import { useDocumentTitle } from '../../lib/title'
 import { toast } from '../../lib/toast'
+import { useUnblockFilter } from '../../lib/useUnblockFilter'
 import type { ArtistAlbum, ArtistProfile, ArtistSummary, Mv, Song } from '../../types'
 
 /** Tab ids double as the `?tab=` value so a deep link restores the tab. */
@@ -163,7 +164,7 @@ function ArtistPage() {
   const [failedAlbums, setFailedAlbums] = useState<ArtistAlbum[]>([])
   const [songQuery, setSongQuery] = useState('')
   /** Keep only rows NetEase cannot play directly (无版权 / 其它版本可播). */
-  const [unblockOnly, setUnblockOnly] = useState(false)
+  const [unblockOnly, setUnblockOnly] = useUnblockFilter(`artist:${id}`)
   // How many albums were loaded on the previous visit; the route holds no
   // component state, so the list must be rebuilt before scroll can restore.
   const albumsRestoreRef = useRef(false)
@@ -188,7 +189,8 @@ function ArtistPage() {
     setExpandAlbumCount(0)
     setFailedAlbums([])
     setSongQuery('')
-    setUnblockOnly(false)
+    // Restored from sessionStorage by `useUnblockFilter`; the route remounts
+    // when coming back, so resetting here would undo the restore.
     albumsRestoreRef.current = false
 
     Promise.allSettled([

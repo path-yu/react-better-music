@@ -19,6 +19,7 @@ import { useUserStore } from '../../store/user'
 import type { AlbumDetail } from '../../types'
 import { formatDate, matchesKeyword } from '../../lib/format'
 import { needsUnblock } from '../../lib/songs'
+import { useUnblockFilter } from '../../lib/useUnblockFilter'
 import { useDocumentTitle } from '../../lib/title'
 import { toast } from '../../lib/toast'
 
@@ -34,7 +35,7 @@ function AlbumDetailPage() {
   const [loading, setLoading] = useState(true)
   const [keyword, setKeyword] = useState('')
   /** Keep only rows NetEase cannot play directly (无版权 / 其它版本可播). */
-  const [unblockOnly, setUnblockOnly] = useState(false)
+  const [unblockOnly, setUnblockOnly] = useUnblockFilter(`album:${id}`)
   const isLogin = useUserStore((state) => state.isLogin)
   const localAlbums = useLocalLibraryStore((state) => state.subscribedAlbums)
   const toggleLocalAlbum = useLocalLibraryStore(
@@ -131,7 +132,8 @@ function AlbumDetailPage() {
     setLoading(true)
     setAlbum(null)
     setKeyword('')
-    setUnblockOnly(false)
+    // The 「仅看可换源」 switch is restored from sessionStorage by
+    // `useUnblockFilter`; clearing it here would undo that on every remount.
 
     void fetchAlbumDetail(id)
       .then((detail) => {

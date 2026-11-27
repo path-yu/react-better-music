@@ -4,8 +4,12 @@ import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import {
+  Check,
+  ChevronDown,
   Clock3,
+  Disc3,
   Loader2,
+  Mic2,
   Music2,
   Play,
   ScanSearch,
@@ -13,6 +17,12 @@ import {
   Trash2,
   X,
 } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@pikoloo/darwin-ui'
 import { SearchInput } from '../common/SearchInput'
 import {
   fetchAlbumDetail,
@@ -75,6 +85,8 @@ export function SearchBox({
   const refreshSearch = useSearchStore((state) => state.refresh)
   const deepSearch = useSearchStore((state) => state.deepSearch)
   const toggleDeepSearch = useSearchStore((state) => state.toggleDeepSearch)
+  const searchMode = useSearchStore((state) => state.searchMode)
+  const setSearchMode = useSearchStore((state) => state.setSearchMode)
   // The fallback toggle only makes sense on the results screen.
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const routeKeyword = useRouterState({
@@ -233,7 +245,7 @@ export function SearchBox({
       ref={wrapperRef}
       className={cn('flex w-full items-center gap-2', className ?? 'max-w-[520px]')}
     >
-      <div className="relative w-full">
+      <div className="relative min-w-0 flex-1">
       <SearchInput
         autoFocus={autoFocus}
         value={keyword}
@@ -480,6 +492,51 @@ export function SearchBox({
         </div>
       )}
       </div>
+      {showDeepToggle ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild className="shrink-0">
+            <button
+              type="button"
+              title={i18n._(
+                msg`检索方式：歌曲名+歌手名，或歌曲名+专辑名（模糊匹配）`,
+              )}
+              className="pressable flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--app-border-strong)] bg-transparent px-3 text-[11px] text-ink-3 transition-colors hover:bg-black/4 dark:text-white/60"
+            >
+              {searchMode === 'album' ? (
+                <Disc3 className="h-3.5 w-3.5" />
+              ) : (
+                <Mic2 className="h-3.5 w-3.5" />
+              )}
+              {searchMode === 'album' ? (
+                <Trans>按专辑</Trans>
+              ) : (
+                <Trans>按歌手</Trans>
+              )}
+              <ChevronDown className="h-3 w-3 opacity-60" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent glass align="start" side="bottom" sideOffset={6}>
+            <DropdownMenuItem onSelect={() => setSearchMode('artist')}>
+              <span className="flex w-full items-center gap-2">
+                <Mic2 className="h-3.5 w-3.5" />
+                <Trans>歌曲名 + 歌手名</Trans>
+                {searchMode === 'artist' ? (
+                  <Check className="ml-auto h-3.5 w-3.5" />
+                ) : null}
+              </span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => setSearchMode('album')}>
+              <span className="flex w-full items-center gap-2">
+                <Disc3 className="h-3.5 w-3.5" />
+                <Trans>歌曲名 + 专辑名</Trans>
+                {searchMode === 'album' ? (
+                  <Check className="ml-auto h-3.5 w-3.5" />
+                ) : null}
+              </span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
       {showDeepToggle ? (
         <button
           type="button"

@@ -47,6 +47,7 @@ import { toast } from '../../lib/toast'
 import { invalidateApiCache } from '../../lib/http'
 import { useDocumentTitle } from '../../lib/title'
 import { formatDate, formatNumber, matchesKeyword } from '../../lib/format'
+import { useUnblockFilter } from '../../lib/useUnblockFilter'
 import { needsUnblock } from '../../lib/songs'
 import type { Playlist, Song } from '../../types'
 
@@ -75,7 +76,7 @@ function PlaylistDetailPage() {
   )
   const [keyword, setKeyword] = useState('')
   /** Keep only rows NetEase cannot play directly (无版权 / 其它版本可播). */
-  const [unblockOnly, setUnblockOnly] = useState(false)
+  const [unblockOnly, setUnblockOnly] = useUnblockFilter(`songlist:${id}`)
   const [subscribing, setSubscribing] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
   const [recommended, setRecommended] = useState<{
@@ -118,7 +119,9 @@ function PlaylistDetailPage() {
     setSongs([])
     setTracksReady(false)
     setKeyword('')
-    setUnblockOnly(false)
+    // The 「仅看可换源」 switch is restored from sessionStorage by
+    // `useUnblockFilter`; resetting it here would wipe that on every remount
+    // (the route mounts again when you come back from another page).
 
     const load = async () => {
       try {

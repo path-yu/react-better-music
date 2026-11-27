@@ -7,6 +7,8 @@
  * present) and points the Electrobun window at it through QIMIAO_DEV_URL.
  */
 import { execFileSync, spawn, spawnSync } from 'node:child_process'
+import { existsSync, readdirSync, rmSync } from 'node:fs'
+import path from 'node:path'
 
 const DEV_URL = 'http://localhost:5173'
 const DEV_PORT = 5173
@@ -124,6 +126,31 @@ async function stopStaleDevServer() {
   throw new Error(`Port ${DEV_PORT} is still in use after stopping old dev server`)
 }
 
+/**
+ * Electrobun patches the app icon into `launcher.exe` and `bun.exe` on every
+ * dev start. If a previous run died mid-patch (or left the Win32 `.old`
+ * replacement behind), the next start aborts with `EndResourceUpdateFailed`
+ * and no window opens. Removing the patched executables makes hutch copy
+ * pristine templates again — cheaper than wiping the whole dev bundle, and it
+ * covers both binaries (resetting only the launcher just moves the failure to
+ * bun.exe).
+ */
+function resetDevBinaries() {
+  const devRoot = path.join(process.cwd(), 'build', 'dev-win-x64')
+  if (!existsSync(devRoot)) return
+  let reset = 0
+  for (const appDir of readdirSync(devRoot)) {
+    const binDir = path.join(devRoot, appDir, 'bin')
+    if (!existsSync(binDir)) continue
+    for (const file of readdirSync(binDir)) {
+      if (!/\.exe(\.old)?$/i.test(file)) continue
+      rmSync(path.join(binDir, file), { force: true })
+      reset += 1
+    }
+  }
+  if (reset) console.log(`[desktop-dev] reset ${reset} patched binar(ies)`)
+}
+
 function shutdown(code = 0) {
   if (stopping) return
   stopping = true
@@ -138,6 +165,7 @@ process.on('SIGTERM', () => shutdown(0))
 
 try {
   await stopStaleDevServer()
+  resetDevBinaries()
   console.log('[desktop-dev] syncing Electrobun…')
   await run('hutch', ['electrobun', 'sync'], { shell: isWindows })
 

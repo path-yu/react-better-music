@@ -1097,6 +1097,22 @@ function normalizeDeep(value: string) {
     .replace(/[\s\-_—·()（）[\]【】「」'"“”,，.。!！?？/]/g, '')
 }
 
+/**
+ * Fuzzy containment for user typos: "爱情公寓3原生" must still match the album
+ * "爱情公寓3原声大碟" (原生 vs 原声). A miss is retried without the last one or
+ * two characters, which only loosens the tail — an unrelated text of the same
+ * length still cannot match a real prefix.
+ */
+function looseTokenMatch(text: string, token: string) {
+  if (!token) return false
+  if (text.includes(token)) return true
+  for (let cut = 1; cut <= 2; cut += 1) {
+    const trimmed = token.slice(0, -cut)
+    if (trimmed.length >= 4 && text.includes(trimmed)) return true
+  }
+  return false
+}
+
 /** Uploads that are a different recording of the same title. */
 const DEEP_DECORATED =
   /(live|remix|dj|bootleg|cover|翻唱|翻跳|伴奏|纯音乐|instrumental|8d|nightcore|slowed|sped\s*up|08x|v\d|加速|降速|慢速|变速|升调|降调|说唱版|片段|剪辑|铃声|女声版|男声版|\d(?:\.\d)?x)/i
@@ -1137,10 +1153,10 @@ function webHitMatches(song: Song, tokens: string[]) {
   const artists = song.ar.map((artist) => normalizeDeep(artist.name)).join(' ')
   const album = normalizeDeep(song.al?.name ?? '')
   const context = `${name} ${artists} ${album}`
-  if (tokens.length === 1) return name.includes(tokens[0])
+  if (tokens.length === 1) return looseTokenMatch(name, tokens[0])
   return (
-    tokens.every((token) => context.includes(token)) &&
-    tokens.some((token) => name.includes(token))
+    tokens.every((token) => looseTokenMatch(context, token)) &&
+    tokens.some((token) => looseTokenMatch(name, token))
   )
 }
 
@@ -1153,16 +1169,20 @@ function deepMatchScore(song: Song, albumName: string, tokens: string[]) {
 
   // Every word must appear somewhere, and the title itself must cover at
   // least one of them — otherwise a compilation album drags in random tracks.
-  if (!tokens.every((token) => haystack.includes(token))) return 0
-  if (!tokens.some((token) => name.includes(token) || album.includes(token))) {
+  if (!tokens.every((token) => looseTokenMatch(haystack, token))) return 0
+  if (
+    !tokens.some(
+      (token) => looseTokenMatch(name, token) || looseTokenMatch(album, token),
+    )
+  ) {
     return 0
   }
 
   let score = 0
   for (const token of tokens) {
-    if (name.includes(token)) score += 4
-    if (artists.includes(token)) score += 3
-    if (album.includes(token)) score += 2
+    if (looseTokenMatch(name, token)) score += 4
+    if (looseTokenMatch(artists, token)) score += 3
+    if (looseTokenMatch(album, token)) score += 2
   }
 
   // The credits matching the query is the strongest signal that this is the
@@ -1357,9 +1377,292 @@ async function collectArtistAlbumSongs(
   return hits
 }
 
+/** How the words after the title are read; each mode walks its own index. */
+export type DeepSearchMode = 'artist' | 'album'
+
+const ALBUM_MODE_LIMIT = 14
+
+/** `/search` (v1) album lookup: ranks original releases better than cloudsearch. */
+async function searchAlbumsV1(
+  keywords: string,
+  signal?: AbortSignal,
+  limit = 10,
+): Promise<Array<{ id: number; name: string; size?: number }>> {
+  const result = await get<{
+    result?: { albums?: Array<{ id: number; name: string; size?: number }> }
+  }>(
+    '/search',
+    { keywords, type: 10, limit, offset: 0, timestamp: Date.now() },
+    signal,
+  ).catch(() => null)
+  return (result?.result?.albums ?? []).filter((album) => album && album.id)
+}
+
+/**
+ * "歌名 + 专辑名" queries. The song index hides delisted originals, but a fuzzy
+ * album search still finds the release and its track list names the song, so
+ * scan album tracks and score them against the query words.
+ */
+async function deepSearchByAlbum(
+  keyword: string,
+  tokens: string[],
+  signal?: AbortSignal,
+): Promise<DeepSearchHit[]> {
+  if (!tokens.length || signal?.aborted) return []
+
+  // The full query first (album names often carry the trailing words), then
+  // each word alone so a long title cannot hide the album entirely. Every
+  // query runs: a title-heavy full query fills up with same-named cover
+  // albums, and the real release only shows up under the album word.
+  const albums = new Map<
+    number,
+    { id: number; name: string; size?: number }
+  >()
+  for (const query of [keyword, ...tokens]) {
+    if (signal?.aborted) break
+    const list = await searchAlbumsV1(query, signal)
+    for (const album of list) {
+      if (!albums.has(album.id)) albums.set(album.id, album)
+    }
+  }
+
+  // The trailing word is the album the user named, so releases containing it
+  // are scanned first — that is where the original soundtrack sits.
+  const albumToken = tokens[tokens.length - 1] ?? ''
+  const chosen = [...albums.values()]
+    .sort((a, b) => {
+      const hitA = albumToken && normalizeDeep(a.name).includes(albumToken) ? 0 : 1
+      const hitB = albumToken && normalizeDeep(b.name).includes(albumToken) ? 0 : 1
+      if (hitA !== hitB) return hitA - hitB
+      // A real soundtrack has more tracks than a one-off single release that
+      // merely names the drama in its title.
+      const sizeOf = (album: { size?: number }) => Number(album.size) || 0
+      return sizeOf(b) - sizeOf(a)
+    })
+    .slice(0, ALBUM_MODE_LIMIT)
+  if (!chosen.length) return []
+
+  // Tracks must match the *song* words; otherwise a soundtrack album would
+  // contribute every instrumental cue it contains.
+  const titleTokens = tokens.length > 1 ? tokens.slice(0, -1) : tokens
+
+  // "Cookie" (bare) is the original title; "NewJeans Cookie" or
+  // "NewJeans Y2K Kpop Type Beat \"Cookie\"" only quote it. The bare title is
+  // ranked ahead of everything else, then the score separates the versions.
+  const titlePhrase = titleTokens.join('')
+
+  // Two sources, one score: album search finds the covers and soundtracks, the
+  // artist page finds the official (delisted) release that album search hides.
+  const candidates: Array<{
+    song: Song
+    albumId: number
+    albumName: string
+    albumIsFullRecord: boolean
+  }> = []
+
+  const artistHits = await collectArtistAlbumSongsByToken(albumToken, signal)
+  for (const hit of artistHits) {
+    candidates.push({
+      song: hit.song,
+      albumId: hit.albumId,
+      albumName: hit.albumName,
+      // Official releases are EPs or albums, not one-off singles.
+      albumIsFullRecord: true,
+    })
+  }
+
+  // One album at a time: `fetchDeepSearchAlbum` keeps a single 350ms schedule,
+  // and four parallel calls slipped past it and were answered with 405, which
+  // silently dropped most albums from the result. 14 requests now take ~5s but
+  // every one of them lands.
+  for (const album of chosen) {
+    if (signal?.aborted) break
+    const detail = await fetchDeepSearchAlbum(album.id, signal).catch(() => null)
+    if (!detail) continue
+    const albumName = detail.name || album.name
+    // A release with several tracks is a soundtrack/album; a one-track entry
+    // is usually a single that just repeats the drama name in its title.
+    const albumIsFullRecord = (detail.songs?.length ?? 0) >= 4
+    for (const song of detail.songs ?? []) {
+      candidates.push({ song, albumId: album.id, albumName, albumIsFullRecord })
+    }
+  }
+
+  const scored: Array<{ hit: DeepSearchHit; score: number; exact: boolean }> = []
+  for (const candidate of candidates) {
+    const { song, albumName, albumIsFullRecord } = candidate
+    // Remixes and covers share the title but are not "the track on this
+    // album"; they would drown out the original in a short list.
+    if (DEEP_DECORATED.test(song.name)) continue
+    const nameNorm = normalizeDeep(song.name)
+    // The song part of the query has to be in the title, otherwise a
+    // soundtrack album contributes every cue it holds.
+    if (!titleTokens.some((token) => nameNorm.includes(token))) continue
+    const albumNorm = normalizeDeep(albumName)
+    const artistParts = song.ar.map((artist) => normalizeDeep(artist.name))
+    const artistsNorm = artistParts.join(' ')
+    const exact = Boolean(titlePhrase) && nameNorm === titlePhrase
+    // "cookie newjeans": the credited artist matching the album word
+    // ("NewJeans") is the original; a random uploader is not.
+    const artistExact =
+      Boolean(albumToken) && artistParts.some((artist) => artist === albumToken)
+    let score = 0
+    for (const token of tokens) {
+      if (nameNorm.includes(token)) score += 4
+      if (albumNorm.includes(token)) score += 3
+      if (artistsNorm.includes(token)) score += 2
+    }
+    // The album word is what the user named; a release carrying it is far
+    // more likely the original soundtrack than a same-named cover album.
+    if (albumToken && albumNorm.includes(albumToken)) score += 4
+    if (albumIsFullRecord) score += 6
+    if (exact) score += 10
+    if (artistExact) score += 8
+    if (score <= 0) continue
+    scored.push({
+      hit: { song, albumId: candidate.albumId, albumName },
+      score,
+      exact,
+    })
+  }
+
+  const seen = new Set<number>()
+  return scored
+    .sort(
+      (a, b) =>
+        // A title that *is* the queried song wins over one that merely quotes
+        // it, regardless of how many keywords the longer title happens to hit.
+        Number(b.exact) - Number(a.exact) ||
+        b.score - a.score ||
+        // Shorter titles are closer to the bare original ("爱的回归线" before
+        // "爱的回归线 (剧情版)").
+        a.hit.song.name.length - b.hit.song.name.length,
+    )
+    .filter((entry) => {
+      if (seen.has(entry.hit.song.id)) return false
+      seen.add(entry.hit.song.id)
+      return true
+    })
+    .slice(0, 20)
+    .map((entry) => entry.hit)
+}
+
+/**
+ * Albums of the artist whose name exactly matches `token`. NetEase hides
+ * delisted official releases from album *search* (the same way it hides gray
+ * songs from song search), but the artist page still lists them — so this is
+ * the only way back to a gray original.
+ */
+async function collectArtistAlbumSongsByToken(
+  token: string,
+  signal?: AbortSignal,
+): Promise<DeepSearchHit[]> {
+  if (!token || signal?.aborted) return []
+  const artists = await searchArtists(token).catch(() => [])
+  const artist = artists.find((item) => normalizeDeep(item.name) === token)
+  if (!artist?.id) return []
+
+  const albums = await fetchArtistAlbums(artist.id, 24, 0, signal).catch(
+    () => [],
+  )
+  const hits: DeepSearchHit[] = []
+  const seen = new Set<number>()
+  // Walk the whole discography, not just the newest releases: the delisted
+  // track people search for is often on an older EP that sits below the 2024
+  // remix records. Four at a time keeps this at ~1s for a ten-album artist.
+  const chosen = albums.slice(0, 24)
+  for (let index = 0; index < chosen.length; index += 4) {
+    if (signal?.aborted) break
+    const batch = chosen.slice(index, index + 4)
+    const details = await Promise.all(
+      batch.map((album) => fetchAlbumDetail(album.id).catch(() => null)),
+    )
+    details.forEach((detail, offset) => {
+      if (!detail) return
+      const album = batch[offset]
+      for (const song of detail.songs ?? []) {
+        if (seen.has(song.id)) continue
+        seen.add(song.id)
+        hits.push({
+          song,
+          albumId: album.id,
+          albumName: detail.name || album.name,
+        })
+      }
+    })
+  }
+  return hits
+}
+
+/**
+ * A bare song title ("彩色的黑") cannot be told apart from its covers by
+ * NetEase alone — every upload is titled the same. QQ Music keeps the original
+ * release high in its ranking, so read the singer off its first exact-title
+ * rows and then search NetEase for "歌名 歌手": that surfaces the single or
+ * self-titled album holding the gray original.
+ */
+async function resolveOriginalViaQq(
+  keyword: string,
+  signal?: AbortSignal,
+): Promise<DeepSearchHit[]> {
+  const target = normalizeDeep(keyword)
+  if (!target) return []
+  const matches = await fetchQqSongMatches(keyword, signal).catch(() => [])
+  if (!matches.length) return []
+
+  const singers = new Set<string>()
+  for (const match of matches) {
+    if (normalizeDeep(match.name) !== target) continue
+    for (const raw of String(match.singers || '').split(/[/;、]/)) {
+      const name = raw.trim()
+      if (name) singers.add(name)
+    }
+    if (singers.size >= 3) break
+  }
+  if (!singers.size) return []
+
+  const hits: DeepSearchHit[] = []
+  const seen = new Set<number>()
+  for (const singer of singers) {
+    if (signal?.aborted) break
+    const singerNorm = normalizeDeep(singer)
+    const albums = await searchAlbumsV1(`${keyword} ${singer}`, signal).catch(
+      () => [],
+    )
+    for (const album of albums.slice(0, 3)) {
+      if (signal?.aborted) break
+      const detail = await fetchDeepSearchAlbum(album.id, signal).catch(
+        () => null,
+      )
+      if (!detail) continue
+      for (const song of detail.songs ?? []) {
+        if (seen.has(song.id)) continue
+        if (!looseTokenMatch(normalizeDeep(song.name), target)) continue
+        // The credits must be the singer QQ named; otherwise this is just
+        // another upload with the same title.
+        const creditHit = song.ar.some((artist) =>
+          normalizeDeep(artist.name).includes(singerNorm),
+        )
+        if (!creditHit) continue
+        seen.add(song.id)
+        hits.push({
+          song,
+          albumId: album.id,
+          albumName: detail.name || album.name,
+        })
+      }
+    }
+    // One singer with a real hit is enough; later QQ rows are usually live or
+    // cover versions of the same title.
+    if (hits.length) break
+  }
+  return hits
+}
+
 export async function deepSearchSongs(
   keyword: string,
   signal?: AbortSignal,
+  mode: DeepSearchMode = 'artist',
 ): Promise<DeepSearchHit[]> {
   const tokens = keyword
     .trim()
@@ -1368,20 +1671,49 @@ export async function deepSearchSongs(
     .filter(Boolean)
   if (!tokens.length) return []
 
-  const cacheKey = tokens.join(' ')
+  // The two modes read the query differently and return different rows, so the
+  // cache key has to carry the mode.
+  const cacheKey = `${mode}:${tokens.join(' ')}`
   const cached = deepSearchCache.get(cacheKey)
   if (cached && Date.now() - cached.at < DEEP_SEARCH_TTL) {
     return cached.hits
   }
 
-  // Artist query first: for a delisted act the song index only surfaces remixes
-  // and covers ("New Jeans" returns Jersey Club edits), while the artist's own
-  // albums still list every original. Walking albums is exactly what a user
-  // does by hand (歌手 → 专辑), so do it here.
-  const artistHits = await collectArtistAlbumSongs(keyword, tokens.join(''), signal)
-  if (artistHits.length) {
-    deepSearchCache.set(cacheKey, { hits: artistHits, at: Date.now() })
-    return artistHits
+  // A bare title hides its original among same-titled covers. QQ's ranking
+  // still knows which singer released it, so resolve the singer there and
+  // search NetEase for "歌名 歌手" — the shortest reliable path for this case.
+  if (tokens.length === 1) {
+    const qqHits = await resolveOriginalViaQq(keyword, signal)
+    if (qqHits.length) {
+      deepSearchCache.set(cacheKey, { hits: qqHits, at: Date.now() })
+      return qqHits
+    }
+  }
+
+  // Album mode: the user said the trailing words name the release, so scan
+  // album track lists first — that is the shortest path to a delisted original.
+  if (mode === 'album') {
+    const albumHits = await deepSearchByAlbum(keyword, tokens, signal)
+    if (albumHits.length) {
+      deepSearchCache.set(cacheKey, { hits: albumHits, at: Date.now() })
+      return albumHits
+    }
+  }
+
+  // Artist query first, but only for multi-word queries: a single word can be
+  // both a song title and some cover account's name ("一路向北"), and walking
+  // that account's albums would return a wall of covers instead of the
+  // original. "歌名 歌手" / "New Jeans" style queries are the real artist case.
+  if (tokens.length > 1) {
+    const artistHits = await collectArtistAlbumSongs(
+      keyword,
+      tokens.join(''),
+      signal,
+    )
+    if (artistHits.length) {
+      deepSearchCache.set(cacheKey, { hits: artistHits, at: Date.now() })
+      return artistHits
+    }
   }
 
   // Fast path: a web search for the song's NetEase page usually returns the

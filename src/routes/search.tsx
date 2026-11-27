@@ -22,7 +22,7 @@ import {
 } from '../lib/searchCache'
 import { useDocumentTitle } from '../lib/title'
 import { toast } from '../lib/toast'
-import { useSearchStore } from '../store/search'
+import { useSearchStore, type SearchMode } from '../store/search'
 import type {
   Album,
   ArtistSummary,
@@ -75,10 +75,6 @@ function normalizeQuery(value: string) {
     .toLowerCase()
     .replace(/[\s\-_—·()（）[\]【】「」'"“”,，.。!！?？/]/g, '')
 }
-
-/** A live/remix/instrumental upload is not the original. */
-const DECORATED_TITLE =
-  /(live|remix|dj|伴奏|翻唱|cover|纯音乐|instrumental|bootleg|type\s*beat|\bbeat\b|v\d|加速|降速|慢速|变速|升调|降调|说唱版|片段|剪辑|铃声|女声版|男声版|\d(?:\.\d)?x)/i
 
 /**
  * "胭脂妆（Cover 树屋女孩）" has no space before `Cover`, so normalising the
@@ -201,7 +197,14 @@ function sortSongsByRelevance(songs: Song[], keyword: string) {
  * WEICHENG-BEAT satisfied it, so the fallback never ran. One of the words is
  * an artist, so it must appear in the credits, not just in the title.
  */
-function hasDirectMatch(songs: Song[], keyword: string) {
+function hasDirectMatch(
+  songs: Song[],
+  keyword: string,
+  mode: SearchMode,
+) {
+  // Album mode always runs the fallback: the goal is to read the release's
+  // track list, and a cover that happens to share the title is not a hit.
+  if (mode === 'album') return false
   const tokens = queryTokens(keyword)
   if (!tokens.length) return true
   // "Cover" asks for a different recording, so an undecorated original must
@@ -224,39 +227,27 @@ function hasDirectMatch(songs: Song[], keyword: string) {
   // "New Jeans" (with a space) is still one artist name. An artist query must
   // not count remixes/covers as a complete result set: the fallback walks the
   // artist's albums to surface the delisted originals.
-  const compactQuery = normalizeQuery(tokens.join(''))
-  const artistQuery = songs.some((song) =>
-    song.ar.some((artist) => {
-      const name = normalizeQuery(artist.name)
-      return name === compactQuery || name.replace(/\s+/g, '') === compactQuery
-    }),
-  )
-  if (artistQuery) return false
-
   if (tokens.length === 1) {
-    // A bare title ("爱的回归线") is usually dominated by covers when the
-    // original is delisted, so let the fallback look for the original even
-    // though an undecorated cover already matched.
-    return false
-  }
-  const covered = (titleTokens: string[], artistToken: string, song: Song) => {
-    if (DECORATED_TITLE.test(song.name)) return false
-    const name = normalizeQuery(song.name)
-    const artists = normalizeQuery(
-      song.ar.map((artist) => artist.name).join(' '),
+    const token = tokens[0]
+    // A word that appears in a *title* is a song search: covers dominate once
+    // the original is delisted, so let the fallback look for it. Only a bare
+    // artist name ("周杰伦") means the list already is that catalogue — and
+    // even then a same-named cover account ("一路向北") must not count, which
+    // is why the title check runs first.
+    const titleHit = songs.some((song) =>
+      normalizeQuery(song.name).includes(token),
     )
-    return (
-      titleTokens.every((token) => name.includes(token)) &&
-      artists.includes(artistToken)
+    if (titleHit) return false
+    return songs.some((song) =>
+      song.ar.some((artist) => normalizeQuery(artist.name) === token),
     )
   }
-  return songs.some((song) => {
-    // "song artist" and "artist song" are both common ways to type a query.
-    return (
-      covered(tokens.slice(0, -1), tokens[tokens.length - 1], song) ||
-      covered(tokens.slice(1), tokens[0], song)
-    )
-  })
+
+  // Multi-word queries ("歌名 歌手" / "歌名 专辑"): the song index routinely
+  // answers with a cover credited to an account named after the drama or the
+  // album ("爱的回归线" by 爱情公寓), so a row that technically matches the
+  // words is not proof the original exists. Always let the fallback decide.
+  return false
 }
 
 function SearchPage() {
@@ -302,6 +293,7 @@ function SearchPage() {
   // index has nothing. The toggle lives next to the search box and controls
   // whether the fallback runs at all.
   const deepEnabled = useSearchStore((state) => state.deepSearch)
+  const searchMode = useSearchStore((state) => state.searchMode)
   const [deepSongs, setDeepSongs] = useState<DeepSearchHit[]>([])
   const [deepLoading, setDeepLoading] = useState(false)
   const deepKeywordRef = useRef('')
@@ -471,23 +463,29 @@ function SearchPage() {
     // early start is aborted by the fetch effect's `loading` flip and used to
     // leave the fallback permanently blocked.
     if (appliedKeyword !== query) return
-    if (hasDirectMatch(songsRef.current, query)) {
+    if (hasDirectMatch(songsRef.current, query, searchMode)) {
       setDeepSongs([])
       deepKeywordRef.current = ''
       return
     }
-    if (deepKeywordRef.current === query) return
-    deepKeywordRef.current = query
+    // The run key carries the mode: switching between 歌手 / 专辑 must re-run the
+    // fallback for the same query instead of reusing the previous result.
+    const runKey = `${searchMode}:${query}`
+    if (deepKeywordRef.current === runKey) return
+    deepKeywordRef.current = runKey
 
     const controller = new AbortController()
-    const startedWith = query
+    const startedWith = runKey
     setDeepLoading(true)
     setDeepSongs([])
-    deepSearchSongs(query, controller.signal)
+    deepSearchSongs(query, controller.signal, searchMode)
       .then((hits) => {
         if (controller.signal.aborted) return
-        const seen = new Set(songsRef.current.map((song) => song.id))
-        setDeepSongs(hits.filter((hit) => !seen.has(hit.song.id)))
+        // Keep every hit, including rows the song index already returned: the
+        // merged list below moves them to the top (that is the whole point —
+        // the original is usually on page 10 of the cover results, not on page
+        // one). Duplicates are removed once, when merging.
+        setDeepSongs(hits)
       })
       .catch(() => undefined)
       .finally(() => {
@@ -500,7 +498,17 @@ function SearchPage() {
       // An aborted run must be restartable once the fetch settles.
       if (deepKeywordRef.current === startedWith) deepKeywordRef.current = ''
     }
-  }, [tab, page, keyword, loading, failed, deepEnabled, refreshToken, appliedKeyword])
+  }, [
+    tab,
+    page,
+    keyword,
+    loading,
+    failed,
+    deepEnabled,
+    searchMode,
+    refreshToken,
+    appliedKeyword,
+  ])
 
   const retry = () => setAttempt((value) => value + 1)
 
@@ -655,7 +663,7 @@ function SearchPage() {
                     </span>
                   </div>
                   <p className="mb-3 text-[11px] leading-relaxed text-ink-4">
-                    <Trans>这些歌曲没有出现在单曲搜索结果里（可能已下架），仍可通过换源播放</Trans>
+                    <Trans>这些歌曲来自相关专辑（部分已下架），仍可通过换源播放</Trans>
                   </p>
                   <SongTable
                     songs={deepSongs.map((hit) => hit.song)}
