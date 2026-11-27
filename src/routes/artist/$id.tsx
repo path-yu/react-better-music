@@ -28,12 +28,17 @@ import {
   fetchArtistProfile,
   fetchArtistTopSongs,
   fetchSimilarArtists,
+  fetchSongPrivileges,
   subscribeArtist,
 } from '../../api'
 import { useLocalLibraryStore } from '../../store/localLibrary'
 import { useUserStore } from '../../store/user'
 import { formatDate, formatNumber, matchesKeyword } from '../../lib/format'
 import { needsUnblock } from '../../lib/songs'
+import {
+  readArtistSongsCache,
+  writeArtistSongsCache,
+} from '../../lib/artistSongsCache'
 import { composePlaylistCover } from '../../lib/playlistCover'
 import { useDocumentTitle } from '../../lib/title'
 import { toast } from '../../lib/toast'
@@ -111,6 +116,36 @@ async function fetchAlbumSongsWithRetry(albumId: number): Promise<Song[] | null>
   return null
 }
 
+/**
+ * `/album` usually carries per-row rights, but a degraded payload can omit
+ * `st` / `privilege` and the 无版权 tag silently disappears. `/song/detail`'s
+ * sibling `privileges` array is authoritative; backfill before caching.
+ * Returns `null` when the fallback itself failed, so an incomplete list is
+ * never persisted for a day.
+ */
+async function withSongPrivileges(songs: Song[]): Promise<Song[] | null> {
+  if (!songs.length) return songs
+  try {
+    const privileges = await fetchSongPrivileges(songs.map((song) => song.id))
+    if (!privileges.size) return null
+    return songs.map((song) => {
+      const privilege = privileges.get(song.id)
+      return privilege ? { ...song, privilege } : song
+    })
+  } catch {
+    return null
+  }
+}
+
+/** The tag needs at least one of these; otherwise the row would render bare. */
+function hasAvailability(song: Song) {
+  return (
+    typeof song.privilege?.st === 'number' ||
+    typeof song.st === 'number' ||
+    Boolean(song.noCopyrightRcmd)
+  )
+}
+
 export const Route = createFileRoute('/artist/$id')({
   validateSearch: (search: Record<string, unknown>): { tab?: ArtistTab } => {
     const tab = search.tab
@@ -152,8 +187,11 @@ function ArtistPage() {
   const [followBusy, setFollowBusy] = useState(false)
   const [collecting, setCollecting] = useState(false)
   // "Expand every album's songs" view: fetched on demand, kept until the tab
-  // is collapsed so filtering does not re-download 49 albums.
+  // is collapsed so filtering does not re-download 49 albums. The assembled
+  // list is also persisted for a day (`artistSongsCache`).
   const [allSongs, setAllSongs] = useState<Song[] | null>(null)
+  /** Mirrors `allSongs` for handlers that run after an async retry. */
+  const allSongsRef = useRef<Song[] | null>(null)
   const [allAlbumCount, setAllAlbumCount] = useState(0)
   const [expandingAll, setExpandingAll] = useState(false)
   /** Which half of the expansion is running; drives the progress line. */
@@ -182,6 +220,7 @@ function ArtistPage() {
     setAlbumsLoadingMore(false)
     setAlbumsDone(false)
     setAllSongs(null)
+    allSongsRef.current = null
     setAllAlbumCount(0)
     setExpandingAll(false)
     setExpandPhase(null)
@@ -500,10 +539,21 @@ function ArtistPage() {
     setExpandProgress({ done: 0, total: failedAlbums.length })
     try {
       const { failed } = await loadAlbumSongs(failedAlbums, (fresh) => {
-        setAllSongs((current) => appendUniqueSongs(current ?? [], fresh))
+        setAllSongs((current) => {
+          const next = appendUniqueSongs(current ?? [], fresh)
+          allSongsRef.current = next
+          return next
+        })
       })
       setFailedAlbums(failed)
       if (!failed.length) {
+        const current = allSongsRef.current ?? []
+        const finalSongs = (await withSongPrivileges(current)) ?? current
+        setAllSongs(finalSongs)
+        allSongsRef.current = finalSongs
+        if (finalSongs.length && finalSongs.every(hasAvailability)) {
+          writeArtistSongsCache(id, finalSongs, allAlbumCount)
+        }
         toast.success(i18n._(msg`已补齐全部专辑歌曲`))
       } else {
         toast.warning(i18n._(msg`还有 ${failed.length} 张专辑获取失败`))
@@ -519,6 +569,20 @@ function ArtistPage() {
    */
   const handleExpandAllSongs = async () => {
     if (expandingAll) return
+    // Re-expanding right after collapsing used to replay all 23 requests
+    // (plus the one-second gaps) even though nothing had changed.
+    const cached = readArtistSongsCache(id)
+    if (cached?.songs.length) {
+      setSongQuery('')
+      setUnblockOnly(false)
+      setExpandPhase(null)
+      setExpandProgress({ done: 0, total: 0 })
+      setAllSongs(cached.songs)
+      allSongsRef.current = cached.songs
+      setAllAlbumCount(cached.albumCount)
+      setFailedAlbums([])
+      return
+    }
     setExpandingAll(true)
     setSongQuery('')
     setUnblockOnly(false)
@@ -528,6 +592,7 @@ function ArtistPage() {
     // Enter the list view immediately: rows stream in album by album instead
     // of waiting for all 49 requests to finish.
     setAllSongs([])
+    allSongsRef.current = []
     setAllAlbumCount(0)
     setFailedAlbums([])
     try {
@@ -567,19 +632,34 @@ function ArtistPage() {
       setExpandPhase('songs')
       setExpandProgress({ done: 0, total: collected.length })
       const { tracks, failed } = await loadAlbumSongs(collected, (fresh) => {
-        setAllSongs((current) => appendUniqueSongs(current ?? [], fresh))
+        setAllSongs((current) => {
+          const next = appendUniqueSongs(current ?? [], fresh)
+          allSongsRef.current = next
+          return next
+        })
       })
 
       setFailedAlbums(failed)
       if (!tracks.length) {
         toast.info(i18n._(msg`这些专辑里没有可播放的歌曲`))
-      } else if (failed.length) {
-        toast.warning(i18n._(msg`有 ${failed.length} 张专辑的歌曲获取失败`))
+      } else {
+        // Backfill row rights before showing/caching the assembled list so a
+        // missing `st` in one `/album` payload cannot hide its 无版权 tag.
+        const finalSongs = (await withSongPrivileges(tracks)) ?? tracks
+        setAllSongs(finalSongs)
+        allSongsRef.current = finalSongs
+        if (!failed.length && finalSongs.every(hasAvailability)) {
+          writeArtistSongsCache(id, finalSongs, collected.length)
+        }
+        if (failed.length) {
+          toast.warning(i18n._(msg`有 ${failed.length} 张专辑的歌曲获取失败`))
+        }
       }
     } catch {
       // Nothing streamed in: fall back to the album grid instead of an empty
       // table so the user can simply try again.
       setAllSongs(null)
+      allSongsRef.current = null
       toast.error(i18n._(msg`专辑歌曲加载失败`))
     } finally {
       setExpandingAll(false)
@@ -810,6 +890,7 @@ function ArtistPage() {
                     disabled={expandingAll}
                     onClick={() => {
                       setAllSongs(null)
+                      allSongsRef.current = null
                       setAllAlbumCount(0)
                       setSongQuery('')
                       setUnblockOnly(false)

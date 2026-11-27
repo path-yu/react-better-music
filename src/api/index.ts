@@ -454,6 +454,28 @@ export async function fetchSongDetail(id: number | string) {
   return privilege ? { ...song, privilege } : song
 }
 
+/**
+ * Per-track rights for a whole list in one (or a few) `/song/detail` calls.
+ * Album payloads occasionally omit `st` / `privilege` for a row, which made
+ * the 无版权 tag disappear; `privileges` is the authoritative fallback.
+ */
+export async function fetchSongPrivileges(ids: number[]) {
+  const privileges = new Map<number, SongPrivilege>()
+  const CHUNK = 200
+  for (let index = 0; index < ids.length; index += CHUNK) {
+    const chunk = ids.slice(index, index + CHUNK)
+    if (!chunk.length) continue
+    const res = await get<{ privileges?: SongPrivilege[] }>('/song/detail', {
+      ids: chunk.join(','),
+    })
+    for (const privilege of res.privileges ?? []) {
+      const id = Number(privilege.id)
+      if (Number.isSafeInteger(id) && id > 0) privileges.set(id, privilege)
+    }
+  }
+  return privileges
+}
+
 /** NetEase's recommended playable edition for a grey copyright track. */
 export async function fetchSongCopyrightRecommendation(id: number | string) {
   const res = await get<{ data?: { rcmd?: Song | null } }>(
