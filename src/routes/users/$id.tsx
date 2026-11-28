@@ -370,19 +370,20 @@ function UserDetailPage() {
         onValueChange={(value) => setTab(value as ProfileTab)}
         className="mt-6"
       >
-        {/* The tab group is its own frame; no extra divider under it. */}
-        <TabsList>
-          <TabsTrigger value="created">
-            <Trans>创建的歌单</Trans> ({createdPlaylists.length})
-          </TabsTrigger>
-          <TabsTrigger value="collected">
-            <Trans>收藏的歌单</Trans> ({collectedPlaylists.length})
-          </TabsTrigger>
-          <TabsTrigger value="albums">
-            <Trans>收藏的专辑</Trans>
-            {isOwnProfile && albumsLoaded ? ` (${albumTotal})` : ''}
-          </TabsTrigger>
-        </TabsList>
+        <div className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-[var(--app-border)] sticky-bar py-2 page-bleed">
+          <TabsList>
+            <TabsTrigger value="created">
+              <Trans>创建的歌单</Trans> ({createdPlaylists.length})
+            </TabsTrigger>
+            <TabsTrigger value="collected">
+              <Trans>收藏的歌单</Trans> ({collectedPlaylists.length})
+            </TabsTrigger>
+            <TabsTrigger value="albums">
+              <Trans>收藏的专辑</Trans>
+              {isOwnProfile && albumsLoaded ? ` (${albumTotal})` : ''}
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {(['created', 'collected'] as const).map((value) => {
           const list = value === 'created' ? createdPlaylists : collectedPlaylists

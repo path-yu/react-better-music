@@ -15,6 +15,8 @@ import { useVideoPlaybackStore } from '../../store/videoPlayback'
 
 interface MvVideoPlayerProps {
   src: string
+  /** NetEase MV id, used to remember/restore the playback position. */
+  videoId?: number | string
   poster?: string
   autoPlay?: boolean
   /** Fill the parent box instead of enforcing a 16:9 aspect ratio. */
@@ -24,6 +26,57 @@ interface MvVideoPlayerProps {
   /** Fired once the browser has enough data to start playback. */
   onReady?: () => void
   onError?: () => void
+}
+
+type MvProgressMap = Record<string, { time: number; at: number }>
+const MV_PROGRESS_KEY = 'react-music-mv-progress'
+
+function readMvProgressMap(): MvProgressMap {
+  try {
+    const raw = localStorage.getItem(MV_PROGRESS_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw) as MvProgressMap
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+function saveMvProgress(
+  videoId: number | string | undefined,
+  time: number,
+) {
+  if (!videoId || !Number.isFinite(time) || time < 1) return
+  try {
+    const key = String(videoId)
+    const map = readMvProgressMap()
+    map[key] = { time: Math.floor(time), at: Date.now() }
+    // Keep recent MVs only; this is a convenience, not a full watch history.
+    const entries = Object.entries(map)
+      .sort(([, left], [, right]) => right.at - left.at)
+      .slice(0, 100)
+    localStorage.setItem(MV_PROGRESS_KEY, JSON.stringify(Object.fromEntries(entries)))
+  } catch {
+    // storage may be unavailable
+  }
+}
+
+function readMvProgress(videoId: number | string | undefined) {
+  if (!videoId) return null
+  const saved = readMvProgressMap()[String(videoId)]
+  const time = Number(saved?.time)
+  return Number.isFinite(time) && time >= 1 ? time : null
+}
+
+function clearMvProgress(videoId: number | string | undefined) {
+  if (!videoId) return
+  try {
+    const map = readMvProgressMap()
+    delete map[String(videoId)]
+    localStorage.setItem(MV_PROGRESS_KEY, JSON.stringify(map))
+  } catch {
+    // storage may be unavailable
+  }
 }
 
 /**
@@ -50,6 +103,7 @@ const skinStyle = {
 
 export function MvVideoPlayer({
   src,
+  videoId,
   poster,
   autoPlay = false,
   fill = false,
@@ -100,20 +154,79 @@ export function MvVideoPlayer({
     showControls()
   }, [playing, showControls, clearHideTimer])
 
-  // Closing the immersive page unmounts this player. Explicitly stop the
-  // decoder there; removing the DOM node alone can leave audio playing.
+  // Restore the remembered position once the media is seekable. Without this,
+  // returning from an artist page reloads the MV at 0 and autoplays from the top.
+  useEffect(() => {
+    if (!videoId) return
+    const video = shellRef.current?.querySelector<HTMLVideoElement>('video')
+    if (!video) return
+
+    const onLoadedMetadata = () => {
+      const target = readMvProgress(videoId)
+      if (!target) return
+      // Don't replay the final seconds as though they were unfinished.
+      if (
+        Number.isFinite(video.duration) &&
+        video.duration > 0 &&
+        target > video.duration - 2
+      ) {
+        return
+      }
+      video.currentTime = target
+    }
+
+    video.addEventListener('loadedmetadata', onLoadedMetadata)
+    return () => video.removeEventListener('loadedmetadata', onLoadedMetadata)
+  }, [videoId])
+
+  // Save progress while playing, on pause, and when the tab/page is hidden.
+  useEffect(() => {
+    if (!videoId) return
+    const video = shellRef.current?.querySelector<HTMLVideoElement>('video')
+    if (!video) return
+    let lastSavedAt = 0
+
+    const save = () => saveMvProgress(videoId, video.currentTime)
+    const onTimeUpdate = () => {
+      const now = Date.now()
+      if (now - lastSavedAt < 1000) return
+      lastSavedAt = now
+      save()
+    }
+    const onPause = () => save()
+    const onEnded = () => clearMvProgress(videoId)
+    const onPageHide = () => save()
+
+    video.addEventListener('timeupdate', onTimeUpdate)
+    video.addEventListener('pause', onPause)
+    video.addEventListener('ended', onEnded)
+    video.addEventListener('seeked', save)
+    window.addEventListener('pagehide', onPageHide)
+    return () => {
+      video.removeEventListener('timeupdate', onTimeUpdate)
+      video.removeEventListener('pause', onPause)
+      video.removeEventListener('ended', onEnded)
+      video.removeEventListener('seeked', save)
+      window.removeEventListener('pagehide', onPageHide)
+    }
+  }, [videoId])
+
+  // Closing the immersive page unmounts this player. Save first, then
+  // explicitly stop the decoder; removing the DOM node alone can leave audio
+  // playing.
   useEffect(
     () => () => {
       const video =
         videoRef.current ?? shellRef.current?.querySelector('video')
       if (video) {
+        saveMvProgress(videoId, video.currentTime)
         video.pause()
         video.removeAttribute('src')
         video.load()
       }
       useVideoPlaybackStore.getState().setActive(false)
     },
-    [],
+    [videoId],
   )
 
   // Keep the local state in sync with the actual media element. This matters

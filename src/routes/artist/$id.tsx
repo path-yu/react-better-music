@@ -803,7 +803,7 @@ function ArtistPage() {
         }
         className="mt-6"
       >
-        <div className="flex items-center justify-between gap-3 border-b border-black/8 pb-2">
+        <div className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-[var(--app-border)] sticky-bar py-2 page-bleed">
           <TabsList>
             <TabsTrigger value="songs">
               <Trans>热门作品</Trans>
@@ -850,6 +850,7 @@ function ArtistPage() {
             // Every row is this artist: no 歌手 column, only featured artists.
             pageArtistId={profile.id}
             emptyText={i18n._(msg`暂无热门单曲`)}
+            stickyTop={57}
           />
         </TabsContent>
 
@@ -926,6 +927,7 @@ function ArtistPage() {
                 pageArtistId={profile.id}
                 loading={expandingAll && !filteredAllSongs.length}
                 emptyText={i18n._(msg`没有匹配的歌曲`)}
+                stickyTop={57}
               />
             </>
           ) : (

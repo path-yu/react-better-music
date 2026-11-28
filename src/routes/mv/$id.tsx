@@ -16,7 +16,7 @@ import {
   fetchMvUrl,
   fetchRelatedMvs,
 } from '../../api'
-import { formatDate, formatNumber } from '../../lib/format'
+import { cn, formatDate, formatNumber } from '../../lib/format'
 import { resizedImageUrl } from '../../lib/image'
 import { useDocumentTitle } from '../../lib/title'
 import { toast } from '../../lib/toast'
@@ -34,6 +34,11 @@ interface AuthorInfo {
   briefDesc?: string
 }
 
+interface ArtistCardAuthorInfo extends AuthorInfo {
+  /** Artist detail id; MVs created by a user profile may not have one. */
+  artistId?: number
+}
+
 function MvDetailPage() {
   const { i18n } = useLingui()
   const { id } = Route.useParams()
@@ -41,7 +46,7 @@ function MvDetailPage() {
   const [detail, setDetail] = useState<Mv | null>(null)
   const [videoUrl, setVideoUrl] = useState('')
   const [similar, setSimilar] = useState<Mv[]>([])
-  const [author, setAuthor] = useState<AuthorInfo | null>(null)
+  const [author, setAuthor] = useState<ArtistCardAuthorInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [videoLoading, setVideoLoading] = useState(true)
   useDocumentTitle(detail?.name ?? i18n._(msg`MV`))
@@ -85,10 +90,15 @@ function MvDetailPage() {
       .then(async (mv) => {
         if (cancelled || !mv) return
         setDetail(mv)
-        if (mv.artistId) {
-          fetchArtistDetail(mv.artistId)
+        const artistId = mv.artistId ?? mv.artists?.[0]?.id
+        if (artistId) {
+          fetchArtistDetail(artistId)
             .then((artist) => {
-              if (!cancelled) setAuthor(artist)
+              if (!cancelled && artist) {
+                // `/artists` returns the artist body without echoing its own
+                // id, so carry the MV author id through to the clickable card.
+                setAuthor({ ...artist, artistId })
+              }
             })
             .catch(() => undefined)
         }
@@ -172,6 +182,7 @@ function MvDetailPage() {
             ) : videoUrl ? (
               <MvVideoPlayer
                 key={videoUrl}
+                videoId={detail.id}
                 src={videoUrl}
                 poster={resizedImageUrl(detail.cover, '640y360') ?? undefined}
                 autoPlay
@@ -209,7 +220,28 @@ function MvDetailPage() {
           </div>
 
           {author ? (
-            <div className="mt-5 flex items-start gap-3 rounded-[18px] border border-black/8 bg-[#fafafc] p-4">
+            <button
+              type="button"
+              disabled={!author.artistId}
+              title={
+                author.artistId
+                  ? i18n._(msg`查看 ${author.name} 的主页`)
+                  : undefined
+              }
+              onClick={() => {
+                if (!author.artistId) return
+                void navigate({
+                  to: '/artist/$id',
+                  params: { id: String(author.artistId) },
+                })
+              }}
+              className={cn(
+                'mt-5 flex w-full items-start gap-3 rounded-[18px] border border-black/8 bg-[#fafafc] p-4 text-left transition-colors',
+                author.artistId
+                  ? 'cursor-pointer hover:bg-black/4'
+                  : 'cursor-default',
+              )}
+            >
               <Avatar src={author.picUrl} alt={author.name} size="md" />
               <div className="min-w-0">
                 <p className="text-[13px] font-medium text-ink-1">{author.name}</p>
@@ -219,7 +251,7 @@ function MvDetailPage() {
                   </p>
                 ) : null}
               </div>
-            </div>
+            </button>
           ) : null}
 
           <div className="mt-8">

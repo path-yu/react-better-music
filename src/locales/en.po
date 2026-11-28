@@ -9,7 +9,7 @@ msgstr ""
 
 #. placeholder {0}: album.size
 #: src/components/cards/AlbumCard.tsx:59
-#: src/routes/artist/$id.tsx:981
+#: src/routes/artist/$id.tsx:983
 msgid " · {0} 首"
 msgstr " · {0} tracks"
 
@@ -73,7 +73,7 @@ msgid "{0} 条"
 msgstr "{0}"
 
 #. placeholder {0}: formatNumber(detail.playCount)
-#: src/routes/mv/$id.tsx:202
+#: src/routes/mv/$id.tsx:213
 #: src/routes/songlists/$id.tsx:486
 msgid "{0} 次播放"
 msgstr "{0} plays"
@@ -94,7 +94,7 @@ msgid "{0} 等 {1} 首"
 msgstr "{0} and more · {1} tracks"
 
 #. placeholder {0}: formatNumber(artist.fansCount)
-#: src/routes/artist/$id.tsx:1053
+#: src/routes/artist/$id.tsx:1055
 msgid "{0} 粉丝"
 msgstr "{0} fans"
 
@@ -296,11 +296,11 @@ msgstr "MP3"
 #~ msgstr "MSLS"
 
 #: src/components/layout/TitleBar.tsx:24
-#: src/routes/mv/$id.tsx:47
+#: src/routes/mv/$id.tsx:52
 msgid "MV"
 msgstr "MV"
 
-#: src/routes/mv/$id.tsx:141
+#: src/routes/mv/$id.tsx:151
 msgid "MV 不存在或无法访问"
 msgstr "MV not found or unavailable"
 
@@ -309,11 +309,11 @@ msgstr "MV not found or unavailable"
 msgid "MV 加载失败"
 msgstr "Failed to load MVs"
 
-#: src/routes/mv/$id.tsx:229
+#: src/routes/mv/$id.tsx:261
 msgid "MV 评论"
 msgstr "MV comments"
 
-#: src/routes/mv/$id.tsx:102
+#: src/routes/mv/$id.tsx:112
 msgid "MV 详情加载失败"
 msgstr "Failed to load MV details"
 
@@ -787,7 +787,7 @@ msgstr "{0} charts"
 #~ msgstr "{0} songs from {1} albums"
 
 #. placeholder {0}: filteredAllSongs.length
-#: src/routes/artist/$id.tsx:870
+#: src/routes/artist/$id.tsx:871
 msgid "共 {0} 首，来自 {allAlbumCount} 张专辑"
 msgstr ""
 
@@ -1168,7 +1168,7 @@ msgstr "Joined {0}"
 msgid "加载更多"
 msgstr "Load more"
 
-#: src/routes/artist/$id.tsx:997
+#: src/routes/artist/$id.tsx:999
 msgid "加载更多专辑"
 msgstr "Load more albums"
 
@@ -1294,8 +1294,8 @@ msgstr "Failed to unfollow"
 #: src/components/player/ImmersivePlayerBar.tsx:215
 #: src/components/player/NowPlayingTransport.tsx:291
 #: src/components/player/NowPlayingTransport.tsx:292
-#: src/components/player/PlayerArtwork.tsx:711
-#: src/components/player/PlayerArtwork.tsx:713
+#: src/components/player/PlayerArtwork.tsx:741
+#: src/components/player/PlayerArtwork.tsx:743
 #: src/components/player/PlayerBar.tsx:1945
 #: src/components/player/PlayerBar.tsx:1947
 #: src/components/songs/SongContextMenu.tsx:421
@@ -1410,8 +1410,8 @@ msgstr "Bilibili"
 #: src/components/player/ImmersivePlayerBar.tsx:215
 #: src/components/player/NowPlayingTransport.tsx:291
 #: src/components/player/NowPlayingTransport.tsx:292
-#: src/components/player/PlayerArtwork.tsx:711
-#: src/components/player/PlayerArtwork.tsx:713
+#: src/components/player/PlayerArtwork.tsx:741
+#: src/components/player/PlayerArtwork.tsx:743
 #: src/components/player/PlayerBar.tsx:1945
 #: src/components/player/PlayerBar.tsx:1947
 #: src/components/songs/SongContextMenu.tsx:421
@@ -1690,7 +1690,7 @@ msgstr "Expand sidebar"
 msgid "展开全部"
 msgstr "Show all"
 
-#: src/routes/artist/$id.tsx:946
+#: src/routes/artist/$id.tsx:948
 msgid "展开全部歌曲"
 msgstr "Show all songs"
 
@@ -1754,7 +1754,7 @@ msgid "已创建歌单「{name}」"
 msgstr "Created playlist “{name}”"
 
 #. placeholder {0}: albums.length
-#: src/routes/artist/$id.tsx:936
+#: src/routes/artist/$id.tsx:938
 msgid "已加载 {0} 张专辑"
 msgstr "{0} albums loaded"
 
@@ -2135,7 +2135,7 @@ msgstr "Open"
 #. placeholder {0}: album.name
 #. placeholder {0}: song.al.name
 #: src/components/cards/AlbumCard.tsx:35
-#: src/components/player/PlayerArtwork.tsx:546
+#: src/components/player/PlayerArtwork.tsx:576
 msgid "打开专辑 {0}"
 msgstr "Open album {0}"
 
@@ -2273,7 +2273,7 @@ msgstr "Search “{0}”"
 msgid "搜索专辑歌曲"
 msgstr "Search album tracks"
 
-#: src/routes/artist/$id.tsx:882
+#: src/routes/artist/$id.tsx:883
 msgid "搜索全部歌曲"
 msgstr "Search all songs"
 
@@ -2501,7 +2501,7 @@ msgid "收藏 {0} 首到歌单"
 msgstr "Add {0} songs to a playlist"
 
 #: src/routes/users/$id.tsx:158
-#: src/routes/users/$id.tsx:433
+#: src/routes/users/$id.tsx:434
 msgid "收藏专辑加载失败"
 msgstr "Failed to load saved albums"
 
@@ -2568,7 +2568,7 @@ msgstr "Collapse"
 msgid "收起侧栏"
 msgstr "Collapse sidebar"
 
-#: src/routes/artist/$id.tsx:899
+#: src/routes/artist/$id.tsx:900
 msgid "收起列表"
 msgstr "Collapse list"
 
@@ -2765,7 +2765,7 @@ msgstr "Pause voice comment"
 msgid "暂无 MV"
 msgstr "No MVs yet"
 
-#: src/routes/artist/$id.tsx:1003
+#: src/routes/artist/$id.tsx:1005
 msgid "暂无专辑"
 msgstr "No albums yet"
 
@@ -2834,11 +2834,11 @@ msgstr "No similar playlists yet"
 msgid "暂无相似歌曲"
 msgstr "No similar songs yet"
 
-#: src/routes/artist/$id.tsx:1017
+#: src/routes/artist/$id.tsx:1019
 msgid "暂无相关 MV"
 msgstr "No related MVs yet"
 
-#: src/routes/mv/$id.tsx:264
+#: src/routes/mv/$id.tsx:296
 msgid "暂无相关推荐"
 msgstr "Nothing related yet"
 
@@ -2899,7 +2899,7 @@ msgid "有 {0} 张专辑的歌曲获取失败"
 msgstr "Songs failed to load for {0} albums"
 
 #. placeholder {0}: failedAlbums.length
-#: src/routes/artist/$id.tsx:907
+#: src/routes/artist/$id.tsx:908
 msgid "有 {0} 张专辑的歌曲获取失败（接口限流）"
 msgstr "Songs failed to load for {0} albums (rate limited)"
 
@@ -3010,12 +3010,14 @@ msgstr "Ultra"
 msgid "柔和的粉色，轻盈浪漫"
 msgstr "A soft, light pink"
 
+#. placeholder {0}: author.name
 #. placeholder {0}: comment.user?.nickname ?? ''
 #: src/components/comments/CommentSection.tsx:677
+#: src/routes/mv/$id.tsx:228
 msgid "查看 {0} 的主页"
 msgstr "View {0}'s profile"
 
-#: src/components/player/PlayerArtwork.tsx:745
+#: src/components/player/PlayerArtwork.tsx:775
 msgid "查看专辑"
 msgstr "View album"
 
@@ -3439,7 +3441,7 @@ msgstr "Fetching MV…"
 #~ msgid "正在获取专辑列表…"
 #~ msgstr "Loading the album list…"
 
-#: src/routes/artist/$id.tsx:864
+#: src/routes/artist/$id.tsx:865
 msgid "正在获取专辑列表（已获取 {expandAlbumCount} 张）…"
 msgstr ""
 
@@ -3457,7 +3459,7 @@ msgstr "Resolving the playlist link…"
 
 #. placeholder {0}: expandProgress.done
 #. placeholder {1}: expandProgress.total
-#: src/routes/artist/$id.tsx:867
+#: src/routes/artist/$id.tsx:868
 msgid "正在读取 {0} / {1} 张专辑的歌曲…"
 msgstr "Reading songs from album {0} of {1}…"
 
@@ -3529,7 +3531,7 @@ msgstr "No matching tracks could be imported"
 #: src/components/player/NowPlaying.tsx:1887
 #: src/components/player/NowPlaying.tsx:2012
 #: src/routes/albums/$id.tsx:345
-#: src/routes/artist/$id.tsx:928
+#: src/routes/artist/$id.tsx:929
 #: src/routes/recent.tsx:151
 #: src/routes/recent.tsx:180
 #: src/routes/songlists/$id.tsx:642
@@ -3884,8 +3886,8 @@ msgstr "Similar"
 msgid "相似歌单"
 msgstr "Similar playlists"
 
-#: src/routes/artist/$id.tsx:1025
-#: src/routes/artist/$id.tsx:1055
+#: src/routes/artist/$id.tsx:1027
+#: src/routes/artist/$id.tsx:1057
 msgid "相似歌手"
 msgstr "Similar artists"
 
@@ -3901,7 +3903,7 @@ msgstr "Could not load similar songs"
 msgid "相关专辑"
 msgstr ""
 
-#: src/routes/mv/$id.tsx:236
+#: src/routes/mv/$id.tsx:268
 msgid "相关推荐"
 msgstr "Related"
 
@@ -3973,10 +3975,10 @@ msgstr "Loading video…"
 msgid "视频加载失败"
 msgstr "Failed to load videos"
 
-#: src/components/mv/MvVideoPlayer.tsx:184
+#: src/components/mv/MvVideoPlayer.tsx:297
 #: src/components/player/NowPlaying.tsx:1127
 #: src/components/player/NowPlaying.tsx:1385
-#: src/routes/mv/$id.tsx:186
+#: src/routes/mv/$id.tsx:197
 #: src/routes/video/$id.tsx:142
 msgid "视频暂时无法播放，可能已下架或存在地区限制"
 msgstr "Video is temporarily unavailable, possibly removed or region-restricted"
@@ -4314,15 +4316,15 @@ msgstr "This track is currently unavailable"
 msgid "该歌曲没有官方音源，当前使用匹配到的其他音源"
 msgstr "No official source; using a matched source"
 
-#: src/routes/users/$id.tsx:419
+#: src/routes/users/$id.tsx:420
 msgid "该用户的收藏专辑不可见"
 msgstr "This user's saved albums are private"
 
-#: src/routes/users/$id.tsx:406
+#: src/routes/users/$id.tsx:407
 msgid "该用户还没有创建歌单"
 msgstr "This user hasn't created any playlists"
 
-#: src/routes/users/$id.tsx:407
+#: src/routes/users/$id.tsx:408
 msgid "该用户还没有收藏歌单"
 msgstr "This user hasn't saved any playlists"
 
@@ -4380,7 +4382,7 @@ msgstr "Check your network or the local API service"
 #: src/routes/search.tsx:1100
 #: src/routes/songlists/index.tsx:447
 #: src/routes/toplist.tsx:344
-#: src/routes/users/$id.tsx:434
+#: src/routes/users/$id.tsx:435
 msgid "请检查网络或本地 API 服务后重试"
 msgstr "Check your network or the local API and try again."
 
@@ -4472,7 +4474,7 @@ msgstr "Workout"
 #: src/routes/artist/$id.tsx:700
 #: src/routes/artist/$id.tsx:701
 #: src/routes/local/playlists/$id.tsx:130
-#: src/routes/mv/$id.tsx:164
+#: src/routes/mv/$id.tsx:174
 #: src/routes/songlists/$id.tsx:423
 #: src/routes/songlists/$id.tsx:424
 #: src/routes/video/$id.tsx:107
@@ -4535,7 +4537,7 @@ msgid "还没有播放记录"
 msgstr "No recent plays yet"
 
 #: src/routes/library.tsx:628
-#: src/routes/users/$id.tsx:453
+#: src/routes/users/$id.tsx:454
 msgid "还没有收藏专辑"
 msgstr "No saved albums yet"
 
@@ -4746,7 +4748,7 @@ msgstr "Reset pairing"
 
 #: src/components/common/EmptyState.tsx:56
 #: src/routes/__root.tsx:94
-#: src/routes/artist/$id.tsx:918
+#: src/routes/artist/$id.tsx:919
 #: src/routes/index.tsx:98
 #: src/routes/search.tsx:837
 #: src/routes/video/$id.tsx:153

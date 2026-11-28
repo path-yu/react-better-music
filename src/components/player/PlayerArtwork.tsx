@@ -109,11 +109,36 @@ function useSmoothPlaybackPosition(
 ) {
   const reduced = usePrefersReducedMotion()
   const [smooth, setSmooth] = useState(position)
-  const positionRef = useRef(position)
-  positionRef.current = position
+  const smoothRef = useRef(smooth)
+  const wasPlayingRef = useRef(playing)
+  const applySmooth = (value: number) => {
+    smoothRef.current = value
+    setSmooth(value)
+  }
 
   useEffect(() => {
-    if (!holdPosition && (!playing || reduced)) setSmooth(position)
+    const wasPlaying = wasPlayingRef.current
+    wasPlayingRef.current = playing
+    if (holdPosition || reduced || playing) return
+
+    const audio = getAudio()
+    if (wasPlaying) {
+      // Pause: freeze at the media element's real time. The store position is
+      // updated only ~4 times per second, so syncing to it here visibly
+      // rewinds the record for one or two frames.
+      applySmooth(
+        audio && Number.isFinite(audio.currentTime)
+          ? audio.currentTime
+          : smoothRef.current,
+      )
+      return
+    }
+
+    // While paused, follow the prop only for a real seek. Small updates are
+    // the store catching up with the pause point and must not move the disc.
+    if (Math.abs(position - smoothRef.current) > 0.5) {
+      applySmooth(position)
+    }
   }, [position, playing, reduced, holdPosition])
 
   useEffect(() => {
@@ -121,15 +146,20 @@ function useSmoothPlaybackPosition(
     let frame = 0
     let last = 0
     const tick = (now: number) => {
-      if (now - last >= 1000 / 30) {
+      if (now - last >= 1000 / 60) {
         last = now
         const audio = getAudio()
         // `playing` is the UI's intent; the element is the source of truth.
-        // While a source is buffering, currentTime stays put and the record
-        // waits instead of running ahead like a wall-clock animation.
-        setSmooth(
-          audio && !audio.paused ? audio.currentTime : positionRef.current,
-        )
+        // A restored track starts its media at 0 and seeks to the remembered
+        // position once metadata arrives. Until that seek has settled (or the
+        // element is ready to keep playing), hold the angle instead of briefly
+        // reading time 0 and snapping the disc backwards.
+        const stable =
+          audio &&
+          !audio.paused &&
+          !audio.seeking &&
+          audio.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA
+        applySmooth(stable ? audio.currentTime : smoothRef.current)
       }
       frame = window.requestAnimationFrame(tick)
     }

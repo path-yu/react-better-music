@@ -350,6 +350,10 @@ input[type='search']::-webkit-search-decoration {
       .seek-slider__buffer,
       .seek-slider__fill,
       .volume-slider__thumb,
+      .mv-video-shell .media-time-slider .media-slider-thumb,
+      .mv-video-shell .media-time-slider .media-slider-track,
+      .mv-video-shell .media-time-slider .media-slider-buffer,
+      .mv-video-shell .media-time-slider .media-slider-fill,
       .immersive-progress__track,
       .immersive-progress__fill
     ) {
@@ -5576,9 +5580,23 @@ html.desktop .mv-video-shell .media-cast-button {
   background-color: #ffffff;
 }
 
-.mv-video-shell .media-time-slider-thumb {
+/* The skin derives its thumb radius from a theme token; pin the scrubber point
+   and force it circular so WebView2/theme differences never render it square. */
+.mv-video-shell .media-time-slider .media-slider-thumb {
+  width: 12px;
+  height: 12px;
+  top: 50%;
+  left: var(--media-slider-fill, 0%);
+  translate: -50% -50%;
   background-color: #ffffff;
+  border-radius: 9999px;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18), 0 1px 4px rgba(0, 0, 0, 0.45);
+}
+
+/* Video.js adds a tiny hover-position marker under the preview time. The MV
+   skin only wants the time label; hide the marker while keeping the label. */
+.mv-video-shell .media-time-slider .media-slider-preview::before {
+  display: none;
 }
 
 /* The skin drops backdrop-filter for these preferences; stay opaque instead. */
